@@ -1,0 +1,18 @@
+{
+  "status": 307,
+  "headers": {
+    "location": "/roadmaps/ai-content-creator",
+    "x-nextjs-stale-time": "300",
+    "x-nextjs-prerender": "1",
+    "x-next-cache-tags": "_N_T_/layout,_N_T_/roadmap/layout,_N_T_/roadmap/[id]/layout,_N_T_/roadmap/[id]/page,_N_T_/roadmap/ai-content-creator"
+  },
+  "segmentPaths": [
+    "/_tree",
+    "/_full",
+    "/roadmap/$d$id/__PAGE__",
+    "/roadmap/$d$id",
+    "/roadmap",
+    "/_index",
+    "/_head"
+  ]
+}
