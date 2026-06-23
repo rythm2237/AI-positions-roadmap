@@ -1,31 +1,47 @@
 "use client";
 
 // src/components/landing/WaitlistSection.tsx
-// Client component — uses React state for form submission and success message.
-// Replace the handleSubmit body with a real API call (e.g. Resend, ConvertKit) later.
+// Client component — real API call to /api/waitlist → Supabase + Resend.
 
 import { useState, FormEvent } from "react";
 import { careerPositions } from "@/data/careerRoadmaps";
 
-type FormState = "idle" | "submitting" | "success";
+type FormState = "idle" | "submitting" | "success" | "error";
 
 export default function WaitlistSection() {
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [interest, setInterest] = useState("");
   const [formState, setFormState] = useState<FormState>("idle");
+  const [errorMsg, setErrorMsg] = useState("");
 
-  function handleSubmit(e: FormEvent<HTMLFormElement>) {
+  async function handleSubmit(e: FormEvent<HTMLFormElement>) {
     e.preventDefault();
-
-    // Guard: basic validation
     if (!name.trim() || !email.trim()) return;
 
-    // Simulate submission (replace with real API call later)
     setFormState("submitting");
-    setTimeout(() => {
+    setErrorMsg("");
+
+    try {
+      const res = await fetch("/api/waitlist", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ name, email, interest }),
+      });
+
+      const data = await res.json();
+
+      if (!res.ok) {
+        setErrorMsg(data.error ?? "Something went wrong. Please try again.");
+        setFormState("error");
+        return;
+      }
+
       setFormState("success");
-    }, 800);
+    } catch {
+      setErrorMsg("Network error. Please check your connection and try again.");
+      setFormState("error");
+    }
   }
 
   return (
@@ -40,7 +56,7 @@ export default function WaitlistSection() {
           roadmap goes live — plus early-bird pricing when we launch.
         </p>
 
-        {/* Success state */}
+        {/* ── Success state ── */}
         {formState === "success" ? (
           <div
             role="alert"
@@ -66,11 +82,11 @@ export default function WaitlistSection() {
               Thanks! You&apos;re on the early access list.
             </p>
             <p className="mt-2 text-sm text-indigo-200">
-              We&apos;ll reach out as soon as your roadmap is ready.
+              Check your inbox — we&apos;ve sent you a confirmation email.
             </p>
           </div>
         ) : (
-          /* Form */
+          /* ── Form ── */
           <form
             onSubmit={handleSubmit}
             className="mt-10 flex flex-col gap-4 text-left"
@@ -139,13 +155,49 @@ export default function WaitlistSection() {
               </select>
             </div>
 
+            {/* Error message */}
+            {formState === "error" && errorMsg && (
+              <div
+                role="alert"
+                className="rounded-xl bg-red-500/20 px-4 py-3 text-sm text-red-200 border border-red-400/30"
+              >
+                ⚠️ {errorMsg}
+              </div>
+            )}
+
             {/* Submit */}
             <button
               type="submit"
               disabled={formState === "submitting"}
-              className="mt-2 w-full rounded-xl bg-white px-8 py-3.5 text-base font-semibold text-indigo-600 shadow-md transition-colors hover:bg-indigo-50 focus:outline-none focus:ring-2 focus:ring-white focus:ring-offset-2 focus:ring-offset-indigo-600 disabled:opacity-60"
+              className="mt-2 w-full rounded-xl bg-white px-8 py-3.5 text-base font-semibold text-indigo-600 shadow-md transition-colors hover:bg-indigo-50 focus:outline-none focus:ring-2 focus:ring-white focus:ring-offset-2 focus:ring-offset-indigo-600 disabled:opacity-60 disabled:cursor-not-allowed"
             >
-              {formState === "submitting" ? "Joining…" : "Join Waitlist"}
+              {formState === "submitting" ? (
+                <span className="flex items-center justify-center gap-2">
+                  <svg
+                    className="h-4 w-4 animate-spin"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    aria-hidden="true"
+                  >
+                    <circle
+                      className="opacity-25"
+                      cx="12"
+                      cy="12"
+                      r="10"
+                      stroke="currentColor"
+                      strokeWidth="4"
+                    />
+                    <path
+                      className="opacity-75"
+                      fill="currentColor"
+                      d="M4 12a8 8 0 018-8v4l3-3-3-3v4a8 8 0 00-8 8h4z"
+                    />
+                  </svg>
+                  Joining…
+                </span>
+              ) : (
+                "Join Waitlist"
+              )}
             </button>
 
             <p className="text-center text-xs text-indigo-300">

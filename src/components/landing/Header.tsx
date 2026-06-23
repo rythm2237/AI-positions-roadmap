@@ -17,34 +17,40 @@ export default function Header() {
         {/* Desktop nav */}
         <nav className="hidden items-center gap-6 md:flex" aria-label="Main navigation">
           <Link
-            href="#roadmaps"
+            href="/#roadmaps"
             className="text-sm font-medium text-gray-600 transition-colors hover:text-gray-900"
           >
             Roadmaps
           </Link>
           <Link
-            href="#preview"
+            href="/#preview"
             className="text-sm font-medium text-gray-600 transition-colors hover:text-gray-900"
           >
             Preview
           </Link>
           <Link
-            href="#how-it-works"
+            href="/#how-it-works"
             className="text-sm font-medium text-gray-600 transition-colors hover:text-gray-900"
           >
             How It Works
           </Link>
           <Link
-            href="#pricing"
+            href="/#pricing"
             className="text-sm font-medium text-gray-600 transition-colors hover:text-gray-900"
           >
             Pricing
+          </Link>
+          <Link
+            href="/career-dashboard"
+            className="text-sm font-medium text-indigo-600 transition-colors hover:text-indigo-800"
+          >
+            Career Analyzer
           </Link>
         </nav>
 
         {/* CTA */}
         <Link
-          href="#waitlist"
+          href="/#waitlist"
           className="rounded-lg bg-indigo-600 px-4 py-2 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2"
         >
           Join Waitlist
