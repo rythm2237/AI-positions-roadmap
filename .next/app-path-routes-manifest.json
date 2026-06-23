@@ -1,7 +1,0 @@
-{
-  "/_global-error/page": "/_global-error",
-  "/_not-found/page": "/_not-found",
-  "/page": "/",
-  "/roadmap/[id]/page": "/roadmap/[id]",
-  "/roadmaps/[slug]/page": "/roadmaps/[slug]"
-}
