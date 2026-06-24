@@ -4,11 +4,11 @@
 
 // ─── Learning Types ─────────────────────────────────────────────────────────
 
-export type LearningType = "Video" | "Reading" | "Practice" | "Project" | "Quiz";
+export type LearningType = "Video" | "Reading" | "Practice" | "Project" | "Quiz" | "Tool";
 
 export type Difficulty = "Beginner" | "Intermediate" | "Advanced";
 
-export type RoadmapStatus = "mvp-ready" | "coming-soon";
+export type RoadmapStatus = "available" | "coming-soon";
 
 export type PhaseAccessLevel = "free" | "locked";
 

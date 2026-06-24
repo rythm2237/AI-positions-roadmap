@@ -46,9 +46,9 @@ export default function RoadmapHero({ position }: RoadmapHeroProps) {
           <span className="rounded-full bg-indigo-100 px-3 py-1 text-xs font-semibold text-indigo-700">
             {position.category}
           </span>
-          {position.status === "mvp-ready" ? (
-            <span className="rounded-full bg-indigo-600 px-3 py-1 text-xs font-semibold text-white">
-              MVP Ready
+          {position.status === "available" ? (
+            <span className="rounded-full bg-emerald-100 px-3 py-1 text-xs font-semibold text-emerald-700">
+              Available Now
             </span>
           ) : (
             <span className="rounded-full bg-gray-200 px-3 py-1 text-xs font-medium text-gray-500">

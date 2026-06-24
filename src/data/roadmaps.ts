@@ -154,12 +154,23 @@ function lightPhase(
   access: "free" | "locked",
   sectionDefs: Array<{ id: string; title: string; desc: string; time: string; diff: "Beginner" | "Intermediate" | "Advanced"; types: Array<"Video" | "Reading" | "Practice" | "Project" | "Quiz"> }>
 ): RoadmapPhase {
+  const estimatedHours = Math.max(
+    sectionDefs.length * 2,
+    Math.round(
+      sectionDefs.reduce((total, section) => {
+        const hoursFromTime = Number.parseInt(section.time, 10);
+        return total + (Number.isNaN(hoursFromTime) ? 2 : hoursFromTime);
+      }, 0)
+    )
+  );
+
   return {
     id,
     phaseNumber,
     title,
     description,
     estimatedDuration,
+    estimatedHours,
     weekRange,
     outcome,
     access,
@@ -197,7 +208,7 @@ const aiAutomationSpecialist: Roadmap = {
   category: "Automation",
   level: "Beginner to Intermediate",
   duration: "~60 hours of content",
-  status: "mvp-ready",
+  status: "available",
   totalEstimatedHours: 60,
   recommendedCourses: [
     {
@@ -451,6 +462,7 @@ const aiAutomationSpecialist: Roadmap = {
       description:
         "Get hands-on with the most important automation platforms: Make, Zapier, n8n, and AI-native tools that connect your stack.",
       estimatedDuration: "2 weeks",
+      estimatedHours: 12,
       weekRange: "Week 3–4",
       outcome:
         "You can build basic automations in Make and Zapier, understand trigger-action logic, and connect common business tools.",
@@ -638,6 +650,7 @@ const aiAutomationSpecialist: Roadmap = {
       description:
         "Learn to map, design, and document business processes. Turn messy manual work into clean, reliable automated workflows.",
       estimatedDuration: "2 weeks",
+      estimatedHours: 12,
       weekRange: "Week 5–6",
       outcome:
         "You can map any business process, design a clean automated workflow, handle errors, and document it professionally.",
@@ -830,6 +843,7 @@ const aiAutomationSpecialist: Roadmap = {
       description:
         "Demystify APIs, webhooks, and JSON so you can connect any two tools — even those without native integrations.",
       estimatedDuration: "2 weeks",
+      estimatedHours: 12,
       weekRange: "Week 7–8",
       outcome:
         "You can read API documentation, make HTTP requests, understand JSON, and connect tools through APIs in Make or Zapier.",
@@ -1018,6 +1032,7 @@ const aiAutomationSpecialist: Roadmap = {
       description:
         "Apply everything you have learned by building real automation projects. Document and present your work to demonstrate job-readiness.",
       estimatedDuration: "4 weeks",
+      estimatedHours: 16,
       weekRange: "Week 9–12",
       outcome:
         "You have 3+ portfolio-ready automation projects, documented professionally and ready to show employers or clients.",
