@@ -1,242 +1,149 @@
-import type {
-  Difficulty,
-  LearningType,
-  Roadmap,
-  RoadmapPhase,
-  RoadmapProject,
-  RoadmapQuestion,
-  RoadmapResource,
-  RoadmapSection,
-  RoadmapStatus,
-  RoadmapTest,
-} from "@/types/roadmap";
+// src/data/roadmaps.ts
+// Static roadmap data for all 10 AI career positions.
+// Edit this file to update roadmap content.
+// Designed to be replaced with Supabase/API calls later.
 
-type SectionInput = {
-  id: string;
-  title: string;
-  description: string;
-  estimatedTime: string;
-  difficulty: Difficulty;
-  learningTypes: LearningType[];
-  resources: RoadmapResource[];
-  questions: RoadmapQuestion[];
-};
+import { Roadmap, RoadmapPhase, RoadmapProject, RoadmapTest, RoadmapSection } from "@/types/roadmap";
 
-type LightSectionInput = {
-  id: string;
-  title: string;
-  description: string;
-  estimatedTime: string;
-  difficulty: Difficulty;
-  learningTypes: LearningType[];
-  resources: RoadmapResource[];
-  correct: string;
-  distractors: [string, string, string];
-  explanation: string;
-};
-
-const URLS = {
-  karpathyIntroLlm: "https://www.youtube.com/watch?v=zjkBMFhNj_g",
-  karpathyBuildGpt: "https://www.youtube.com/watch?v=kCc8FmEb1nY",
-  fccAi: "https://www.freecodecamp.org/news/artificial-intelligence-ai/",
-  openAiPrompting: "https://platform.openai.com/docs/guides/prompt-engineering",
-  openAiText: "https://platform.openai.com/docs/guides/text-generation",
-  openAiStructured: "https://platform.openai.com/docs/guides/structured-outputs",
-  openAiVision: "https://platform.openai.com/docs/guides/vision",
-  openAiSpeech: "https://platform.openai.com/docs/guides/speech-to-text",
-  learnPrompting: "https://learnprompting.org/docs/introduction",
-  zapierLearn: "https://zapier.com/learn",
-  zapierQuickStart: "https://zapier.com/help/create/basics/create-zaps",
-  zapierFormatter: "https://zapier.com/help/create/format/get-started-with-formatter",
-  zapierPaths: "https://zapier.com/help/create/paths/get-started-with-paths",
-  makeHelp: "https://www.make.com/en/help",
-  makeRouter: "https://www.make.com/en/help/modules/router",
-  n8nDocs: "https://docs.n8n.io/",
-  n8nWebhook: "https://docs.n8n.io/integrations/builtin/core-nodes/n8n-nodes-base.webhook/",
-  postman: "https://learning.postman.com/docs/introduction/overview/",
-  rapidApi: "https://docs.rapidapi.com/",
-  lucidchart: "https://www.lucidchart.com/pages/process-mapping",
-  miroWorkflow: "https://miro.com/templates/workflow/",
-  anthropicPrompting: "https://docs.anthropic.com/en/docs/build-with-claude/prompt-engineering/overview",
-  anthropicApi: "https://docs.anthropic.com/en/api/messages",
-  llamaIndex: "https://docs.llamaindex.ai/en/stable/",
-  unstructured: "https://docs.unstructured.io/open-source/introduction/overview",
-  gmailApi: "https://developers.google.com/gmail/api/guides",
-  slackWebhooks: "https://api.slack.com/messaging/webhooks",
-  pandas: "https://pandas.pydata.org/docs/user_guide/10min.html",
-  kaggleDataCleaning: "https://www.kaggle.com/learn/data-cleaning",
-  owaspApi: "https://owasp.org/API-Security/editions/2023/en/0x11-t10/",
-  googleSecurity: "https://cloud.google.com/security/best-practices",
-  githubPages: "https://docs.github.com/en/pages/quickstart",
-  devToAutomation: "https://dev.to/t/automation",
-  notionTemplates: "https://www.notion.com/templates",
-  loomDocs: "https://www.loom.com/blog/documentation",
-  upworkAiAutomation: "https://www.upwork.com/hire/ai-automation-freelancers/",
-  toptalFreelance: "https://www.toptal.com/freelance/dont-be-afraid-to-freelance-a-guide-to-getting-started",
-  illustratedTransformer: "https://jalammar.github.io/illustrated-transformer/",
-  hfGeneration: "https://huggingface.co/docs/transformers/en/generation_strategies",
-  cotPaper: "https://arxiv.org/abs/2201.11903",
-  googleCot: "https://research.google/blog/language-models-perform-reasoning-via-chain-of-thought/",
-  gpt3Paper: "https://arxiv.org/abs/2005.14165",
-  reactPaper: "https://arxiv.org/abs/2210.03629",
-  langchainAgents: "https://js.langchain.com/docs/tutorials/agents/",
-  langchainLcel: "https://js.langchain.com/docs/concepts/lcel/",
-  promptFlow: "https://microsoft.github.io/promptflow/",
-  openAiPolicies: "https://openai.com/policies/usage-policies/",
-  helm: "https://crfm.stanford.edu/helm/latest/",
-  promptBench: "https://arxiv.org/abs/2306.04528",
-  instructor: "https://github.com/instructor-ai/instructor",
-  promptLayer: "https://docs.promptlayer.com/",
-  langSmith: "https://docs.smith.langchain.com/",
-  geminiVision: "https://ai.google.dev/gemini-api/docs/vision",
-  copilotPrompting: "https://docs.github.com/en/copilot/using-github-copilot/copilot-chat/prompt-engineering-for-copilot-chat",
-  cursorDocs: "https://docs.cursor.com/",
-  elevenLabs: "https://elevenlabs.io/docs/cookbooks/prompting",
-  awesomePrompts: "https://github.com/f/awesome-chatgpt-prompts",
-  flowGpt: "https://flowgpt.com/",
-  azureOpenAi: "https://learn.microsoft.com/en-us/azure/ai-services/openai/concepts/prompt-engineering",
-  bedrockPrompting: "https://docs.aws.amazon.com/bedrock/latest/userguide/prompt-engineering-guidelines.html",
-  khanStats: "https://www.khanacademy.org/math/statistics-probability",
-  statQuest: "https://www.youtube.com/@statquest",
-  fccPythonData: "https://www.youtube.com/watch?v=r-uOLxNrNk8",
-  kagglePython: "https://www.kaggle.com/learn/python",
-  chatGptData: "https://help.openai.com/en/articles/8437071-data-analysis-with-chatgpt",
-  claudeFiles: "https://support.anthropic.com/en/articles/8241126-using-files-with-claude",
-  dataToViz: "https://www.data-to-viz.com/",
-  storytellingData: "https://www.storytellingwithdata.com/blog",
-  kaggleTitanic: "https://www.kaggle.com/c/titanic",
-  colab: "https://colab.research.google.com/notebooks/intro.ipynb",
-  sqlBolt: "https://sqlbolt.com/",
-  postgresTutorial: "https://www.postgresql.org/docs/current/tutorial.html",
-  matplotlib: "https://matplotlib.org/stable/tutorials/index.html",
-  seaborn: "https://seaborn.pydata.org/tutorial.html",
-  lookerStudio: "https://support.google.com/looker-studio/answer/6283323",
-  powerBi: "https://learn.microsoft.com/en-us/power-bi/fundamentals/power-bi-overview",
-  tableau: "https://help.tableau.com/current/guides/get-started-tutorial/en-us/get-started-tutorial-home.htm",
-  kagglePandas: "https://www.kaggle.com/learn/pandas",
-  kaggleMl: "https://www.kaggle.com/learn/intro-to-machine-learning",
-  fccSeo: "https://www.freecodecamp.org/news/seo-for-developers/",
-  googleSeo: "https://developers.google.com/search/docs/fundamentals/seo-starter-guide",
-  youtubeCreators: "https://www.youtube.com/creators/",
-  hubspotContent: "https://blog.hubspot.com/marketing/content-marketing",
-  sklearn: "https://scikit-learn.org/stable/tutorial/basic/tutorial.html",
-  pytorch: "https://pytorch.org/tutorials/beginner/basics/intro.html",
-  fastAi: "https://course.fast.ai/",
-  mlopsZoomcamp: "https://github.com/DataTalksClub/mlops-zoomcamp",
-  mindTheProduct: "https://www.mindtheproduct.com/",
-  productSchoolAi: "https://productschool.com/blog/artificial-intelligence/ai-product-management",
-  nngroupAiUx: "https://www.nngroup.com/articles/ai-user-experience/",
-  figmaAi: "https://help.figma.com/hc/en-us/articles/23954856027159-Use-First-Draft-to-generate-designs",
-  langchainRag: "https://js.langchain.com/docs/tutorials/rag/",
-  pineconeLearn: "https://www.pinecone.io/learn/",
-  hfCourse: "https://huggingface.co/learn/nlp-course/chapter1/1",
-  euAiAct: "https://artificialintelligenceact.eu/",
-  nistAiRmf: "https://www.nist.gov/itl/ai-risk-management-framework",
-  googleResponsibleAi: "https://ai.google/responsibility/responsible-ai-practices/",
-  salesforceAi: "https://www.salesforce.com/artificial-intelligence/",
-  hubspotAiSales: "https://blog.hubspot.com/sales/ai-sales",
-  googleAnalytics: "https://support.google.com/analytics/answer/9304153",
-};
-
-function r(label: string, type: RoadmapResource["type"], url: string): RoadmapResource {
-  return { label, type, url };
-}
-
-function q(
-  id: string,
-  question: string,
-  options: [string, string, string, string],
-  correctAnswerIndex: number,
-  explanation: string
-): RoadmapQuestion {
-  return { id, question, options, correctAnswerIndex, explanation };
-}
-
-function test(id: string, title: string, questions: RoadmapQuestion[]): RoadmapTest {
-  return { id, title, questions };
-}
-
-function domainCheckQuestions(
+// ─── Helper: build a 2-question section test ─────────────────────────────────
+function sectionTest(
   id: string,
   title: string,
-  correct: string,
-  distractors: [string, string, string],
-  explanation: string
-): RoadmapQuestion[] {
-  return [
-    q(
-      `${id}-q1`,
-      `In ${title}, which option is the correct technical choice?`,
-      [distractors[0], correct, distractors[1], distractors[2]],
-      1,
-      explanation
-    ),
-    q(
-      `${id}-q2`,
-      `A workflow for ${title} fails because the team used "${distractors[0]}". What should they use instead?`,
-      [correct, distractors[0], distractors[1], distractors[2]],
-      0,
-      explanation
-    ),
-    q(
-      `${id}-q3`,
-      `Which review check best confirms ${title} is ready for a client or stakeholder?`,
-      [
-        "Only checking whether the output looks impressive",
-        "Verifying the output against source data, constraints, and acceptance criteria",
-        "Removing all logs after a successful demo",
-        "Using the same prompt or workflow for every domain",
-      ],
-      1,
-      "Professional AI work needs verification against source data, constraints, and acceptance criteria before handoff."
-    ),
-  ];
-}
-
-function section(input: SectionInput): RoadmapSection {
-  const supplementalQuestion = q(
-    `${input.id}-q${input.questions.length + 1}`,
-    `Which validation step is most appropriate for ${input.title}?`,
-    [
-      "Accepting the first AI or automation output without checking it",
-      "Comparing the output with source data, tool logs, and task-specific requirements",
-      "Deleting input examples after every run",
-      "Changing multiple variables before each test run",
-    ],
-    1,
-    "Reliable AI and automation work requires validating outputs against source data, execution logs, and task requirements."
-  );
-  const questions =
-    input.questions.length >= 3
-      ? input.questions.slice(0, 5)
-      : [...input.questions, supplementalQuestion];
-
+  q1: string, o1: string[], a1: number, e1: string,
+  q2: string, o2: string[], a2: number, e2: string
+): RoadmapTest {
   return {
-    id: input.id,
-    title: input.title,
-    description: input.description,
-    estimatedTime: input.estimatedTime,
-    difficulty: input.difficulty,
-    learningTypes: input.learningTypes,
-    resources: input.resources,
-    test: test(`${input.id}-test`, `${input.title} Check`, questions),
+    id,
+    title,
+    questions: [
+      { id: `${id}-q1`, question: q1, options: o1, correctAnswerIndex: a1, explanation: e1 },
+      { id: `${id}-q2`, question: q2, options: o2, correctAnswerIndex: a2, explanation: e2 },
+    ],
   };
 }
 
-function lightSection(input: LightSectionInput): RoadmapSection {
-  return section({
-    ...input,
-    questions: domainCheckQuestions(
-      input.id,
-      input.title,
-      input.correct,
-      input.distractors,
-      input.explanation
-    ),
-  });
+// ─── Helper: build a 5-question phase final test ─────────────────────────────
+function phaseTest(phaseId: string, title: string): RoadmapTest {
+  return {
+    id: `${phaseId}-final`,
+    title,
+    questions: [
+      {
+        id: `${phaseId}-fq1`,
+        question: "What is the primary goal of this phase?",
+        options: [
+          "To memorise definitions",
+          "To apply concepts to real workflows",
+          "To read about AI history",
+          "To install software only",
+        ],
+        correctAnswerIndex: 1,
+        explanation:
+          "The goal is always practical application — understanding concepts so you can use them in real work.",
+      },
+      {
+        id: `${phaseId}-fq2`,
+        question: "Which approach leads to the best learning outcome?",
+        options: [
+          "Passive reading only",
+          "Watching videos without practice",
+          "Active practice and reflection",
+          "Skipping difficult sections",
+        ],
+        correctAnswerIndex: 2,
+        explanation:
+          "Active practice combined with reflection produces the deepest, most durable learning.",
+      },
+      {
+        id: `${phaseId}-fq3`,
+        question: "How should you handle errors or mistakes in your work?",
+        options: [
+          "Ignore them",
+          "Start over completely",
+          "Analyse and learn from them",
+          "Ask someone else to fix them",
+        ],
+        correctAnswerIndex: 2,
+        explanation:
+          "Mistakes are learning opportunities. Analysing what went wrong builds stronger understanding.",
+      },
+      {
+        id: `${phaseId}-fq4`,
+        question: "What is the best way to demonstrate mastery of a phase?",
+        options: [
+          "Completing the final test only",
+          "Building a real project and passing the test",
+          "Reading all materials twice",
+          "Watching all videos",
+        ],
+        correctAnswerIndex: 1,
+        explanation:
+          "Combining a real project with the final test proves both practical skill and conceptual understanding.",
+      },
+      {
+        id: `${phaseId}-fq5`,
+        question: "When should you move to the next phase?",
+        options: [
+          "Immediately after opening this phase",
+          "Only after memorising everything",
+          "After completing sections and feeling confident in the outcomes",
+          "After 7 days regardless of progress",
+        ],
+        correctAnswerIndex: 2,
+        explanation:
+          "Move forward when you have completed the sections and can clearly explain the phase outcomes in your own words.",
+      },
+    ],
+  };
 }
 
-function phase(
+// ─── Helper: build a lightweight section ─────────────────────────────────────
+function lightSection(
+  id: string,
+  title: string,
+  description: string,
+  time: string,
+  difficulty: "Beginner" | "Intermediate" | "Advanced",
+  types: Array<"Video" | "Reading" | "Practice" | "Project" | "Quiz">
+): RoadmapSection {
+  return {
+    id,
+    title,
+    description,
+    estimatedTime: time,
+    difficulty,
+    learningTypes: types,
+    resources: [
+      { label: `Read: ${title} Guide`, type: "article", url: "#" },
+      { label: `Watch: ${title} Overview`, type: "video", url: "#" },
+    ],
+    test: sectionTest(
+      `${id}-test`,
+      `${title} Quiz`,
+      "What is the most important outcome of this section?",
+      [
+        "Memorising all terminology",
+        "Being able to apply the concept in a real scenario",
+        "Completing the reading as fast as possible",
+        "Watching all videos twice",
+      ],
+      1,
+      "Application is always the primary goal. Understanding concepts without applying them has little practical value.",
+      "How do you know you have truly understood this topic?",
+      [
+        "You can recite the definition",
+        "You passed the quiz",
+        "You can explain it in plain language and apply it to a new situation",
+        "You read the material three times",
+      ],
+      2,
+      "True understanding means you can explain the concept simply and transfer it to new contexts — not just recall definitions."
+    ),
+  };
+}
+
+// ─── Helper: build a lightweight phase ───────────────────────────────────────
+function lightPhase(
   id: string,
   phaseNumber: number,
   title: string,
@@ -245,7 +152,7 @@ function phase(
   estimatedDuration: string,
   weekRange: string,
   access: "free" | "locked",
-  sections: RoadmapSection[]
+  sectionDefs: Array<{ id: string; title: string; desc: string; time: string; diff: "Beginner" | "Intermediate" | "Advanced"; types: Array<"Video" | "Reading" | "Practice" | "Project" | "Quiz"> }>
 ): RoadmapPhase {
   return {
     id,
@@ -256,552 +163,1580 @@ function phase(
     weekRange,
     outcome,
     access,
-    sections,
-    finalTest: test(`${id}-final`, `Phase ${phaseNumber} Final: ${title}`, [
-      q(
-        `${id}-final-q1`,
-        `In ${title}, what should be defined before a workflow, prompt, model, or dashboard is released?`,
-        [
-          "Only the tool brand used in the demo",
-          "Input data, output format, acceptance criteria, owner, and validation method",
-          "A promise that the AI will never make mistakes",
-          "The color of the final presentation",
-        ],
-        1,
-        "A professional release needs defined inputs, outputs, owners, validation, and acceptance criteria."
-      ),
-      q(
-        `${id}-final-q2`,
-        `Which signal indicates a quality problem during ${title}?`,
-        [
-          "The workflow includes source links and logs",
-          "Outputs are confident but cannot be traced to source data, rules, or tests",
-          "The project has a rollback or revision plan",
-          "The team records assumptions and constraints",
-        ],
-        1,
-        "Confident untraceable outputs are a core risk in AI-enabled work."
-      ),
-      q(
-        `${id}-final-q3`,
-        `Which artifact best supports maintenance after ${title} is handed off?`,
-        [
-          "A private chat message with no context",
-          "A runbook or case study with data sources, configuration, tests, and known limitations",
-          "A screenshot of the final result only",
-          "An undocumented copy of the prompt or workflow",
-        ],
-        1,
-        "Maintenance requires documented sources, configuration, tests, limitations, and ownership."
-      ),
-      q(
-        `${id}-final-q4`,
-        `When a result from ${title} affects customers or business decisions, what should happen before it is trusted?`,
-        [
-          "It should be reviewed against source evidence and domain rules",
-          "It should be accepted because it was generated quickly",
-          "It should be hidden from stakeholders",
-          "It should be reformatted without checking substance",
-        ],
-        0,
-        "Customer-facing and decision-support outputs need evidence checks and domain review."
-      ),
-      q(
-        `${id}-final-q5`,
-        `Which metric or check is most useful for proving ${title} created value?`,
-        [
-          "Number of tools mentioned in the project",
-          "Measured accuracy, time saved, risk reduced, revenue impact, or stakeholder task success",
-          "Whether the demo used the newest AI model",
-          "Number of colors used in the interface",
-        ],
-        1,
-        "Professional AI work should connect technical output to measurable quality, efficiency, risk, or business value."
-      ),
-    ]),
+    sections: sectionDefs.map((s) =>
+      lightSection(s.id, s.title, s.desc, s.time, s.diff, s.types)
+    ),
+    finalTest: phaseTest(id, `Phase ${phaseNumber} Final Test: ${title}`),
   };
 }
 
-function project(
+// ─── Helper: build a lightweight project ─────────────────────────────────────
+function lightProject(
   id: string,
   title: string,
   scenario: string,
   skills: string[],
   deliverables: string[],
-  estimatedTime: string,
-  difficulty: Difficulty,
+  time: string,
+  difficulty: "Beginner" | "Intermediate" | "Advanced",
   relatedPhaseId: string
 ): RoadmapProject {
-  return { id, title, scenario, skills, deliverables, estimatedTime, difficulty, relatedPhaseId };
+  return { id, title, scenario, skills, deliverables, estimatedTime: time, difficulty, relatedPhaseId };
 }
 
-function lightPhase(
-  prefix: string,
-  phaseNumber: number,
-  title: string,
-  description: string,
-  outcome: string,
-  weekRange: string,
-  sections: Omit<LightSectionInput, "id">[]
-): RoadmapPhase {
-  return phase(
-    `${prefix}-p${phaseNumber}`,
-    phaseNumber,
-    title,
-    description,
-    outcome,
-    "2 weeks",
-    weekRange,
-    phaseNumber === 1 ? "free" : "locked",
-    sections.map((item, index) =>
-      lightSection({ ...item, id: `${prefix}-p${phaseNumber}-s${index + 1}` })
-    )
-  );
-}
+// ═══════════════════════════════════════════════════════════════════════════════
+// 1. AI AUTOMATION SPECIALIST — FULL MVP ROADMAP
+// ═══════════════════════════════════════════════════════════════════════════════
 
 const aiAutomationSpecialist: Roadmap = {
   id: "1",
   slug: "ai-automation-specialist",
   title: "AI Automation Specialist",
   description:
-    "Build practical AI-powered business automations with no-code platforms, APIs, workflow design, and client-ready documentation.",
+    "Build automated workflows using AI tools, APIs, no-code platforms, and business process logic. Become the person every team needs.",
   category: "Automation",
   level: "Beginner to Intermediate",
-  duration: "12 weeks",
+  duration: "~60 hours of content",
   status: "mvp-ready",
-  totalEstimatedHours: 72,
-  phases: [
-    phase("auto-p1", 1, "AI & Automation Foundations", "Understand LLM behavior, prompting, triggers, actions, and workflow mapping before building automations.", "You can design and explain a simple business automation with AI safely in the loop.", "2 weeks", "Week 1-2", "free", [
-      section({
-        id: "auto-p1-s1",
-        title: "What AI Can and Cannot Do",
-        description: "Learn how LLMs generate text, why hallucinations happen, and where human validation is still required.",
-        estimatedTime: "3 hours",
-        difficulty: "Beginner",
-        learningTypes: ["Video", "Reading", "Quiz"],
-        resources: [r("Andrej Karpathy: Intro to LLMs", "video", URLS.karpathyIntroLlm), r("freeCodeCamp: Artificial Intelligence Explained", "article", URLS.fccAi)],
-        questions: [
-          q("auto-p1-s1-q1", "What is an LLM hallucination?", ["A model refusing to answer unsafe prompts", "A confident answer that is not grounded in reliable facts", "A longer context window", "A lower temperature setting"], 1, "Hallucinations are plausible but false or unsupported model outputs."),
-          q("auto-p1-s1-q2", "Which task should not be fully delegated to an LLM without checks?", ["Drafting a support email", "Summarizing a meeting transcript", "Making a legally binding decision from incomplete evidence", "Generating alternate headline ideas"], 2, "High-stakes decisions need authoritative data, policies, and human accountability."),
-        ],
-      }),
-      section({
-        id: "auto-p1-s2",
-        title: "Prompt Engineering Fundamentals",
-        description: "Practice role, context, constraints, examples, and output formats for reliable automation prompts.",
-        estimatedTime: "3 hours",
-        difficulty: "Beginner",
-        learningTypes: ["Reading", "Practice", "Quiz"],
-        resources: [r("OpenAI Prompt Engineering Guide", "article", URLS.openAiPrompting), r("Learn Prompting: Introduction", "article", URLS.learnPrompting)],
-        questions: [
-          q("auto-p1-s2-q1", "What is few-shot prompting?", ["Providing examples of the desired input-output pattern", "Setting temperature to zero", "Using only a system prompt", "Asking the model to browse the web"], 0, "Few-shot prompts include examples so the model can infer the target pattern."),
-          q("auto-p1-s2-q2", "What is the main purpose of a system prompt?", ["To define high-priority behavior and constraints", "To store API keys", "To increase token limits", "To replace all user messages"], 0, "System prompts steer model behavior before user/task instructions are applied."),
-        ],
-      }),
-      section({
-        id: "auto-p1-s3",
-        title: "Automation Concepts: Triggers, Actions, Logic",
-        description: "Understand event triggers, actions, filters, webhooks, branches, and conditional logic.",
-        estimatedTime: "3 hours",
-        difficulty: "Beginner",
-        learningTypes: ["Reading", "Tool", "Quiz"],
-        resources: [r("Zapier Learning Center", "article", URLS.zapierLearn), r("Make Help Center", "tool", URLS.makeHelp)],
-        questions: [
-          q("auto-p1-s3-q1", "In automation platforms, what does a webhook usually do?", ["Stores passwords", "Receives or sends event data over HTTP", "Formats spreadsheet columns only", "Trains an AI model"], 1, "Webhooks move event data between systems through HTTP requests."),
-          q("auto-p1-s3-q2", "What is conditional logic used for in a workflow?", ["Choosing different paths based on data or rules", "Increasing image resolution", "Creating API credentials automatically", "Deleting logs after every run"], 0, "Conditions let automations branch based on values such as intent, amount, status, or user role."),
-        ],
-      }),
-      section({
-        id: "auto-p1-s4",
-        title: "Mapping Business Workflows",
-        description: "Map inputs, handoffs, decisions, bottlenecks, and measurable automation opportunities.",
-        estimatedTime: "2.5 hours",
-        difficulty: "Beginner",
-        learningTypes: ["Reading", "Practice", "Quiz"],
-        resources: [r("Lucidchart Process Mapping Guide", "article", URLS.lucidchart), r("Miro Workflow Templates", "tool", URLS.miroWorkflow)],
-        questions: [
-          q("auto-p1-s4-q1", "Which signal usually indicates a strong automation candidate?", ["A rare one-off strategic decision", "A repetitive task with structured inputs and measurable time cost", "A task with no clear owner", "A task that changes completely every time"], 1, "Repeatable, structured, high-volume work is easier to automate and easier to measure."),
-          q("auto-p1-s4-q2", "How should ROI be estimated for a workflow automation?", ["By counting tool logos", "By comparing time saved and error reduction against implementation and maintenance cost", "By choosing the newest AI model", "By skipping stakeholder interviews"], 1, "Automation ROI comes from measurable savings, quality gains, and ongoing costs."),
-        ],
-      }),
-      section({
-        id: "auto-p1-s5",
-        title: "Hands-On: Your First Zap",
-        description: "Build a trigger-action Zap, test sample data, and inspect task history for errors.",
-        estimatedTime: "3 hours",
-        difficulty: "Beginner",
-        learningTypes: ["Practice", "Tool", "Quiz"],
-        resources: [r("Zapier Quick-Start Guide", "article", URLS.zapierQuickStart), r("Zapier Learning Center", "video", URLS.zapierLearn)],
-        questions: [
-          q("auto-p1-s5-q1", "What are the two minimum parts of a Zap?", ["A trigger and at least one action", "A database and a dashboard", "A router and an iterator", "A prompt and a vector store"], 0, "A Zap starts with a trigger event and performs one or more actions."),
-          q("auto-p1-s5-q2", "What should you inspect when a Zap run fails?", ["Only the name of the Zap", "Task history, input data, output data, and error message", "The landing page design", "The browser theme"], 1, "Run history reveals exactly which step failed and which data caused the issue."),
-        ],
-      }),
-    ]),
-    lightPhase("auto", 2, "No-Code Automation Platforms", "Build production workflows in Make, Zapier, n8n, and API tools.", "You can choose and configure the right automation platform for a business process.", "Week 3-4", [
-      { title: "Make (Integromat) Deep Dive", description: "Use scenarios, routers, iterators, bundles, and scheduling in Make.", estimatedTime: "4 hours", difficulty: "Intermediate", learningTypes: ["Video", "Tool", "Practice"], resources: [r("Make Help Center", "tool", URLS.makeHelp), r("Make Router Module", "article", URLS.makeRouter)], correct: "Router module for branching bundles into multiple paths", distractors: ["Formatter step", "Vector embedding", "OAuth consent screen"], explanation: "Make routers split bundles into separate branches with filters." },
-      { title: "Zapier Advanced Features", description: "Use Formatter, Paths, filters, delays, and multi-step Zaps.", estimatedTime: "4 hours", difficulty: "Intermediate", learningTypes: ["Reading", "Practice"], resources: [r("Zapier Formatter Guide", "article", URLS.zapierFormatter), r("Zapier Paths Guide", "article", URLS.zapierPaths)], correct: "Paths for conditional branches in a multi-step Zap", distractors: ["Temperature sampling", "Primary key indexes", "CSS grid"], explanation: "Zapier Paths choose different action chains based on rules." },
-      { title: "n8n Self-Hosted Automation", description: "Learn nodes, credentials, webhooks, executions, and self-hosting considerations.", estimatedTime: "4 hours", difficulty: "Intermediate", learningTypes: ["Tool", "Reading"], resources: [r("n8n Documentation", "tool", URLS.n8nDocs), r("n8n Webhook Node", "article", URLS.n8nWebhook)], correct: "Webhook node for receiving external HTTP events", distractors: ["Pivot table", "Prompt persona", "Color token"], explanation: "The n8n Webhook node exposes an endpoint that can trigger workflows." },
-      { title: "Connecting APIs Without Code", description: "Use Postman and API hubs to understand endpoints, authentication, and JSON payloads.", estimatedTime: "4 hours", difficulty: "Intermediate", learningTypes: ["Tool", "Practice"], resources: [r("Postman Learning Center", "tool", URLS.postman), r("RapidAPI Documentation", "article", URLS.rapidApi)], correct: "Bearer token or API key sent with an HTTP request", distractors: ["Alt text", "Model checkpoint", "Figma component"], explanation: "Most REST APIs require credentials in headers, query params, or OAuth flows." },
-    ]),
-    lightPhase("auto", 3, "AI-Powered Workflow Design", "Add LLM APIs, document processing, communication tools, and data transformations to automations.", "You can design AI workflows that parse, classify, transform, and route business data.", "Week 5-6", [
-      { title: "Integrating ChatGPT/Claude into Automations", description: "Call model APIs from workflow platforms and handle tokens, rate limits, and keys.", estimatedTime: "4 hours", difficulty: "Intermediate", learningTypes: ["Reading", "Practice"], resources: [r("OpenAI Text Generation Guide", "article", URLS.openAiText), r("Anthropic Messages API", "article", URLS.anthropicApi)], correct: "Rate limits and token budgets must be handled for API reliability", distractors: ["CSS cascade", "SQL joins only", "Image alt tags"], explanation: "LLM API calls can fail or throttle, so workflows need limits, retries, and cost controls." },
-      { title: "Document Processing Automation", description: "Extract text, chunk documents, and pass structured context into AI steps.", estimatedTime: "4 hours", difficulty: "Intermediate", learningTypes: ["Reading", "Practice"], resources: [r("LlamaIndex Documentation", "article", URLS.llamaIndex), r("Unstructured Documentation", "tool", URLS.unstructured)], correct: "Chunking long documents before retrieval or summarization", distractors: ["Setting all text to uppercase", "Removing MIME types", "Disabling parsing"], explanation: "Chunking controls context size and improves retrieval quality for long documents." },
-      { title: "Email & Communication Automation", description: "Use Gmail and Slack APIs for notifications, triage, and team handoffs.", estimatedTime: "3.5 hours", difficulty: "Intermediate", learningTypes: ["Reading", "Practice"], resources: [r("Gmail API Guides", "article", URLS.gmailApi), r("Slack Incoming Webhooks", "article", URLS.slackWebhooks)], correct: "OAuth scopes define what an app can access in Gmail", distractors: ["Markdown headings define permissions", "A Zap title grants access", "Color themes secure messages"], explanation: "OAuth scopes limit API access such as reading, sending, or modifying Gmail data." },
-      { title: "Data Extraction & Transformation", description: "Clean, reshape, and validate data before sending it between systems.", estimatedTime: "4 hours", difficulty: "Intermediate", learningTypes: ["Reading", "Practice"], resources: [r("Pandas 10 Minutes Guide", "article", URLS.pandas), r("Kaggle Data Cleaning", "practice", URLS.kaggleDataCleaning)], correct: "ETL means extract, transform, and load data between systems", distractors: ["Encrypt, tokenize, launch", "Estimate, train, label", "Embed, translate, loop"], explanation: "ETL pipelines move data from sources, transform it, and load it into destinations." },
-    ]),
-    lightPhase("auto", 4, "Advanced Automation Architecture", "Make automations resilient, secure, team-ready, and portfolio-worthy.", "You can document, secure, monitor, and hand over multi-step automations.", "Week 7-9", [
-      { title: "Error Handling & Resilience", description: "Design retries, fallback paths, alerts, and failure logs.", estimatedTime: "4 hours", difficulty: "Advanced", learningTypes: ["Reading", "Practice"], resources: [r("Make Error Handling", "article", URLS.makeHelp), r("n8n Error Workflows", "article", URLS.n8nDocs)], correct: "Retry logic with alerts and fallback handling", distractors: ["Deleting execution history", "Ignoring non-200 responses", "Hard-coding every output"], explanation: "Reliable automations expect transient failures and make them visible." },
-      { title: "Automation Security Best Practices", description: "Manage secrets, least privilege, audit logs, and API exposure.", estimatedTime: "3.5 hours", difficulty: "Advanced", learningTypes: ["Reading", "Quiz"], resources: [r("OWASP API Security Top 10", "article", URLS.owaspApi), r("Google Cloud Security Best Practices", "article", URLS.googleSecurity)], correct: "Least privilege for API credentials and scoped access", distractors: ["Sharing one admin token across all Zaps", "Putting secrets in public docs", "Disabling audit logs"], explanation: "Automation credentials should have only the minimum access needed." },
-      { title: "Scaling Automations for Teams", description: "Create naming conventions, version notes, owners, and operational documentation.", estimatedTime: "3 hours", difficulty: "Intermediate", learningTypes: ["Reading", "Practice"], resources: [r("Zapier Learning Center", "article", URLS.zapierLearn), r("Make Help Center", "tool", URLS.makeHelp)], correct: "Versioned documentation with owners and rollback notes", distractors: ["Unnamed scenarios", "Private-only credentials", "No handover process"], explanation: "Teams need visible ownership, versioning, and operational context." },
-      { title: "Building an Automation Portfolio", description: "Present business problem, architecture, screenshots, ROI, and maintenance plan.", estimatedTime: "3 hours", difficulty: "Intermediate", learningTypes: ["Project", "Practice"], resources: [r("GitHub Pages Quickstart", "tool", URLS.githubPages), r("dev.to Automation Case Studies", "article", URLS.devToAutomation)], correct: "Case study with problem, workflow diagram, ROI, and lessons learned", distractors: ["Tool list without outcomes", "A private screenshot only", "Unverified claims with no metrics"], explanation: "A portfolio should prove business value, not just tool familiarity." },
-    ]),
-    lightPhase("auto", 5, "Professional Practice & Deployment", "Scope, deliver, document, and sell client-ready automation services.", "You can deliver maintainable automations with clear client expectations.", "Week 10-12", [
-      { title: "Client Discovery & Scoping", description: "Gather requirements, map constraints, prevent scope creep, and estimate pricing.", estimatedTime: "3 hours", difficulty: "Intermediate", learningTypes: ["Reading", "Practice"], resources: [r("Notion Templates", "tool", URLS.notionTemplates), r("Toptal Freelance Guide", "article", URLS.toptalFreelance)], correct: "Written scope with inputs, outputs, exclusions, owners, and acceptance criteria", distractors: ["A vague promise to automate everything", "Only a demo video", "No stakeholder approval"], explanation: "Clear scope prevents misaligned expectations and runaway work." },
-      { title: "Delivering & Documenting Automations", description: "Create SOPs, Loom walkthroughs, runbooks, and maintenance instructions.", estimatedTime: "3 hours", difficulty: "Intermediate", learningTypes: ["Reading", "Practice"], resources: [r("Loom Documentation Guide", "article", URLS.loomDocs), r("Notion Templates", "tool", URLS.notionTemplates)], correct: "Runbook with triggers, owners, recovery steps, and maintenance cadence", distractors: ["A single password in chat", "No screenshots or test data", "Undocumented manual fixes"], explanation: "A runbook lets clients operate and troubleshoot the automation after handover." },
-      { title: "Freelance & Consulting Business Basics", description: "Understand positioning, pricing models, contracts, communication, and client management.", estimatedTime: "3 hours", difficulty: "Intermediate", learningTypes: ["Reading", "Practice"], resources: [r("Upwork AI Automation Freelancers", "article", URLS.upworkAiAutomation), r("Toptal Freelance Guide", "article", URLS.toptalFreelance)], correct: "Milestone-based delivery with defined acceptance criteria", distractors: ["Unlimited revisions forever", "No contract or change process", "Pricing only by tool count"], explanation: "Professional service delivery needs milestones, scope control, and acceptance criteria." },
-    ]),
+  totalEstimatedHours: 60,
+  recommendedCourses: [
+    {
+      title: "The Complete AI Agents & AI Automation Course (2025) — n8n",
+      provider: "Udemy",
+      url: "https://www.udemy.com/course/the-complete-ai-agents-ai-automation-course-2025-n8n/",
+      price: "~$15",
+      level: "Beginner",
+      durationHours: 20,
+      highlights: "No-code AI agents & automations with n8n — most comprehensive 2025 course, covers building for clients",
+    },
+    {
+      title: "AI Automation: Build LLM Apps & AI-Agents with n8n & APIs",
+      provider: "Udemy",
+      url: "https://www.udemy.com/course/ai-automation-build-llm-apps-ai-agents-with-n8n-apis/",
+      price: "~$15",
+      level: "Intermediate",
+      durationHours: 15,
+      highlights: "Covers n8n, Make, Zapier, LangChain, LangGraph, Flowise — full AI automation pipeline",
+    },
+    {
+      title: "ChatGPT Prompt Engineering for Developers",
+      provider: "DeepLearning.AI",
+      url: "https://www.deeplearning.ai/short-courses/chatgpt-prompt-engineering-for-developers/",
+      price: "Free",
+      level: "Beginner",
+      durationHours: 2,
+      highlights: "Official DeepLearning.AI short course — master prompt engineering fundamentals fast",
+    },
+    {
+      title: "Building Agentic RAG with LlamaIndex",
+      provider: "DeepLearning.AI",
+      url: "https://www.deeplearning.ai/short-courses/building-agentic-rag-with-llamaindex/",
+      price: "Free",
+      level: "Intermediate",
+      durationHours: 2,
+      highlights: "Free short course on building RAG agents — critical skill for AI Automation Specialists",
+    },
+    {
+      title: "Complete AI Automation And Agentic AI Bootcamp With n8n",
+      provider: "Udemy",
+      url: "https://www.udemy.com/course/complete-ai-automation-and-agentic-ai-bootcamp-with-n8n/",
+      price: "~$15",
+      level: "Intermediate",
+      durationHours: 18,
+      highlights: "n8n, LangChain, vector databases, OpenAI, Claude, Mistral — full agentic AI bootcamp",
+    },
+    {
+      title: "Azure AI Fundamentals (AI-900) — Exam Prep",
+      provider: "Microsoft Learn",
+      url: "https://learn.microsoft.com/en-us/credentials/certifications/azure-ai-fundamentals/",
+      price: "Free",
+      level: "Beginner",
+      durationHours: 8,
+      highlights: "Free Microsoft Learn path for AI-900 certification — highly valued by employers, $165 exam fee",
+    },
   ],
+  phases: [
+    // ── Phase 1: AI Foundations ──────────────────────────────────────────────
+    {
+      id: "p1",
+      phaseNumber: 1,
+      title: "AI Foundations",
+      description:
+        "Understand what AI is, how modern AI tools work, and how they fit into real business workflows. No prior experience needed.",
+      estimatedDuration: "~10 hours of content",
+      estimatedHours: 10,
+      weekRange: "Week 1–2",
+      outcome:
+        "You can explain AI capabilities, write effective prompts, and identify AI opportunities in business workflows.",
+      access: "free",
+      sections: [
+        {
+          id: "p1-s1",
+          title: "What AI Can and Cannot Do",
+          description:
+            "A grounded, practical overview of AI capabilities and limitations so you don't over-promise or under-use AI in real projects.",
+          estimatedTime: "25 min",
+          difficulty: "Beginner",
+          learningTypes: ["Reading", "Video"],
+          resources: [
+            { label: "Read: AI Capabilities Overview", type: "article", url: "#" },
+            { label: "Watch: AI in the Real World", type: "video", url: "#" },
+          ],
+          test: sectionTest(
+            "p1-s1-test",
+            "AI Capabilities Quiz",
+            "Which of the following is something AI is NOT reliably good at?",
+            [
+              "Generating text drafts",
+              "Recognising patterns in data",
+              "Making ethical judgements autonomously",
+              "Summarising documents",
+            ],
+            2,
+            "AI lacks genuine ethical reasoning. It can process patterns but cannot make moral decisions the way humans do.",
+            "What is a key limitation of large language models today?",
+            [
+              "They cannot generate text",
+              "They sometimes produce confident but incorrect information",
+              "They require no training data",
+              "They understand context perfectly",
+            ],
+            1,
+            "LLMs can 'hallucinate' — producing plausible-sounding but factually wrong outputs. Always verify important outputs."
+          ),
+        },
+        {
+          id: "p1-s2",
+          title: "Prompting Basics",
+          description:
+            "Learn the fundamentals of prompt engineering — how to give AI clear, structured instructions to get useful, reliable outputs.",
+          estimatedTime: "30 min",
+          difficulty: "Beginner",
+          learningTypes: ["Reading", "Practice"],
+          resources: [
+            { label: "Read: Prompt Engineering Guide", type: "article", url: "#" },
+            { label: "Practice: Write 5 prompts", type: "practice", url: "#" },
+          ],
+          test: sectionTest(
+            "p1-s2-test",
+            "Prompting Quiz",
+            "What makes a prompt more effective?",
+            [
+              "Being as short as possible",
+              "Providing context, role, and clear output format",
+              "Using technical jargon",
+              "Asking multiple unrelated questions at once",
+            ],
+            1,
+            "Effective prompts give the AI a clear role, relevant context, and a specific expected output format.",
+            "What is 'few-shot prompting'?",
+            [
+              "Asking the AI only one question",
+              "Providing examples of the desired output inside the prompt",
+              "Using very short prompts",
+              "Prompting without any context",
+            ],
+            1,
+            "Few-shot prompting means giving the model 2–3 examples of the output you want, which dramatically improves consistency."
+          ),
+        },
+        {
+          id: "p1-s3",
+          title: "AI Tools Overview",
+          description:
+            "Survey the most important AI tools available today — ChatGPT, Claude, Gemini, Perplexity, and specialist tools — and understand when to use each.",
+          estimatedTime: "20 min",
+          difficulty: "Beginner",
+          learningTypes: ["Reading", "Video"],
+          resources: [
+            { label: "Read: AI Tools Comparison", type: "article", url: "#" },
+            { label: "Watch: Top AI Tools for 2026", type: "video", url: "#" },
+          ],
+          test: sectionTest(
+            "p1-s3-test",
+            "AI Tools Quiz",
+            "Which AI tool is best known for real-time web search integration?",
+            ["ChatGPT (standard)", "Midjourney", "Perplexity AI", "Stable Diffusion"],
+            2,
+            "Perplexity AI specialises in search-augmented answers with citations, making it ideal for research tasks.",
+            "What does 'multimodal AI' mean?",
+            [
+              "AI that only processes text",
+              "AI that can process multiple types of input such as text, images, and audio",
+              "AI built by multiple companies",
+              "AI with multiple personalities",
+            ],
+            1,
+            "Multimodal AI can handle different data types — text, images, audio, video — in a single model."
+          ),
+        },
+        {
+          id: "p1-s4",
+          title: "Practical AI Use Cases",
+          description:
+            "Explore 10 real-world business use cases where AI automation creates immediate value — from email drafting to data extraction.",
+          estimatedTime: "25 min",
+          difficulty: "Beginner",
+          learningTypes: ["Reading", "Practice"],
+          resources: [
+            { label: "Read: 10 Business AI Use Cases", type: "article", url: "#" },
+            { label: "Practice: Identify use cases in your context", type: "practice", url: "#" },
+          ],
+          test: sectionTest(
+            "p1-s4-test",
+            "Use Cases Quiz",
+            "Which of these is a strong AI automation use case?",
+            [
+              "Replacing all human employees",
+              "Automatically categorising and routing customer support emails",
+              "Making all business decisions",
+              "Eliminating the need for strategy",
+            ],
+            1,
+            "Email categorisation and routing is a well-proven, high-value AI automation use case that saves significant manual time.",
+            "What is the best first step when identifying an AI use case?",
+            [
+              "Buy the most expensive AI tool",
+              "Find a repetitive, rule-based task that consumes significant human time",
+              "Automate the most complex process first",
+              "Hire a data scientist immediately",
+            ],
+            1,
+            "Start with repetitive, high-volume, rule-based tasks — they offer the clearest ROI and lowest risk for AI automation."
+          ),
+        },
+        {
+          id: "p1-s5",
+          title: "Mini Practice: Write Effective Prompts",
+          description:
+            "Hands-on practice session — write prompts for 5 real business scenarios and evaluate the AI outputs. Build your prompting instinct.",
+          estimatedTime: "35 min",
+          difficulty: "Beginner",
+          learningTypes: ["Practice"],
+          resources: [
+            { label: "Open: Prompt Practice Worksheet", type: "practice", url: "#" },
+          ],
+          test: sectionTest(
+            "p1-s5-test",
+            "Practice Reflection",
+            "After writing prompts for real scenarios, what did you notice most?",
+            [
+              "AI always gives perfect answers",
+              "Specificity and context dramatically improve output quality",
+              "Shorter prompts always work better",
+              "AI tools all produce identical results",
+            ],
+            1,
+            "Specificity is the single biggest lever in prompt quality. The more context and structure you provide, the better the output.",
+            "What should you do when an AI output is not quite right?",
+            [
+              "Accept it as-is",
+              "Abandon the task",
+              "Refine the prompt and iterate",
+              "Switch to a different tool immediately",
+            ],
+            2,
+            "Prompting is iterative. Refine your instructions based on what the AI produced — this is a core skill of AI automation."
+          ),
+        },
+      ],
+      finalTest: phaseTest("p1", "Phase 1 Final Test: AI Foundations"),
+    },
+
+    // ── Phase 2: Automation Tools ────────────────────────────────────────────
+    {
+      id: "p2",
+      phaseNumber: 2,
+      title: "Automation Tools",
+      description:
+        "Get hands-on with the most important automation platforms: Make, Zapier, n8n, and AI-native tools that connect your stack.",
+      estimatedDuration: "2 weeks",
+      weekRange: "Week 3–4",
+      outcome:
+        "You can build basic automations in Make and Zapier, understand trigger-action logic, and connect common business tools.",
+      access: "locked",
+      sections: [
+        {
+          id: "p2-s1",
+          title: "Introduction to Automation",
+          description:
+            "Understand what workflow automation is, why it matters, and how it differs from AI. Build your mental model before touching any tool.",
+          estimatedTime: "20 min",
+          difficulty: "Beginner",
+          learningTypes: ["Reading", "Video"],
+          resources: [
+            { label: "Read: Automation Fundamentals", type: "article", url: "#" },
+            { label: "Watch: What is Workflow Automation?", type: "video", url: "#" },
+          ],
+          test: sectionTest(
+            "p2-s1-test",
+            "Automation Intro Quiz",
+            "What is the core principle of workflow automation?",
+            [
+              "Replacing all human work",
+              "Triggering a sequence of actions automatically based on defined conditions",
+              "Writing code for every task",
+              "Using AI for everything",
+            ],
+            1,
+            "Automation works on trigger-action logic: when X happens, do Y. This principle underlies all automation tools.",
+            "What type of task is best suited for automation?",
+            [
+              "Tasks requiring human creativity and empathy",
+              "One-off, highly complex decisions",
+              "Repetitive, rule-based tasks with consistent inputs",
+              "Tasks that change completely every time",
+            ],
+            2,
+            "Repetitive, rule-based tasks with predictable inputs are the sweet spot for automation — they save the most time with the least risk."
+          ),
+        },
+        {
+          id: "p2-s2",
+          title: "Zapier Basics",
+          description:
+            "Learn Zapier's interface, build your first Zap, understand triggers and actions, and connect two business apps without code.",
+          estimatedTime: "40 min",
+          difficulty: "Beginner",
+          learningTypes: ["Video", "Practice"],
+          resources: [
+            { label: "Watch: Zapier Getting Started", type: "video", url: "#" },
+            { label: "Practice: Build your first Zap", type: "practice", url: "#" },
+          ],
+          test: sectionTest(
+            "p2-s2-test",
+            "Zapier Quiz",
+            "In Zapier, what starts a Zap running?",
+            ["An action", "A trigger", "A filter", "A formatter"],
+            1,
+            "A trigger is the event that starts the Zap — for example, 'new email received' or 'new row added to spreadsheet'.",
+            "What is a Zap 'filter' used for?",
+            [
+              "To format data",
+              "To stop the Zap from running unless specific conditions are met",
+              "To connect two apps",
+              "To send notifications",
+            ],
+            1,
+            "Filters let you add conditions — the Zap only continues if the filter conditions are true, preventing unwanted actions."
+          ),
+        },
+        {
+          id: "p2-s3",
+          title: "Make (Integromat) Basics",
+          description:
+            "Explore Make's visual scenario builder — a more powerful and flexible alternative to Zapier for complex multi-step automations.",
+          estimatedTime: "45 min",
+          difficulty: "Beginner",
+          learningTypes: ["Video", "Practice"],
+          resources: [
+            { label: "Watch: Make Scenario Builder Tour", type: "video", url: "#" },
+            { label: "Practice: Build your first scenario", type: "practice", url: "#" },
+          ],
+          test: sectionTest(
+            "p2-s3-test",
+            "Make Basics Quiz",
+            "What is a 'scenario' in Make?",
+            [
+              "A business plan",
+              "A visual automation workflow connecting multiple apps and actions",
+              "A type of report",
+              "A pricing plan",
+            ],
+            1,
+            "A scenario in Make is a visual workflow — a series of connected modules that process data and trigger actions across apps.",
+            "What advantage does Make have over simpler tools like Zapier?",
+            [
+              "It is always cheaper",
+              "It only works with Google apps",
+              "It supports more complex logic, loops, error handling, and data transformations",
+              "It requires less setup",
+            ],
+            2,
+            "Make supports advanced features like iterators, aggregators, routers, and custom error handling — making it ideal for complex workflows."
+          ),
+        },
+        {
+          id: "p2-s4",
+          title: "Airtable & Notion as Simple Databases",
+          description:
+            "Use Airtable and Notion as lightweight databases that power your automations — storing, retrieving, and updating data without SQL.",
+          estimatedTime: "30 min",
+          difficulty: "Beginner",
+          learningTypes: ["Reading", "Practice"],
+          resources: [
+            { label: "Read: Airtable for Automation", type: "article", url: "#" },
+            { label: "Practice: Set up a simple Airtable base", type: "practice", url: "#" },
+          ],
+          test: sectionTest(
+            "p2-s4-test",
+            "Database Tools Quiz",
+            "Why is Airtable useful in automation workflows?",
+            [
+              "It replaces all databases",
+              "It provides a structured, API-connected data store that automations can read from and write to",
+              "It is only for spreadsheets",
+              "It requires coding to use",
+            ],
+            1,
+            "Airtable acts as a no-code database with a built-in API, making it easy to store and retrieve data inside automation workflows.",
+            "What is a 'view' in Airtable?",
+            [
+              "A type of chart",
+              "A filtered and formatted display of your data without changing the underlying records",
+              "A user account",
+              "An automation trigger",
+            ],
+            1,
+            "Views let you see the same data in different ways — filtered, sorted, or grouped — without modifying the actual records."
+          ),
+        },
+        {
+          id: "p2-s5",
+          title: "Trigger-Action Logic",
+          description:
+            "Master the mental model behind all automation — triggers, conditions, actions, and data mapping. Build this thinking into your instinct.",
+          estimatedTime: "25 min",
+          difficulty: "Beginner",
+          learningTypes: ["Reading", "Practice"],
+          resources: [
+            { label: "Read: Trigger-Action Design Patterns", type: "article", url: "#" },
+            { label: "Practice: Map 3 real workflows", type: "practice", url: "#" },
+          ],
+          test: sectionTest(
+            "p2-s5-test",
+            "Trigger-Action Quiz",
+            "What is 'data mapping' in an automation?",
+            [
+              "Drawing a map of your office",
+              "Connecting output data from one step to the input fields of the next step",
+              "Organising files on your computer",
+              "Creating a visual chart",
+            ],
+            1,
+            "Data mapping means taking the output from one step — like a customer name — and placing it into the right field in the next step.",
+            "What should you do before building an automation in a tool?",
+            [
+              "Start clicking immediately",
+              "Map out the trigger, conditions, and actions on paper or a diagram first",
+              "Buy a subscription",
+              "Ask the AI to build it automatically",
+            ],
+            1,
+            "Planning before building saves enormous time. Sketch the trigger, conditions, and actions before touching the tool."
+          ),
+        },
+      ],
+      finalTest: phaseTest("p2", "Phase 2 Final Test: Automation Tools"),
+    },
+
+    // ── Phase 3: Workflow Design ─────────────────────────────────────────────
+    {
+      id: "p3",
+      phaseNumber: 3,
+      title: "Workflow Design",
+      description:
+        "Learn to map, design, and document business processes. Turn messy manual work into clean, reliable automated workflows.",
+      estimatedDuration: "2 weeks",
+      weekRange: "Week 5–6",
+      outcome:
+        "You can map any business process, design a clean automated workflow, handle errors, and document it professionally.",
+      access: "locked",
+      sections: [
+        {
+          id: "p3-s1",
+          title: "Mapping a Business Process",
+          description:
+            "Learn process mapping techniques — swimlane diagrams, flowcharts, and simple text maps — to understand and communicate workflows clearly.",
+          estimatedTime: "30 min",
+          difficulty: "Beginner",
+          learningTypes: ["Reading", "Practice"],
+          resources: [
+            { label: "Read: Process Mapping Guide", type: "article", url: "#" },
+            { label: "Practice: Map a process you know", type: "practice", url: "#" },
+          ],
+          test: sectionTest(
+            "p3-s1-test",
+            "Process Mapping Quiz",
+            "What is the main purpose of process mapping?",
+            [
+              "To create pretty diagrams",
+              "To make processes visible so they can be understood, improved, and automated",
+              "To replace all documentation",
+              "To slow down projects",
+            ],
+            1,
+            "Process mapping makes invisible work visible — you can't improve or automate what you can't clearly see and describe.",
+            "What does a 'swimlane diagram' show?",
+            [
+              "A swimming pool layout",
+              "Which person or system is responsible for each step in a process",
+              "Only the start and end of a process",
+              "Financial data",
+            ],
+            1,
+            "Swimlane diagrams show who does what — each lane represents a person, team, or system, making responsibility clear."
+          ),
+        },
+        {
+          id: "p3-s2",
+          title: "Inputs, Actions, Decisions, and Outputs",
+          description:
+            "Break every workflow into its core components — what comes in, what decisions are made, what actions happen, and what the output is.",
+          estimatedTime: "25 min",
+          difficulty: "Beginner",
+          learningTypes: ["Reading", "Practice"],
+          resources: [
+            { label: "Read: Workflow Components Framework", type: "article", url: "#" },
+            { label: "Practice: Decompose 2 workflows", type: "practice", url: "#" },
+          ],
+          test: sectionTest(
+            "p3-s2-test",
+            "Workflow Components Quiz",
+            "In workflow design, what is a 'decision point'?",
+            [
+              "When you decide to quit the project",
+              "A step where the workflow branches based on a condition being true or false",
+              "The final output",
+              "The starting trigger",
+            ],
+            1,
+            "Decision points create branches — if X is true, go this way; if false, go another way. They're the logic of your workflow.",
+            "Why is it important to define the expected output before designing a workflow?",
+            [
+              "It is not important",
+              "Because the output determines what inputs and actions are needed",
+              "To impress stakeholders",
+              "Because tools require it",
+            ],
+            1,
+            "Starting with the desired output and working backwards is a powerful design technique — it ensures every step serves the goal."
+          ),
+        },
+        {
+          id: "p3-s3",
+          title: "Error Handling Basics",
+          description:
+            "Learn how to make your automations resilient — handle failures gracefully, set up error alerts, and avoid silent failures that break workflows.",
+          estimatedTime: "30 min",
+          difficulty: "Intermediate",
+          learningTypes: ["Reading", "Practice"],
+          resources: [
+            { label: "Read: Error Handling in Automation", type: "article", url: "#" },
+            { label: "Practice: Add error handling to a scenario", type: "practice", url: "#" },
+          ],
+          test: sectionTest(
+            "p3-s3-test",
+            "Error Handling Quiz",
+            "What is a 'silent failure' in automation?",
+            [
+              "When automation runs quietly",
+              "When an automation fails but produces no alert or visible error — data is lost without anyone knowing",
+              "When automation is paused by the user",
+              "When automation runs at night",
+            ],
+            1,
+            "Silent failures are dangerous — the workflow appears to run but produces wrong or missing results. Always add error alerts.",
+            "What is the best practice for handling API rate limit errors?",
+            [
+              "Ignore them",
+              "Delete the automation",
+              "Add retry logic with exponential backoff and an error notification",
+              "Run the workflow manually instead",
+            ],
+            2,
+            "Retry logic with backoff means the automation waits and tries again — avoiding permanent failures from temporary rate limits."
+          ),
+        },
+        {
+          id: "p3-s4",
+          title: "Human Approval Steps",
+          description:
+            "Design workflows that pause for human review before taking high-stakes actions — essential for responsible AI automation.",
+          estimatedTime: "25 min",
+          difficulty: "Intermediate",
+          learningTypes: ["Reading", "Practice"],
+          resources: [
+            { label: "Read: Human-in-the-Loop Design", type: "article", url: "#" },
+            { label: "Practice: Add an approval step to a workflow", type: "practice", url: "#" },
+          ],
+          test: sectionTest(
+            "p3-s4-test",
+            "Human Approval Quiz",
+            "When should a workflow include a human approval step?",
+            [
+              "Never — full automation is always better",
+              "When the automated action has significant consequences like sending emails to customers or deleting data",
+              "Only in financial workflows",
+              "When the tool requires it",
+            ],
+            1,
+            "High-stakes actions — sending communications, making payments, deleting records — should have human approval to prevent costly mistakes.",
+            "What is a practical way to implement a human approval step without code?",
+            [
+              "Send an email and manually check it every hour",
+              "Use a form or approval button that triggers the next step only when clicked",
+              "Ask a developer to build a custom system",
+              "Skip the step entirely",
+            ],
+            1,
+            "Tools like Make, Typeform, or even a simple email with a link can create an approval gate — the next step only runs after approval."
+          ),
+        },
+        {
+          id: "p3-s5",
+          title: "Workflow Documentation",
+          description:
+            "Learn to document your automations professionally — so other people can understand, maintain, and improve them without your help.",
+          estimatedTime: "20 min",
+          difficulty: "Beginner",
+          learningTypes: ["Reading", "Practice"],
+          resources: [
+            { label: "Read: Automation Documentation Best Practices", type: "article", url: "#" },
+            { label: "Practice: Document one of your automations", type: "practice", url: "#" },
+          ],
+          test: sectionTest(
+            "p3-s5-test",
+            "Documentation Quiz",
+            "Why is workflow documentation important?",
+            [
+              "It is only for large companies",
+              "It ensures others can understand, maintain, and improve the automation without relying on the original builder",
+              "It is required by law",
+              "It makes workflows run faster",
+            ],
+            1,
+            "Good documentation is what separates a professional automation from a fragile one-person system. It enables teams and longevity.",
+            "What should a good automation document include?",
+            [
+              "Only the tool name",
+              "Purpose, trigger, steps, data sources, error handling, and maintenance notes",
+              "Just a screenshot",
+              "The cost of the tool",
+            ],
+            1,
+            "Comprehensive documentation covers the why, what, and how — purpose, trigger, each step, data sources, error handling, and how to maintain it."
+          ),
+        },
+      ],
+      finalTest: phaseTest("p3", "Phase 3 Final Test: Workflow Design"),
+    },
+
+    // ── Phase 4: API & Integration Basics ───────────────────────────────────
+    {
+      id: "p4",
+      phaseNumber: 4,
+      title: "API & Integration Basics",
+      description:
+        "Demystify APIs, webhooks, and JSON so you can connect any two tools — even those without native integrations.",
+      estimatedDuration: "2 weeks",
+      weekRange: "Week 7–8",
+      outcome:
+        "You can read API documentation, make HTTP requests, understand JSON, and connect tools through APIs in Make or Zapier.",
+      access: "locked",
+      sections: [
+        {
+          id: "p4-s1",
+          title: "What Is an API?",
+          description:
+            "A plain-English explanation of APIs — what they are, how they work, and why they are the backbone of all modern automation.",
+          estimatedTime: "20 min",
+          difficulty: "Beginner",
+          learningTypes: ["Reading", "Video"],
+          resources: [
+            { label: "Read: APIs Explained Simply", type: "article", url: "#" },
+            { label: "Watch: What is an API? (Analogy)", type: "video", url: "#" },
+          ],
+          test: sectionTest(
+            "p4-s1-test",
+            "API Basics Quiz",
+            "What does API stand for?",
+            [
+              "Automated Process Integration",
+              "Application Programming Interface",
+              "Advanced Platform Intelligence",
+              "Automated Product Interface",
+            ],
+            1,
+            "API stands for Application Programming Interface — it is a defined way for two software applications to communicate.",
+            "What is the best analogy for an API?",
+            [
+              "A filing cabinet",
+              "A waiter taking your order to the kitchen and bringing back the food",
+              "A computer screen",
+              "A database table",
+            ],
+            1,
+            "The waiter analogy is apt — you (client) place an order, the waiter (API) takes it to the kitchen (server) and returns the result."
+          ),
+        },
+        {
+          id: "p4-s2",
+          title: "Webhooks Explained Simply",
+          description:
+            "Understand webhooks — the 'push' alternative to polling APIs. Learn when to use them and how to set up a simple webhook receiver.",
+          estimatedTime: "25 min",
+          difficulty: "Beginner",
+          learningTypes: ["Reading", "Practice"],
+          resources: [
+            { label: "Read: Webhooks vs APIs", type: "article", url: "#" },
+            { label: "Practice: Set up a webhook in Make", type: "practice", url: "#" },
+          ],
+          test: sectionTest(
+            "p4-s2-test",
+            "Webhooks Quiz",
+            "How does a webhook differ from a regular API call?",
+            [
+              "They are the same thing",
+              "A webhook pushes data to your URL automatically when an event occurs, rather than you polling for it",
+              "Webhooks only work with Zapier",
+              "Webhooks require a database",
+            ],
+            1,
+            "Webhooks are event-driven — the sender pushes data to your endpoint when something happens. You don't need to keep asking.",
+            "What do you need to receive a webhook?",
+            [
+              "A physical server",
+              "A publicly accessible URL that can receive HTTP POST requests",
+              "A credit card",
+              "A special programming language",
+            ],
+            1,
+            "Webhook receivers are just URLs — Make, Zapier, and n8n all provide webhook URLs you can use without any server setup."
+          ),
+        },
+        {
+          id: "p4-s3",
+          title: "JSON Basics",
+          description:
+            "Learn to read and understand JSON — the universal data format used by virtually every API. No coding required.",
+          estimatedTime: "25 min",
+          difficulty: "Beginner",
+          learningTypes: ["Reading", "Practice"],
+          resources: [
+            { label: "Read: JSON for Non-Developers", type: "article", url: "#" },
+            { label: "Practice: Parse 3 JSON examples", type: "practice", url: "#" },
+          ],
+          test: sectionTest(
+            "p4-s3-test",
+            "JSON Quiz",
+            "What does JSON stand for?",
+            [
+              "Java Standard Object Notation",
+              "JavaScript Object Notation",
+              "Joint System Output Network",
+              "Just Simple Object Names",
+            ],
+            1,
+            "JSON stands for JavaScript Object Notation — a lightweight, human-readable format for structuring data as key-value pairs.",
+            "In JSON, what does this represent: { \"name\": \"Alice\", \"age\": 30 }?",
+            [
+              "A list of items",
+              "An object with two properties: name and age",
+              "A function",
+              "A database query",
+            ],
+            1,
+            "A JSON object is a set of key-value pairs: { \"name\": \"Alice\", \"age\": 30 }. It is the most common structure in API responses."
+          ),
+        },
+        {
+          id: "p4-s4",
+          title: "Connecting Tools Through APIs",
+          description:
+            "Use API modules in Make and Zapier to connect tools that don't have native integrations — dramatically expanding what you can automate.",
+          estimatedTime: "40 min",
+          difficulty: "Intermediate",
+          learningTypes: ["Video", "Practice"],
+          resources: [
+            { label: "Watch: Custom API Connections in Make", type: "video", url: "#" },
+            { label: "Practice: Connect a tool via HTTP module", type: "practice", url: "#" },
+          ],
+          test: sectionTest(
+            "p4-s4-test",
+            "API Connections Quiz",
+            "What is the HTTP module in Make used for?",
+            [
+              "Browsing the web",
+              "Making custom API requests to any URL",
+              "Sending emails only",
+              "Managing files",
+            ],
+            1,
+            "The HTTP module lets you make raw API requests to any endpoint — essential for connecting tools without native Make integrations.",
+            "What do you typically need to authenticate an API request?",
+            [
+              "Nothing — APIs are always public",
+              "An API key, token, or OAuth credentials provided by the service",
+              "Your email address only",
+              "A credit card",
+            ],
+            1,
+            "Most APIs require authentication — usually an API key in the request header or OAuth tokens for user-specific access."
+          ),
+        },
+        {
+          id: "p4-s5",
+          title: "Testing Simple API Requests",
+          description:
+            "Use tools like Postman or Make's built-in HTTP module to test API requests before building full automations. Debug like a pro.",
+          estimatedTime: "35 min",
+          difficulty: "Intermediate",
+          learningTypes: ["Practice", "Tool"],
+          resources: [
+            { label: "Watch: Testing APIs with Postman", type: "video", url: "#" },
+            { label: "Practice: Test 3 real API endpoints", type: "practice", url: "#" },
+            { label: "Tool: Postman (free)", type: "tool", url: "#" },
+          ],
+          test: sectionTest(
+            "p4-s5-test",
+            "API Testing Quiz",
+            "Why should you test an API request before building a full automation?",
+            [
+              "It is not necessary",
+              "To confirm the endpoint works, understand the response structure, and catch errors early",
+              "Because tools require it",
+              "To slow down development",
+            ],
+            1,
+            "Testing first saves hours — you confirm the API works, understand what data comes back, and avoid building on a broken foundation.",
+            "What HTTP status code indicates a successful API request?",
+            ["404", "500", "200", "301"],
+            2,
+            "HTTP 200 means OK — the request was successful. 404 means not found, 500 means server error."
+          ),
+        },
+      ],
+      finalTest: phaseTest("p4", "Phase 4 Final Test: API & Integration Basics"),
+    },
+
+    // ── Phase 5: Portfolio Projects ──────────────────────────────────────────
+    {
+      id: "p5",
+      phaseNumber: 5,
+      title: "Portfolio Projects",
+      description:
+        "Apply everything you have learned by building real automation projects. Document and present your work to demonstrate job-readiness.",
+      estimatedDuration: "4 weeks",
+      weekRange: "Week 9–12",
+      outcome:
+        "You have 3+ portfolio-ready automation projects, documented professionally and ready to show employers or clients.",
+      access: "locked",
+      sections: [
+        {
+          id: "p5-s1",
+          title: "Choose a Real Business Problem",
+          description:
+            "Select a real automation problem to solve — from your own life, a business you know, or a common business scenario. Scope it clearly.",
+          estimatedTime: "30 min",
+          difficulty: "Intermediate",
+          learningTypes: ["Practice"],
+          resources: [
+            { label: "Read: How to Scope an Automation Project", type: "article", url: "#" },
+            { label: "Practice: Write your project brief", type: "practice", url: "#" },
+          ],
+          test: sectionTest(
+            "p5-s1-test",
+            "Project Scoping Quiz",
+            "What makes a good automation project for your portfolio?",
+            [
+              "The most technically complex project possible",
+              "A project that solves a real problem, demonstrates clear value, and uses skills from this roadmap",
+              "Any project that uses the most expensive tools",
+              "A project that took the longest to build",
+            ],
+            1,
+            "Portfolio projects should solve real problems and demonstrate practical skills — not complexity for its own sake.",
+            "What should a project brief include?",
+            [
+              "Only the tool you will use",
+              "Problem statement, proposed solution, tools, expected outcome, and success criteria",
+              "Just the title",
+              "Your personal biography",
+            ],
+            1,
+            "A clear brief keeps you focused and makes your portfolio project look professional — it shows you can think before you build."
+          ),
+        },
+        {
+          id: "p5-s2",
+          title: "Build a Complete Automation",
+          description:
+            "Build your chosen automation from scratch — trigger, logic, error handling, and output. Apply everything from Phases 1–4.",
+          estimatedTime: "3 hours",
+          difficulty: "Intermediate",
+          learningTypes: ["Project", "Practice"],
+          resources: [
+            { label: "Read: Automation Build Checklist", type: "article", url: "#" },
+            { label: "Practice: Build your automation", type: "practice", url: "#" },
+          ],
+          test: sectionTest(
+            "p5-s2-test",
+            "Build Quality Quiz",
+            "What should you check before considering an automation 'done'?",
+            [
+              "That it runs once successfully",
+              "That it handles errors, edge cases, and has been tested with multiple scenarios",
+              "That it looks good",
+              "That it uses the most modules",
+            ],
+            1,
+            "A complete automation handles edge cases and errors gracefully — not just the happy path.",
+            "What is an 'edge case' in automation?",
+            [
+              "A case that happens at the edge of the screen",
+              "An unusual input or scenario that the automation might not handle correctly",
+              "The final step in a workflow",
+              "A type of API error",
+            ],
+            1,
+            "Edge cases are unusual but possible inputs — like an empty field, a duplicate record, or an unexpected data format. Always test for them."
+          ),
+        },
+        {
+          id: "p5-s3",
+          title: "Document the Workflow",
+          description:
+            "Write professional documentation for your automation — purpose, architecture, data flow, error handling, and maintenance guide.",
+          estimatedTime: "45 min",
+          difficulty: "Intermediate",
+          learningTypes: ["Practice", "Reading"],
+          resources: [
+            { label: "Read: Portfolio Documentation Template", type: "article", url: "#" },
+            { label: "Practice: Write your automation docs", type: "practice", url: "#" },
+          ],
+          test: sectionTest(
+            "p5-s3-test",
+            "Documentation Quiz",
+            "What is the purpose of a maintenance guide in automation documentation?",
+            [
+              "To make the document longer",
+              "To explain how to update, fix, or extend the automation when things change",
+              "To list all the tools used",
+              "To describe the project manager",
+            ],
+            1,
+            "A maintenance guide ensures the automation stays working over time — it explains how to handle common issues and updates.",
+            "Who should be able to understand your documentation?",
+            [
+              "Only developers",
+              "Only you",
+              "Any reasonably technical person who was not involved in building it",
+              "Only the client who paid for it",
+            ],
+            2,
+            "Good documentation is written for someone who wasn't there — clear enough that they can understand, maintain, and improve the automation."
+          ),
+        },
+        {
+          id: "p5-s4",
+          title: "Test and Improve the System",
+          description:
+            "Run your automation through real scenarios, find weaknesses, and improve it. Iteration is what separates good automations from great ones.",
+          estimatedTime: "1 hour",
+          difficulty: "Intermediate",
+          learningTypes: ["Practice"],
+          resources: [
+            { label: "Read: Automation Testing Checklist", type: "article", url: "#" },
+            { label: "Practice: Run 5 test scenarios", type: "practice", url: "#" },
+          ],
+          test: sectionTest(
+            "p5-s4-test",
+            "Testing & Iteration Quiz",
+            "What is the best approach to testing an automation?",
+            [
+              "Run it once and assume it works",
+              "Test with multiple real-world scenarios including happy paths, edge cases, and error conditions",
+              "Ask someone else to test it",
+              "Only test the trigger",
+            ],
+            1,
+            "Thorough testing covers the happy path, edge cases, and deliberate error conditions — all three are essential.",
+            "What should you do after finding a bug in your automation?",
+            [
+              "Delete the automation and start over",
+              "Document the bug, fix it, test the fix, and update your documentation",
+              "Ignore it if it rarely happens",
+              "Ask the tool's support team to fix it",
+            ],
+            1,
+            "A professional approach to bugs: document, fix, test, and update docs. This process builds reliability and demonstrates professionalism."
+          ),
+        },
+        {
+          id: "p5-s5",
+          title: "Prepare Portfolio Presentation",
+          description:
+            "Package your automation projects into a professional portfolio — a document, Notion page, or video walkthrough that showcases your skills.",
+          estimatedTime: "1.5 hours",
+          difficulty: "Intermediate",
+          learningTypes: ["Project", "Practice"],
+          resources: [
+            { label: "Read: Portfolio Presentation Guide", type: "article", url: "#" },
+            { label: "Practice: Create your portfolio page", type: "practice", url: "#" },
+          ],
+          test: sectionTest(
+            "p5-s5-test",
+            "Portfolio Quiz",
+            "What should your automation portfolio demonstrate to a potential employer or client?",
+            [
+              "How many tools you know",
+              "That you can identify real problems, build reliable solutions, and document your work professionally",
+              "That you have the most expensive tools",
+              "That you work very fast",
+            ],
+            1,
+            "Employers and clients want to see problem-solving ability, reliable builds, and professional communication — not just tool knowledge.",
+            "What format works best for an automation portfolio?",
+            [
+              "A single screenshot",
+              "A combination of written case studies, screenshots, and ideally a short video walkthrough",
+              "Only a GitHub repository",
+              "A list of tools you have used",
+            ],
+            1,
+            "Multi-format portfolios — case studies, visuals, and video — give reviewers multiple ways to understand your work and skills."
+          ),
+        },
+      ],
+      finalTest: phaseTest("p5", "Phase 5 Final Test: Portfolio Projects"),
+    },
+  ],
+
+  // ── Projects ──────────────────────────────────────────────────────────────
   projects: [
-    project("auto-proj-1", "Customer Support Email Triage System", "Build a Make or Zapier workflow that reads incoming emails, uses GPT to classify intent, routes to the correct team, and logs to Google Sheets.", ["API integration", "Prompt engineering", "Conditional logic"], ["Email trigger", "Intent classifier", "Team routing rules", "Google Sheets log"], "6 hours", "Beginner", "auto-p3"),
-    project("auto-proj-2", "Content Repurposing Pipeline", "Automate turning a blog post URL into a Twitter thread, LinkedIn post, and email newsletter using AI.", ["Web extraction", "LLM APIs", "Multi-channel output"], ["URL intake", "AI transformations", "Three content formats", "Review queue"], "8 hours", "Intermediate", "auto-p4"),
-    project("auto-proj-3", "Client Onboarding Automation Suite", "Create a flow from form submission to contract generation, welcome email, CRM entry, and Slack notification.", ["Multi-tool integration", "Document generation", "Error handling"], ["Intake form", "Generated contract draft", "CRM record", "Slack alert", "Runbook"], "12 hours", "Advanced", "auto-p5"),
+    {
+      id: "proj-1",
+      title: "Personal Task Automation System",
+      scenario:
+        "You receive tasks from multiple sources — email, Slack, and a form. Build an automation that captures all tasks into a single Airtable base, assigns priorities, and sends you a daily digest.",
+      skills: ["Zapier or Make", "Airtable", "Email parsing", "Data consolidation"],
+      deliverables: [
+        "Working automation capturing tasks from 2+ sources",
+        "Airtable base with priority logic",
+        "Daily digest email automation",
+        "Documentation of the workflow",
+      ],
+      estimatedTime: "4 hours",
+      difficulty: "Beginner",
+      relatedPhaseId: "p2",
+    },
+    {
+      id: "proj-2",
+      title: "AI Email Sorting Workflow",
+      scenario:
+        "Build an automation that reads incoming emails, uses AI to classify them by type (support, sales, spam, other), and routes them to the right folder or Slack channel with a summary.",
+      skills: ["Make or Zapier", "OpenAI API", "Email integration", "AI classification"],
+      deliverables: [
+        "Email classification automation using AI",
+        "Routing logic to 3+ destinations",
+        "AI-generated email summary",
+        "Error handling for unclassifiable emails",
+      ],
+      estimatedTime: "5 hours",
+      difficulty: "Intermediate",
+      relatedPhaseId: "p4",
+    },
+    {
+      id: "proj-3",
+      title: "Lead Capture and Follow-up Automation",
+      scenario:
+        "A business receives leads through a website form. Build a complete automation: capture the lead, enrich it with basic research, add it to a CRM, and trigger a personalised follow-up email sequence.",
+      skills: ["Make", "Airtable CRM", "Email automation", "AI personalisation"],
+      deliverables: [
+        "Form-to-CRM automation",
+        "AI-personalised follow-up email",
+        "Lead status tracking",
+        "Notification to sales team",
+      ],
+      estimatedTime: "6 hours",
+      difficulty: "Intermediate",
+      relatedPhaseId: "p3",
+    },
+    {
+      id: "proj-4",
+      title: "AI Research Assistant Workflow",
+      scenario:
+        "Build an automation where a user submits a research topic via a form, AI researches and summarises the topic, and a formatted report is sent back via email and saved to a Notion database.",
+      skills: ["Make", "OpenAI API", "Notion API", "Report generation"],
+      deliverables: [
+        "Topic submission form",
+        "AI research and summarisation workflow",
+        "Formatted report delivered by email",
+        "Notion database of all research reports",
+      ],
+      estimatedTime: "5 hours",
+      difficulty: "Intermediate",
+      relatedPhaseId: "p4",
+    },
+    {
+      id: "proj-5",
+      title: "Final Portfolio Automation System",
+      scenario:
+        "Design and build a complete end-to-end automation system for a real business scenario of your choice. The system must include a trigger, AI processing, data storage, human approval step, and a final output — documented and presented professionally.",
+      skills: ["Make or Zapier", "OpenAI API", "Database tool", "API integration", "Documentation"],
+      deliverables: [
+        "Complete multi-step automation with AI",
+        "Human approval step",
+        "Error handling and alerts",
+        "Professional documentation",
+        "Portfolio presentation (Notion or PDF)",
+      ],
+      estimatedTime: "10 hours",
+      difficulty: "Advanced",
+      relatedPhaseId: "p5",
+    },
   ],
 };
 
-function namedPhase(prefix: string, n: number, title: string, topics: Omit<LightSectionInput, "id">[]): RoadmapPhase {
-  return lightPhase(prefix, n, title, `Build professional skill in ${title.toLowerCase()} with real tools, standards, and deliverables.`, `You can apply ${title.toLowerCase()} in portfolio-grade work.`, `Week ${n * 2 - 1}-${n * 2}`, topics);
-}
+// ═══════════════════════════════════════════════════════════════════════════════
+// 2. AI WORKFLOW BUILDER
+// ═══════════════════════════════════════════════════════════════════════════════
 
-const promptEngineer: Roadmap = {
+const aiWorkflowBuilder: Roadmap = {
   id: "2",
-  slug: "prompt-engineer",
-  title: "Prompt Engineer",
-  description: "Design, test, evaluate, and manage prompts for reliable language-model applications and business workflows.",
-  category: "Prompting",
-  level: "Beginner to Intermediate",
-  duration: "12 weeks",
-  status: "mvp-ready",
-  totalEstimatedHours: 70,
+  slug: "ai-workflow-builder",
+  title: "AI Workflow Builder",
+  description:
+    "Design and connect AI-powered workflows for teams, creators, and businesses. Master the art of building systems that run themselves.",
+  category: "Automation",
+  level: "Beginner",
+  duration: "10 weeks",
+  status: "coming-soon",
+  totalEstimatedHours: 48,
   phases: [
-    phase("prompt-p1", 1, "Language Model Fundamentals", "Learn how LLMs tokenize, attend to context, sample outputs, and follow prompt hierarchy.", "You can explain and improve prompts using model behavior instead of guesswork.", "2 weeks", "Week 1-2", "free", [
-      section({ id: "prompt-p1-s1", title: "How Large Language Models Work", description: "Understand tokenization, attention, next-token prediction, and context windows.", estimatedTime: "4 hours", difficulty: "Beginner", learningTypes: ["Video", "Reading"], resources: [r("Andrej Karpathy: Let's build GPT", "video", URLS.karpathyBuildGpt), r("The Illustrated Transformer", "article", URLS.illustratedTransformer)], questions: [q("prompt-p1-s1-q1", "What is a token in an LLM?", ["A unit of text processed by the model", "A database password", "A training GPU", "A web request header"], 0, "Models process text as tokens, which can be words, subwords, or characters."), q("prompt-p1-s1-q2", "What does the attention mechanism help a transformer do?", ["Relate tokens to other tokens in the context", "Compress images only", "Store API credentials", "Disable sampling"], 0, "Attention lets tokens weigh relevant parts of the context.")]}),
-      section({ id: "prompt-p1-s2", title: "The Anatomy of a Great Prompt", description: "Use role, task, context, constraints, examples, and output formats.", estimatedTime: "3 hours", difficulty: "Beginner", learningTypes: ["Reading", "Practice"], resources: [r("OpenAI Prompt Engineering Guide", "article", URLS.openAiPrompting), r("Learn Prompting", "article", URLS.learnPrompting)], questions: [q("prompt-p1-s2-q1", "Which prompt element most directly controls the response schema?", ["Output format instructions", "Browser zoom", "Model provider logo", "Conversation title"], 0, "Explicit schema instructions reduce ambiguity."), q("prompt-p1-s2-q2", "Why include constraints in a prompt?", ["To limit acceptable behavior and outputs", "To increase billing automatically", "To make tokenization impossible", "To remove context"], 0, "Constraints define boundaries such as length, tone, sources, and forbidden actions.")]}),
-      section({ id: "prompt-p1-s3", title: "Temperature, Top-P & Sampling", description: "Learn how sampling controls creativity, determinism, and risk.", estimatedTime: "3 hours", difficulty: "Intermediate", learningTypes: ["Reading", "Quiz"], resources: [r("Hugging Face Generation Strategies", "article", URLS.hfGeneration), r("OpenAI Text Generation Guide", "article", URLS.openAiText)], questions: [q("prompt-p1-s3-q1", "What does temperature close to 0 usually produce?", ["More deterministic outputs", "Longer context windows", "More API keys", "Guaranteed factuality"], 0, "Lower temperature reduces randomness but does not guarantee truth."), q("prompt-p1-s3-q2", "When is a higher temperature usually more appropriate?", ["Brainstorming varied creative options", "Extracting exact invoice totals", "Running database migrations", "Validating legal citations"], 0, "Creative tasks benefit from more diverse sampling.")]}),
-      section({ id: "prompt-p1-s4", title: "System Prompts & Personas", description: "Use higher-priority instructions while keeping personas safe and task-specific.", estimatedTime: "3 hours", difficulty: "Intermediate", learningTypes: ["Reading", "Practice"], resources: [r("Anthropic Prompt Engineering Overview", "article", URLS.anthropicPrompting), r("OpenAI Prompt Engineering Guide", "article", URLS.openAiPrompting)], questions: [q("prompt-p1-s4-q1", "How does a system message differ from a user message?", ["It sets higher-priority behavior for the assistant", "It always contains JSON", "It is ignored by model APIs", "It stores billing settings"], 0, "System instructions are used to define assistant behavior and constraints."), q("prompt-p1-s4-q2", "What is a risk of an overly broad persona prompt?", ["Inconsistent or unsafe behavior outside the task", "Lower monitor brightness", "Fewer tokens in the tokenizer", "Faster database joins"], 0, "Personas should serve task goals and safety constraints.")]}),
-      section({ id: "prompt-p1-s5", title: "Practice: Prompt Iteration Lab", description: "Compare prompt versions, run A/B tests, and document improvements.", estimatedTime: "3 hours", difficulty: "Beginner", learningTypes: ["Practice", "Tool"], resources: [r("Awesome ChatGPT Prompts", "tool", URLS.awesomePrompts), r("FlowGPT Prompt Library", "tool", URLS.flowGpt)], questions: [q("prompt-p1-s5-q1", "What should you change when A/B testing prompts?", ["One meaningful variable at a time", "Every instruction and model at once", "Only the file name", "The browser language only"], 0, "Controlled changes make it possible to attribute improvements."), q("prompt-p1-s5-q2", "What metric best evaluates a summarization prompt?", ["Faithfulness and coverage against source text", "Number of emojis", "Model logo color", "Random output length"], 0, "Summaries should be accurate to the source and cover key points.")]}),
+    lightPhase("wfb-p1", 1, "Workflow Thinking", "Develop the mindset and vocabulary of a workflow builder — systems thinking, process design, and automation logic.", "You can think in systems and identify workflow opportunities in any business context.", "2 weeks", "Week 1–2", "free", [
+      { id: "wfb-p1-s1", title: "Systems Thinking Basics", desc: "Learn to see businesses as interconnected systems — inputs, processes, outputs, and feedback loops.", time: "25 min", diff: "Beginner", types: ["Reading", "Video"] },
+      { id: "wfb-p1-s2", title: "Workflow vs Process vs Automation", desc: "Understand the distinctions between workflows, processes, and automation so you can communicate precisely.", time: "20 min", diff: "Beginner", types: ["Reading"] },
+      { id: "wfb-p1-s3", title: "Identifying Workflow Opportunities", desc: "A structured method to find high-value workflow opportunities in any business or team.", time: "30 min", diff: "Beginner", types: ["Reading", "Practice"] },
+      { id: "wfb-p1-s4", title: "Designing Your First Workflow Map", desc: "Map a real workflow from scratch using a simple visual framework.", time: "40 min", diff: "Beginner", types: ["Practice"] },
     ]),
-    namedPhase("prompt", 2, "Advanced Prompting Techniques", [
-      { title: "Chain-of-Thought Prompting", description: "Use reasoning prompts and hidden reasoning alternatives responsibly.", estimatedTime: "3 hours", difficulty: "Advanced", learningTypes: ["Reading"], resources: [r("Wei et al. Chain-of-Thought Paper", "article", URLS.cotPaper), r("Google AI: Chain of Thought", "article", URLS.googleCot)], correct: "Decomposing multi-step reasoning into intermediate steps", distractors: ["Increasing CSS specificity", "Hashing passwords", "Turning off all examples"], explanation: "CoT-style methods improve reasoning by encouraging stepwise decomposition." },
-      { title: "Few-Shot & Zero-Shot Strategies", description: "Choose examples when they improve consistency and omit them when they bias outputs.", estimatedTime: "3 hours", difficulty: "Intermediate", learningTypes: ["Reading", "Practice"], resources: [r("GPT-3 Paper", "article", URLS.gpt3Paper), r("Hugging Face NLP Course", "article", URLS.hfCourse)], correct: "Few-shot examples demonstrate the target pattern", distractors: ["Few-shot means fewer tokens always", "Zero-shot requires training a model", "Examples disable constraints"], explanation: "Few-shot prompts teach format and criteria through examples." },
-      { title: "ReAct & Tool-Use Prompting", description: "Combine reasoning traces with tool calls and observations.", estimatedTime: "4 hours", difficulty: "Advanced", learningTypes: ["Reading", "Practice"], resources: [r("ReAct Paper", "article", URLS.reactPaper), r("LangChain Agents", "tool", URLS.langchainAgents)], correct: "Alternating reasoning, actions, and observations", distractors: ["Only generating images", "Removing all tools", "Single static completion"], explanation: "ReAct agents reason about which tool to use and incorporate observations." },
-      { title: "Prompt Chaining & Pipelines", description: "Break complex tasks into typed, testable prompt steps.", estimatedTime: "4 hours", difficulty: "Intermediate", learningTypes: ["Tool", "Practice"], resources: [r("LangChain Expression Language", "tool", URLS.langchainLcel), r("Microsoft PromptFlow", "tool", URLS.promptFlow)], correct: "Passing structured outputs from one prompt step to the next", distractors: ["One huge prompt for every task", "No intermediate validation", "Manual copy-paste only"], explanation: "Prompt chains make complex workflows more testable and debuggable." },
+    lightPhase("wfb-p2", 2, "AI Tools for Workflows", "Master the AI tools that power modern workflows — from language models to image generators and research assistants.", "You can select and use the right AI tool for any workflow step.", "2 weeks", "Week 3–4", "locked", [
+      { id: "wfb-p2-s1", title: "AI Tool Landscape", desc: "Survey the key AI tools used in workflow building — ChatGPT, Claude, Gemini, Perplexity, and more.", time: "25 min", diff: "Beginner", types: ["Reading", "Video"] },
+      { id: "wfb-p2-s2", title: "Choosing the Right AI Tool", desc: "A decision framework for selecting the best AI tool for each step in a workflow.", time: "20 min", diff: "Beginner", types: ["Reading", "Practice"] },
+      { id: "wfb-p2-s3", title: "Prompting for Workflow Steps", desc: "Write prompts specifically designed for workflow integration — consistent, reliable, and structured output.", time: "35 min", diff: "Beginner", types: ["Practice"] },
+      { id: "wfb-p2-s4", title: "AI APIs in Workflows", desc: "Connect AI tools via API inside Make or Zapier to create AI-powered workflow steps.", time: "40 min", diff: "Intermediate", types: ["Practice", "Video"] },
     ]),
-    namedPhase("prompt", 3, "Prompt Engineering for Products", [
-      { title: "Prompt Design for Customer-Facing Apps", description: "Design safe prompts for real users, policies, and edge cases.", estimatedTime: "3 hours", difficulty: "Advanced", learningTypes: ["Reading"], resources: [r("Anthropic Prompt Engineering", "article", URLS.anthropicPrompting), r("OpenAI Usage Policies", "article", URLS.openAiPolicies)], correct: "Clear refusal, escalation, and safe-completion behavior", distractors: ["No safety instructions", "Unbounded persona roleplay", "Hiding policy from evaluation"], explanation: "Customer-facing prompts need safe behavior and escalation paths." },
-      { title: "Evaluation & Red-Teaming Prompts", description: "Test prompt robustness with adversarial and benchmark-style cases.", estimatedTime: "4 hours", difficulty: "Advanced", learningTypes: ["Reading", "Practice"], resources: [r("Stanford HELM", "article", URLS.helm), r("PromptBench Paper", "article", URLS.promptBench)], correct: "Adversarial test cases that probe jailbreaks and task failures", distractors: ["Only checking one happy path", "Changing prompts without logs", "Relying on vibes"], explanation: "Prompt evaluation needs systematic, repeatable test suites." },
-      { title: "Structured Output & JSON Mode", description: "Constrain model output for parsers, APIs, and downstream automations.", estimatedTime: "3 hours", difficulty: "Intermediate", learningTypes: ["Reading", "Tool"], resources: [r("OpenAI Structured Outputs", "article", URLS.openAiStructured), r("Instructor Library", "tool", URLS.instructor)], correct: "Schema-constrained JSON that downstream code can validate", distractors: ["Free-form paragraphs only", "Screenshots of data", "Random indentation"], explanation: "Structured outputs reduce parsing failures." },
-      { title: "Prompt Version Control & Management", description: "Track prompt changes, evaluation results, and production regressions.", estimatedTime: "3 hours", difficulty: "Intermediate", learningTypes: ["Tool"], resources: [r("PromptLayer Docs", "tool", URLS.promptLayer), r("LangSmith Docs", "tool", URLS.langSmith)], correct: "Versioned prompts with traces and evaluation results", distractors: ["Editing production prompts without history", "No test cases", "Deleting logs"], explanation: "Prompt management tools support traceability and regression testing." },
+    lightPhase("wfb-p3", 3, "Building Connected Workflows", "Build multi-step, multi-tool workflows that connect AI with databases, communication tools, and business apps.", "You can build a complete multi-tool workflow that processes data and delivers results automatically.", "3 weeks", "Week 5–7", "locked", [
+      { id: "wfb-p3-s1", title: "Multi-Step Workflow Design", desc: "Design workflows with multiple sequential and parallel steps — handling branching logic and data transformation.", time: "35 min", diff: "Intermediate", types: ["Reading", "Practice"] },
+      { id: "wfb-p3-s2", title: "Connecting Apps Without Code", desc: "Use Make and Zapier to connect apps that don't have native integrations.", time: "40 min", diff: "Intermediate", types: ["Video", "Practice"] },
+      { id: "wfb-p3-s3", title: "Data Transformation in Workflows", desc: "Clean, format, and transform data as it moves through your workflow — essential for reliable outputs.", time: "30 min", diff: "Intermediate", types: ["Practice"] },
+      { id: "wfb-p3-s4", title: "Workflow Testing & Reliability", desc: "Test your workflows thoroughly and build in reliability — error handling, retries, and monitoring.", time: "30 min", diff: "Intermediate", types: ["Practice"] },
+      { id: "wfb-p3-s5", title: "Team Workflow Collaboration", desc: "Design workflows for teams — permissions, handoffs, notifications, and shared databases.", time: "25 min", diff: "Intermediate", types: ["Reading", "Practice"] },
     ]),
-    namedPhase("prompt", 4, "Multimodal & Specialised Prompting", [
-      { title: "Vision Prompting", description: "Prompt image-capable models for inspection, extraction, and reasoning.", estimatedTime: "3 hours", difficulty: "Intermediate", learningTypes: ["Reading"], resources: [r("OpenAI Vision Guide", "article", URLS.openAiVision), r("Gemini Vision Docs", "article", URLS.geminiVision)], correct: "Ask for observable evidence and structured visual findings", distractors: ["Assume hidden facts from an image", "Ignore image resolution", "Skip uncertainty"], explanation: "Vision prompts should distinguish observed evidence from inference." },
-      { title: "Code Generation Prompting", description: "Prompt coding tools with repo context, constraints, tests, and acceptance criteria.", estimatedTime: "3 hours", difficulty: "Intermediate", learningTypes: ["Reading", "Practice"], resources: [r("GitHub Copilot Prompt Engineering", "article", URLS.copilotPrompting), r("Cursor Docs", "tool", URLS.cursorDocs)], correct: "Provide relevant files, constraints, and tests to run", distractors: ["Ask for unrelated refactors", "Hide failing tests", "Use no acceptance criteria"], explanation: "Code prompts are strongest when grounded in project context and checks." },
-      { title: "Audio & Speech Prompting", description: "Work with transcription, voice instructions, and speech generation constraints.", estimatedTime: "2.5 hours", difficulty: "Intermediate", learningTypes: ["Reading"], resources: [r("OpenAI Speech to Text", "article", URLS.openAiSpeech), r("ElevenLabs Prompting", "article", URLS.elevenLabs)], correct: "Specify speaker style, pronunciation, and transcription constraints", distractors: ["Use visual bounding boxes", "Set SQL indexes", "Disable punctuation always"], explanation: "Audio work needs modality-specific constraints for speech and transcripts." },
-      { title: "Domain-Specific Prompt Libraries", description: "Evaluate reusable prompts for legal, marketing, coding, support, and analysis use cases.", estimatedTime: "2.5 hours", difficulty: "Beginner", learningTypes: ["Tool", "Practice"], resources: [r("Awesome ChatGPT Prompts", "tool", URLS.awesomePrompts), r("FlowGPT", "tool", URLS.flowGpt)], correct: "Adapt prompts to domain rules, data, and evaluation criteria", distractors: ["Copy prompts blindly", "Remove all constraints", "Ignore compliance"], explanation: "Prompt libraries are starting points, not validated domain solutions." },
-    ]),
-    namedPhase("prompt", 5, "Professional Prompt Engineering", [
-      { title: "Building a Prompt Engineering Portfolio", description: "Show prompt versions, test cases, metrics, and business impact.", estimatedTime: "3 hours", difficulty: "Intermediate", learningTypes: ["Project"], resources: [r("GitHub Pages Quickstart", "tool", URLS.githubPages), r("LangSmith Docs", "tool", URLS.langSmith)], correct: "Before/after prompt results with evaluation metrics", distractors: ["Only screenshots of chat messages", "No baseline", "No prompt versions"], explanation: "A prompt portfolio should prove measurable improvement." },
-      { title: "Consulting & Freelance Prompt Engineering", description: "Scope prompt projects, price deliverables, and hand over maintainable assets.", estimatedTime: "3 hours", difficulty: "Intermediate", learningTypes: ["Reading"], resources: [r("Upwork AI Automation Freelancers", "article", URLS.upworkAiAutomation), r("Toptal Freelance Guide", "article", URLS.toptalFreelance)], correct: "Deliverables include prompts, eval cases, documentation, and handover", distractors: ["One prompt with no tests", "Unlimited unpaid revisions", "No acceptance criteria"], explanation: "Prompt consulting needs assets clients can operate and verify." },
-      { title: "Prompt Engineering for Enterprises", description: "Design prompts within governance, security, model-routing, and compliance constraints.", estimatedTime: "4 hours", difficulty: "Advanced", learningTypes: ["Reading"], resources: [r("Azure OpenAI Prompt Engineering", "article", URLS.azureOpenAi), r("AWS Bedrock Prompt Guidelines", "article", URLS.bedrockPrompting)], correct: "Governed prompts with security, auditability, and evaluation gates", distractors: ["Ad hoc prompts pasted into production", "No access controls", "No logs"], explanation: "Enterprise prompt work requires operational controls, not just clever wording." },
+    lightPhase("wfb-p4", 4, "Workflow Projects & Portfolio", "Build and present real workflow projects that demonstrate your skills to employers and clients.", "You have 2 portfolio-ready AI workflow projects with professional documentation.", "3 weeks", "Week 8–10", "locked", [
+      { id: "wfb-p4-s1", title: "Content Creation Workflow", desc: "Build a complete AI-powered content creation workflow — from topic to published post.", time: "3 hours", diff: "Intermediate", types: ["Project"] },
+      { id: "wfb-p4-s2", title: "Team Reporting Workflow", desc: "Build an automated team reporting workflow that collects data, generates summaries, and distributes reports.", time: "3 hours", diff: "Intermediate", types: ["Project"] },
+      { id: "wfb-p4-s3", title: "Portfolio Documentation", desc: "Document your projects professionally for your portfolio.", time: "1 hour", diff: "Intermediate", types: ["Practice"] },
     ]),
   ],
   projects: [
-    project("prompt-proj-1", "Support Bot Prompt Evaluation Suite", "Design prompts and test cases for a support chatbot that must answer policy questions safely.", ["System prompting", "Evaluation", "Red-teaming"], ["Prompt set", "20 test cases", "Scoring rubric"], "8 hours", "Intermediate", "prompt-p3"),
-    project("prompt-proj-2", "Structured Extraction Prompt Pipeline", "Build chained prompts that extract JSON from messy sales notes and validate it.", ["Structured outputs", "Prompt chaining", "Schema validation"], ["Extraction prompts", "JSON schema", "Error examples"], "8 hours", "Intermediate", "prompt-p3"),
-    project("prompt-proj-3", "Prompt Portfolio Case Study", "Create a public case study showing baseline, iterations, evals, and final prompt performance.", ["Portfolio writing", "A/B testing", "Metrics"], ["Case study page", "Prompt versions", "Evaluation report"], "10 hours", "Advanced", "prompt-p5"),
+    lightProject("wfb-proj-1", "AI Content Pipeline", "Build an end-to-end content workflow: topic input → AI research → AI draft → formatted output → published to Notion.", ["Make", "OpenAI API", "Notion", "Content strategy"], ["Working content pipeline", "AI-generated drafts", "Notion publishing", "Documentation"], "5 hours", "Intermediate", "wfb-p4"),
+    lightProject("wfb-proj-2", "Team Reporting System", "Automate weekly team reporting: collect data from multiple sources, generate an AI summary, and distribute to stakeholders.", ["Make", "Airtable", "OpenAI API", "Email/Slack"], ["Data collection automation", "AI summary generation", "Automated distribution", "Documentation"], "4 hours", "Intermediate", "wfb-p4"),
   ],
 };
 
-const aiDataAnalyst: Roadmap = {
+// ═══════════════════════════════════════════════════════════════════════════════
+// 3. NO-CODE AI AUTOMATION SPECIALIST
+// ═══════════════════════════════════════════════════════════════════════════════
+
+const noCodeAiAutomation: Roadmap = {
   id: "3",
-  slug: "ai-data-analyst",
-  title: "AI Data Analyst",
-  description: "Use statistics, SQL, Python, visualization, and LLM-assisted analysis to turn raw data into decisions.",
-  category: "Data",
-  level: "Beginner to Intermediate",
-  duration: "12 weeks",
-  status: "mvp-ready",
-  totalEstimatedHours: 78,
+  slug: "no-code-ai-automation-specialist",
+  title: "No-Code AI Automation Specialist",
+  description:
+    "Create powerful business automations using Make, Zapier, Airtable, Notion, and AI assistants — without writing a single line of code.",
+  category: "No-Code",
+  level: "Beginner",
+  duration: "8 weeks",
+  status: "coming-soon",
+  totalEstimatedHours: 40,
   phases: [
-    phase("data-p1", 1, "Data & AI Fundamentals", "Build the statistical, Python, visualization, and LLM-assisted analysis foundation for modern data work.", "You can inspect a real dataset, ask better analytical questions, and communicate initial findings.", "2 weeks", "Week 1-2", "free", [
-      section({ id: "data-p1-s1", title: "Statistics for Data Analysis", description: "Learn averages, spread, distributions, hypothesis tests, and p-values.", estimatedTime: "5 hours", difficulty: "Beginner", learningTypes: ["Video", "Reading"], resources: [r("Khan Academy Statistics", "article", URLS.khanStats), r("StatQuest YouTube Channel", "video", URLS.statQuest)], questions: [q("data-p1-s1-q1", "Which metric is most sensitive to extreme outliers?", ["Mean", "Median", "Mode", "Interquartile range"], 0, "The mean shifts strongly when extreme values are added."), q("data-p1-s1-q2", "What does a p-value measure?", ["The probability of observing data at least this extreme under the null hypothesis", "The size of a database table", "The slope of every regression line", "The number of missing cells"], 0, "A p-value is interpreted relative to a null hypothesis.")]}),
-      section({ id: "data-p1-s2", title: "Python for Data Analysis Basics", description: "Use notebooks, pandas DataFrames, indexing, data types, and simple transformations.", estimatedTime: "7 hours", difficulty: "Beginner", learningTypes: ["Video", "Practice"], resources: [r("freeCodeCamp Python for Data Science", "video", URLS.fccPythonData), r("Kaggle Python Course", "practice", URLS.kagglePython)], questions: [q("data-p1-s2-q1", "Which Python library is primarily used for DataFrame manipulation?", ["pandas", "matplotlib", "scikit-learn", "pytest"], 0, "pandas provides DataFrame and Series data structures."), q("data-p1-s2-q2", "In pandas, what does df.loc usually select by?", ["Labels", "Pixel coordinates", "GPU memory", "HTTP status"], 0, "loc is label-based selection.")]}),
-      section({ id: "data-p1-s3", title: "Working with Data in ChatGPT/Claude", description: "Upload CSVs, ask analytical questions, check calculations, and interpret AI-generated findings.", estimatedTime: "3 hours", difficulty: "Beginner", learningTypes: ["Reading", "Practice"], resources: [r("OpenAI Data Analysis with ChatGPT", "article", URLS.chatGptData), r("Using Files with Claude", "article", URLS.claudeFiles)], questions: [q("data-p1-s3-q1", "What should you do before trusting an AI-generated data insight?", ["Verify the calculation or reproduce it with code", "Copy it into a slide immediately", "Delete the source CSV", "Increase chart saturation"], 0, "LLM analysis can be wrong, so key findings need reproducible checks."), q("data-p1-s3-q2", "Which prompt is best for a CSV analysis task?", ["Ask a specific question and request assumptions, code, and caveats", "Say 'analyze everything' only", "Ask for a random chart", "Hide column definitions"], 0, "Specific analytical prompts produce more auditable results.")]}),
-      section({ id: "data-p1-s4", title: "Data Visualisation Principles", description: "Choose charts, use color intentionally, and avoid misleading encodings.", estimatedTime: "3 hours", difficulty: "Beginner", learningTypes: ["Reading"], resources: [r("Data-to-Viz", "article", URLS.dataToViz), r("Storytelling with Data Blog", "article", URLS.storytellingData)], questions: [q("data-p1-s4-q1", "Which chart is usually best for a time-series trend?", ["Line chart", "Pie chart", "Word cloud", "Stack of icons"], 0, "Line charts show change over a continuous time axis."), q("data-p1-s4-q2", "Why can truncated bar chart axes mislead viewers?", ["They exaggerate differences between bars", "They always reduce file size", "They improve statistical power", "They remove missing values"], 0, "Bars encode magnitude from the baseline, so truncation can distort comparisons.")]}),
-      section({ id: "data-p1-s5", title: "Hands-On: Analyse a Real Dataset", description: "Use the Titanic dataset in Colab to practice EDA, missing values, outliers, and initial insights.", estimatedTime: "5 hours", difficulty: "Beginner", learningTypes: ["Practice", "Project"], resources: [r("Kaggle Titanic Dataset", "practice", URLS.kaggleTitanic), r("Google Colab Intro", "tool", URLS.colab)], questions: [q("data-p1-s5-q1", "What is a common first step in exploratory data analysis?", ["Inspect rows, columns, data types, missing values, and summary statistics", "Train a neural network immediately", "Publish a dashboard before checking data", "Delete categorical columns"], 0, "EDA starts with understanding structure and quality."), q("data-p1-s5-q2", "How should missing values be handled?", ["Investigate pattern and choose deletion, imputation, or separate category based on context", "Always replace with zero", "Always delete the dataset", "Ignore them in every chart"], 0, "Missingness strategy depends on meaning, volume, and analytical goal.")]}),
+    lightPhase("nc-p1", 1, "No-Code Foundations", "Understand the no-code ecosystem and build your first simple automations without any technical background.", "You can navigate the no-code tool landscape and build basic automations independently.", "2 weeks", "Week 1–2", "free", [
+      { id: "nc-p1-s1", title: "What is No-Code?", desc: "Understand the no-code movement, its power, and its limits — and why it's the fastest path to automation skills.", time: "20 min", diff: "Beginner", types: ["Reading", "Video"] },
+      { id: "nc-p1-s2", title: "No-Code Tool Overview", desc: "Survey the most important no-code tools: Make, Zapier, Airtable, Notion, Glide, and Webflow.", time: "25 min", diff: "Beginner", types: ["Reading"] },
+      { id: "nc-p1-s3", title: "Your First Automation in Zapier", desc: "Build a simple but real automation in Zapier — step by step, from trigger to action.", time: "40 min", diff: "Beginner", types: ["Practice", "Video"] },
+      { id: "nc-p1-s4", title: "Your First Scenario in Make", desc: "Build a simple scenario in Make and understand how it differs from Zapier.", time: "40 min", diff: "Beginner", types: ["Practice", "Video"] },
     ]),
-    namedPhase("data", 2, "SQL & Database Querying", [
-      { title: "SQL SELECT, WHERE, GROUP BY", description: "Query relational data and aggregate business metrics.", estimatedTime: "4 hours", difficulty: "Beginner", learningTypes: ["Practice"], resources: [r("SQLBolt", "practice", URLS.sqlBolt), r("PostgreSQL Tutorial", "article", URLS.postgresTutorial)], correct: "GROUP BY aggregates rows by one or more columns", distractors: ["ORDER BY creates new tables", "WHERE runs after aggregation only", "SELECT encrypts records"], explanation: "GROUP BY is used with aggregate functions such as COUNT, SUM, and AVG." },
-      { title: "Joins and Data Modeling", description: "Combine tables with keys and understand one-to-many relationships.", estimatedTime: "4 hours", difficulty: "Intermediate", learningTypes: ["Practice"], resources: [r("SQLBolt", "practice", URLS.sqlBolt), r("PostgreSQL Tutorial", "article", URLS.postgresTutorial)], correct: "INNER JOIN returns matching rows from both tables", distractors: ["INNER JOIN deletes duplicates", "INNER JOIN creates charts", "INNER JOIN trains classifiers"], explanation: "Joins combine related rows using key relationships." },
-      { title: "Window Functions", description: "Rank, lag, and calculate rolling metrics without collapsing rows.", estimatedTime: "4 hours", difficulty: "Intermediate", learningTypes: ["Reading", "Practice"], resources: [r("PostgreSQL Window Functions", "article", "https://www.postgresql.org/docs/current/tutorial-window.html"), r("SQLBolt", "practice", URLS.sqlBolt)], correct: "Window functions calculate across related rows while preserving row detail", distractors: ["Window functions only resize dashboards", "They require image data", "They disable sorting"], explanation: "Window functions support ranking, moving averages, and comparisons within partitions." },
+    lightPhase("nc-p2", 2, "AI + No-Code", "Combine AI tools with no-code platforms to create intelligent automations that go beyond simple trigger-action logic.", "You can integrate AI into no-code workflows to add intelligence and natural language processing.", "2 weeks", "Week 3–4", "locked", [
+      { id: "nc-p2-s1", title: "Adding AI to Zapier Workflows", desc: "Use Zapier's AI steps and OpenAI integration to add intelligence to your Zaps.", time: "35 min", diff: "Beginner", types: ["Practice", "Video"] },
+      { id: "nc-p2-s2", title: "Adding AI to Make Scenarios", desc: "Use Make's OpenAI module to process text, classify data, and generate content inside scenarios.", time: "40 min", diff: "Beginner", types: ["Practice", "Video"] },
+      { id: "nc-p2-s3", title: "AI-Powered Data Extraction", desc: "Use AI to extract structured data from unstructured text — emails, documents, and web pages.", time: "35 min", diff: "Intermediate", types: ["Practice"] },
+      { id: "nc-p2-s4", title: "Building AI Forms and Inputs", desc: "Create smart input forms that feed data into AI-powered automation workflows.", time: "30 min", diff: "Beginner", types: ["Practice"] },
     ]),
-    namedPhase("data", 3, "Python Analytics & Visualization", [
-      { title: "Pandas Cleaning Workflows", description: "Clean missing values, types, duplicates, and derived columns.", estimatedTime: "5 hours", difficulty: "Intermediate", learningTypes: ["Practice"], resources: [r("Kaggle Pandas", "practice", URLS.kagglePandas), r("Kaggle Data Cleaning", "practice", URLS.kaggleDataCleaning)], correct: "Convert data types before grouping or calculating metrics", distractors: ["Group strings as dates", "Ignore duplicate IDs", "Plot before cleaning every time"], explanation: "Correct types prevent broken filters, aggregations, and visualizations." },
-      { title: "Matplotlib and Seaborn", description: "Create clear exploratory and presentation charts in Python.", estimatedTime: "4 hours", difficulty: "Intermediate", learningTypes: ["Practice"], resources: [r("Matplotlib Tutorials", "article", URLS.matplotlib), r("Seaborn Tutorial", "article", URLS.seaborn)], correct: "Seaborn provides statistical visualization built on matplotlib", distractors: ["Seaborn is a database", "Matplotlib is an LLM", "Charts replace data validation"], explanation: "Seaborn simplifies common statistical chart patterns." },
-      { title: "Intro to ML-Assisted Analysis", description: "Use basic models to explore predictors and segment customers.", estimatedTime: "5 hours", difficulty: "Intermediate", learningTypes: ["Practice"], resources: [r("Kaggle Intro to Machine Learning", "practice", URLS.kaggleMl), r("scikit-learn Tutorial", "article", URLS.sklearn)], correct: "Split training and validation data to estimate generalization", distractors: ["Evaluate only on training data", "Remove target labels randomly", "Use accuracy for every problem"], explanation: "Validation data helps detect overfitting." },
+    lightPhase("nc-p3", 3, "No-Code Databases & Apps", "Use Airtable and Notion as the data backbone of your automations — storing, organising, and displaying information without code.", "You can design and use no-code databases to power complex automation workflows.", "2 weeks", "Week 5–6", "locked", [
+      { id: "nc-p3-s1", title: "Airtable Database Design", desc: "Design Airtable bases that serve as the data layer for your automations.", time: "40 min", diff: "Beginner", types: ["Practice", "Video"] },
+      { id: "nc-p3-s2", title: "Notion as a Workflow Hub", desc: "Use Notion databases, pages, and templates as the central hub for your automation outputs.", time: "35 min", diff: "Beginner", types: ["Practice"] },
+      { id: "nc-p3-s3", title: "Connecting Databases to Automations", desc: "Read from and write to Airtable and Notion inside Make and Zapier workflows.", time: "40 min", diff: "Intermediate", types: ["Practice"] },
+      { id: "nc-p3-s4", title: "Building a Simple No-Code App", desc: "Use Glide or Softr to turn your Airtable data into a simple web app — no code required.", time: "1 hour", diff: "Intermediate", types: ["Practice", "Project"] },
     ]),
-    namedPhase("data", 4, "Dashboards & Reporting", [
-      { title: "Looker Studio Dashboards", description: "Connect data sources and build readable executive dashboards.", estimatedTime: "4 hours", difficulty: "Beginner", learningTypes: ["Tool"], resources: [r("Looker Studio Help", "tool", URLS.lookerStudio), r("Google Analytics 4 Reports", "article", URLS.googleAnalytics)], correct: "Use dimensions and metrics with filters to build dashboard views", distractors: ["Use raw screenshots only", "Disable data connectors", "Avoid chart titles"], explanation: "Looker Studio dashboards rely on connected dimensions, metrics, filters, and charts." },
-      { title: "Power BI and Tableau Basics", description: "Understand common BI concepts across enterprise tools.", estimatedTime: "5 hours", difficulty: "Intermediate", learningTypes: ["Tool"], resources: [r("Power BI Overview", "article", URLS.powerBi), r("Tableau Get Started", "practice", URLS.tableau)], correct: "A calculated measure derives metrics from fields and formulas", distractors: ["A measure is a PDF", "A dashboard cannot filter", "A data source is always manual"], explanation: "Measures define reusable calculations in BI tools." },
-      { title: "Automated Reporting Pipelines", description: "Schedule analysis, chart exports, summaries, and email delivery.", estimatedTime: "5 hours", difficulty: "Advanced", learningTypes: ["Project"], resources: [r("Pandas 10 Minutes Guide", "article", URLS.pandas), r("Make Help Center", "tool", URLS.makeHelp)], correct: "Scheduled data refresh plus generated summary and delivery step", distractors: ["Manual screenshots only", "No timestamped outputs", "No exception alerts"], explanation: "Automated reporting needs refresh, analysis, delivery, and failure handling." },
-    ]),
-    namedPhase("data", 5, "Presenting Data Insights", [
-      { title: "Executive Data Storytelling", description: "Turn analysis into a decision narrative with caveats and recommendations.", estimatedTime: "3 hours", difficulty: "Intermediate", learningTypes: ["Reading"], resources: [r("Storytelling with Data Blog", "article", URLS.storytellingData), r("Data-to-Viz", "article", URLS.dataToViz)], correct: "Lead with decision context, evidence, and recommended action", distractors: ["Show every chart produced", "Hide limitations", "Use unexplained acronyms"], explanation: "Stakeholders need concise insight tied to action." },
-      { title: "Analytical QA and Reproducibility", description: "Validate numbers, document assumptions, and keep notebooks runnable.", estimatedTime: "3 hours", difficulty: "Intermediate", learningTypes: ["Practice"], resources: [r("Google Colab Intro", "tool", URLS.colab), r("Kaggle Pandas", "practice", URLS.kagglePandas)], correct: "Re-runable notebook with assumptions, data source, and validation checks", distractors: ["Hard-coded mystery numbers", "No source references", "Deleted code cells"], explanation: "Reproducibility lets others trust and audit the analysis." },
-      { title: "Stakeholder Presentation Practice", description: "Prepare concise slides, answer objections, and separate facts from recommendations.", estimatedTime: "3 hours", difficulty: "Intermediate", learningTypes: ["Practice"], resources: [r("Storytelling with Data Blog", "article", URLS.storytellingData), r("GitHub Pages Quickstart", "tool", URLS.githubPages)], correct: "Separate descriptive findings from recommended decisions", distractors: ["Present correlation as causation", "Hide uncertainty", "Use only raw tables"], explanation: "Good data presentations distinguish evidence from judgment." },
+    lightPhase("nc-p4", 4, "No-Code Projects", "Build real no-code automation projects and present them as a professional portfolio.", "You have 2 portfolio-ready no-code AI automation projects.", "2 weeks", "Week 7–8", "locked", [
+      { id: "nc-p4-s1", title: "Client Onboarding Automation", desc: "Build a complete client onboarding workflow using forms, Airtable, AI, and email automation.", time: "4 hours", diff: "Intermediate", types: ["Project"] },
+      { id: "nc-p4-s2", title: "Content Calendar System", desc: "Build a no-code content calendar that generates, schedules, and tracks content using AI.", time: "3 hours", diff: "Intermediate", types: ["Project"] },
+      { id: "nc-p4-s3", title: "Portfolio Presentation", desc: "Package your projects into a professional portfolio page.", time: "1 hour", diff: "Beginner", types: ["Practice"] },
     ]),
   ],
   projects: [
-    project("data-proj-1", "Sales Performance Dashboard", "Analyse a 12-month sales CSV with Python, create five key visualisations, and write an AI-assisted executive summary.", ["Python", "Pandas", "Visualization", "Executive writing"], ["Clean notebook", "Five charts", "Executive summary"], "10 hours", "Beginner", "data-p4"),
-    project("data-proj-2", "Customer Churn Analysis", "Use ML-assisted analysis to identify churn predictors in a telecom dataset and build a risk scoring model.", ["EDA", "scikit-learn", "Feature analysis"], ["Churn model", "Risk segments", "Insight memo"], "14 hours", "Intermediate", "data-p3"),
-    project("data-proj-3", "Automated Weekly Reporting Pipeline", "Build a Python and Make workflow that pulls data, runs analysis, generates charts, and emails a formatted report every Monday.", ["Automation", "Python reporting", "Email delivery"], ["Scheduled workflow", "Charts", "Email report", "Runbook"], "16 hours", "Advanced", "data-p4"),
+    lightProject("nc-proj-1", "Client Onboarding System", "Build a complete no-code client onboarding system: intake form → Airtable CRM → AI welcome email → Notion workspace creation.", ["Zapier", "Airtable", "Notion", "AI email"], ["Onboarding form", "CRM automation", "AI-personalised email", "Notion workspace"], "4 hours", "Intermediate", "nc-p4"),
+    lightProject("nc-proj-2", "AI Content Calendar", "Create a no-code content calendar that uses AI to generate content ideas, schedule posts, and track performance.", ["Make", "Airtable", "OpenAI", "Social tools"], ["Content idea generation", "Scheduling automation", "Performance tracking", "Documentation"], "3 hours", "Intermediate", "nc-p4"),
   ],
 };
 
-function phaseOneSection(id: string, title: string, description: string, correct: string, resources: RoadmapResource[]): RoadmapSection {
-  return lightSection({
-    id,
-    title,
-    description,
-    estimatedTime: "3 hours",
-    difficulty: "Beginner",
-    learningTypes: ["Reading", "Practice"],
-    resources,
-    correct,
-    distractors: ["Unstructured guessing without validation", "Publishing output without review", "Skipping source constraints"],
-    explanation: `${correct} is the professional technique for this topic.`,
-  });
-}
+// ═══════════════════════════════════════════════════════════════════════════════
+// 4. AI MARKETING AUTOMATION SPECIALIST
+// ═══════════════════════════════════════════════════════════════════════════════
 
-function careerRoadmap(
-  id: string,
-  slug: string,
-  title: string,
-  description: string,
-  category: string,
-  level: Roadmap["level"],
-  phase1: RoadmapSection[],
-  phaseTopics: [string, string, string, string],
-  resourcePairs: [RoadmapResource, RoadmapResource],
-  projects: RoadmapProject[]
-): Roadmap {
-  const prefix = slug.split("-").map((part) => part[0]).join("");
-  return {
-    id,
-    slug,
-    title,
-    description,
-    category,
-    level,
-    duration: "12 weeks",
-    status: "mvp-ready",
-    totalEstimatedHours: 66,
-    phases: [
-      phase(`${prefix}-p1`, 1, `${title} Foundations`, `Learn the core concepts, tools, and safety checks for ${title.toLowerCase()}.`, `You can complete a practical first workflow for ${title.toLowerCase()}.`, "2 weeks", "Week 1-2", "free", phase1),
-      ...phaseTopics.map((topic, index) =>
-        namedPhase(prefix, index + 2, topic, [
-          { title: `${topic}: Core Workflow`, description: `Practice the core workflow for ${topic.toLowerCase()}.`, estimatedTime: "3 hours", difficulty: index > 1 ? "Intermediate" : "Beginner", learningTypes: ["Reading", "Practice"], resources: resourcePairs, correct: `A documented ${topic.toLowerCase()} workflow with validation checks`, distractors: ["One-off prompt output", "No stakeholder criteria", "No measurable output"], explanation: `Professional ${topic.toLowerCase()} work needs repeatable workflow, validation, and measurable output.` },
-          { title: `${topic}: Tooling`, description: `Use industry tools and documentation for ${topic.toLowerCase()}.`, estimatedTime: "3 hours", difficulty: "Intermediate", learningTypes: ["Tool", "Practice"], resources: resourcePairs, correct: `Tool configuration matched to ${topic.toLowerCase()} requirements`, distractors: ["Default settings for every use case", "Manual copy-paste as the system", "No data or prompt versioning"], explanation: `Tools should be configured around the use case, risk, and output format.` },
-          { title: `${topic}: Quality Review`, description: `Review outputs for accuracy, safety, usability, and business fit.`, estimatedTime: "3 hours", difficulty: "Intermediate", learningTypes: ["Practice", "Quiz"], resources: resourcePairs, correct: `Quality checklist with examples, edge cases, and acceptance criteria`, distractors: ["Approval by intuition only", "No edge cases", "No ownership"], explanation: "Quality review turns AI work from a demo into a dependable workflow." },
-        ])
-      ),
-    ],
-    projects,
-  };
-}
-
-const aiContentCreator = careerRoadmap(
-  "4",
-  "ai-content-creator",
-  "AI Content Creator",
-  "Create SEO-informed articles, social content, newsletters, and scripts with AI while preserving strategy and editorial quality.",
-  "Content",
-  "Beginner",
-  [
-    phaseOneSection("content-p1-s1", "AI Writing Workflow Basics", "Use AI for ideation, drafting, editing, and repurposing without losing editorial judgment.", "Human-edited AI drafts with source and audience constraints", [r("HubSpot Content Marketing Guide", "article", URLS.hubspotContent), r("OpenAI Prompt Engineering Guide", "article", URLS.openAiPrompting)]),
-    phaseOneSection("content-p1-s2", "SEO Fundamentals for AI Content", "Learn search intent, page structure, internal links, and technical SEO basics.", "Search intent matched to content structure and keywords", [r("Google SEO Starter Guide", "article", URLS.googleSeo), r("freeCodeCamp SEO for Developers", "article", URLS.fccSeo)]),
-    phaseOneSection("content-p1-s3", "Content Strategy and Editorial Calendars", "Plan pillars, topics, cadence, audience fit, and review stages.", "Content pillars mapped to audience problems and funnel stage", [r("HubSpot Content Marketing Guide", "article", URLS.hubspotContent), r("Notion Templates", "tool", URLS.notionTemplates)]),
-    phaseOneSection("content-p1-s4", "Social Media Repurposing", "Turn one source asset into platform-specific posts and hooks.", "Platform-specific adaptation instead of one identical post everywhere", [r("YouTube Creators", "video", URLS.youtubeCreators), r("FlowGPT", "tool", URLS.flowGpt)]),
-    phaseOneSection("content-p1-s5", "Video Scripting with AI", "Create short-form and long-form scripts with hooks, beats, and calls to action.", "Script beats with hook, value sequence, and CTA", [r("YouTube Creators", "video", URLS.youtubeCreators), r("OpenAI Text Generation Guide", "article", URLS.openAiText)]),
+const aiMarketingAutomation: Roadmap = {
+  id: "4",
+  slug: "ai-marketing-automation-specialist",
+  title: "AI Marketing Automation Specialist",
+  description:
+    "Use AI to automate content, campaigns, lead generation, email flows, and marketing operations. Become the marketer who scales without a team.",
+  category: "Marketing",
+  level: "Beginner to Intermediate",
+  duration: "10 weeks",
+  status: "coming-soon",
+  totalEstimatedHours: 52,
+  phases: [
+    lightPhase("mkt-p1", 1, "Marketing Automation Foundations", "Understand modern marketing automation — what it is, how it works, and where AI creates the most value.", "You can map a marketing funnel and identify automation opportunities at each stage.", "2 weeks", "Week 1–2", "free", [
+      { id: "mkt-p1-s1", title: "Marketing Funnel Fundamentals", desc: "Understand the customer journey from awareness to purchase and where automation fits at each stage.", time: "25 min", diff: "Beginner", types: ["Reading", "Video"] },
+      { id: "mkt-p1-s2", title: "Marketing Automation Overview", desc: "Survey the marketing automation landscape — tools, use cases, and what's possible without a big team.", time: "20 min", diff: "Beginner", types: ["Reading"] },
+      { id: "mkt-p1-s3", title: "AI in Marketing", desc: "How AI is transforming content creation, personalisation, targeting, and campaign management.", time: "25 min", diff: "Beginner", types: ["Reading", "Video"] },
+      { id: "mkt-p1-s4", title: "Mapping Your Marketing Stack", desc: "Audit and map the tools in a marketing stack and identify integration and automation opportunities.", time: "30 min", diff: "Beginner", types: ["Practice"] },
+    ]),
+    lightPhase("mkt-p2", 2, "AI Content & Copywriting", "Use AI to create high-quality marketing content at scale — ads, emails, social posts, landing pages, and blogs.", "You can use AI to produce marketing content efficiently while maintaining brand voice and quality.", "2 weeks", "Week 3–4", "locked", [
+      { id: "mkt-p2-s1", title: "AI Copywriting Fundamentals", desc: "Learn to use AI for writing compelling marketing copy — headlines, CTAs, email subject lines, and ads.", time: "35 min", diff: "Beginner", types: ["Practice", "Video"] },
+      { id: "mkt-p2-s2", title: "Brand Voice in AI Content", desc: "Teach AI your brand voice so content stays consistent and on-brand at scale.", time: "30 min", diff: "Intermediate", types: ["Practice"] },
+      { id: "mkt-p2-s3", title: "Content Repurposing with AI", desc: "Turn one piece of content into 10 — repurpose blogs, videos, and podcasts across all channels using AI.", time: "35 min", diff: "Beginner", types: ["Practice"] },
+      { id: "mkt-p2-s4", title: "AI Content Calendar System", desc: "Build an AI-powered content calendar that plans, generates, and schedules content automatically.", time: "1 hour", diff: "Intermediate", types: ["Practice", "Project"] },
+    ]),
+    lightPhase("mkt-p3", 3, "Email & Lead Automation", "Build automated email sequences, lead nurturing flows, and lead capture systems using AI personalisation.", "You can build a complete lead capture and email nurturing automation.", "3 weeks", "Week 5–7", "locked", [
+      { id: "mkt-p3-s1", title: "Email Marketing Automation Basics", desc: "Understand email automation sequences, triggers, and segmentation — the foundation of email marketing.", time: "30 min", diff: "Beginner", types: ["Reading", "Video"] },
+      { id: "mkt-p3-s2", title: "AI-Personalised Email Sequences", desc: "Use AI to personalise email sequences based on subscriber behaviour, interests, and segment.", time: "40 min", diff: "Intermediate", types: ["Practice"] },
+      { id: "mkt-p3-s3", title: "Lead Capture & Qualification", desc: "Build automated lead capture, scoring, and qualification workflows that feed your CRM.", time: "45 min", diff: "Intermediate", types: ["Practice"] },
+      { id: "mkt-p3-s4", title: "CRM Integration & Lead Routing", desc: "Connect lead capture to a CRM and automate lead routing, follow-up, and status updates.", time: "40 min", diff: "Intermediate", types: ["Practice"] },
+      { id: "mkt-p3-s5", title: "Campaign Performance Reporting", desc: "Automate campaign performance reporting with dashboards and AI-generated summaries.", time: "35 min", diff: "Intermediate", types: ["Practice"] },
+    ]),
+    lightPhase("mkt-p4", 4, "Marketing Automation Projects", "Build complete marketing automation systems and present them as a professional portfolio.", "You have 2 portfolio-ready marketing automation projects.", "3 weeks", "Week 8–10", "locked", [
+      { id: "mkt-p4-s1", title: "Lead Generation Funnel", desc: "Build a complete AI-powered lead generation funnel from ad to CRM.", time: "5 hours", diff: "Intermediate", types: ["Project"] },
+      { id: "mkt-p4-s2", title: "Content Marketing System", desc: "Build an automated content marketing system that plans, creates, and distributes content.", time: "4 hours", diff: "Intermediate", types: ["Project"] },
+      { id: "mkt-p4-s3", title: "Portfolio Presentation", desc: "Present your marketing automation projects professionally.", time: "1 hour", diff: "Intermediate", types: ["Practice"] },
+    ]),
   ],
-  ["SEO Content Production", "Social Media Automation", "Newsletter and Email Content", "Video Scripting Portfolio"],
-  [r("Google SEO Starter Guide", "article", URLS.googleSeo), r("HubSpot Content Marketing Guide", "article", URLS.hubspotContent)],
-  [
-    project("content-proj-1", "SEO Blog Package", "Create an AI-assisted SEO article package with brief, draft, metadata, and QA checklist.", ["SEO", "AI writing", "Editing"], ["Content brief", "Draft", "Metadata", "QA checklist"], "8 hours", "Beginner", "aicc-p2"),
-    project("content-proj-2", "Social Repurposing System", "Repurpose one article into posts for LinkedIn, X, email, and video script.", ["Repurposing", "Platform adaptation", "Prompting"], ["Four channel outputs", "Prompt library", "Review notes"], "10 hours", "Intermediate", "aicc-p3"),
-    project("content-proj-3", "AI Content Calendar", "Build a four-week AI-supported editorial calendar with production workflow.", ["Strategy", "Calendar design", "Workflow"], ["Calendar", "Prompts", "Production SOP"], "12 hours", "Advanced", "aicc-p5"),
-  ]
-);
-
-const mlEngineer = careerRoadmap(
-  "5",
-  "ml-engineer",
-  "Machine Learning Engineer",
-  "Build, evaluate, deploy, and monitor machine-learning models with Python, scikit-learn, PyTorch, and MLOps practices.",
-  "Machine Learning",
-  "Intermediate",
-  [
-    phaseOneSection("ml-p1-s1", "Python and Notebooks for ML", "Set up reproducible notebooks and Python environments.", "Reproducible notebook with dependencies and fixed random seeds", [r("Kaggle Python Course", "practice", URLS.kagglePython), r("Google Colab Intro", "tool", URLS.colab)]),
-    phaseOneSection("ml-p1-s2", "Supervised Learning Basics", "Understand features, labels, train/test splits, and baseline models.", "Train/validation split with baseline model performance", [r("Kaggle Intro to ML", "practice", URLS.kaggleMl), r("scikit-learn Tutorial", "article", URLS.sklearn)]),
-    phaseOneSection("ml-p1-s3", "Model Evaluation Metrics", "Choose accuracy, precision, recall, F1, ROC-AUC, or RMSE based on task.", "Metric selected according to business cost of errors", [r("scikit-learn Tutorial", "article", URLS.sklearn), r("Kaggle Intro to ML", "practice", URLS.kaggleMl)]),
-    phaseOneSection("ml-p1-s4", "Neural Network Foundations", "Learn tensors, gradients, loss functions, and training loops.", "Loss function and gradient-based optimization", [r("PyTorch Basics", "practice", URLS.pytorch), r("fast.ai Course", "video", URLS.fastAi)]),
-    phaseOneSection("ml-p1-s5", "Data Leakage and Validation", "Prevent target leakage and build reliable validation schemes.", "Leakage checks before reporting model performance", [r("Kaggle Data Cleaning", "practice", URLS.kaggleDataCleaning), r("scikit-learn Tutorial", "article", URLS.sklearn)]),
+  projects: [
+    lightProject("mkt-proj-1", "AI Lead Generation Funnel", "Build a complete lead generation funnel: landing page → lead capture → AI qualification → CRM → personalised email sequence.", ["Make", "Airtable CRM", "OpenAI", "Email tool"], ["Lead capture form", "AI qualification", "CRM automation", "Email sequence"], "5 hours", "Intermediate", "mkt-p4"),
+    lightProject("mkt-proj-2", "AI Content Marketing System", "Build an automated content system that generates weekly content ideas, creates drafts, and schedules distribution across channels.", ["Make", "OpenAI", "Social tools", "Notion"], ["Content idea generation", "AI drafts", "Multi-channel scheduling", "Performance tracking"], "4 hours", "Intermediate", "mkt-p4"),
   ],
-  ["scikit-learn Model Building", "PyTorch Deep Learning", "MLOps and Experiment Tracking", "Model Deployment and Monitoring"],
-  [r("scikit-learn Tutorial", "article", URLS.sklearn), r("MLOps Zoomcamp", "practice", URLS.mlopsZoomcamp)],
-  [
-    project("ml-proj-1", "House Price Prediction Model", "Train and evaluate a regression model with feature cleaning and metric reporting.", ["Pandas", "scikit-learn", "Regression"], ["Notebook", "Metrics", "Model card"], "12 hours", "Beginner", "me-p2"),
-    project("ml-proj-2", "Image Classifier Prototype", "Fine-tune a small neural-network classifier and report confusion matrix results.", ["PyTorch", "Evaluation", "Computer vision"], ["Training notebook", "Confusion matrix", "Demo"], "16 hours", "Intermediate", "me-p3"),
-    project("ml-proj-3", "Model Deployment Runbook", "Package a trained model behind an API with monitoring and rollback notes.", ["Deployment", "Monitoring", "MLOps"], ["API prototype", "Monitoring checklist", "Runbook"], "18 hours", "Advanced", "me-p5"),
-  ]
-);
+};
 
-const aiProductManager = careerRoadmap(
-  "6",
-  "ai-product-manager",
-  "AI Product Manager",
-  "Lead AI products from user problem discovery to roadmap, metrics, launch, and responsible operation.",
-  "Product",
-  "Beginner to Intermediate",
-  [
-    phaseOneSection("pm-p1-s1", "AI Product Strategy", "Identify where AI creates user value and where it adds risk.", "Problem framing before model or vendor selection", [r("Mind the Product", "article", URLS.mindTheProduct), r("Product School AI PM Guide", "article", URLS.productSchoolAi)]),
-    phaseOneSection("pm-p1-s2", "AI Capability and Feasibility", "Evaluate data availability, model limits, latency, cost, and evaluation needs.", "Feasibility review including data, latency, cost, and risk", [r("OpenAI Text Generation Guide", "article", URLS.openAiText), r("Google Responsible AI Practices", "article", URLS.googleResponsibleAi)]),
-    phaseOneSection("pm-p1-s3", "User Research for AI Features", "Discover user tasks, trust expectations, and failure tolerance.", "Research questions covering trust, errors, and escalation", [r("NN/g AI UX", "article", URLS.nngroupAiUx), r("Mind the Product", "article", URLS.mindTheProduct)]),
-    phaseOneSection("pm-p1-s4", "AI Product Metrics", "Define quality, adoption, task success, cost, latency, and safety metrics.", "Metrics that include task success and model quality", [r("Product School AI PM Guide", "article", URLS.productSchoolAi), r("Stanford HELM", "article", URLS.helm)]),
-    phaseOneSection("pm-p1-s5", "Responsible AI Roadmapping", "Balance experimentation, governance, legal review, and release criteria.", "Roadmap gates for evals, safety, compliance, and launch readiness", [r("NIST AI RMF", "article", URLS.nistAiRmf), r("Google Responsible AI Practices", "article", URLS.googleResponsibleAi)]),
-  ],
-  ["AI Opportunity Discovery", "Roadmapping and Prioritization", "AI Metrics and Experiments", "Stakeholder Launch Management"],
-  [r("Mind the Product", "article", URLS.mindTheProduct), r("NIST AI RMF", "article", URLS.nistAiRmf)],
-  [
-    project("pm-proj-1", "AI Feature PRD", "Write a PRD for an AI assistant feature with scope, risks, evals, and metrics.", ["PRD writing", "AI strategy", "Metrics"], ["PRD", "Risk log", "Metric tree"], "10 hours", "Beginner", "aipm-p2"),
-    project("pm-proj-2", "AI Roadmap Prioritization", "Prioritize a backlog of AI opportunities using impact, feasibility, risk, and data readiness.", ["Prioritization", "Roadmapping", "Stakeholder comms"], ["Prioritization matrix", "Roadmap", "Decision memo"], "10 hours", "Intermediate", "aipm-p3"),
-    project("pm-proj-3", "Launch Readiness Review", "Create launch criteria and review process for a customer-facing AI feature.", ["Governance", "Evals", "Launch"], ["Checklist", "Experiment plan", "Launch readout"], "12 hours", "Advanced", "aipm-p5"),
-  ]
-);
+// ═══════════════════════════════════════════════════════════════════════════════
+// 5. AI PRODUCTIVITY CONSULTANT
+// ═══════════════════════════════════════════════════════════════════════════════
 
-const aiUxDesigner = careerRoadmap(
-  "7",
-  "ai-ux-designer",
-  "AI UX Designer",
-  "Design AI-assisted product experiences that are understandable, controllable, ethical, and useful.",
-  "Design",
-  "Beginner to Intermediate",
-  [
-    phaseOneSection("ux-p1-s1", "AI UX Patterns", "Learn AI interaction patterns: suggestions, copilots, generators, agents, and review loops.", "Human-in-the-loop interaction pattern for uncertain AI output", [r("NN/g AI UX", "article", URLS.nngroupAiUx), r("Google Responsible AI Practices", "article", URLS.googleResponsibleAi)]),
-    phaseOneSection("ux-p1-s2", "Figma AI and Design Acceleration", "Use AI features and plugins while keeping design intent explicit.", "AI-generated draft refined with design-system constraints", [r("Figma First Draft Help", "tool", URLS.figmaAi), r("NN/g AI UX", "article", URLS.nngroupAiUx)]),
-    phaseOneSection("ux-p1-s3", "User Research with AI", "Summarize interviews, cluster themes, and avoid synthetic-user overtrust.", "AI-assisted synthesis checked against source evidence", [r("OpenAI Prompt Engineering Guide", "article", URLS.openAiPrompting), r("Mind the Product", "article", URLS.mindTheProduct)]),
-    phaseOneSection("ux-p1-s4", "Designing for Trust and Control", "Add confidence, editability, undo, provenance, and escalation paths.", "Controls for review, override, and source visibility", [r("Google Responsible AI Practices", "article", URLS.googleResponsibleAi), r("NIST AI RMF", "article", URLS.nistAiRmf)]),
-    phaseOneSection("ux-p1-s5", "Ethical AI Design Basics", "Consider bias, consent, privacy, explainability, and user agency.", "Bias and privacy review before shipping AI flows", [r("EU AI Act Overview", "article", URLS.euAiAct), r("NIST AI RMF", "article", URLS.nistAiRmf)]),
+const aiProductivityConsultant: Roadmap = {
+  id: "5",
+  slug: "ai-productivity-consultant",
+  title: "AI Productivity Consultant",
+  description:
+    "Help individuals and teams dramatically improve their productivity using AI tools, smart workflows, and personal operating systems.",
+  category: "Productivity",
+  level: "Beginner",
+  duration: "8 weeks",
+  status: "coming-soon",
+  totalEstimatedHours: 38,
+  phases: [
+    lightPhase("prod-p1", 1, "Productivity Fundamentals", "Build a solid foundation in productivity principles before adding AI — so you amplify good habits, not bad ones.", "You can assess any person's or team's productivity system and identify improvement opportunities.", "2 weeks", "Week 1–2", "free", [
+      { id: "prod-p1-s1", title: "Productivity Principles", desc: "Core productivity concepts: time blocking, priority frameworks, energy management, and focus systems.", time: "25 min", diff: "Beginner", types: ["Reading", "Video"] },
+      { id: "prod-p1-s2", title: "The Personal Operating System", desc: "Design a personal OS — the system that manages your tasks, goals, information, and projects.", time: "30 min", diff: "Beginner", types: ["Reading", "Practice"] },
+      { id: "prod-p1-s3", title: "Productivity Audit Framework", desc: "A structured method to audit any person's or team's current productivity system.", time: "25 min", diff: "Beginner", types: ["Practice"] },
+      { id: "prod-p1-s4", title: "Common Productivity Blockers", desc: "Identify and address the most common productivity killers — meetings, context switching, and unclear priorities.", time: "20 min", diff: "Beginner", types: ["Reading"] },
+    ]),
+    lightPhase("prod-p2", 2, "AI Tools for Productivity", "Master the AI tools that create the biggest productivity gains — from AI writing assistants to meeting summarisers.", "You can use AI tools to save 2+ hours per day on common knowledge work tasks.", "2 weeks", "Week 3–4", "locked", [
+      { id: "prod-p2-s1", title: "AI Writing & Communication", desc: "Use AI to write emails, documents, and messages faster and better.", time: "30 min", diff: "Beginner", types: ["Practice"] },
+      { id: "prod-p2-s2", title: "AI Meeting Management", desc: "Use AI to prepare for, run, and follow up on meetings — transcription, summaries, and action items.", time: "30 min", diff: "Beginner", types: ["Practice", "Video"] },
+      { id: "prod-p2-s3", title: "AI Research & Summarisation", desc: "Use AI to research topics, summarise documents, and extract key insights in minutes.", time: "25 min", diff: "Beginner", types: ["Practice"] },
+      { id: "prod-p2-s4", title: "Building an AI-Enhanced Personal OS", desc: "Integrate AI tools into your personal operating system for maximum leverage.", time: "45 min", diff: "Intermediate", types: ["Practice"] },
+    ]),
+    lightPhase("prod-p3", 3, "Consulting Skills", "Develop the consulting skills needed to assess, advise, and implement productivity improvements for clients.", "You can run a productivity consulting engagement from discovery to implementation.", "2 weeks", "Week 5–6", "locked", [
+      { id: "prod-p3-s1", title: "Consulting Fundamentals", desc: "Core consulting skills: discovery, diagnosis, recommendation, and implementation.", time: "30 min", diff: "Beginner", types: ["Reading"] },
+      { id: "prod-p3-s2", title: "Running a Productivity Discovery", desc: "How to run a discovery session with a client to understand their current system and pain points.", time: "35 min", diff: "Intermediate", types: ["Practice"] },
+      { id: "prod-p3-s3", title: "Delivering Recommendations", desc: "How to present productivity recommendations clearly and get buy-in from clients.", time: "30 min", diff: "Intermediate", types: ["Practice"] },
+      { id: "prod-p3-s4", title: "Implementation & Follow-up", desc: "Support clients through implementation and follow up to ensure lasting change.", time: "25 min", diff: "Intermediate", types: ["Practice"] },
+    ]),
+    lightPhase("prod-p4", 4, "Consulting Projects", "Deliver real productivity consulting projects and build your portfolio.", "You have a portfolio-ready productivity consulting case study.", "2 weeks", "Week 7–8", "locked", [
+      { id: "prod-p4-s1", title: "Personal Productivity Overhaul", desc: "Conduct a full productivity audit and redesign your own system as a case study.", time: "3 hours", diff: "Intermediate", types: ["Project"] },
+      { id: "prod-p4-s2", title: "Team Productivity Consultation", desc: "Simulate a team productivity consulting engagement and produce a recommendation report.", time: "3 hours", diff: "Intermediate", types: ["Project"] },
+      { id: "prod-p4-s3", title: "Portfolio & Service Offering", desc: "Package your skills into a clear consulting service offering and portfolio.", time: "1 hour", diff: "Beginner", types: ["Practice"] },
+    ]),
   ],
-  ["AI Interaction Patterns", "Figma AI Prototyping", "Research Synthesis with AI", "Responsible AI Design Portfolio"],
-  [r("NN/g AI UX", "article", URLS.nngroupAiUx), r("Figma First Draft Help", "tool", URLS.figmaAi)],
-  [
-    project("ux-proj-1", "AI Copilot UX Flow", "Design a copilot workflow with suggestions, user edits, confidence cues, and undo.", ["Interaction design", "Trust UX", "Figma"], ["Flow diagram", "Prototype", "UX rationale"], "10 hours", "Beginner", "aiud-p2"),
-    project("ux-proj-2", "AI Research Synthesis Board", "Use AI to cluster interview notes and produce validated design insights.", ["Research synthesis", "Prompting", "Evidence review"], ["Synthesis board", "Prompt log", "Findings report"], "10 hours", "Intermediate", "aiud-p4"),
-    project("ux-proj-3", "Responsible AI Design Case Study", "Create a case study showing risk review, controls, and final prototype.", ["Ethics", "Product design", "Portfolio"], ["Prototype", "Risk matrix", "Case study"], "14 hours", "Advanced", "aiud-p5"),
-  ]
-);
+  projects: [
+    lightProject("prod-proj-1", "Personal Productivity System", "Design and implement a complete AI-enhanced personal productivity system — tasks, goals, information, and daily routine.", ["Notion", "AI tools", "Calendar", "Task manager"], ["Productivity audit", "System design", "AI integration", "30-day review"], "3 hours", "Beginner", "prod-p4"),
+    lightProject("prod-proj-2", "Team Productivity Consulting Report", "Conduct a simulated productivity consulting engagement and deliver a professional recommendation report.", ["Discovery framework", "AI analysis", "Report writing"], ["Discovery session notes", "Diagnosis", "Recommendations", "Implementation plan"], "3 hours", "Intermediate", "prod-p4"),
+  ],
+};
 
-const llmApplicationDeveloper = careerRoadmap(
-  "8",
-  "llm-app-developer",
-  "LLM Application Developer",
-  "Build retrieval, tool-use, structured-output, and production-ready applications on top of language models.",
-  "Development",
-  "Intermediate",
-  [
-    phaseOneSection("llm-p1-s1", "LLM API Fundamentals", "Call text-generation APIs, handle model parameters, tokens, and errors.", "API calls with token, latency, and error handling", [r("OpenAI Text Generation Guide", "article", URLS.openAiText), r("Anthropic Messages API", "article", URLS.anthropicApi)]),
-    phaseOneSection("llm-p1-s2", "Structured Outputs", "Return typed JSON for downstream code and automation.", "Schema-constrained structured output validated by code", [r("OpenAI Structured Outputs", "article", URLS.openAiStructured), r("Instructor Library", "tool", URLS.instructor)]),
-    phaseOneSection("llm-p1-s3", "RAG Concepts", "Understand embeddings, chunking, vector search, and grounded generation.", "Retrieval augmented generation with source-grounded context", [r("LangChain RAG Tutorial", "article", URLS.langchainRag), r("Pinecone Learn", "article", URLS.pineconeLearn)]),
-    phaseOneSection("llm-p1-s4", "Prompt and Response Evaluation", "Measure answer quality, faithfulness, and regression risk.", "Eval set with expected behavior and failure cases", [r("LangSmith Docs", "tool", URLS.langSmith), r("Stanford HELM", "article", URLS.helm)]),
-    phaseOneSection("llm-p1-s5", "App Safety and Guardrails", "Apply policy checks, refusal paths, rate limits, and logging.", "Guardrails for unsafe inputs, PII, and ungrounded answers", [r("OpenAI Usage Policies", "article", URLS.openAiPolicies), r("NIST AI RMF", "article", URLS.nistAiRmf)]),
-  ],
-  ["LangChain Application Patterns", "RAG and Vector Databases", "Fine-Tuning and Model Adaptation", "Production LLM App Deployment"],
-  [r("LangChain RAG Tutorial", "article", URLS.langchainRag), r("Hugging Face NLP Course", "article", URLS.hfCourse)],
-  [
-    project("llm-proj-1", "Document Q&A App", "Build a RAG app over a small document collection with citations.", ["RAG", "Embeddings", "Evaluation"], ["RAG app", "Source citations", "Eval set"], "14 hours", "Intermediate", "lad-p3"),
-    project("llm-proj-2", "Structured CRM Note Extractor", "Extract contacts, tasks, and risks from sales notes into typed JSON.", ["Structured outputs", "Validation", "Prompting"], ["Schema", "Extractor", "Error cases"], "10 hours", "Intermediate", "lad-p2"),
-    project("llm-proj-3", "Production Readiness Plan", "Create deployment, monitoring, cost, safety, and incident response plan for an LLM app.", ["MLOps", "Monitoring", "Safety"], ["Runbook", "Cost model", "Monitoring checklist"], "12 hours", "Advanced", "lad-p5"),
-  ]
-);
+// ═══════════════════════════════════════════════════════════════════════════════
+// 6. AI OPERATIONS ASSISTANT
+// ═══════════════════════════════════════════════════════════════════════════════
 
-const aiEthicsSpecialist = careerRoadmap(
-  "9",
-  "ai-ethics-specialist",
-  "AI Ethics & Governance Specialist",
-  "Assess AI systems for risk, bias, policy compliance, transparency, and responsible deployment.",
-  "Governance",
-  "Intermediate",
-  [
-    phaseOneSection("ethics-p1-s1", "Responsible AI Frameworks", "Compare NIST, Google, and organizational responsible AI principles.", "Risk management framework mapped to AI system lifecycle", [r("NIST AI RMF", "article", URLS.nistAiRmf), r("Google Responsible AI Practices", "article", URLS.googleResponsibleAi)]),
-    phaseOneSection("ethics-p1-s2", "EU AI Act Basics", "Understand risk categories, obligations, and governance implications.", "Risk classification under the EU AI Act", [r("EU AI Act Overview", "article", URLS.euAiAct), r("NIST AI RMF", "article", URLS.nistAiRmf)]),
-    phaseOneSection("ethics-p1-s3", "Bias and Fairness Auditing", "Identify representational, measurement, and outcome bias in AI systems.", "Bias audit comparing performance across affected groups", [r("Google Responsible AI Practices", "article", URLS.googleResponsibleAi), r("Stanford HELM", "article", URLS.helm)]),
-    phaseOneSection("ethics-p1-s4", "Transparency and Documentation", "Create model cards, data sheets, decision logs, and user-facing disclosures.", "Model documentation covering intended use and limitations", [r("Hugging Face NLP Course", "article", URLS.hfCourse), r("NIST AI RMF", "article", URLS.nistAiRmf)]),
-    phaseOneSection("ethics-p1-s5", "AI Incident and Risk Review", "Prepare escalation paths, monitoring, and post-incident analysis.", "Incident process with severity, owner, mitigation, and follow-up", [r("OWASP API Security Top 10", "article", URLS.owaspApi), r("Google Cloud Security Best Practices", "article", URLS.googleSecurity)]),
+const aiOperationsAssistant: Roadmap = {
+  id: "6",
+  slug: "ai-operations-assistant",
+  title: "AI Operations Assistant",
+  description:
+    "Support business operations with AI tools, dashboards, process automation, and reporting systems that keep teams aligned and informed.",
+  category: "Operations",
+  level: "Beginner to Intermediate",
+  duration: "12 weeks",
+  status: "coming-soon",
+  totalEstimatedHours: 56,
+  phases: [
+    lightPhase("ops-p1", 1, "Operations Fundamentals", "Understand business operations — what ops teams do, what good operations look like, and where AI creates the most value.", "You can describe the core functions of a business operations team and identify AI opportunities.", "2 weeks", "Week 1–2", "free", [
+      { id: "ops-p1-s1", title: "Business Operations Overview", desc: "What business operations means, what ops teams do, and why it matters for every company.", time: "25 min", diff: "Beginner", types: ["Reading", "Video"] },
+      { id: "ops-p1-s2", title: "Operations Metrics & KPIs", desc: "The key metrics that operations teams track — and how to use them to identify problems and opportunities.", time: "25 min", diff: "Beginner", types: ["Reading"] },
+      { id: "ops-p1-s3", title: "AI in Operations", desc: "How AI is being used across operations — from reporting to process automation to decision support.", time: "25 min", diff: "Beginner", types: ["Reading", "Video"] },
+      { id: "ops-p1-s4", title: "Operations Audit", desc: "Conduct a structured operations audit to identify inefficiencies and automation opportunities.", time: "35 min", diff: "Beginner", types: ["Practice"] },
+    ]),
+    lightPhase("ops-p2", 2, "Data & Reporting Automation", "Build automated data collection, processing, and reporting systems that give teams real-time visibility.", "You can build automated dashboards and reports that update without manual intervention.", "3 weeks", "Week 3–5", "locked", [
+      { id: "ops-p2-s1", title: "Data Collection Automation", desc: "Automate the collection of operational data from multiple sources into a central database.", time: "40 min", diff: "Intermediate", types: ["Practice"] },
+      { id: "ops-p2-s2", title: "Building Dashboards", desc: "Create operational dashboards in Airtable, Notion, or Google Sheets that update automatically.", time: "45 min", diff: "Intermediate", types: ["Practice", "Video"] },
+      { id: "ops-p2-s3", title: "AI-Generated Reports", desc: "Use AI to generate narrative summaries of operational data — turning numbers into insights.", time: "35 min", diff: "Intermediate", types: ["Practice"] },
+      { id: "ops-p2-s4", title: "Automated Report Distribution", desc: "Schedule and automate the distribution of reports to stakeholders via email or Slack.", time: "30 min", diff: "Intermediate", types: ["Practice"] },
+    ]),
+    lightPhase("ops-p3", 3, "Process Automation", "Automate the most common operational processes — onboarding, approvals, scheduling, and status updates.", "You can automate 3+ common operational processes end-to-end.", "4 weeks", "Week 6–9", "locked", [
+      { id: "ops-p3-s1", title: "Employee Onboarding Automation", desc: "Build a complete employee onboarding automation — from offer accepted to day one ready.", time: "1 hour", diff: "Intermediate", types: ["Practice", "Project"] },
+      { id: "ops-p3-s2", title: "Approval Workflow Automation", desc: "Automate common approval workflows — expense approvals, leave requests, and vendor approvals.", time: "45 min", diff: "Intermediate", types: ["Practice"] },
+      { id: "ops-p3-s3", title: "Meeting & Scheduling Automation", desc: "Automate meeting scheduling, preparation, and follow-up using AI and calendar tools.", time: "40 min", diff: "Intermediate", types: ["Practice"] },
+      { id: "ops-p3-s4", title: "Status Update Automation", desc: "Build automated status update systems that keep teams informed without manual check-ins.", time: "35 min", diff: "Intermediate", types: ["Practice"] },
+      { id: "ops-p3-s5", title: "Vendor & Supplier Automation", desc: "Automate vendor communication, order tracking, and invoice processing.", time: "40 min", diff: "Intermediate", types: ["Practice"] },
+    ]),
+    lightPhase("ops-p4", 4, "Operations Projects", "Build complete operations automation systems and present them professionally.", "You have 2 portfolio-ready operations automation projects.", "3 weeks", "Week 10–12", "locked", [
+      { id: "ops-p4-s1", title: "Operations Dashboard Project", desc: "Build a complete real-time operations dashboard for a sample business.", time: "4 hours", diff: "Intermediate", types: ["Project"] },
+      { id: "ops-p4-s2", title: "Process Automation Project", desc: "Build a complete end-to-end process automation for a common operations workflow.", time: "4 hours", diff: "Intermediate", types: ["Project"] },
+      { id: "ops-p4-s3", title: "Portfolio Presentation", desc: "Present your operations projects professionally.", time: "1 hour", diff: "Intermediate", types: ["Practice"] },
+    ]),
   ],
-  ["AI Policy and Risk Classification", "Bias Audit Methods", "Governance Documentation", "Responsible AI Review Board"],
-  [r("NIST AI RMF", "article", URLS.nistAiRmf), r("EU AI Act Overview", "article", URLS.euAiAct)],
-  [
-    project("ethics-proj-1", "AI Risk Assessment", "Assess a fictional hiring AI feature for risk, stakeholders, controls, and launch gates.", ["Risk management", "Policy", "Documentation"], ["Risk register", "Mitigation plan", "Launch gates"], "10 hours", "Intermediate", "aegs-p2"),
-    project("ethics-proj-2", "Bias Audit Report", "Evaluate model outputs across user groups and write a fairness findings report.", ["Bias audit", "Metrics", "Communication"], ["Audit notebook", "Findings report", "Recommendations"], "14 hours", "Advanced", "aegs-p3"),
-    project("ethics-proj-3", "Governance Playbook", "Create a governance checklist and review process for AI product teams.", ["Governance", "Process design", "Responsible AI"], ["Checklist", "Review workflow", "Template pack"], "12 hours", "Advanced", "aegs-p5"),
-  ]
-);
+  projects: [
+    lightProject("ops-proj-1", "Real-Time Operations Dashboard", "Build a live operations dashboard that pulls data from multiple sources, shows key KPIs, and alerts the team to issues.", ["Airtable", "Make", "Slack", "AI summaries"], ["Data collection automation", "Live dashboard", "Alert system", "AI narrative reports"], "4 hours", "Intermediate", "ops-p4"),
+    lightProject("ops-proj-2", "Employee Onboarding Automation", "Build a complete employee onboarding automation from offer acceptance to day-one setup.", ["Make", "Notion", "Email", "Slack"], ["Onboarding trigger", "Task assignments", "Welcome communications", "Day-one checklist"], "4 hours", "Intermediate", "ops-p4"),
+  ],
+};
 
-const aiSalesMarketing = careerRoadmap(
-  "10",
-  "ai-sales-marketing",
-  "AI Sales & Marketing Specialist",
-  "Use AI to improve CRM workflows, personalization, campaign creation, forecasting, and revenue operations.",
-  "Sales & Marketing",
-  "Beginner to Intermediate",
-  [
-    phaseOneSection("sales-p1-s1", "AI CRM Workflow Basics", "Use AI to summarize leads, enrich CRM records, and prioritize follow-up.", "CRM workflow with validated enrichment and next-best action", [r("Salesforce AI", "article", URLS.salesforceAi), r("HubSpot AI Sales Guide", "article", URLS.hubspotAiSales)]),
-    phaseOneSection("sales-p1-s2", "Personalisation at Scale", "Segment audiences and generate tailored messaging with review controls.", "Segment-specific messaging based on verified attributes", [r("HubSpot AI Sales Guide", "article", URLS.hubspotAiSales), r("OpenAI Prompt Engineering Guide", "article", URLS.openAiPrompting)]),
-    phaseOneSection("sales-p1-s3", "AI Ad and Campaign Creation", "Create campaign briefs, ad variants, landing-page ideas, and QA checklists.", "Campaign variants mapped to audience, channel, and offer", [r("Google SEO Starter Guide", "article", URLS.googleSeo), r("HubSpot Content Marketing Guide", "article", URLS.hubspotContent)]),
-    phaseOneSection("sales-p1-s4", "Sales Forecasting Foundations", "Understand pipeline stages, conversion rates, seasonality, and forecast hygiene.", "Forecast built from pipeline stages and historical conversion rates", [r("Google Analytics 4 Reports", "article", URLS.googleAnalytics), r("Khan Academy Statistics", "article", URLS.khanStats)]),
-    phaseOneSection("sales-p1-s5", "Responsible Sales Automation", "Respect consent, opt-outs, claims, and human review of outbound messages.", "Compliance and opt-out checks before outbound automation", [r("OpenAI Usage Policies", "article", URLS.openAiPolicies), r("NIST AI RMF", "article", URLS.nistAiRmf)]),
+// ═══════════════════════════════════════════════════════════════════════════════
+// 7. AI CUSTOMER SUPPORT AUTOMATION SPECIALIST
+// ═══════════════════════════════════════════════════════════════════════════════
+
+const aiCustomerSupportAutomation: Roadmap = {
+  id: "7",
+  slug: "ai-customer-support-automation-specialist",
+  title: "AI Customer Support Automation Specialist",
+  description:
+    "Build AI-powered support flows, chatbots, knowledge bases, and ticket automation systems that delight customers at scale.",
+  category: "Customer Support",
+  level: "Intermediate",
+  duration: "12 weeks",
+  status: "coming-soon",
+  totalEstimatedHours: 58,
+  phases: [
+    lightPhase("cs-p1", 1, "Customer Support Fundamentals", "Understand modern customer support operations and where AI creates the highest impact.", "You can analyse a support operation and identify automation opportunities.", "2 weeks", "Week 1–2", "free", [
+      { id: "cs-p1-s1", title: "Support Operations Overview", desc: "How modern customer support teams operate — channels, tiers, metrics, and tools.", time: "25 min", diff: "Beginner", types: ["Reading", "Video"] },
+      { id: "cs-p1-s2", title: "Customer Journey in Support", desc: "Map the customer journey through a support interaction — from first contact to resolution.", time: "25 min", diff: "Beginner", types: ["Reading", "Practice"] },
+      { id: "cs-p1-s3", title: "AI in Customer Support", desc: "How AI is transforming support — chatbots, ticket classification, knowledge bases, and sentiment analysis.", time: "25 min", diff: "Beginner", types: ["Reading", "Video"] },
+      { id: "cs-p1-s4", title: "Key Support Metrics", desc: "The metrics that matter in support: CSAT, FRT, resolution rate, and how AI improves each.", time: "20 min", diff: "Beginner", types: ["Reading"] },
+    ]),
+    lightPhase("cs-p2", 2, "Chatbot & AI Agent Design", "Design and build AI-powered chatbots and support agents that handle common customer queries.", "You can design and deploy a basic AI support chatbot.", "3 weeks", "Week 3–5", "locked", [
+      { id: "cs-p2-s1", title: "Chatbot Design Principles", desc: "Design chatbots that feel helpful and natural — conversation flows, fallbacks, and escalation.", time: "35 min", diff: "Intermediate", types: ["Reading", "Video"] },
+      { id: "cs-p2-s2", title: "Conversation Flow Mapping", desc: "Map conversation flows for the top 10 support queries — the foundation of any chatbot.", time: "40 min", diff: "Intermediate", types: ["Practice"] },
+      { id: "cs-p2-s3", title: "AI Agent Tools Overview", desc: "Survey the tools for building AI support agents — Intercom, Tidio, Voiceflow, and custom builds.", time: "30 min", diff: "Intermediate", types: ["Reading", "Video"] },
+      { id: "cs-p2-s4", title: "Building Your First Chatbot", desc: "Build a functional AI support chatbot for a sample business scenario.", time: "2 hours", diff: "Intermediate", types: ["Practice", "Project"] },
+      { id: "cs-p2-s5", title: "Testing and Improving", desc: "Test your chatbot with real scenarios and iterate based on conversation quality.", time: "1 hour", diff: "Intermediate", types: ["Practice"] },
+    ]),
+    lightPhase("cs-p3", 3, "Knowledge Base & Ticket Automation", "Build an AI-powered knowledge base and automate ticket routing, classification, and resolution.", "You can build an AI-powered knowledge base and automate ticket workflows.", "4 weeks", "Week 6–9", "locked", [
+      { id: "cs-p3-s1", title: "Knowledge Base Design", desc: "Design a knowledge base that AI can use to answer questions — structure, content, and maintenance.", time: "35 min", diff: "Intermediate", types: ["Reading", "Practice"] },
+      { id: "cs-p3-s2", title: "AI Content for Support", desc: "Use AI to generate, update, and improve knowledge base articles at scale.", time: "40 min", diff: "Intermediate", types: ["Practice"] },
+      { id: "cs-p3-s3", title: "Ticket Classification Automation", desc: "Build an AI system that classifies incoming tickets by type, priority, and required skill.", time: "45 min", diff: "Intermediate", types: ["Practice"] },
+      { id: "cs-p3-s4", title: "Auto-Resolution Workflows", desc: "Build workflows that automatically resolve common ticket types without human intervention.", time: "1 hour", diff: "Advanced", types: ["Practice", "Project"] },
+      { id: "cs-p3-s5", title: "Escalation Logic", desc: "Design intelligent escalation logic that routes complex issues to the right human agent.", time: "35 min", diff: "Intermediate", types: ["Practice"] },
+    ]),
+    lightPhase("cs-p4", 4, "Support Automation Projects", "Build complete support automation systems for real business scenarios.", "You have 2 portfolio-ready support automation projects.", "3 weeks", "Week 10–12", "locked", [
+      { id: "cs-p4-s1", title: "AI Support Chatbot Project", desc: "Build a complete AI support chatbot for a sample e-commerce business.", time: "5 hours", diff: "Intermediate", types: ["Project"] },
+      { id: "cs-p4-s2", title: "Ticket Automation System", desc: "Build a complete ticket automation system with classification, routing, and escalation.", time: "4 hours", diff: "Advanced", types: ["Project"] },
+      { id: "cs-p4-s3", title: "Portfolio Presentation", desc: "Present your support automation projects professionally.", time: "1 hour", diff: "Intermediate", types: ["Practice"] },
+    ]),
   ],
-  ["AI CRM Operations", "Personalized Outreach Systems", "AI Campaign Production", "Forecasting and Revenue Reporting"],
-  [r("Salesforce AI", "article", URLS.salesforceAi), r("HubSpot AI Sales Guide", "article", URLS.hubspotAiSales)],
-  [
-    project("sales-proj-1", "AI Lead Research Workflow", "Create a workflow that enriches inbound leads and drafts personalized follow-up notes.", ["CRM", "Prompting", "Personalization"], ["Lead profile", "Email draft", "CRM update"], "8 hours", "Beginner", "aism-p2"),
-    project("sales-proj-2", "Campaign Variant Generator", "Generate and QA multiple ad and landing-page message variants for a campaign.", ["Campaign strategy", "AI writing", "QA"], ["Campaign brief", "Variants", "Review checklist"], "10 hours", "Intermediate", "aism-p4"),
-    project("sales-proj-3", "Sales Forecasting Dashboard", "Build a simple forecast model and dashboard using CRM-style pipeline data.", ["Forecasting", "Analytics", "Reporting"], ["Forecast sheet", "Dashboard", "Insight memo"], "14 hours", "Advanced", "aism-p5"),
-  ]
-);
+  projects: [
+    lightProject("cs-proj-1", "AI Support Chatbot", "Build an AI chatbot that handles the top 10 support queries for a sample e-commerce business, with escalation logic.", ["Voiceflow or Tidio", "OpenAI", "Knowledge base", "Escalation"], ["Conversation flows", "AI responses", "Escalation logic", "Testing report"], "5 hours", "Intermediate", "cs-p4"),
+    lightProject("cs-proj-2", "Ticket Automation System", "Create an automated ticket routing and classification system with AI-powered auto-resolution and escalation.", ["Make", "OpenAI", "Helpdesk tool", "Slack"], ["Ticket classification", "Auto-resolution", "Escalation routing", "Reporting"], "4 hours", "Advanced", "cs-p4"),
+  ],
+};
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// 8. AI CONTENT SYSTEMS SPECIALIST
+// ═══════════════════════════════════════════════════════════════════════════════
+
+const aiContentSystems: Roadmap = {
+  id: "8",
+  slug: "ai-content-systems-specialist",
+  title: "AI Content Systems Specialist",
+  description:
+    "Design AI-assisted content creation systems for social media, blogs, newsletters, and video workflows that produce consistent output at scale.",
+  category: "Content",
+  level: "Beginner",
+  duration: "8 weeks",
+  status: "coming-soon",
+  totalEstimatedHours: 42,
+  phases: [
+    lightPhase("cnt-p1", 1, "Content Systems Thinking", "Move from one-off content creation to systematic, scalable content production using AI.", "You can design a repeatable content system for any channel.", "2 weeks", "Week 1–2", "free", [
+      { id: "cnt-p1-s1", title: "Content System Design", desc: "What a content system is and why it's more powerful than creating content one piece at a time.", time: "25 min", diff: "Beginner", types: ["Reading", "Video"] },
+      { id: "cnt-p1-s2", title: "Content Pillars and Strategy", desc: "Define content pillars, themes, and a strategy that guides AI-assisted content creation.", time: "30 min", diff: "Beginner", types: ["Reading", "Practice"] },
+      { id: "cnt-p1-s3", title: "AI in Content Creation", desc: "How AI tools are used across the content creation process — ideation, writing, editing, and distribution.", time: "25 min", diff: "Beginner", types: ["Reading", "Video"] },
+      { id: "cnt-p1-s4", title: "Content Calendar Design", desc: "Design a content calendar system that integrates AI generation and human review.", time: "35 min", diff: "Beginner", types: ["Practice"] },
+    ]),
+    lightPhase("cnt-p2", 2, "AI Writing & Editing", "Use AI tools to write, edit, repurpose, and improve content across formats.", "You can use AI to produce high-quality content efficiently.", "2 weeks", "Week 3–4", "locked", [
+      { id: "cnt-p2-s1", title: "AI Writing Tools", desc: "Survey and compare the top AI writing tools — ChatGPT, Claude, Jasper, and specialist tools.", time: "25 min", diff: "Beginner", types: ["Reading", "Video"] },
+      { id: "cnt-p2-s2", title: "Prompt Engineering for Content", desc: "Write prompts that produce on-brand, high-quality content consistently.", time: "35 min", diff: "Beginner", types: ["Practice"] },
+      { id: "cnt-p2-s3", title: "Editing and Refining AI Output", desc: "Develop an editing workflow that turns good AI output into great content.", time: "30 min", diff: "Beginner", types: ["Practice"] },
+      { id: "cnt-p2-s4", title: "Repurposing Content with AI", desc: "Turn one piece of content into many — blog to social, video to newsletter, podcast to article.", time: "35 min", diff: "Beginner", types: ["Practice"] },
+    ]),
+    lightPhase("cnt-p3", 3, "Multi-Channel Content Automation", "Automate content distribution across blogs, social media, email, and video platforms.", "You can automate multi-channel content distribution.", "2 weeks", "Week 5–6", "locked", [
+      { id: "cnt-p3-s1", title: "Social Media Automation", desc: "Automate social media posting, scheduling, and engagement monitoring.", time: "40 min", diff: "Intermediate", types: ["Practice"] },
+      { id: "cnt-p3-s2", title: "Newsletter Automation", desc: "Build an automated newsletter system that generates, curates, and sends content weekly.", time: "45 min", diff: "Intermediate", types: ["Practice", "Project"] },
+      { id: "cnt-p3-s3", title: "Blog Publishing Workflows", desc: "Automate the blog content workflow from AI draft to published post.", time: "35 min", diff: "Intermediate", types: ["Practice"] },
+      { id: "cnt-p3-s4", title: "Video Content Workflows", desc: "Use AI to assist with video scripts, thumbnails, descriptions, and repurposing.", time: "35 min", diff: "Intermediate", types: ["Practice"] },
+    ]),
+    lightPhase("cnt-p4", 4, "Content System Projects", "Build a complete AI content system for a real brand or niche.", "You have a portfolio-ready AI content system.", "2 weeks", "Week 7–8", "locked", [
+      { id: "cnt-p4-s1", title: "Content System Design Project", desc: "Design and build a complete AI content system for a sample brand.", time: "4 hours", diff: "Intermediate", types: ["Project"] },
+      { id: "cnt-p4-s2", title: "Multi-Channel Automation", desc: "Automate content distribution across at least 3 channels.", time: "3 hours", diff: "Intermediate", types: ["Project"] },
+      { id: "cnt-p4-s3", title: "Portfolio Presentation", desc: "Present your content system professionally.", time: "1 hour", diff: "Beginner", types: ["Practice"] },
+    ]),
+  ],
+  projects: [
+    lightProject("cnt-proj-1", "AI Content Calendar System", "Build a complete AI-powered content calendar that generates ideas, creates drafts, and schedules posts weekly.", ["Make", "OpenAI", "Airtable", "Social tools"], ["Content idea generation", "AI drafting", "Scheduling automation", "Performance tracking"], "4 hours", "Intermediate", "cnt-p4"),
+    lightProject("cnt-proj-2", "Multi-Channel Content Repurposing", "Create an automation that takes one blog post and repurposes it into 5 different content formats across 3 channels.", ["Make", "OpenAI", "Social tools", "Email"], ["Blog-to-social automation", "Format adaptation", "Multi-channel distribution", "Documentation"], "3 hours", "Intermediate", "cnt-p4"),
+  ],
+};
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// 9. JUNIOR AI AGENT BUILDER
+// ═══════════════════════════════════════════════════════════════════════════════
+
+const juniorAiAgentBuilder: Roadmap = {
+  id: "9",
+  slug: "junior-ai-agent-builder",
+  title: "Junior AI Agent Builder",
+  description:
+    "Learn to build simple AI agents that can use tools, follow workflows, and complete structured tasks with minimal human intervention.",
+  category: "AI Agents",
+  level: "Intermediate",
+  duration: "14 weeks",
+  status: "coming-soon",
+  totalEstimatedHours: 68,
+  phases: [
+    lightPhase("agt-p1", 1, "AI Agent Foundations", "Understand what AI agents are, how they reason, and how they differ from simple chatbots.", "You can explain AI agent architecture and identify agent use cases.", "2 weeks", "Week 1–2", "free", [
+      { id: "agt-p1-s1", title: "What Is an AI Agent?", desc: "A clear, practical explanation of AI agents — what they are, how they work, and why they matter.", time: "25 min", diff: "Intermediate", types: ["Reading", "Video"] },
+      { id: "agt-p1-s2", title: "Agent vs Chatbot", desc: "The key differences between a chatbot and an AI agent — autonomy, tools, and multi-step reasoning.", time: "20 min", diff: "Intermediate", types: ["Reading"] },
+      { id: "agt-p1-s3", title: "Reasoning and Planning Basics", desc: "How AI agents plan and reason through multi-step tasks — chain-of-thought, ReAct, and planning loops.", time: "30 min", diff: "Intermediate", types: ["Reading", "Video"] },
+      { id: "agt-p1-s4", title: "Agent Use Cases", desc: "Real-world AI agent use cases — research agents, coding agents, support agents, and data agents.", time: "25 min", diff: "Intermediate", types: ["Reading"] },
+    ]),
+    lightPhase("agt-p2", 2, "Tool Use & Function Calling", "Build agents that use tools — web search, calculators, APIs, and databases.", "You can build agents that use multiple tools to complete tasks.", "3 weeks", "Week 3–5", "locked", [
+      { id: "agt-p2-s1", title: "Tool Use Concepts", desc: "How AI agents decide which tool to use and when — the tool selection problem.", time: "25 min", diff: "Intermediate", types: ["Reading"] },
+      { id: "agt-p2-s2", title: "Function Calling Basics", desc: "Use OpenAI's function calling to give agents structured access to external tools.", time: "40 min", diff: "Intermediate", types: ["Practice", "Video"] },
+      { id: "agt-p2-s3", title: "Web Search Integration", desc: "Give your agent the ability to search the web and incorporate real-time information.", time: "40 min", diff: "Intermediate", types: ["Practice"] },
+      { id: "agt-p2-s4", title: "API Tool Integration", desc: "Connect your agent to external APIs — weather, databases, calculators, and more.", time: "45 min", diff: "Intermediate", types: ["Practice"] },
+      { id: "agt-p2-s5", title: "Multi-Tool Agents", desc: "Build agents that intelligently select and combine multiple tools to complete complex tasks.", time: "1 hour", diff: "Advanced", types: ["Practice", "Project"] },
+    ]),
+    lightPhase("agt-p3", 3, "Agent Workflow Design", "Design structured agent workflows — planning, execution, reflection, and error recovery.", "You can design and implement structured agent workflows.", "4 weeks", "Week 6–9", "locked", [
+      { id: "agt-p3-s1", title: "Agent Planning Patterns", desc: "Common patterns for structuring agent planning — sequential, parallel, and hierarchical.", time: "35 min", diff: "Advanced", types: ["Reading", "Practice"] },
+      { id: "agt-p3-s2", title: "Execution and Monitoring", desc: "How to monitor agent execution, log steps, and track what the agent is doing.", time: "35 min", diff: "Intermediate", types: ["Practice"] },
+      { id: "agt-p3-s3", title: "Error Recovery Logic", desc: "Build agents that recover gracefully from errors — retries, fallbacks, and human escalation.", time: "40 min", diff: "Advanced", types: ["Practice"] },
+      { id: "agt-p3-s4", title: "Multi-Step Agent Tasks", desc: "Build agents that complete multi-step tasks — research, write, review, and submit.", time: "1 hour", diff: "Advanced", types: ["Practice", "Project"] },
+      { id: "agt-p3-s5", title: "Agent Testing", desc: "Test your agents systematically — happy paths, edge cases, and adversarial inputs.", time: "45 min", diff: "Advanced", types: ["Practice"] },
+    ]),
+    lightPhase("agt-p4", 4, "Agent Platforms & Deployment", "Use platforms like LangChain, Flowise, and n8n AI to build and deploy agents.", "You can build and deploy agents using no-code and low-code platforms.", "3 weeks", "Week 10–12", "locked", [
+      { id: "agt-p4-s1", title: "LangChain Overview", desc: "Introduction to LangChain — the most popular framework for building AI agents.", time: "40 min", diff: "Advanced", types: ["Reading", "Video"] },
+      { id: "agt-p4-s2", title: "Flowise Visual Agents", desc: "Build agents visually using Flowise — a no-code interface for LangChain.", time: "1 hour", diff: "Intermediate", types: ["Practice", "Video"] },
+      { id: "agt-p4-s3", title: "n8n AI Workflows", desc: "Use n8n's AI nodes to build agent-like workflows without deep coding.", time: "45 min", diff: "Intermediate", types: ["Practice"] },
+      { id: "agt-p4-s4", title: "Deployment Basics", desc: "Deploy your agent to a simple endpoint that can be called from other tools.", time: "40 min", diff: "Advanced", types: ["Practice"] },
+    ]),
+    lightPhase("agt-p5", 5, "Agent Projects", "Build real AI agent projects that demonstrate practical value.", "You have 2 portfolio-ready AI agent projects.", "2 weeks", "Week 13–14", "locked", [
+      { id: "agt-p5-s1", title: "Research & Summary Agent", desc: "Build a complete research agent that searches, reads, synthesises, and reports.", time: "5 hours", diff: "Advanced", types: ["Project"] },
+      { id: "agt-p5-s2", title: "Task Automation Agent", desc: "Build an agent that accepts a task description and executes it using multiple tools.", time: "5 hours", diff: "Advanced", types: ["Project"] },
+      { id: "agt-p5-s3", title: "Documentation and Presentation", desc: "Document and present your agent projects professionally.", time: "1 hour", diff: "Intermediate", types: ["Practice"] },
+    ]),
+  ],
+  projects: [
+    lightProject("agt-proj-1", "Research & Summary Agent", "Build an AI agent that researches a given topic, synthesises findings from multiple sources, and produces a structured report.", ["LangChain or Flowise", "Web search", "OpenAI", "Report generation"], ["Topic research", "Multi-source synthesis", "Structured report", "Documentation"], "5 hours", "Advanced", "agt-p5"),
+    lightProject("agt-proj-2", "Task Automation Agent", "Build an agent that accepts a natural language task, breaks it into steps, executes each step using tools, and delivers a result.", ["LangChain or n8n", "Multiple APIs", "Task planning", "Tool use"], ["Task parsing", "Step planning", "Tool execution", "Result delivery"], "5 hours", "Advanced", "agt-p5"),
+  ],
+};
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// 10. AI BUSINESS PROCESS ANALYST
+// ═══════════════════════════════════════════════════════════════════════════════
+
+const aiBusinessProcessAnalyst: Roadmap = {
+  id: "10",
+  slug: "ai-business-process-analyst",
+  title: "AI Business Process Analyst",
+  description:
+    "Analyse business processes and identify where AI and automation can reduce manual work and create measurable value — then design the roadmap to get there.",
+  category: "Business Analysis",
+  level: "Beginner to Intermediate",
+  duration: "10 weeks",
+  status: "coming-soon",
+  totalEstimatedHours: 50,
+  phases: [
+    lightPhase("bpa-p1", 1, "Business Analysis Fundamentals", "Learn the core skills of business analysis — process mapping, stakeholder interviews, and requirements gathering.", "You can conduct a business process analysis and document findings professionally.", "2 weeks", "Week 1–2", "free", [
+      { id: "bpa-p1-s1", title: "Business Analysis Overview", desc: "What business analysts do, how they create value, and where AI BPAs fit in modern organisations.", time: "25 min", diff: "Beginner", types: ["Reading", "Video"] },
+      { id: "bpa-p1-s2", title: "Stakeholder Interviews", desc: "How to conduct effective stakeholder interviews to understand processes, pain points, and goals.", time: "30 min", diff: "Beginner", types: ["Reading", "Practice"] },
+      { id: "bpa-p1-s3", title: "Process Mapping Techniques", desc: "Master process mapping — flowcharts, swimlane diagrams, and value stream maps.", time: "35 min", diff: "Beginner", types: ["Practice", "Video"] },
+      { id: "bpa-p1-s4", title: "Requirements Documentation", desc: "Write clear, structured requirements documents that guide automation projects.", time: "30 min", diff: "Beginner", types: ["Practice"] },
+    ]),
+    lightPhase("bpa-p2", 2, "AI Opportunity Assessment", "Learn to systematically identify, evaluate, and prioritise AI automation opportunities in any business.", "You can produce a prioritised AI opportunity assessment for any business.", "3 weeks", "Week 3–5", "locked", [
+      { id: "bpa-p2-s1", title: "AI Opportunity Framework", desc: "A structured framework for identifying and evaluating AI automation opportunities.", time: "30 min", diff: "Intermediate", types: ["Reading", "Practice"] },
+      { id: "bpa-p2-s2", title: "Process Scoring Methodology", desc: "Score processes on automation suitability — volume, complexity, data quality, and impact.", time: "35 min", diff: "Intermediate", types: ["Practice"] },
+      { id: "bpa-p2-s3", title: "ROI Estimation Basics", desc: "Estimate the return on investment for AI automation projects — time saved, cost reduced, and risk lowered.", time: "35 min", diff: "Intermediate", types: ["Reading", "Practice"] },
+      { id: "bpa-p2-s4", title: "Prioritisation Matrix", desc: "Build a prioritisation matrix that ranks automation opportunities by impact and feasibility.", time: "30 min", diff: "Intermediate", types: ["Practice"] },
+      { id: "bpa-p2-s5", title: "Opportunity Report Writing", desc: "Write a professional AI opportunity assessment report that stakeholders can act on.", time: "45 min", diff: "Intermediate", types: ["Practice"] },
+    ]),
+    lightPhase("bpa-p3", 3, "Automation Strategy & Roadmap", "Design an AI automation strategy and 90-day implementation roadmap for a business.", "You can design and present a credible AI automation strategy.", "3 weeks", "Week 6–8", "locked", [
+      { id: "bpa-p3-s1", title: "Strategy Design", desc: "Design an AI automation strategy aligned with business goals and constraints.", time: "35 min", diff: "Intermediate", types: ["Reading", "Practice"] },
+      { id: "bpa-p3-s2", title: "Roadmap Planning", desc: "Create a phased 90-day implementation roadmap with clear milestones and success criteria.", time: "40 min", diff: "Intermediate", types: ["Practice"] },
+      { id: "bpa-p3-s3", title: "Change Management Basics", desc: "Address the human side of automation — how to manage change and get team buy-in.", time: "30 min", diff: "Intermediate", types: ["Reading"] },
+      { id: "bpa-p3-s4", title: "Stakeholder Communication", desc: "Communicate your automation strategy and roadmap to different stakeholder groups effectively.", time: "30 min", diff: "Intermediate", types: ["Practice"] },
+      { id: "bpa-p3-s5", title: "Presenting Recommendations", desc: "Present your analysis and recommendations in a compelling, professional format.", time: "35 min", diff: "Intermediate", types: ["Practice"] },
+    ]),
+    lightPhase("bpa-p4", 4, "Analyst Projects", "Deliver a complete AI business process analysis for a real or simulated business scenario.", "You have a portfolio-ready business process analysis project.", "2 weeks", "Week 9–10", "locked", [
+      { id: "bpa-p4-s1", title: "AI Opportunity Assessment Project", desc: "Conduct a full AI opportunity assessment for a sample business.", time: "4 hours", diff: "Intermediate", types: ["Project"] },
+      { id: "bpa-p4-s2", title: "Automation Strategy Presentation", desc: "Design and present a 90-day automation strategy for your sample business.", time: "3 hours", diff: "Intermediate", types: ["Project"] },
+      { id: "bpa-p4-s3", title: "Portfolio Presentation", desc: "Present your analysis projects professionally.", time: "1 hour", diff: "Intermediate", types: ["Practice"] },
+    ]),
+  ],
+  projects: [
+    lightProject("bpa-proj-1", "AI Opportunity Assessment Report", "Conduct a full AI opportunity assessment for a sample business and produce a prioritised, professional report.", ["Process mapping", "Scoring framework", "ROI estimation", "Report writing"], ["Process inventory", "Scoring matrix", "Prioritised opportunities", "Executive summary"], "4 hours", "Intermediate", "bpa-p4"),
+    lightProject("bpa-proj-2", "Automation Strategy Presentation", "Design a 90-day AI automation strategy and present it as a professional stakeholder presentation.", ["Strategy design", "Roadmap planning", "Presentation design"], ["Strategy document", "90-day roadmap", "Stakeholder slides", "Success metrics"], "3 hours", "Intermediate", "bpa-p4"),
+  ],
+};
+
+// ─── Export all roadmaps ─────────────────────────────────────────────────────
 
 export const allRoadmaps: Roadmap[] = [
   aiAutomationSpecialist,
-  promptEngineer,
-  aiDataAnalyst,
-  aiContentCreator,
-  mlEngineer,
-  aiProductManager,
-  aiUxDesigner,
-  llmApplicationDeveloper,
-  aiEthicsSpecialist,
-  aiSalesMarketing,
+  aiWorkflowBuilder,
+  noCodeAiAutomation,
+  aiMarketingAutomation,
+  aiProductivityConsultant,
+  aiOperationsAssistant,
+  aiCustomerSupportAutomation,
+  aiContentSystems,
+  juniorAiAgentBuilder,
+  aiBusinessProcessAnalyst,
 ];
 
 export function getRoadmapBySlug(slug: string): Roadmap | undefined {
-  return allRoadmaps.find((roadmap) => roadmap.slug === slug);
+  return allRoadmaps.find((r) => r.slug === slug);
 }
 
 export function getAllSlugs(): string[] {
-  return allRoadmaps.map((roadmap) => roadmap.slug);
-}
-
-export function getRoadmapsByStatus(status: RoadmapStatus): Roadmap[] {
-  return allRoadmaps.filter((roadmap) => roadmap.status === status);
+  return allRoadmaps.map((r) => r.slug);
 }

@@ -1,11 +1,11 @@
 // src/components/landing/CareerPositionsSection.tsx
 // Grid of career position cards generated from static data.
+// All cards are uniform — no "MVP Ready" special treatment.
 
 import Link from "next/link";
 import { careerPositions } from "@/data/careerRoadmaps";
 import { CareerPosition, DifficultyLevel } from "@/types/career";
 
-// Colour mapping for difficulty badges
 const levelColour: Record<DifficultyLevel, string> = {
   Beginner: "bg-emerald-100 text-emerald-700",
   "Beginner to Intermediate": "bg-yellow-100 text-yellow-700",
@@ -14,18 +14,18 @@ const levelColour: Record<DifficultyLevel, string> = {
 };
 
 function CareerCard({ position }: { position: CareerPosition }) {
-  const isMvpReady = position.status === "mvp-ready";
+  const isAvailable = position.status === "mvp-ready";
 
   return (
     <article className="relative flex flex-col rounded-2xl border border-gray-200 bg-white p-6 shadow-sm transition-shadow hover:shadow-md">
-      {/* Status badge */}
+      {/* Category + availability */}
       <div className="mb-4 flex items-start justify-between gap-2">
         <span className="rounded-full bg-gray-100 px-3 py-1 text-xs font-medium text-gray-500">
           {position.category}
         </span>
-        {isMvpReady ? (
-          <span className="rounded-full bg-indigo-600 px-3 py-1 text-xs font-semibold text-white">
-            MVP Ready
+        {isAvailable ? (
+          <span className="rounded-full bg-emerald-100 px-3 py-1 text-xs font-semibold text-emerald-700">
+            Available Now
           </span>
         ) : (
           <span className="rounded-full bg-gray-200 px-3 py-1 text-xs font-medium text-gray-500">
@@ -65,23 +65,18 @@ function CareerCard({ position }: { position: CareerPosition }) {
         ))}
       </div>
 
-      {/* CTA */}
+      {/* CTA — same style for all, different label */}
       <div className="mt-5">
-        {isMvpReady ? (
-          <Link
-            href={`/roadmaps/${position.id}`}
-            className="block w-full rounded-lg bg-indigo-600 px-4 py-2.5 text-center text-sm font-semibold text-white transition-colors hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2"
-          >
-            Open Roadmap
-          </Link>
-        ) : (
-          <Link
-            href="#waitlist"
-            className="block w-full rounded-lg border border-gray-300 bg-white px-4 py-2.5 text-center text-sm font-semibold text-gray-600 transition-colors hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2"
-          >
-            Join Waitlist
-          </Link>
-        )}
+        <Link
+          href={`/roadmaps/${position.id}`}
+          className={`block w-full rounded-lg px-4 py-2.5 text-center text-sm font-semibold transition-colors focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 ${
+            isAvailable
+              ? "bg-indigo-600 text-white hover:bg-indigo-700"
+              : "border border-gray-300 bg-white text-gray-600 hover:bg-gray-50"
+          }`}
+        >
+          {isAvailable ? "View Roadmap" : "Preview Roadmap"}
+        </Link>
       </div>
     </article>
   );

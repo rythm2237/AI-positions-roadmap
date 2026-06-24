@@ -1,12 +1,10 @@
 // src/app/page.tsx
 // Landing page — composes all section components.
-// This is a Server Component by default (Next.js App Router).
-// WaitlistSection is a Client Component and is imported normally — Next.js handles the boundary.
+// FeaturedRoadmapPreview removed: all positions are treated equally.
 
 import Header from "@/components/landing/Header";
 import HeroSection from "@/components/landing/HeroSection";
 import CareerPositionsSection from "@/components/landing/CareerPositionsSection";
-import FeaturedRoadmapPreview from "@/components/landing/FeaturedRoadmapPreview";
 import HowItWorksSection from "@/components/landing/HowItWorksSection";
 import PricingPreviewSection from "@/components/landing/PricingPreviewSection";
 import WaitlistSection from "@/components/landing/WaitlistSection";
@@ -26,7 +24,6 @@ export default function LandingPage() {
       <main>
         <HeroSection />
         <CareerPositionsSection />
-        <FeaturedRoadmapPreview />
         <HowItWorksSection />
         <PricingPreviewSection />
         <WaitlistSection />

@@ -1,6 +1,6 @@
 "use client";
 // src/components/roadmap/RoadmapTimeline.tsx
-// Clean, readable timeline showing all phases with week ranges.
+// Clean, readable timeline showing all phases with content hours.
 // Each phase row is clickable and links to the phases section.
 
 import { RoadmapPhase, ProgressState } from "@/types/roadmap";
@@ -8,6 +8,7 @@ import { RoadmapPhase, ProgressState } from "@/types/roadmap";
 interface RoadmapTimelineProps {
   phases: RoadmapPhase[];
   duration: string;
+  totalHours: number;
   progress: ProgressState;
 }
 
@@ -24,10 +25,11 @@ function getPhaseCompletion(
 
 export default function RoadmapTimeline({
   phases,
-  duration,
+  totalHours,
   progress,
 }: RoadmapTimelineProps) {
   if (!phases || phases.length === 0) return null;
+
   return (
     <section
       id="timeline"
@@ -40,8 +42,9 @@ export default function RoadmapTimeline({
               Learning Timeline
             </h2>
             <p className="text-sm text-gray-500">
-              Estimated total duration:{" "}
-              <strong className="text-gray-700">{duration}</strong>
+              Total content time:{" "}
+              <strong className="text-gray-700">~{totalHours} hours</strong>
+              {" "}· Your actual pace depends on weekly hours committed.
             </p>
           </div>
         </div>
@@ -57,6 +60,7 @@ export default function RoadmapTimeline({
             {phases.map((phase) => {
               const completion = getPhaseCompletion(phase, progress);
               const isLocked = phase.access === "locked";
+              const phaseHours = phase.estimatedHours ?? 0;
 
               return (
                 <a
@@ -67,7 +71,7 @@ export default function RoadmapTimeline({
                       ? "border-gray-100 bg-gray-50 opacity-80"
                       : "border-indigo-100 bg-white shadow-sm"
                   }`}
-                  aria-label={`${phase.weekRange}: ${phase.title}`}
+                  aria-label={`Phase ${phase.phaseNumber}: ${phase.title} — ~${phaseHours}h`}
                 >
                   {/* Phase number dot */}
                   <div
@@ -85,7 +89,7 @@ export default function RoadmapTimeline({
                     <div className="flex flex-wrap items-start justify-between gap-2">
                       <div>
                         <span className="text-xs font-semibold text-indigo-500 uppercase tracking-wide">
-                          {phase.weekRange}
+                          Phase {phase.phaseNumber}
                         </span>
                         <h3
                           className={`text-base font-bold mt-0.5 ${
@@ -126,8 +130,23 @@ export default function RoadmapTimeline({
                             Free
                           </span>
                         )}
-                        <span className="text-xs text-gray-400">
-                          {phase.estimatedDuration}
+                        {/* Hours badge */}
+                        <span className="flex items-center gap-1 text-xs text-gray-400 bg-gray-100 rounded-full px-2.5 py-0.5">
+                          <svg
+                            xmlns="http://www.w3.org/2000/svg"
+                            className="h-3 w-3"
+                            viewBox="0 0 24 24"
+                            fill="none"
+                            stroke="currentColor"
+                            strokeWidth="2"
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            aria-hidden="true"
+                          >
+                            <circle cx="12" cy="12" r="10" />
+                            <path d="M12 6v6l4 2" />
+                          </svg>
+                          ~{phaseHours}h
                         </span>
                       </div>
                     </div>

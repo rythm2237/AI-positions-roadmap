@@ -58,15 +58,6 @@ export default function RoadmapHeader({
               <span className="rounded-full bg-indigo-100 px-3 py-1 text-xs font-semibold text-indigo-700">
                 {roadmap.category}
               </span>
-              {roadmap.status === "mvp-ready" ? (
-                <span className="rounded-full bg-indigo-600 px-3 py-1 text-xs font-semibold text-white">
-                  MVP Ready
-                </span>
-              ) : (
-                <span className="rounded-full bg-amber-100 px-3 py-1 text-xs font-semibold text-amber-700">
-                  Coming Soon
-                </span>
-              )}
               <span
                 className={`rounded-full px-3 py-1 text-xs font-medium ${
                   levelColour[roadmap.level] ?? "bg-gray-100 text-gray-600"

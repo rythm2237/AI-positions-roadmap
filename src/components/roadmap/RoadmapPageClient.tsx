@@ -2,8 +2,6 @@
 // src/components/roadmap/RoadmapPageClient.tsx
 // Client component that owns all interactive state for the roadmap page.
 // Loaded by the server page.tsx — keeps server/client boundary clean.
-// Block 3: wires in RoadmapProgressDashboard, RoadmapResetButton,
-//           and RoadmapCertificatePreview.
 
 import { useState, useEffect } from "react";
 import { Roadmap, ProgressState } from "@/types/roadmap";
@@ -19,7 +17,8 @@ import NotesSummaryPanel from "./NotesSummaryPanel";
 import RoadmapProgressDashboard from "./RoadmapProgressDashboard";
 import RoadmapResetButton from "./RoadmapResetButton";
 import RoadmapCertificatePreview from "./RoadmapCertificatePreview";
-import RoadmapVisualButton from "./RoadmapVisualButton";
+import RecommendedCoursesSection from "./RecommendedCoursesSection";
+import CareerReadinessSection from "./CareerReadinessSection";
 import Footer from "@/components/landing/Footer";
 
 interface RoadmapPageClientProps {
@@ -63,6 +62,12 @@ export default function RoadmapPageClient({ roadmap }: RoadmapPageClientProps) {
     );
   }
 
+  // Collect all courses: roadmap-level + phase-level
+  const allCourses = [
+    ...(roadmap.recommendedCourses ?? []),
+    ...roadmap.phases.flatMap((p) => p.recommendedCourses ?? []),
+  ];
+
   return (
     <>
       <RoadmapNavigation />
@@ -79,10 +84,11 @@ export default function RoadmapPageClient({ roadmap }: RoadmapPageClientProps) {
         {/* 2. Visual overview */}
         <RoadmapVisualOverview phases={roadmap.phases} progress={progress} />
 
-        {/* 3. Timeline */}
+        {/* 3. Timeline (hours-based) */}
         <RoadmapTimeline
           phases={roadmap.phases}
           duration={roadmap.duration}
+          totalHours={roadmap.totalEstimatedHours}
           progress={progress}
         />
 
@@ -119,16 +125,23 @@ export default function RoadmapPageClient({ roadmap }: RoadmapPageClientProps) {
           onProgressUpdate={handleProgressUpdate}
         />
 
-        {/* 6. Notes summary */}
+        {/* 6. Recommended Courses */}
+        {allCourses.length > 0 && (
+          <RecommendedCoursesSection courses={allCourses} />
+        )}
+
+        {/* 7. Notes summary */}
         <NotesSummaryPanel roadmap={roadmap} progress={progress} />
 
-        {/* 7. Completion certificate (only shown at 100%) */}
+        {/* 8. Career Readiness: CV/LinkedIn/Portfolio + Job Search */}
+        <CareerReadinessSection roleTitle={roadmap.title} />
+
+        {/* 9. Completion certificate (only shown at 100%) */}
         <RoadmapCertificatePreview roadmap={roadmap} progress={progress} />
       </main>
 
-      {/* 8. Floating progress dashboard (sticky bottom-right) */}
+      {/* 10. Floating progress dashboard (sticky bottom-right) */}
       <RoadmapProgressDashboard roadmap={roadmap} progress={progress} />
-      <RoadmapVisualButton slug={roadmap.slug} />
 
       <Footer />
     </>
