@@ -14,7 +14,7 @@ const levelColour: Record<DifficultyLevel, string> = {
 };
 
 function CareerCard({ position }: { position: CareerPosition }) {
-  const isAvailable = position.status === "mvp-ready";
+  const isAvailable = position.status === "available";
 
   return (
     <article className="relative flex flex-col rounded-2xl border border-gray-200 bg-white p-6 shadow-sm transition-shadow hover:shadow-md">
