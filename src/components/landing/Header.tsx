@@ -1,76 +1,106 @@
-// src/components/landing/Header.tsx
-// Sticky top navigation — mobile-first with hamburger menu.
-
 "use client";
+// src/components/landing/Header.tsx
+// Premium dark navigation — sticky, glassmorphic, with animated CTA.
 
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
 import Link from "next/link";
 
 const navLinks = [
-  { label: "Roadmaps", href: "/#roadmaps" },
+  { label: "Careers", href: "/#roadmaps" },
   { label: "How It Works", href: "/#how-it-works" },
   { label: "Pricing", href: "/#pricing" },
+  { label: "CV Analyzer", href: "/cv-analyzer", highlight: false },
   { label: "Career Analyzer", href: "/career-dashboard", highlight: true },
 ];
 
 export default function Header() {
   const [mobileOpen, setMobileOpen] = useState(false);
+  const [scrolled, setScrolled]     = useState(false);
+  const [visible, setVisible]        = useState(true);
+  const lastScrollY = useRef(0);
+
+  useEffect(() => {
+    const onScroll = () => {
+      const y = window.scrollY;
+      setScrolled(y > 20);
+      setVisible(y < lastScrollY.current || y < 60);
+      lastScrollY.current = y;
+    };
+    window.addEventListener("scroll", onScroll, { passive: true });
+    return () => window.removeEventListener("scroll", onScroll);
+  }, []);
 
   return (
-    <header className="sticky top-0 z-50 w-full border-b border-gray-100 bg-white/95 backdrop-blur-sm">
+    <header
+      className={`fixed top-0 left-0 right-0 z-50 transition-all duration-500 ${
+        visible ? "translate-y-0" : "-translate-y-full"
+      } ${
+        scrolled
+          ? "glass border-b border-indigo-500/10 shadow-glass"
+          : "bg-transparent border-b border-transparent"
+      }`}
+    >
       <div className="mx-auto flex max-w-7xl items-center justify-between px-4 py-4 sm:px-6 lg:px-8">
-        {/* Brand */}
-        <Link href="/" className="flex items-center gap-2 shrink-0">
-          <span className="text-xl font-bold text-gray-900 tracking-tight">
-            AI Career Roadmaps
+        {/* ── Brand ── */}
+        <Link href="/" className="group flex items-center gap-2.5 shrink-0">
+          {/* Logo mark */}
+          <div className="relative flex h-8 w-8 items-center justify-center rounded-lg bg-gradient-to-br from-indigo-500 to-violet-600 shadow-glow-sm">
+            <svg viewBox="0 0 24 24" className="h-4 w-4 text-white" fill="none" stroke="currentColor" strokeWidth="2">
+              <circle cx="12" cy="12" r="3" />
+              <path d="M12 2v3M12 19v3M2 12h3M19 12h3" strokeLinecap="round" />
+              <path d="M5.6 5.6l2.1 2.1M16.3 16.3l2.1 2.1M5.6 18.4l2.1-2.1M16.3 7.7l2.1-2.1" strokeLinecap="round" />
+            </svg>
+            <div className="absolute inset-0 rounded-lg bg-gradient-to-br from-indigo-400 to-violet-500 opacity-0 group-hover:opacity-100 transition-opacity duration-300 blur-sm" />
+          </div>
+          <span className="font-display text-lg font-bold text-white tracking-tight">
+            AI Career <span className="gradient-text">OS</span>
           </span>
         </Link>
 
-        {/* Desktop nav */}
-        <nav className="hidden items-center gap-6 md:flex" aria-label="Main navigation">
+        {/* ── Desktop nav ── */}
+        <nav className="hidden items-center gap-1 md:flex" aria-label="Main navigation">
           {navLinks.map((link) => (
             <Link
               key={link.label}
               href={link.href}
-              className={
+              className={`relative rounded-lg px-3 py-2 text-sm font-medium transition-all duration-200 ${
                 link.highlight
-                  ? "text-sm font-semibold text-indigo-600 transition-colors hover:text-indigo-800"
-                  : "text-sm font-medium text-gray-600 transition-colors hover:text-gray-900"
-              }
+                  ? "text-indigo-300 hover:text-indigo-200 hover:bg-indigo-500/10"
+                  : "text-slate-400 hover:text-white hover:bg-white/5"
+              }`}
             >
+              {link.highlight && (
+                <span className="absolute -top-1 -right-1 h-2 w-2 rounded-full bg-indigo-400 animate-neural-pulse" />
+              )}
               {link.label}
             </Link>
           ))}
         </nav>
 
-        {/* Desktop CTA */}
+        {/* ── Desktop CTA ── */}
         <div className="hidden md:flex items-center gap-3">
           <Link
-            href="/#waitlist"
-            className="rounded-lg bg-indigo-600 px-4 py-2 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2"
+            href="/cv-analyzer"
+            className="btn-secondary text-sm px-4 py-2"
           >
-            Join Waitlist
+            Analyze CV
+          </Link>
+          <Link
+            href="/#waitlist"
+            className="btn-primary text-sm px-4 py-2"
+          >
+            Get Early Access
           </Link>
         </div>
 
-        {/* Mobile: hamburger */}
+        {/* ── Mobile hamburger ── */}
         <button
-          className="md:hidden flex items-center justify-center rounded-lg p-2 text-gray-600 hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+          className="md:hidden flex items-center justify-center rounded-lg p-2 text-slate-400 hover:text-white hover:bg-white/5 transition-colors focus:outline-none focus:ring-2 focus:ring-indigo-500"
           onClick={() => setMobileOpen((v) => !v)}
           aria-expanded={mobileOpen}
           aria-label="Toggle navigation menu"
         >
-          <svg
-            xmlns="http://www.w3.org/2000/svg"
-            className="h-6 w-6"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="2"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            aria-hidden="true"
-          >
+          <svg className="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
             {mobileOpen ? (
               <path d="M18 6L6 18M6 6l12 12" />
             ) : (
@@ -84,9 +114,9 @@ export default function Header() {
         </button>
       </div>
 
-      {/* Mobile dropdown menu */}
+      {/* ── Mobile menu ── */}
       {mobileOpen && (
-        <div className="md:hidden border-t border-gray-100 bg-white shadow-lg">
+        <div className="glass border-t border-indigo-500/10 md:hidden">
           <nav className="flex flex-col px-4 py-3 gap-1" aria-label="Mobile navigation">
             {navLinks.map((link) => (
               <Link
@@ -95,20 +125,27 @@ export default function Header() {
                 onClick={() => setMobileOpen(false)}
                 className={`rounded-lg px-3 py-2.5 text-sm font-medium transition-colors ${
                   link.highlight
-                    ? "text-indigo-600 hover:bg-indigo-50"
-                    : "text-gray-700 hover:bg-gray-50"
+                    ? "text-indigo-300 hover:bg-indigo-500/10"
+                    : "text-slate-300 hover:text-white hover:bg-white/5"
                 }`}
               >
                 {link.label}
               </Link>
             ))}
-            <div className="mt-2 pt-2 border-t border-gray-100">
+            <div className="mt-3 pt-3 border-t border-white/5 flex flex-col gap-2">
+              <Link
+                href="/cv-analyzer"
+                onClick={() => setMobileOpen(false)}
+                className="btn-secondary text-sm text-center py-2.5"
+              >
+                Analyze My CV
+              </Link>
               <Link
                 href="/#waitlist"
                 onClick={() => setMobileOpen(false)}
-                className="block w-full rounded-lg bg-indigo-600 px-4 py-2.5 text-center text-sm font-semibold text-white shadow-sm transition-colors hover:bg-indigo-700"
+                className="btn-primary text-sm text-center py-2.5"
               >
-                Join Waitlist
+                Get Early Access
               </Link>
             </div>
           </nav>

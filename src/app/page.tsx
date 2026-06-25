@@ -1,7 +1,4 @@
 // src/app/page.tsx
-// Landing page — composes all section components.
-// FeaturedRoadmapPreview removed: all positions are treated equally.
-
 import Header from "@/components/landing/Header";
 import HeroSection from "@/components/landing/HeroSection";
 import CareerPositionsSection from "@/components/landing/CareerPositionsSection";
@@ -11,16 +8,15 @@ import WaitlistSection from "@/components/landing/WaitlistSection";
 import Footer from "@/components/landing/Footer";
 
 export const metadata = {
-  title: "AI Career Roadmaps — Build your future AI career",
+  title: "AI Career OS — Build Your Future AI Career",
   description:
-    "Choose a role, follow a structured learning path, build real portfolio projects, and track your progress step by step.",
+    "The personal AI Career Operating System. Explore AI roles, follow structured roadmaps, build a portfolio, and become job-ready with AI-powered guidance.",
 };
 
 export default function LandingPage() {
   return (
     <>
       <Header />
-
       <main>
         <HeroSection />
         <CareerPositionsSection />
@@ -28,7 +24,6 @@ export default function LandingPage() {
         <PricingPreviewSection />
         <WaitlistSection />
       </main>
-
       <Footer />
     </>
   );
