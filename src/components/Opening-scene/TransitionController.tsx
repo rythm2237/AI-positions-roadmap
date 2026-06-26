@@ -1,48 +1,56 @@
+
 "use client";
-// src/components/opening-scene/TransitionController.tsx
+// src/components/opening-scene/TransitionController.tsx — v6
 //
-// ─── PRODUCT INFRASTRUCTURE — ACTIVATION SEQUENCE ────────────────────────
-//
-// Orchestrates the timed sequence that happens when the user clicks the CTA.
-// This component has no visual output — it is a pure controller.
+// Drives ONLY the timed phase transitions that require no user input.
 //
 // Sequence:
-//   t=0ms    CTA clicked → phase becomes "activating" (set in HeroContent)
-//   t=0ms    NeuralNetwork begins cascade illumination (driven by phase)
-//   t=0ms    AmbientEnvironment lights boost intensity (driven by phase)
-//   t=0ms    CameraRig begins slow forward zoom (driven by phase)
-//   t=1200ms phase advances to "travelling" → camera accelerates
-//   t=1800ms HeroContent triggers router.push (in HeroContent useEffect)
+//   activating → 900ms  → travelling
+//   travelling → 3000ms → arrived    (matches TRAVEL_DURATION in World.tsx)
+//   arrived    → 600ms  → exploring  (let arrival animation play)
 //
-// Why a separate component:
-//   The timing logic is isolated here so it can be extended without touching
-//   the visual components. As the product grows, this controller will handle
-//   deeper transitions: career selection, roadmap entry, dashboard navigation.
+// What this controller does NOT do:
+//   • Does NOT advance to "complete" — that phase is removed.
+//   • Does NOT scroll the page.
+//   • Does NOT trigger navigation.
+//
+// The "exploring" phase is permanent until the user clicks another node,
+// which calls travelTo() → sets destination → phase = "travelling" again.
+// This cycle can repeat indefinitely. The user is never forced to leave.
 
 import { useEffect, useRef } from "react";
 import { useScene } from "./SceneContext";
 
 export default function TransitionController() {
   const { phase, advance } = useScene();
-  const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const timersRef = useRef<ReturnType<typeof setTimeout>[]>([]);
 
   useEffect(() => {
+    // Clear any pending timers from previous phase
+    timersRef.current.forEach(clearTimeout);
+    timersRef.current = [];
+
     if (phase === "activating") {
-      // After world reacts for 1.2s, advance to travelling
-      timerRef.current = setTimeout(() => {
-        advance("travelling");
-      }, 1200);
+      // Camera pulls back, world reacts, then begin travel
+      timersRef.current.push(setTimeout(() => advance("travelling"), 900));
     }
 
-    if (phase === "complete") {
-      // Clean up — nothing to do here; navigation is handled in HeroContent
+    if (phase === "travelling") {
+      // Travel duration (3000ms ≈ TRAVEL_DURATION + small buffer) then arrive
+      timersRef.current.push(setTimeout(() => advance("arrived"), 3000));
     }
+
+    if (phase === "arrived") {
+      // Let the arrival animation settle, then enter free exploration
+      timersRef.current.push(setTimeout(() => advance("exploring"), 600));
+    }
+
+    // "exploring" has no timer — permanent until user action.
 
     return () => {
-      if (timerRef.current) clearTimeout(timerRef.current);
+      timersRef.current.forEach(clearTimeout);
     };
   }, [phase, advance]);
 
-  // Pure controller — no visual output
   return null;
 }
