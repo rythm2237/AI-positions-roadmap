@@ -3,6 +3,7 @@
 
 import type { Metadata } from "next";
 import Header from "@/components/landing/Header";
+
 import OpeningScene from "@/components/opening-scene/OpeningScene";
 import CareerPositionsSection from "@/components/landing/CareerPositionsSection";
 import HowItWorksSection from "@/components/landing/HowItWorksSection";

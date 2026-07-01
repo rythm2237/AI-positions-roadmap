@@ -546,6 +546,84 @@ function CareerNavPanel({ allNodes }: NavPanelProps) {
 const TRAVEL_DURATION = 2800;
 const CAM_START_Z     = 52;
 
+type CameraBehavior = {
+  name: string;
+  run: (
+    progress: number,
+    startPos: THREE.Vector3,
+    startTarget: THREE.Vector3,
+    endPos: THREE.Vector3,
+    endTarget: THREE.Vector3,
+    camPos: THREE.Vector3,
+    camTarget: THREE.Vector3,
+  ) => void;
+};
+
+const CAMERA_BEHAVIORS: CameraBehavior[] = [
+  {
+    name: "smoothArc",
+    run: (progress, startPos, startTarget, endPos, endTarget, camPos, camTarget) => {
+      const eased = progress < 0.5 ? 2 * progress * progress : 1 - Math.pow(-2 * progress + 2, 2) / 2;
+      camPos.lerpVectors(startPos, endPos, eased);
+      camPos.x += Math.sin(eased * Math.PI) * 18;
+      camPos.y += Math.sin(eased * Math.PI) * 6;
+      camTarget.lerpVectors(startTarget, endTarget, eased);
+    },
+  },
+  {
+    name: "highDescend",
+    run: (progress, startPos, startTarget, endPos, endTarget, camPos, camTarget) => {
+      const eased = progress < 0.5 ? 2 * progress * progress : 1 - Math.pow(-2 * progress + 2, 2) / 2;
+      camPos.lerpVectors(startPos, endPos, eased);
+      camPos.y += (1 - eased) * 24;
+      camPos.z += (1 - eased) * 16;
+      camTarget.lerpVectors(startTarget, endTarget, eased);
+    },
+  },
+  {
+    name: "sideSweep",
+    run: (progress, startPos, startTarget, endPos, endTarget, camPos, camTarget) => {
+      const eased = progress < 0.5 ? 2 * progress * progress : 1 - Math.pow(-2 * progress + 2, 2) / 2;
+      camPos.lerpVectors(startPos, endPos, eased);
+      camPos.x += (eased - 0.5) * 32;
+      camTarget.lerpVectors(startTarget, endTarget, eased);
+      camTarget.x += (eased - 0.5) * 12;
+    },
+  },
+  {
+    name: "gentleOrbit",
+    run: (progress, startPos, startTarget, endPos, endTarget, camPos, camTarget) => {
+      const eased = progress < 0.5 ? 2 * progress * progress : 1 - Math.pow(-2 * progress + 2, 2) / 2;
+      camPos.x = startPos.x + (endPos.x - startPos.x) * eased + Math.cos(eased * Math.PI * 2) * 12;
+      camPos.y = startPos.y + (endPos.y - startPos.y) * eased + Math.sin(eased * Math.PI * 1.4) * 8;
+      camPos.z = startPos.z + (endPos.z - startPos.z) * eased + Math.sin(eased * Math.PI * 2) * 10;
+      camTarget.lerpVectors(startTarget, endTarget, eased);
+    },
+  },
+  {
+    name: "forwardFlyIn",
+    run: (progress, startPos, startTarget, endPos, endTarget, camPos, camTarget) => {
+      const eased = progress < 0.5 ? 2 * progress * progress : 1 - Math.pow(-2 * progress + 2, 2) / 2;
+      camPos.lerpVectors(startPos, endPos, eased);
+      camPos.z += (1 - eased) * 34;
+      camPos.y += Math.sin(eased * Math.PI) * 3;
+      camTarget.lerpVectors(startTarget, endTarget, eased);
+    },
+  },
+  {
+    name: "wideReveal",
+    run: (progress, startPos, startTarget, endPos, endTarget, camPos, camTarget) => {
+      const eased = progress < 0.5 ? 2 * progress * progress : 1 - Math.pow(-2 * progress + 2, 2) / 2;
+      camPos.lerpVectors(startPos, endPos, eased);
+      camPos.x += Math.sin(eased * Math.PI) * 10;
+      camPos.y += Math.cos(eased * Math.PI * 0.5) * 8;
+      camPos.z += (1 - eased) * 18;
+      camTarget.lerpVectors(startTarget, endTarget, eased);
+      camTarget.x += Math.sin(eased * Math.PI) * 6;
+    },
+  },
+];
+
 function ThreeScene() {
   const canvasRef = useRef<HTMLDivElement>(null);
   const {
@@ -579,6 +657,10 @@ function ThreeScene() {
   const destNodeRef   = useRef<CareerNode | null>(null);
   const destPosRef    = useRef(new THREE.Vector3());
   const destCamPosRef = useRef(new THREE.Vector3());
+  const startCamPosRef = useRef(new THREE.Vector3());
+  const startCamTargetRef = useRef(new THREE.Vector3());
+  const activeCameraBehaviorRef = useRef<CameraBehavior | null>(null);
+  const recentCameraBehaviorsRef = useRef<string[]>([]);
 
   const setHoveredNodeState = useCallback((node: CareerNode | null, sx: number, sy: number) => {
     setHoveredNode(node);
@@ -803,6 +885,14 @@ function ThreeScene() {
           destNodeRef.current = node;
           destPosRef.current.set(...node.position);
           destCamPosRef.current.set(node.position[0], node.position[1]+4, node.position[2]+14);
+          startCamPosRef.current.copy(camPosSmoothed);
+          startCamTargetRef.current.copy(camTargetSmoothed);
+          const availableBehaviors = CAMERA_BEHAVIORS.filter((behavior) => !recentCameraBehaviorsRef.current.includes(behavior.name));
+          const pool = availableBehaviors.length > 0 ? availableBehaviors : CAMERA_BEHAVIORS;
+          const behavior = pool[Math.floor(Math.random() * pool.length)];
+          activeCameraBehaviorRef.current = behavior;
+          recentCameraBehaviorsRef.current = [...recentCameraBehaviorsRef.current.slice(-2), behavior.name];
+          console.log("Camera Behavior:", behavior.name);
           rebuildConnections(node);
           // Reset orbit offsets so new destination is centered
           o.yaw = 0; o.pitch = 0;
@@ -894,15 +984,23 @@ function ThreeScene() {
         camTarget.set(0, 0, 0);
       } else if (phase === "travelling") {
         const prog = Math.min(elapsedMs / TRAVEL_DURATION, 1);
-        const e    = easeInOut(prog);
-        const startZ = CAM_START_Z + 8;
+        const behavior = activeCameraBehaviorRef.current;
+        const startPos = startCamPosRef.current;
+        const startTarget = startCamTargetRef.current;
         const endPos = destCamPosRef.current;
-        camPos.set(
-          endPos.x * e,
-          endPos.y * e,
-          startZ + (endPos.z - startZ) * e,
-        );
-        camTarget.copy(destPosRef.current);
+        const endTarget = destPosRef.current;
+        if (behavior) {
+          behavior.run(prog, startPos, startTarget, endPos, endTarget, camPos, camTarget);
+        } else {
+          const e = easeInOut(prog);
+          const startZ = CAM_START_Z + 8;
+          camPos.set(
+            endPos.x * e,
+            endPos.y * e,
+            startZ + (endPos.z - startZ) * e,
+          );
+          camTarget.copy(endTarget);
+        }
       } else if (phase === "arrived") {
         camPos.copy(destCamPosRef.current);
         camTarget.copy(destPosRef.current);
