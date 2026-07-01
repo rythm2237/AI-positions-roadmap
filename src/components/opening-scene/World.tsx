@@ -628,6 +628,7 @@ function ThreeScene() {
   const canvasRef = useRef<HTMLDivElement>(null);
   const {
     phase, mouseNorm, setMouseNorm,
+    destination,
     setNodes, setDestination,
     hoveredNodeId, setHoveredNodeId,
     travelTo,
@@ -638,6 +639,10 @@ function ThreeScene() {
   const activationTimeRef = useRef(0);
   const travelToRef       = useRef(travelTo);
   const setHoveredRef     = useRef(setHoveredNodeId);
+  const cameraRef         = useRef<THREE.PerspectiveCamera | null>(null);
+  const camPosSmoothedRef = useRef(new THREE.Vector3());
+  const camTargetSmoothedRef = useRef(new THREE.Vector3());
+  const rebuildConnectionsRef = useRef<(node: CareerNode) => void>(() => {});
 
   const [hoveredNode, setHoveredNode]     = useState<CareerNode | null>(null);
   const [hoverScreenPos, setHoverScreenPos] = useState({ x: 0, y: 0 });
@@ -661,6 +666,17 @@ function ThreeScene() {
   const startCamTargetRef = useRef(new THREE.Vector3());
   const activeCameraBehaviorRef = useRef<CameraBehavior | null>(null);
   const recentCameraBehaviorsRef = useRef<string[]>([]);
+
+  useEffect(() => {
+    if (!destination) return;
+    const node = destination;
+    destNodeRef.current = node;
+    destPosRef.current.set(...node.position);
+    destCamPosRef.current.set(node.position[0], node.position[1] + 4, node.position[2] + 14);
+    startCamPosRef.current.copy(camPosSmoothedRef.current);
+    startCamTargetRef.current.copy(camTargetSmoothedRef.current);
+    rebuildConnectionsRef.current(node);
+  }, [destination]);
 
   const setHoveredNodeState = useCallback((node: CareerNode | null, sx: number, sy: number) => {
     setHoveredNode(node);
@@ -690,6 +706,7 @@ function ThreeScene() {
     // ── Camera ─────────────────────────────────────────────────────────────
     const camera = new THREE.PerspectiveCamera(58, w / h, 0.1, 600);
     camera.position.set(0, 0, CAM_START_Z);
+    cameraRef.current = camera;
 
     // ── Renderer ───────────────────────────────────────────────────────────
     const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: false });
@@ -786,6 +803,7 @@ function ThreeScene() {
       dimConnGeo.setAttribute("position",  new THREE.Float32BufferAttribute(dimVerts,  3));
       destConnGeo.setAttribute("position", new THREE.Float32BufferAttribute(destVerts, 3));
     }
+    rebuildConnectionsRef.current = rebuildConnections;
     rebuildConnections(initDest);
 
     // ── Sector spine lines ─────────────────────────────────────────────────
@@ -1023,6 +1041,8 @@ function ThreeScene() {
       camTargetSmoothed.lerp(camTarget, delta * lerpSpeed);
       camera.position.copy(camPosSmoothed);
       camera.lookAt(camTargetSmoothed);
+      camPosSmoothedRef.current.copy(camPosSmoothed);
+      camTargetSmoothedRef.current.copy(camTargetSmoothed);
 
       renderer.render(scene, camera);
     }
