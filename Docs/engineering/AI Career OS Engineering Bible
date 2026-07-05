@@ -1,0 +1,4157 @@
+# 📘 AI Career OS Engineering Bible
+## Volume 1 — Foundation & System Architecture
+### Version 2.0
+### Status: Official Engineering Specification
+
+---
+
+# 1. Purpose
+
+This Engineering Bible defines how AI Career OS is engineered.
+
+The Product Bible defines **what** we build and **why** we build it.
+
+The Engineering Bible defines **how** we build it.
+
+Every line of code, every component, every API, every database model, every AI workflow, every animation, and every engineering decision must comply with this document.
+
+This document is the highest technical authority of AI Career OS.
+
+---
+
+# 2. Engineering Vision
+
+AI Career OS is **not a website**.
+
+It is **an AI-native operating system** dedicated to helping people build successful AI careers.
+
+The software must therefore behave more like an operating system than a collection of pages.
+
+Every module should integrate into one intelligent ecosystem.
+
+Users should never feel they are moving between disconnected features.
+
+They should feel they are working inside one continuously evolving system.
+
+---
+
+# 3. Engineering Philosophy
+
+Everything we build follows six principles.
+
+---
+
+## Principle 1 — Build an Operating System
+
+Never think:
+
+"I'm building a page."
+
+Always think:
+
+"I'm extending the operating system."
+
+Every new feature should integrate naturally with:
+
+- Dashboard
+- AI Coach
+- Career DNA
+- Knowledge Graph
+- Career Progress
+- Search
+- Recommendations
+- Analytics
+- Notifications
+- Portfolio
+- Learning
+
+Nothing exists independently.
+
+---
+
+## Principle 2 — AI First
+
+Artificial Intelligence is never an add-on.
+
+Every workflow should ask:
+
+How can AI improve this?
+
+Examples:
+
+Career Page
+
+↓
+
+AI explains difficult concepts
+
+Roadmap
+
+↓
+
+AI adjusts learning speed
+
+Portfolio
+
+↓
+
+AI reviews projects
+
+Resume
+
+↓
+
+AI improves wording
+
+Interview
+
+↓
+
+AI conducts mock interviews
+
+Dashboard
+
+↓
+
+AI prioritizes today's work
+
+---
+
+## Principle 3 — Context Before Action
+
+No recommendation should be made without context.
+
+The system should understand:
+
+Current Career
+
+↓
+
+Current Skill Level
+
+↓
+
+Career DNA
+
+↓
+
+Learning History
+
+↓
+
+Current Progress
+
+↓
+
+Goals
+
+↓
+
+Time Availability
+
+↓
+
+Previous Conversations
+
+Only then should recommendations be generated.
+
+---
+
+## Principle 4 — Modular Architecture
+
+Every module should be independently maintainable.
+
+Modules communicate through shared contracts.
+
+No module should depend on another module's internal implementation.
+
+---
+
+## Principle 5 — Configuration Over Duplication
+
+Nothing should be hardcoded if it can be configured.
+
+Examples
+
+Roadmaps
+
+Career Metadata
+
+Progress Rules
+
+Dashboard Widgets
+
+Question Banks
+
+Navigation
+
+Achievements
+
+Everything should be data-driven.
+
+---
+
+## Principle 6 — Product Before Code
+
+Engineering decisions should always support the product philosophy.
+
+Never introduce technical complexity that reduces user clarity.
+
+---
+
+# 4. Platform Definition
+
+AI Career OS consists of interconnected systems.
+
+These systems together create the operating system.
+
+```
+Landing Experience
+
+↓
+
+Authentication
+
+↓
+
+Career Discovery
+
+↓
+
+Career DNA
+
+↓
+
+Dashboard
+
+↓
+
+Career Workspace
+
+↓
+
+Learning Workspace
+
+↓
+
+Projects
+
+↓
+
+Portfolio
+
+↓
+
+Interview Preparation
+
+↓
+
+Career Readiness
+
+↓
+
+Employment
+
+↓
+
+Career Growth
+```
+
+Users move naturally between systems.
+
+They never "leave" the product.
+
+---
+
+# 5. Core Engineering Principles
+
+Every engineering decision should satisfy all of these.
+
+## Single Source of Truth
+
+Every entity exists once.
+
+Never duplicate business data.
+
+---
+
+## Shared Components
+
+Never recreate UI.
+
+Reuse.
+
+Extend.
+
+Compose.
+
+---
+
+## Shared Logic
+
+Business logic belongs in reusable services.
+
+Never inside UI components.
+
+---
+
+## Predictable State
+
+Every state should have one owner.
+
+Users should never experience inconsistent data.
+
+---
+
+## Explainable AI
+
+Every AI recommendation must explain:
+
+Why?
+
+Why now?
+
+What comes next?
+
+---
+
+## Progressive Enhancement
+
+The platform should remain usable without advanced effects.
+
+Animations enhance.
+
+They never replace functionality.
+
+---
+
+# 6. System Architecture
+
+The operating system consists of independent engines.
+
+```
+Presentation Layer
+
+↓
+
+Workspace Layer
+
+↓
+
+Application Layer
+
+↓
+
+Domain Layer
+
+↓
+
+AI Layer
+
+↓
+
+Knowledge Layer
+
+↓
+
+Infrastructure Layer
+```
+
+Each layer has a clear responsibility.
+
+---
+
+# 7. Workspace Architecture
+
+Everything inside AI Career OS is a Workspace.
+
+Examples
+
+Dashboard Workspace
+
+Career Workspace
+
+Learning Workspace
+
+Portfolio Workspace
+
+Resume Workspace
+
+Interview Workspace
+
+AI Coach Workspace
+
+Community Workspace
+
+Settings Workspace
+
+Each workspace owns:
+
+UI
+
+Business Logic
+
+Routing
+
+State
+
+Services
+
+Permissions
+
+while following shared platform standards.
+
+---
+
+# 8. Domain Architecture
+
+Domains define business boundaries.
+
+Primary Domains
+
+Career
+
+Learning
+
+Projects
+
+Portfolio
+
+AI
+
+Identity
+
+Progress
+
+Assessment
+
+Recruitment
+
+Community
+
+Analytics
+
+Each domain owns its own models.
+
+Its own services.
+
+Its own rules.
+
+Communication happens through public interfaces only.
+
+---
+
+# 9. Shared Platform Services
+
+The following services are platform-wide.
+
+Authentication
+
+Authorization
+
+Search
+
+AI Context Builder
+
+Recommendation Engine
+
+Knowledge Graph
+
+Notification Service
+
+Analytics
+
+Logging
+
+Storage
+
+Feature Flags
+
+Localization
+
+Theme
+
+No feature should implement its own version.
+
+---
+
+# 10. AI Layer
+
+Artificial Intelligence consists of specialized engines.
+
+Career Reasoning Engine
+
+Career DNA Engine
+
+Recommendation Engine
+
+Roadmap Generator
+
+Project Reviewer
+
+Resume Reviewer
+
+Portfolio Reviewer
+
+Interview Coach
+
+Learning Planner
+
+Content Generator
+
+Every engine has one responsibility.
+
+No engine should perform unrelated tasks.
+
+---
+
+# 11. Knowledge Graph
+
+The Knowledge Graph is the brain of AI Career OS.
+
+Everything becomes an entity.
+
+Examples
+
+Career
+
+↓
+
+Skills
+
+↓
+
+Projects
+
+↓
+
+Frameworks
+
+↓
+
+Programming Languages
+
+↓
+
+Tools
+
+↓
+
+Companies
+
+↓
+
+Industries
+
+↓
+
+Certifications
+
+↓
+
+Interview Questions
+
+↓
+
+Communities
+
+↓
+
+Learning Resources
+
+Relationships become more important than pages.
+
+Nothing should exist in isolation.
+
+---
+
+# 12. Module Communication
+
+Modules never communicate directly.
+
+Communication occurs through:
+
+Events
+
+Shared Services
+
+Domain APIs
+
+Shared State
+
+Example
+
+Complete Project
+
+↓
+
+Progress Engine
+
+↓
+
+Achievement Engine
+
+↓
+
+Dashboard
+
+↓
+
+Career Readiness
+
+↓
+
+AI Coach
+
+↓
+
+Notifications
+
+Every update propagates automatically.
+
+---
+
+# 13. Event-Driven Architecture
+
+Major user actions emit events.
+
+Examples
+
+CareerStarted
+
+CareerCompleted
+
+RoadmapStarted
+
+CourseCompleted
+
+ProjectCompleted
+
+QuizPassed
+
+CertificateEarned
+
+PortfolioPublished
+
+InterviewCompleted
+
+ResumeGenerated
+
+CareerChanged
+
+AIConversationCompleted
+
+Every event becomes available to:
+
+Analytics
+
+Notifications
+
+Achievements
+
+Recommendations
+
+AI Memory
+
+Dashboard
+
+Future automation
+
+---
+
+# 14. Routing Philosophy
+
+Routes represent Workspaces.
+
+Not pages.
+
+Example
+
+/dashboard
+
+/careers
+
+/careers/[slug]
+
+/projects
+
+/portfolio
+
+/interviews
+
+/progress
+
+/coach
+
+/settings
+
+Routes should be predictable.
+
+Readable.
+
+Semantic.
+
+---
+
+# 15. Folder Philosophy
+
+Code organization mirrors business domains.
+
+Never organize by file type alone.
+
+Instead organize by ownership.
+
+Example
+
+```
+app/
+
+domains/
+
+shared/
+
+components/
+
+services/
+
+lib/
+
+hooks/
+
+stores/
+
+types/
+
+styles/
+
+config/
+
+assets/
+```
+
+Business features remain grouped together.
+
+---
+
+# 16. Dependency Rules
+
+Allowed
+
+UI
+
+↓
+
+Domain
+
+↓
+
+Services
+
+↓
+
+Infrastructure
+
+Not Allowed
+
+Infrastructure
+
+↓
+
+UI
+
+Components
+
+↓
+
+Components from unrelated domains
+
+Circular dependencies
+
+Every dependency should point downward.
+
+---
+
+# 17. Engineering Standards
+
+Every feature must satisfy:
+
+✓ Modular
+
+✓ Reusable
+
+✓ Typed
+
+✓ Accessible
+
+✓ Tested
+
+✓ Responsive
+
+✓ Performant
+
+✓ AI-aware
+
+✓ Observable
+
+✓ Secure
+
+✓ Extensible
+
+---
+
+# 18. Scalability
+
+The architecture must support:
+
+1000+ Careers
+
+100,000+ Resources
+
+Millions of Users
+
+Unlimited Projects
+
+Unlimited Notes
+
+Unlimited AI Conversations
+
+Unlimited Roadmap Versions
+
+Unlimited Portfolio Items
+
+without redesigning the system.
+
+---
+
+# 19. Non-Negotiable Rules
+
+Never duplicate business logic.
+
+Never duplicate UI components.
+
+Never hardcode reusable data.
+
+Never bypass shared services.
+
+Never create isolated features.
+
+Never ignore AI context.
+
+Never break the design system.
+
+Never break the Product Bible.
+
+Every engineering decision should strengthen the platform.
+
+---
+
+# 20. Engineering Manifesto
+
+AI Career OS is not engineered as a collection of web pages.
+
+It is engineered as a living AI-native operating system.
+
+Every module should increase the intelligence of the platform.
+
+Every interaction should increase user confidence.
+
+Every architectural decision should improve long-term scalability.
+
+Every line of code should contribute to one mission:
+
+**Helping people confidently build successful careers in Artificial Intelligence.**
+
+---
+
+# 📘 AI Career OS Engineering Bible
+## Volume 2 — Core Engineering Standards & Project Structure
+### Version 2.0
+### Status: Official Engineering Specification
+
+---
+
+# 1. Purpose
+
+This volume defines the engineering standards that every developer, AI coding assistant, and contributor must follow when building AI Career OS.
+
+The objective is consistency.
+
+Regardless of whether code is written by a human, Claude, GPT, Codex, Cursor, or any future AI, the resulting codebase should appear as though it was created by one experienced engineering team.
+
+---
+
+# 2. Engineering Stack
+
+The technology stack is part of the platform architecture and should remain stable unless a strong architectural reason exists.
+
+## Frontend
+
+- Next.js (App Router)
+- React
+- TypeScript
+- Tailwind CSS
+- shadcn/ui
+- Radix UI
+- Framer Motion
+- React Three Fiber (only where justified)
+
+---
+
+## Backend
+
+- Next.js Server Actions
+- Supabase
+- PostgreSQL
+- Edge Functions (when appropriate)
+
+---
+
+## AI
+
+- OpenAI
+- Anthropic
+- Google Gemini
+- Future provider abstraction layer
+
+The platform must never depend on a single AI vendor.
+
+---
+
+# 3. Project Structure
+
+```
+app/
+
+components/
+
+domains/
+
+features/
+
+hooks/
+
+services/
+
+lib/
+
+types/
+
+config/
+
+styles/
+
+public/
+
+assets/
+
+database/
+
+docs/
+
+tests/
+
+scripts/
+```
+
+Every folder has a single responsibility.
+
+---
+
+# 4. Domain Structure
+
+Every business capability becomes a domain.
+
+Example
+
+```
+domains/
+
+career/
+
+dashboard/
+
+roadmap/
+
+mentor/
+
+projects/
+
+portfolio/
+
+assessment/
+
+progress/
+
+community/
+
+auth/
+
+profile/
+
+settings/
+```
+
+Each domain owns:
+
+- Components
+- Hooks
+- Types
+- Server Actions
+- Services
+- Validation
+- Tests
+
+---
+
+# 5. Shared Layer
+
+The Shared layer contains code reused by multiple domains.
+
+Examples
+
+```
+shared/
+
+components/
+
+hooks/
+
+utils/
+
+constants/
+
+validators/
+
+animations/
+
+icons/
+
+providers/
+```
+
+Nothing business-specific belongs here.
+
+---
+
+# 6. Component Rules
+
+Components have one responsibility.
+
+Good
+
+```
+CareerHero
+
+ProjectCard
+
+ProgressRing
+
+MentorCard
+```
+
+Bad
+
+```
+CareerDashboardWithProjectsAndSettings
+```
+
+Small components compose larger ones.
+
+---
+
+# 7. Server vs Client Components
+
+Default
+
+Server Component
+
+Only use Client Components when necessary.
+
+Allowed reasons
+
+- Local interaction
+- Browser APIs
+- Animation
+- Forms
+- Drag & Drop
+
+Everything else should remain server-rendered.
+
+---
+
+# 8. Business Logic
+
+Business logic NEVER belongs inside components.
+
+Incorrect
+
+```
+CareerCard.tsx
+
+↓
+
+calculates readiness
+```
+
+Correct
+
+```
+CareerService
+
+↓
+
+calculates readiness
+
+↓
+
+CareerCard renders result
+```
+
+Components display.
+
+Services think.
+
+---
+
+# 9. Service Layer
+
+Every important business process belongs in a service.
+
+Examples
+
+CareerService
+
+ProgressService
+
+RoadmapService
+
+RecommendationService
+
+PortfolioService
+
+ResumeService
+
+InterviewService
+
+NotificationService
+
+AnalyticsService
+
+AIContextService
+
+Services should contain no UI code.
+
+---
+
+# 10. Custom Hooks
+
+Hooks encapsulate reusable behavior.
+
+Examples
+
+useCareer()
+
+useProgress()
+
+useRoadmap()
+
+useDashboard()
+
+useMentor()
+
+useNotifications()
+
+Hooks should not duplicate business rules.
+
+---
+
+# 11. Naming Conventions
+
+Folders
+
+lowercase
+
+```
+career
+
+dashboard
+
+projects
+```
+
+Files
+
+PascalCase for components
+
+camelCase for utilities
+
+Examples
+
+CareerHero.tsx
+
+ProjectCard.tsx
+
+careerService.ts
+
+calculateReadiness.ts
+
+---
+
+# 12. TypeScript Rules
+
+No `any`.
+
+Prefer explicit types.
+
+Every public function must be typed.
+
+Shared models belong inside
+
+```
+types/
+```
+
+Never redefine shared interfaces.
+
+---
+
+# 13. Configuration
+
+Never hardcode configurable values.
+
+Move to
+
+```
+config/
+```
+
+Examples
+
+Career categories
+
+Roadmap weights
+
+Difficulty levels
+
+AI providers
+
+Feature flags
+
+Theme options
+
+---
+
+# 14. Constants
+
+Static values belong in
+
+```
+constants/
+```
+
+Examples
+
+Career levels
+
+Badge names
+
+Route names
+
+Quiz limits
+
+Notification types
+
+---
+
+# 15. Environment Variables
+
+Never expose secrets.
+
+Public values
+
+```
+NEXT_PUBLIC_
+```
+
+Private values
+
+Server only.
+
+AI keys must never reach the browser.
+
+---
+
+# 16. Validation
+
+Every input must be validated.
+
+Frontend validation
+
+↓
+
+Server validation
+
+↓
+
+Database constraints
+
+Never trust client input.
+
+---
+
+# 17. Error Handling
+
+Every service returns predictable results.
+
+Never expose stack traces.
+
+Errors should contain
+
+- message
+- type
+- retry possibility
+
+---
+
+# 18. Logging
+
+Log meaningful events.
+
+Examples
+
+Career Started
+
+Roadmap Completed
+
+Project Published
+
+Interview Generated
+
+AI Recommendation Created
+
+Never log sensitive user data.
+
+---
+
+# 19. Security
+
+Default principles
+
+Least privilege
+
+Secure by default
+
+Validate everything
+
+Sanitize input
+
+Protect secrets
+
+Encrypt sensitive information
+
+---
+
+# 20. Authentication
+
+Authentication is centralized.
+
+No domain implements its own auth logic.
+
+Every request requiring identity must verify authentication before execution.
+
+---
+
+# 21. Authorization
+
+Permissions belong in policy layers.
+
+Never check permissions directly inside components.
+
+---
+
+# 22. API Standards
+
+Every endpoint should
+
+- validate input
+- return typed output
+- return predictable errors
+- support future versioning
+
+Prefer Server Actions over REST where appropriate.
+
+---
+
+# 23. State Rules
+
+Persistent state
+
+↓
+
+Database
+
+Temporary state
+
+↓
+
+Component
+
+Global state
+
+↓
+
+Shared store
+
+Never duplicate ownership.
+
+---
+
+# 24. Caching
+
+Cache
+
+Career content
+
+Tools
+
+Resources
+
+Salary
+
+Communities
+
+Do not cache
+
+User progress
+
+Notes
+
+Achievements
+
+Notifications
+
+---
+
+# 25. Performance Standards
+
+Target
+
+First Load
+
+<2s
+
+Interaction
+
+<100ms
+
+Animation
+
+60 FPS
+
+Search
+
+Instant
+
+AI responses
+
+Streaming
+
+Every feature must justify additional JavaScript.
+
+---
+
+# 26. Accessibility
+
+Every component supports
+
+Keyboard
+
+Screen readers
+
+Focus indicators
+
+Reduced motion
+
+ARIA labels
+
+Semantic HTML
+
+Accessibility is required.
+
+---
+
+# 27. Testing Strategy
+
+Every domain includes
+
+Unit Tests
+
+Integration Tests
+
+UI Tests
+
+End-to-End Tests
+
+Critical user journeys must always be covered.
+
+---
+
+# 28. Documentation
+
+Every reusable system requires documentation.
+
+Include
+
+Purpose
+
+Responsibilities
+
+Dependencies
+
+Examples
+
+Extension guidelines
+
+Undocumented architecture is considered incomplete.
+
+---
+
+# 29. AI-Generated Code Rules
+
+AI-generated code must
+
+Reuse existing components
+
+Follow naming conventions
+
+Follow project structure
+
+Use shared services
+
+Avoid duplication
+
+Remain fully typed
+
+Include error handling
+
+Support accessibility
+
+Support responsiveness
+
+If AI cannot find an existing pattern, it should extend—not invent—a new one without updating the specification.
+
+---
+
+# 30. Definition of Done
+
+A feature is complete only if it
+
+✓ Works
+
+✓ Matches Product Bible
+
+✓ Matches Design Bible
+
+✓ Uses shared architecture
+
+✓ Passes tests
+
+✓ Is documented
+
+✓ Is accessible
+
+✓ Is responsive
+
+✓ Supports dark mode
+
+✓ Integrates with AI systems
+
+✓ Integrates with analytics
+
+✓ Integrates with progress tracking
+
+✓ Integrates with notifications
+
+✓ Produces no architectural debt
+
+---
+
+# Engineering Oath
+
+Every engineer and every AI coding assistant contributing to AI Career OS should build as though they are adding a permanent capability to a living operating system—not merely completing a task.
+
+Consistency is more valuable than speed.
+
+Architecture is more valuable than shortcuts.
+
+User success is more valuable than technical cleverness.
+
+Every contribution should make AI Career OS more intelligent, more maintainable, and more trustworthy than it was yesterday.
+
+---
+
+# 📘 AI Career OS Engineering Bible
+## Volume 3 — Shared Services, Domain Architecture & Component Engineering
+### Version 2.0
+### Status: Official Engineering Specification
+
+---
+
+# 1. Purpose
+
+This volume defines how business logic is organized inside AI Career OS.
+
+Its purpose is to ensure that:
+
+- UI remains simple.
+- Business rules remain reusable.
+- AI can understand the architecture.
+- Every feature is extensible.
+- Every domain evolves independently.
+
+The system must resemble a collection of collaborating engines—not a collection of pages.
+
+---
+
+# 2. Engineering Layers
+
+Every feature belongs to one of the following layers.
+
+```
+Presentation Layer
+
+↓
+
+Application Layer
+
+↓
+
+Domain Layer
+
+↓
+
+AI Layer
+
+↓
+
+Infrastructure Layer
+```
+
+Each layer has one responsibility.
+
+No layer should bypass another.
+
+---
+
+# 3. Presentation Layer
+
+Responsible for:
+
+- UI
+- User Interaction
+- Layout
+- Accessibility
+- Animations
+- Responsive Design
+
+Presentation Layer never contains business rules.
+
+Components should only answer:
+
+"What should the user see?"
+
+---
+
+# 4. Application Layer
+
+Coordinates workflows.
+
+Examples
+
+Career Started
+
+↓
+
+Progress updated
+
+↓
+
+Achievement unlocked
+
+↓
+
+Dashboard refreshed
+
+↓
+
+AI notified
+
+↓
+
+Notification created
+
+Application layer orchestrates.
+
+It does not calculate.
+
+---
+
+# 5. Domain Layer
+
+Every business capability belongs to one domain.
+
+Examples
+
+Career
+
+Roadmap
+
+Learning
+
+Projects
+
+Portfolio
+
+Interview
+
+Mentor
+
+Progress
+
+Dashboard
+
+Community
+
+Assessment
+
+Authentication
+
+Settings
+
+Analytics
+
+Domains never access each other's internals.
+
+Interaction occurs through public interfaces.
+
+---
+
+# 6. Infrastructure Layer
+
+Responsible for external systems.
+
+Examples
+
+Database
+
+Supabase
+
+AI Providers
+
+Storage
+
+Email
+
+Authentication
+
+Analytics
+
+Payments (future)
+
+Push Notifications
+
+Search
+
+Infrastructure never contains business decisions.
+
+---
+
+# 7. AI Layer
+
+AI is treated as a platform service.
+
+Never call LLMs directly from UI.
+
+Always use the AI Service.
+
+Responsibilities
+
+Context Building
+
+Prompt Construction
+
+Reasoning
+
+Memory
+
+Evaluation
+
+Streaming
+
+Caching
+
+Fallback
+
+Logging
+
+Provider Selection
+
+---
+
+# 8. Domain Structure
+
+Every domain follows exactly the same structure.
+
+```
+career/
+
+components/
+
+hooks/
+
+services/
+
+actions/
+
+types/
+
+schemas/
+
+utils/
+
+constants/
+
+tests/
+
+README.md
+```
+
+Every domain becomes self-contained.
+
+---
+
+# 9. Domain Responsibilities
+
+## Career Domain
+
+Owns
+
+Career Metadata
+
+Career Relationships
+
+Salary
+
+Tools
+
+Skills
+
+Overview
+
+Career Status
+
+---
+
+## Roadmap Domain
+
+Owns
+
+Phases
+
+Courses
+
+Resources
+
+Missions
+
+Quizzes
+
+Milestones
+
+Progress
+
+---
+
+## Learning Domain
+
+Owns
+
+Lessons
+
+Learning Queue
+
+Study Plans
+
+Recommendations
+
+Completion
+
+---
+
+## Progress Domain
+
+Owns
+
+Career Progress
+
+Readiness
+
+Learning Streak
+
+Analytics
+
+Achievements
+
+---
+
+## Portfolio Domain
+
+Owns
+
+Projects
+
+Portfolio
+
+GitHub
+
+Live Demo
+
+Publishing
+
+---
+
+## AI Mentor Domain
+
+Owns
+
+Recommendations
+
+Coaching
+
+Learning Advice
+
+Interview Advice
+
+Career Guidance
+
+---
+
+# 10. Shared Services
+
+Shared services are platform-wide.
+
+Only one implementation exists.
+
+Examples
+
+CareerService
+
+RoadmapService
+
+RecommendationService
+
+ProgressService
+
+PortfolioService
+
+NotificationService
+
+AnalyticsService
+
+SearchService
+
+KnowledgeGraphService
+
+ResumeService
+
+InterviewService
+
+Every feature consumes these services.
+
+---
+
+# 11. Service Rules
+
+Every service has one responsibility.
+
+Example
+
+ProgressService
+
+Allowed
+
+Calculate progress
+
+Update progress
+
+Return progress
+
+Not Allowed
+
+Render UI
+
+Generate animations
+
+Call unrelated services unnecessarily
+
+---
+
+# 12. Service Communication
+
+Services communicate through interfaces.
+
+Example
+
+```
+PortfolioService
+
+↓
+
+ProgressService
+
+↓
+
+AchievementService
+
+↓
+
+NotificationService
+```
+
+Services should not create circular dependencies.
+
+---
+
+# 13. Event Bus
+
+The platform communicates through domain events.
+
+Example
+
+```
+ProjectCompleted
+
+↓
+
+ProgressUpdated
+
+↓
+
+AchievementUnlocked
+
+↓
+
+DashboardUpdated
+
+↓
+
+AIRecommendationGenerated
+
+↓
+
+NotificationCreated
+```
+
+Every important user action becomes an event.
+
+---
+
+# 14. Event Naming
+
+Events use past tense.
+
+Examples
+
+CareerStarted
+
+CourseCompleted
+
+MissionSubmitted
+
+QuizPassed
+
+PortfolioPublished
+
+ResumeGenerated
+
+InterviewFinished
+
+CertificateEarned
+
+CareerChanged
+
+---
+
+# 15. Business Rules
+
+Business rules belong inside domain services.
+
+Examples
+
+Career readiness calculation
+
+Roadmap unlocking
+
+Skill progression
+
+Badge unlocking
+
+Portfolio scoring
+
+Interview readiness
+
+Never inside UI.
+
+---
+
+# 16. Repository Pattern
+
+Database access is abstracted.
+
+Example
+
+```
+CareerRepository
+
+UserRepository
+
+ProgressRepository
+
+PortfolioRepository
+```
+
+Services never query the database directly.
+
+Repositories isolate persistence.
+
+---
+
+# 17. Validation Layer
+
+Every domain owns validation.
+
+Examples
+
+Career Schema
+
+Project Schema
+
+Profile Schema
+
+Resume Schema
+
+Validation occurs
+
+Before business logic.
+
+---
+
+# 18. Shared Utilities
+
+Utilities contain pure functions.
+
+Examples
+
+Date formatting
+
+Score calculation
+
+Duration formatting
+
+Markdown rendering
+
+Slug generation
+
+Utilities never depend on business state.
+
+---
+
+# 19. Constants
+
+Every reusable value belongs in constants.
+
+Examples
+
+Career Categories
+
+Difficulty Levels
+
+Progress Thresholds
+
+Badge Types
+
+Roadmap Status
+
+Animation Durations
+
+Notification Types
+
+---
+
+# 20. Configuration
+
+Configuration is centralized.
+
+Examples
+
+Feature Flags
+
+AI Provider Priority
+
+Roadmap Rules
+
+Career Readiness Weights
+
+Learning Limits
+
+Theme
+
+Brand
+
+Environment
+
+Never hardcode configurable behavior.
+
+---
+
+# 21. Dependency Injection
+
+Services should receive dependencies.
+
+Not create them.
+
+Example
+
+RecommendationService receives
+
+KnowledgeGraph
+
+AIService
+
+ProgressService
+
+ProfileService
+
+instead of instantiating them internally.
+
+This improves testing and extensibility.
+
+---
+
+# 22. Component Engineering
+
+Components exist only to present information.
+
+Component lifecycle
+
+Receive Props
+
+↓
+
+Render
+
+↓
+
+Emit Events
+
+↓
+
+Done
+
+No business calculations.
+
+---
+
+# 23. Component Categories
+
+Every component belongs to exactly one category.
+
+Layout
+
+Navigation
+
+Career
+
+Roadmap
+
+Learning
+
+Progress
+
+Portfolio
+
+Mentor
+
+Assessment
+
+Dashboard
+
+Feedback
+
+Shared
+
+Utility
+
+Never mix responsibilities.
+
+---
+
+# 24. Smart vs Dumb Components
+
+Presentation Components
+
+Only render.
+
+Container Components
+
+Coordinate data.
+
+Prefer Presentation Components whenever possible.
+
+---
+
+# 25. Component Composition
+
+Large components are assembled from small ones.
+
+Example
+
+CareerHero
+
+contains
+
+Title
+
+Metrics
+
+Actions
+
+Progress
+
+Bookmark
+
+Share
+
+Tags
+
+Never duplicate subcomponents.
+
+---
+
+# 26. Hooks
+
+Hooks coordinate interaction.
+
+Examples
+
+useCareer()
+
+useRoadmap()
+
+useMentor()
+
+useProgress()
+
+useDashboard()
+
+Hooks may call services.
+
+Hooks never own business rules.
+
+---
+
+# 27. Server Actions
+
+Server Actions perform mutations.
+
+Examples
+
+Complete Course
+
+Create Note
+
+Update Profile
+
+Publish Portfolio
+
+Save Resume
+
+Submit Quiz
+
+Generate Recommendation
+
+All mutations originate here.
+
+---
+
+# 28. AI Service Architecture
+
+Every AI request follows the same pipeline.
+
+```
+User Action
+
+↓
+
+Context Builder
+
+↓
+
+Memory Retrieval
+
+↓
+
+Knowledge Graph
+
+↓
+
+Prompt Builder
+
+↓
+
+Provider Selection
+
+↓
+
+LLM
+
+↓
+
+Validation
+
+↓
+
+Structured Response
+
+↓
+
+UI
+```
+
+No component bypasses this flow.
+
+---
+
+# 29. Context Builder
+
+The Context Builder is mandatory.
+
+Before any AI call it collects
+
+Current Career
+
+Career DNA
+
+Roadmap Phase
+
+Completed Projects
+
+Skill Levels
+
+Previous Conversations
+
+User Preferences
+
+Current Goals
+
+Study Availability
+
+Recent Activity
+
+The LLM should never receive incomplete context if it is available.
+
+---
+
+# 30. Engineering Decision Matrix
+
+Before implementing any feature, ask:
+
+Does it reuse existing services?
+
+Does it belong to the correct domain?
+
+Can it be configured?
+
+Does it duplicate logic?
+
+Does it emit events?
+
+Does it integrate with AI?
+
+Does it update Progress?
+
+Does it update Analytics?
+
+Does it follow Product Bible?
+
+If any answer is "No", redesign before implementation.
+
+---
+
+# Engineering Principle
+
+The architecture of AI Career OS is intentionally designed to make complexity invisible.
+
+Business logic belongs to domains.
+
+Coordination belongs to the application layer.
+
+Presentation belongs to components.
+
+Intelligence belongs to AI services.
+
+Persistence belongs to repositories.
+
+When every layer respects its responsibility, the platform remains understandable, scalable, and maintainable—even as it grows into hundreds of careers, thousands of resources, and millions of users.
+
+---
+
+# 📘 AI Career OS Engineering Bible
+## Volume 4 — AI Architecture, Memory System, Knowledge Graph & Recommendation Engine
+### Version 2.0
+### Status: Official Engineering Specification
+
+---
+
+# 1. Purpose
+
+Artificial Intelligence is **not a feature** of AI Career OS.
+
+Artificial Intelligence **is the operating system**.
+
+Unlike traditional applications where AI is attached to existing workflows, AI Career OS is designed around AI-first decision making.
+
+Every recommendation, roadmap, dashboard, career suggestion and learning plan should originate from the AI layer.
+
+---
+
+# 2. AI Architecture Overview
+
+The AI platform consists of multiple specialized engines.
+
+```
+User
+
+↓
+
+Context Builder
+
+↓
+
+Memory Engine
+
+↓
+
+Knowledge Graph
+
+↓
+
+Reasoning Engine
+
+↓
+
+Decision Engine
+
+↓
+
+Recommendation Engine
+
+↓
+
+Personalization Engine
+
+↓
+
+UI
+```
+
+Each engine has one responsibility.
+
+---
+
+# 3. AI Engineering Principles
+
+Every AI system must satisfy these principles.
+
+## Explainable
+
+AI never recommends without reasoning.
+
+Every recommendation answers:
+
+- Why?
+- Why now?
+- Why not another option?
+
+---
+
+## Contextual
+
+AI always reasons using user context.
+
+Never generate generic advice.
+
+---
+
+## Adaptive
+
+Recommendations evolve continuously.
+
+Static recommendations are considered bugs.
+
+---
+
+## Predictable
+
+AI should feel intelligent but consistent.
+
+The same user with the same context should receive nearly identical recommendations.
+
+---
+
+## Transparent
+
+Users should understand how conclusions were reached.
+
+---
+
+# 4. AI Layer Components
+
+The AI layer consists of:
+
+- Context Builder
+- Memory Engine
+- Knowledge Graph Engine
+- Career DNA Engine
+- Recommendation Engine
+- Roadmap Engine
+- Learning Planner
+- Portfolio Reviewer
+- Resume Reviewer
+- Interview Coach
+- AI Mentor
+- Evaluation Engine
+
+Every engine is replaceable.
+
+---
+
+# 5. Context Builder
+
+The Context Builder is mandatory.
+
+No LLM request should bypass it.
+
+It gathers all relevant information before prompting.
+
+Sources include:
+
+User Profile
+
+Career DNA
+
+Current Career
+
+Learning Progress
+
+Roadmap Phase
+
+Completed Projects
+
+Skills
+
+Weaknesses
+
+Goals
+
+Study Schedule
+
+Recent AI Conversations
+
+Career History
+
+Learning Preferences
+
+Current Dashboard State
+
+Notifications
+
+Achievements
+
+Everything becomes one structured AI context.
+
+---
+
+# 6. Context Priority
+
+Context is prioritized.
+
+Highest
+
+Current User State
+
+↓
+
+Current Workspace
+
+↓
+
+Career Data
+
+↓
+
+Knowledge Graph
+
+↓
+
+Conversation History
+
+↓
+
+Global Knowledge
+
+This prevents irrelevant AI responses.
+
+---
+
+# 7. AI Memory System
+
+Memory is divided into layers.
+
+## Layer 1
+
+Conversation Memory
+
+Current discussion.
+
+---
+
+## Layer 2
+
+Session Memory
+
+Everything inside the current session.
+
+---
+
+## Layer 3
+
+Career Memory
+
+Career goals
+
+Career changes
+
+Preferred technologies
+
+Preferred learning style
+
+Completed milestones
+
+---
+
+## Layer 4
+
+Long-Term Memory
+
+Stable preferences.
+
+Learning habits.
+
+Strengths.
+
+Weaknesses.
+
+Career ambitions.
+
+---
+
+## Layer 5
+
+Platform Intelligence
+
+Anonymous aggregated insights.
+
+Never personally identifiable.
+
+---
+
+# 8. Memory Rules
+
+AI should remember:
+
+Career Goals
+
+Learning Style
+
+Preferred Companies
+
+Completed Projects
+
+Favorite Technologies
+
+Weak Skills
+
+Strong Skills
+
+Preferred AI Models
+
+Study Schedule
+
+Career Interests
+
+AI should never repeatedly ask known information.
+
+---
+
+# 9. Memory Updates
+
+Memory updates only after meaningful events.
+
+Examples
+
+Career Changed
+
+Project Completed
+
+Certificate Earned
+
+Assessment Finished
+
+Profile Updated
+
+Goal Changed
+
+Conversation Summary Saved
+
+Avoid noisy memories.
+
+---
+
+# 10. Knowledge Graph
+
+The Knowledge Graph is the intelligence backbone.
+
+Everything is modeled as connected entities.
+
+Examples
+
+Career
+
+↓
+
+Skills
+
+↓
+
+Projects
+
+↓
+
+Technologies
+
+↓
+
+Companies
+
+↓
+
+Industries
+
+↓
+
+Courses
+
+↓
+
+Communities
+
+↓
+
+Interview Questions
+
+↓
+
+Salary
+
+↓
+
+Future Careers
+
+Relationships matter more than individual nodes.
+
+---
+
+# 11. Knowledge Graph Rules
+
+Every entity includes:
+
+Definition
+
+Relationships
+
+Prerequisites
+
+Alternatives
+
+Difficulty
+
+Popularity
+
+Demand
+
+Future Outlook
+
+Dependencies
+
+Official Resources
+
+Every entity should be reusable.
+
+---
+
+# 12. Career Graph
+
+Careers connect naturally.
+
+Example
+
+```
+Python
+
+↓
+
+APIs
+
+↓
+
+LLMs
+
+↓
+
+RAG
+
+↓
+
+AI Engineer
+
+↓
+
+AI Architect
+```
+
+Users can explore adjacent careers naturally.
+
+---
+
+# 13. Recommendation Engine
+
+The Recommendation Engine never guesses.
+
+It reasons.
+
+Inputs include:
+
+Career DNA
+
+Learning Progress
+
+Knowledge Graph
+
+Job Market
+
+Portfolio
+
+Skill Gaps
+
+Study Time
+
+Career Goal
+
+Interview Readiness
+
+Outputs include:
+
+Next Skill
+
+Next Project
+
+Next Course
+
+Next Career
+
+Next Mission
+
+Next Interview Task
+
+---
+
+# 14. Recommendation Pipeline
+
+```
+Collect Context
+
+↓
+
+Analyze Skill Graph
+
+↓
+
+Identify Gaps
+
+↓
+
+Rank Priorities
+
+↓
+
+Evaluate Alternatives
+
+↓
+
+Generate Recommendation
+
+↓
+
+Explain Reasoning
+
+↓
+
+Update Dashboard
+```
+
+---
+
+# 15. Career DNA Engine
+
+Career DNA represents the user's evolving professional identity.
+
+It evaluates dimensions such as:
+
+Analytical Thinking
+
+Communication
+
+Programming Confidence
+
+Business Thinking
+
+Leadership
+
+Research Interest
+
+Automation Mindset
+
+Creativity
+
+Problem Solving
+
+Learning Style
+
+Every recommendation is influenced by Career DNA.
+
+---
+
+# 16. Learning Planner
+
+The planner generates personalized learning schedules.
+
+Inputs
+
+Available Time
+
+Energy Level (future)
+
+Career Goal
+
+Progress
+
+Deadlines
+
+Roadmap
+
+Outputs
+
+Daily Tasks
+
+Weekly Goals
+
+Learning Queue
+
+Practice Sessions
+
+Review Sessions
+
+Projects
+
+---
+
+# 17. Portfolio Intelligence
+
+Portfolio is continuously evaluated.
+
+Metrics
+
+Project Diversity
+
+Difficulty
+
+Industry Relevance
+
+Code Quality (future)
+
+Documentation
+
+Deployment
+
+Business Value
+
+AI recommends improvements automatically.
+
+---
+
+# 18. Resume Intelligence
+
+Resume analysis considers
+
+Career Target
+
+Portfolio
+
+Projects
+
+Skills
+
+Certificates
+
+Achievements
+
+Job Market
+
+The resume evolves alongside the user.
+
+---
+
+# 19. Interview Intelligence
+
+Interview preparation uses
+
+Career
+
+Skill Gaps
+
+Portfolio
+
+Target Company
+
+Seniority
+
+Weak Topics
+
+Behavioral Profile
+
+Mock interviews become increasingly personalized.
+
+---
+
+# 20. AI Mentor
+
+The AI Mentor consumes every engine.
+
+It never reasons independently.
+
+Instead it orchestrates:
+
+Knowledge Graph
+
+Career DNA
+
+Memory
+
+Recommendation Engine
+
+Roadmap
+
+Dashboard
+
+Portfolio
+
+Interview
+
+The Mentor becomes the user-facing personality.
+
+---
+
+# 21. AI Reasoning
+
+Every recommendation follows:
+
+Observe
+
+↓
+
+Understand
+
+↓
+
+Reason
+
+↓
+
+Evaluate
+
+↓
+
+Recommend
+
+↓
+
+Explain
+
+↓
+
+Monitor
+
+↓
+
+Adapt
+
+No recommendation should skip reasoning.
+
+---
+
+# 22. Confidence Scoring
+
+Every recommendation receives a confidence score.
+
+Examples
+
+95%
+
+Highly Recommended
+
+78%
+
+Recommended
+
+61%
+
+Possible Alternative
+
+Low-confidence recommendations should explain uncertainty.
+
+---
+
+# 23. AI Provider Abstraction
+
+The platform should support multiple LLM providers.
+
+Provider selection depends on:
+
+Task
+
+Latency
+
+Cost
+
+Capability
+
+Availability
+
+No business logic depends on a specific provider.
+
+---
+
+# 24. AI Safety
+
+The AI must never:
+
+Invent user history
+
+Invent completed projects
+
+Guarantee employment
+
+Recommend unethical behavior
+
+Hide uncertainty
+
+Hallucinations should be minimized through Knowledge Graph grounding.
+
+---
+
+# 25. AI Evaluation
+
+Every AI output should be evaluated.
+
+Metrics
+
+Accuracy
+
+Helpfulness
+
+Consistency
+
+Reasoning Quality
+
+Personalization
+
+User Satisfaction
+
+These metrics continuously improve prompts.
+
+---
+
+# 26. Future AI Systems
+
+The architecture must support:
+
+Multi-Agent Systems
+
+Planner Agents
+
+Research Agents
+
+Coding Agents
+
+Review Agents
+
+Recruitment Agents
+
+Career Agents
+
+without redesigning the platform.
+
+---
+
+# AI Architecture Manifesto
+
+Artificial Intelligence inside AI Career OS exists for one purpose:
+
+To transform information into intelligent career guidance.
+
+The platform should never become an AI chatbot.
+
+It should become an AI career partner.
+
+Every AI response should make the user more confident, more capable, and closer to meaningful career success.
+
+---
+# 📘 AI Career OS Engineering Bible
+## Volume 5 — Database Architecture, Knowledge Schema & Data Engineering
+### Version 2.0
+### Status: Official Engineering Specification
+
+---
+
+# 1. Purpose
+
+Data is the foundation of AI Career OS.
+
+Artificial Intelligence is only as intelligent as the data it can reason over.
+
+This specification defines how information is stored, related, queried, versioned, and evolved throughout the platform.
+
+The database is not merely storage.
+
+It is the persistent memory of the operating system.
+
+---
+
+# 2. Database Philosophy
+
+The database must satisfy six principles.
+
+## Human-Centered
+
+Data exists to improve user outcomes.
+
+Never collect information without purpose.
+
+---
+
+## AI-Native
+
+Every model should support AI reasoning.
+
+Relationships are first-class citizens.
+
+---
+
+## Knowledge-Driven
+
+Store entities.
+
+Connect entities.
+
+Reason over relationships.
+
+---
+
+## Extensible
+
+New careers, skills, AI tools, and technologies should be added without redesigning existing tables.
+
+---
+
+## Versioned
+
+Content changes.
+
+Roadmaps evolve.
+
+Recommendations improve.
+
+User progress must remain valid.
+
+---
+
+## Observable
+
+Every meaningful change should be measurable.
+
+---
+
+# 3. Data Layers
+
+The platform contains five logical layers.
+
+```
+Identity Layer
+
+↓
+
+Knowledge Layer
+
+↓
+
+Learning Layer
+
+↓
+
+Progress Layer
+
+↓
+
+Analytics Layer
+```
+
+Each layer owns its own responsibility.
+
+---
+
+# 4. Identity Layer
+
+Stores user identity.
+
+Entities include
+
+User
+
+Profile
+
+Preferences
+
+Career DNA
+
+Settings
+
+Authentication
+
+Permissions
+
+Study Schedule
+
+Goals
+
+Identity should remain independent from learning content.
+
+---
+
+# 5. Knowledge Layer
+
+The Knowledge Layer powers AI reasoning.
+
+Core entities
+
+Career
+
+Skill
+
+Technology
+
+Programming Language
+
+Framework
+
+Library
+
+Tool
+
+Cloud Platform
+
+Certification
+
+Company
+
+Industry
+
+Learning Resource
+
+Community
+
+Interview Question
+
+Salary
+
+Market Trend
+
+Every entity is reusable.
+
+---
+
+# 6. Learning Layer
+
+Owns educational content.
+
+Entities
+
+Roadmap
+
+Roadmap Phase
+
+Course
+
+Lesson
+
+Mission
+
+Project
+
+Capstone
+
+Quiz
+
+Assessment
+
+Portfolio Template
+
+Everything should reference Knowledge Layer entities.
+
+---
+
+# 7. Progress Layer
+
+Stores user progression.
+
+Examples
+
+Completed Courses
+
+Completed Missions
+
+Completed Projects
+
+Quiz Results
+
+Certificates
+
+Portfolio
+
+Learning Hours
+
+Career Readiness
+
+Learning Streak
+
+Progress should never be mixed with static content.
+
+---
+
+# 8. Analytics Layer
+
+Captures events.
+
+Examples
+
+Career Started
+
+Course Completed
+
+Project Published
+
+Career Changed
+
+Portfolio Updated
+
+Interview Finished
+
+Recommendation Accepted
+
+Every event becomes queryable.
+
+---
+
+# 9. Knowledge Graph
+
+Traditional databases answer
+
+"What is stored?"
+
+Knowledge Graph answers
+
+"How are things related?"
+
+Example
+
+```
+Python
+
+↓
+
+Required By
+
+↓
+
+AI Engineer
+
+↓
+
+Uses
+
+↓
+
+LangChain
+
+↓
+
+Requires
+
+↓
+
+Vector Database
+
+↓
+
+Used In
+
+↓
+
+RAG Project
+```
+
+Relationships become the product's intelligence.
+
+---
+
+# 10. Entity Rules
+
+Every entity includes
+
+UUID
+
+Slug
+
+Title
+
+Description
+
+Status
+
+Created At
+
+Updated At
+
+Version
+
+Metadata
+
+Relationships
+
+Soft Delete Flag (where appropriate)
+
+No anonymous records.
+
+---
+
+# 11. Entity Relationships
+
+Relationships should be explicit.
+
+Examples
+
+Career
+
+has many
+
+Skills
+
+Career
+
+has many
+
+Projects
+
+Project
+
+uses many
+
+Technologies
+
+Technology
+
+belongs to many
+
+Careers
+
+Avoid storing duplicate relationship data.
+
+---
+
+# 12. Metadata Strategy
+
+Every entity supports extensible metadata.
+
+Examples
+
+Display Options
+
+SEO
+
+AI Context
+
+Popularity
+
+Difficulty
+
+Experimental Flags
+
+Future fields should not require schema redesign.
+
+---
+
+# 13. Versioning
+
+Versioning applies to
+
+Roadmaps
+
+Career Pages
+
+Assessments
+
+Projects
+
+Courses
+
+Recommendations
+
+Users remain attached to the version they started until migrated.
+
+---
+
+# 14. Career Model
+
+Career contains
+
+Identity
+
+Description
+
+Difficulty
+
+Salary
+
+Hiring Demand
+
+Remote Availability
+
+Career DNA Factors
+
+Roadmap
+
+Related Careers
+
+Required Skills
+
+Recommended Tools
+
+Market Data
+
+Everything else references the Career.
+
+---
+
+# 15. Skill Model
+
+Skills exist independently.
+
+Examples
+
+Python
+
+Git
+
+Prompt Engineering
+
+REST APIs
+
+Docker
+
+Communication
+
+Leadership
+
+Systems Thinking
+
+One skill can belong to hundreds of careers.
+
+---
+
+# 16. Technology Model
+
+Technologies remain independent.
+
+Examples
+
+LangChain
+
+OpenAI
+
+Claude
+
+Docker
+
+Next.js
+
+FastAPI
+
+Supabase
+
+PostgreSQL
+
+Technologies evolve independently from careers.
+
+---
+
+# 17. Resource Model
+
+Learning resources include
+
+Official Documentation
+
+Courses
+
+Books
+
+Videos
+
+Podcasts
+
+Articles
+
+Communities
+
+Every resource references skills and technologies.
+
+---
+
+# 18. Project Model
+
+Projects include
+
+Title
+
+Description
+
+Difficulty
+
+Technologies
+
+Skills
+
+Estimated Duration
+
+Portfolio Value
+
+Deployment Requirements
+
+Projects should reference technologies rather than duplicating them.
+
+---
+
+# 19. Portfolio Model
+
+Portfolio is user-owned.
+
+Contains
+
+Projects
+
+GitHub
+
+Live Demo
+
+Screenshots
+
+Reflection
+
+Lessons Learned
+
+Portfolio evolves continuously.
+
+---
+
+# 20. Assessment Model
+
+Assessment includes
+
+Quiz
+
+Coding Challenge
+
+Project Review
+
+Interview
+
+Portfolio Review
+
+Career Readiness
+
+All assessments produce structured results.
+
+---
+
+# 21. Career Readiness Model
+
+Career readiness is calculated.
+
+Inputs include
+
+Skills
+
+Projects
+
+Portfolio
+
+Interview
+
+Certificates
+
+Roadmap
+
+Consistency
+
+Learning Velocity
+
+Weights remain configurable.
+
+---
+
+# 22. Recommendation Model
+
+Recommendations are stored.
+
+Fields include
+
+Type
+
+Reason
+
+Confidence
+
+Priority
+
+Created
+
+Accepted
+
+Dismissed
+
+Completed
+
+Recommendations become measurable.
+
+---
+
+# 23. AI Conversation Model
+
+Conversation stores
+
+Prompt
+
+Context Snapshot
+
+AI Response
+
+User Feedback
+
+Memory Summary
+
+Referenced Entities
+
+Every conversation improves future reasoning.
+
+---
+
+# 24. Search Index
+
+Everything searchable becomes indexed.
+
+Examples
+
+Career
+
+Skill
+
+Tool
+
+Technology
+
+Company
+
+Project
+
+Course
+
+Resource
+
+FAQ
+
+Interview Question
+
+Community
+
+Search should reason through relationships.
+
+---
+
+# 25. Soft Deletes
+
+User-generated data should generally be soft deleted.
+
+Examples
+
+Notes
+
+Projects
+
+Bookmarks
+
+Portfolio
+
+Recovery should be possible.
+
+---
+
+# 26. Audit Trail
+
+Critical operations are logged.
+
+Examples
+
+Career Changed
+
+Role Updated
+
+Certificate Added
+
+Roadmap Completed
+
+Resume Exported
+
+Audit data supports debugging and analytics.
+
+---
+
+# 27. Data Integrity
+
+Every relationship must remain valid.
+
+No orphan records.
+
+No broken references.
+
+No duplicated entities.
+
+Validation occurs before persistence.
+
+---
+
+# 28. AI Data Contracts
+
+Every AI engine consumes structured data.
+
+Never raw SQL.
+
+Never UI models.
+
+Instead expose domain models.
+
+This allows AI systems to evolve independently from storage.
+
+---
+
+# 29. Migration Philosophy
+
+Schema changes must
+
+Preserve existing users
+
+Support rollback
+
+Support versioning
+
+Avoid downtime
+
+Never break AI reasoning.
+
+---
+
+# 30. Future Compatibility
+
+The schema must support future modules without redesign.
+
+Examples
+
+AI Agents
+
+Recruiter Portal
+
+Hiring Marketplace
+
+Universities
+
+Enterprise Accounts
+
+Team Learning
+
+Mentorship
+
+Marketplace
+
+Mobile Apps
+
+Public API
+
+The database should anticipate growth for the next decade.
+
+---
+
+# Database Engineering Manifesto
+
+The database of AI Career OS is not simply a collection of tables.
+
+It is a structured representation of careers, knowledge, relationships, and human progress.
+
+Every entity should increase the intelligence of the platform.
+
+Every relationship should improve AI reasoning.
+
+Every schema decision should make future evolution easier—not harder.
+
+The database exists to preserve knowledge, support personalization, and power the operating system for millions of future users.
+
+---
+
+**End 

@@ -1,0 +1,939 @@
+# AI Career OS
+## State Management & Application Logic Specification v1.0
+
+---
+
+# Purpose
+
+This document defines how application state is managed throughout AI Career OS.
+
+Every page, component, hook, API, and AI-generated feature must follow these rules.
+
+The objective is to create a predictable, scalable, maintainable application where data has a single source of truth and UI always reflects the current application state.
+
+---
+
+# Core Principles
+
+## 1. Single Source of Truth
+
+Every piece of information should have one authoritative owner.
+
+Examples
+
+Career Content
+
+↓
+
+Database
+
+User Progress
+
+↓
+
+Database
+
+Current UI State
+
+↓
+
+Local State
+
+Authentication
+
+↓
+
+Auth Provider
+
+Never duplicate state.
+
+---
+
+## 2. Server First
+
+Persistent data belongs on the server.
+
+Examples
+
+Progress
+
+Notes
+
+Bookmarks
+
+Portfolio
+
+Projects
+
+Quiz Results
+
+Certificates
+
+Profile
+
+Never rely on client memory for important data.
+
+---
+
+## 3. Local State Only for UI
+
+Local state should only manage temporary interface behavior.
+
+Examples
+
+Modal open
+
+Accordion expanded
+
+Selected tab
+
+Search input
+
+Hovered card
+
+Loading spinner
+
+Never store business data only in local state.
+
+---
+
+## 4. Optimistic Updates
+
+User actions should feel instant.
+
+Flow
+
+User Action
+
+↓
+
+Optimistic UI Update
+
+↓
+
+Server Update
+
+↓
+
+Confirmation
+
+↓
+
+Rollback if failed
+
+---
+
+# State Categories
+
+The application contains four categories of state.
+
+---
+
+# 1. Global Application State
+
+Available everywhere.
+
+Contains
+
+Current User
+
+Authentication
+
+Theme
+
+Language
+
+Notifications
+
+Search
+
+Current Career
+
+Current Workspace
+
+Feature Flags
+
+Network Status
+
+---
+
+# 2. User State
+
+Contains
+
+Profile
+
+Experience
+
+Target Career
+
+Bookmarks
+
+Achievements
+
+Learning Preferences
+
+Completed Careers
+
+Learning Streak
+
+Career Readiness
+
+---
+
+# 3. Career State
+
+Scoped to one career.
+
+Contains
+
+Roadmap
+
+Skills
+
+Projects
+
+Certificates
+
+Resources
+
+Progress
+
+Notes
+
+Quiz Results
+
+Portfolio
+
+---
+
+# 4. UI State
+
+Temporary interface state.
+
+Contains
+
+Modal
+
+Drawer
+
+Expanded Accordion
+
+Selected Tab
+
+Sorting
+
+Filtering
+
+Pagination
+
+Search Query
+
+---
+
+# Data Ownership
+
+Each entity has one owner.
+
+Career
+
+Database
+
+Course
+
+Database
+
+Project
+
+Database
+
+User Progress
+
+Database
+
+Theme
+
+Global App State
+
+Current Modal
+
+Local Component
+
+Search Text
+
+Search Component
+
+Accordion
+
+Component
+
+---
+
+# State Persistence
+
+Persist automatically
+
+Progress
+
+Bookmarks
+
+Portfolio
+
+Notes
+
+Completed Courses
+
+Quiz Results
+
+Certificates
+
+Projects
+
+Resume
+
+Settings
+
+Do NOT persist
+
+Hover state
+
+Dropdown open
+
+Tooltip
+
+Loading spinner
+
+Temporary filters
+
+---
+
+# State Flow
+
+Read Flow
+
+Database
+
+↓
+
+Server
+
+↓
+
+Page
+
+↓
+
+Component
+
+↓
+
+User
+
+Write Flow
+
+User
+
+↓
+
+Action
+
+↓
+
+Validation
+
+↓
+
+Server Action
+
+↓
+
+Database
+
+↓
+
+Cache Update
+
+↓
+
+UI Refresh
+
+---
+
+# Loading Strategy
+
+Each page supports
+
+Initial Loading
+
+Skeleton Loading
+
+Incremental Loading
+
+Background Refresh
+
+Optimistic Updates
+
+---
+
+# Error Handling
+
+Every mutation supports
+
+Pending
+
+Success
+
+Failure
+
+Retry
+
+Rollback
+
+Errors should never leave the application in an inconsistent state.
+
+---
+
+# Cache Strategy
+
+Cache
+
+Career Content
+
+Learning Resources
+
+Tools
+
+FAQs
+
+Communities
+
+Salary
+
+Do Not Cache
+
+Progress
+
+Notes
+
+Achievements
+
+Bookmarks
+
+Portfolio
+
+Notifications
+
+---
+
+# Synchronization Rules
+
+Completing a course automatically updates
+
+Roadmap Progress
+
+↓
+
+Dashboard
+
+↓
+
+Career Progress
+
+↓
+
+Readiness Score
+
+↓
+
+Achievements
+
+↓
+
+Analytics
+
+---
+
+Completing a project updates
+
+Portfolio
+
+↓
+
+Dashboard
+
+↓
+
+Career Readiness
+
+↓
+
+Profile
+
+↓
+
+Analytics
+
+---
+
+Passing a quiz updates
+
+Quiz Progress
+
+↓
+
+Roadmap
+
+↓
+
+Career Readiness
+
+↓
+
+Dashboard
+
+---
+
+Earning a certificate updates
+
+Certificates
+
+↓
+
+Resume
+
+↓
+
+Profile
+
+↓
+
+Career Score
+
+↓
+
+Dashboard
+
+---
+
+# Roadmap Logic
+
+Each phase has
+
+Locked
+
+Available
+
+In Progress
+
+Completed
+
+Users cannot skip required phases unless explicitly allowed.
+
+Completion unlocks the next phase automatically.
+
+---
+
+# Progress Calculation
+
+Career Readiness Score
+
+Suggested default weights
+
+Courses
+
+25%
+
+Projects
+
+30%
+
+Portfolio
+
+20%
+
+Quizzes
+
+10%
+
+Certificates
+
+10%
+
+Final Challenge
+
+5%
+
+Weights must be configurable.
+
+Never hardcode.
+
+---
+
+# Completion Rules
+
+A phase is complete only when
+
+Required Courses
+
+Completed
+
+AND
+
+Required Missions
+
+Completed
+
+AND
+
+Quiz Passed
+
+Optional content does not block progression.
+
+---
+
+# Notes Logic
+
+Notes belong to
+
+User
+
+Career
+
+Roadmap Phase (optional)
+
+Project (optional)
+
+Mission (optional)
+
+Requirements
+
+Auto Save
+
+Version History (future)
+
+Searchable
+
+Markdown Support
+
+---
+
+# Bookmark Logic
+
+Users may bookmark
+
+Career
+
+Course
+
+Mission
+
+Project
+
+Tool
+
+Company
+
+Resource
+
+Bookmarks are global.
+
+---
+
+# Search Logic
+
+Global Search includes
+
+Careers
+
+Courses
+
+Projects
+
+Tools
+
+Resources
+
+Communities
+
+Companies
+
+Skills
+
+FAQs
+
+Notes
+
+Results grouped by category.
+
+---
+
+# Dashboard Logic
+
+Dashboard aggregates
+
+Current Career
+
+Learning Hours
+
+Career Readiness
+
+Projects
+
+Portfolio
+
+Certificates
+
+Achievements
+
+Daily Goals
+
+Upcoming Missions
+
+Recent Activity
+
+Dashboard never owns data.
+
+It only summarizes existing data.
+
+---
+
+# AI Mentor Logic
+
+AI Mentor always receives context.
+
+Available Context
+
+Current Career
+
+Completed Courses
+
+Current Phase
+
+Skill Gaps
+
+Projects
+
+Portfolio
+
+Interview Readiness
+
+Learning History
+
+Goals
+
+Recommendations must be personalized.
+
+---
+
+# Achievement Logic
+
+Achievements unlock automatically.
+
+Examples
+
+First Login
+
+First Career
+
+First Project
+
+Five Projects
+
+Portfolio Complete
+
+100-Day Streak
+
+Job Ready
+
+Achievements should never require manual updates.
+
+---
+
+# Notification Logic
+
+Notifications generated automatically.
+
+Examples
+
+Phase Complete
+
+Mission Due
+
+New Recommendation
+
+Certificate Earned
+
+Streak Maintained
+
+Interview Reminder
+
+Notifications should be actionable.
+
+---
+
+# Offline Behavior
+
+Users may browse cached content.
+
+Mutations queue automatically.
+
+Synchronization occurs once connectivity returns.
+
+Conflicts resolved using server as source of truth.
+
+---
+
+# Undo Rules
+
+Support undo where practical.
+
+Examples
+
+Delete Note
+
+Remove Bookmark
+
+Archive Project
+
+Undo window should be time-limited.
+
+---
+
+# Autosave Rules
+
+Automatically save
+
+Notes
+
+Draft Resume
+
+Portfolio Description
+
+Project Description
+
+Settings
+
+Profile
+
+No explicit save button required.
+
+---
+
+# Permissions
+
+Guest
+
+Browse careers only
+
+Authenticated User
+
+Full learning experience
+
+Premium (future)
+
+Premium resources
+
+Exclusive mentor features
+
+Advanced analytics
+
+Career coaching
+
+---
+
+# State Lifecycle
+
+User Login
+
+↓
+
+Load Profile
+
+↓
+
+Load Dashboard
+
+↓
+
+Load Active Career
+
+↓
+
+Load Progress
+
+↓
+
+Load Recommendations
+
+↓
+
+Render UI
+
+---
+
+# Application Events
+
+Examples
+
+Career Started
+
+Career Completed
+
+Roadmap Started
+
+Course Completed
+
+Mission Completed
+
+Project Submitted
+
+Quiz Passed
+
+Certificate Added
+
+Resume Generated
+
+Portfolio Published
+
+Interview Scheduled
+
+Every event should be available for analytics and future automation.
+
+---
+
+# Business Logic Rules
+
+Business logic must never exist inside UI components.
+
+Business logic belongs in
+
+Server Actions
+
+Services
+
+Custom Hooks
+
+Utility Functions
+
+Domain Modules
+
+UI components are responsible only for presentation and user interaction.
+
+---
+
+# Future Compatibility
+
+The state architecture must support future features without redesign, including
+
+- AI Agents
+- Personalized AI Coaches
+- Team Learning
+- Mentor Chat Memory
+- Gamification
+- Career Marketplace
+- Live Coding Assessments
+- Employer Dashboards
+- Learning Cohorts
+- Mobile Applications
+
+This specification defines the application state architecture for AI Career OS and must be followed by all future development and AI-generated code.

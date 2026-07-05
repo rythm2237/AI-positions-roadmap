@@ -1,0 +1,896 @@
+# AI Career OS
+## UI Component Library Specification v1.0
+
+---
+
+# Purpose
+
+This document defines every reusable UI component used throughout AI Career OS.
+
+No page should create its own version of an existing component.
+
+All components must be reusable, composable, accessible, responsive, and consistent with the Design System.
+
+---
+
+# Component Design Principles
+
+Every component must be:
+
+- Reusable
+- Configurable
+- Responsive
+- Accessible
+- Theme-aware
+- Type-safe
+- Stateless whenever possible
+- Performance optimized
+
+Components should never contain business logic.
+
+Business logic belongs in hooks, services, or server actions.
+
+---
+
+# Component Categories
+
+## Layout
+
+- AppShell
+- Sidebar
+- Topbar
+- BottomNavigation
+- Breadcrumb
+- Container
+- PageHeader
+- Section
+- SectionHeader
+- Grid
+- Stack
+- Divider
+
+---
+
+## Navigation
+
+### SidebarNavigation
+
+Purpose
+
+Main application navigation.
+
+Supports
+
+- Nested items
+- Icons
+- Active state
+- Collapsible groups
+- Badges
+
+---
+
+### Breadcrumb
+
+Displays current navigation path.
+
+Example
+
+Dashboard
+
+↓
+
+Careers
+
+↓
+
+AI Engineer
+
+---
+
+### SearchBar
+
+Supports
+
+- Global search
+- Suggestions
+- Keyboard shortcuts
+- Recent searches
+
+---
+
+# Career Components
+
+## CareerHero
+
+Displays
+
+- Career Title
+- Description
+- Category
+- Difficulty
+- Salary
+- Hiring Demand
+- Remote Status
+- AI Compatibility
+- Start Learning Button
+- Bookmark
+- Share
+
+---
+
+## CareerSnapshot
+
+Displays dashboard metrics.
+
+Includes
+
+- Hiring Demand
+- Growth
+- Automation Risk
+- Job Security
+- Market Trend
+- Future Outlook
+
+---
+
+## CareerCard
+
+Used on
+
+Career Explorer
+
+Related Careers
+
+Recommendations
+
+Recently Viewed
+
+Contains
+
+- Icon
+- Title
+- Description
+- Difficulty
+- Salary
+- Progress
+- Action
+
+---
+
+# Roadmap Components
+
+## RoadmapTimeline
+
+Displays complete learning journey.
+
+Supports
+
+- Expand
+- Collapse
+- Progress
+- Locked phases
+- Completed phases
+- Current phase
+
+---
+
+## RoadmapPhaseCard
+
+Displays
+
+- Phase Number
+- Title
+- Goal
+- Duration
+- Difficulty
+- Progress
+- Expand Button
+
+Expanded content
+
+- Topics
+- Resources
+- Courses
+- Missions
+- Quiz
+- Notes
+- Mentor Tips
+
+---
+
+## MilestoneCard
+
+Displays
+
+Achievement after completing a roadmap phase.
+
+Examples
+
+First AI Project
+
+Portfolio Started
+
+First Deployment
+
+Job Ready
+
+---
+
+# Learning Components
+
+## CourseCard
+
+Contains
+
+- Course Name
+- Provider
+- Level
+- Duration
+- Cost
+- Rating
+- Progress
+- Start Button
+
+---
+
+## ResourceCard
+
+Supports
+
+Books
+
+Documentation
+
+Articles
+
+Videos
+
+Communities
+
+---
+
+## SkillCard
+
+Displays
+
+- Skill Name
+- Importance
+- Difficulty
+- Progress
+- Related Courses
+
+---
+
+## ToolCard
+
+Displays
+
+- Tool Name
+- Logo
+- Category
+- Purpose
+- Industry Usage
+- Official Website
+
+---
+
+# Project Components
+
+## MissionCard
+
+Displays
+
+- Title
+- Difficulty
+- Time Estimate
+- Objective
+- Deliverables
+- Completion Status
+
+---
+
+## ProjectCard
+
+Contains
+
+- Project Title
+- Description
+- Technologies
+- Skills
+- Difficulty
+- Estimated Time
+- GitHub Link
+- Live Demo
+- Progress
+
+---
+
+## CapstoneCard
+
+Represents final challenge.
+
+Displays
+
+Requirements
+
+Deliverables
+
+Evaluation
+
+Readiness Score
+
+---
+
+# Portfolio Components
+
+## PortfolioCard
+
+Contains
+
+Project Preview
+
+Description
+
+Skills
+
+Technologies
+
+Repository
+
+Demo
+
+Status
+
+---
+
+## PortfolioGallery
+
+Displays portfolio projects.
+
+Supports
+
+Search
+
+Filter
+
+Sort
+
+---
+
+# Certification Components
+
+## CertificateCard
+
+Displays
+
+Provider
+
+Difficulty
+
+Cost
+
+Duration
+
+Status
+
+Importance
+
+Earned Badge
+
+---
+
+# Progress Components
+
+## ProgressRing
+
+Circular progress indicator.
+
+Used for
+
+Career Readiness
+
+Learning Progress
+
+Profile Completion
+
+---
+
+## ProgressBar
+
+Linear progress.
+
+Supports
+
+Animated updates
+
+Labels
+
+Milestones
+
+---
+
+## Checklist
+
+Displays
+
+Tasks
+
+Completion
+
+Progress
+
+---
+
+## StreakCard
+
+Displays
+
+Learning streak
+
+Longest streak
+
+Goal
+
+---
+
+## AnalyticsCard
+
+Displays
+
+Charts
+
+Statistics
+
+KPIs
+
+Learning metrics
+
+---
+
+# AI Components
+
+## MentorCard
+
+Contains
+
+Avatar
+
+Title
+
+Advice
+
+Warning
+
+Shortcut
+
+Recommended Action
+
+Mentor cards appear throughout the platform.
+
+---
+
+## AIRecommendationCard
+
+Displays
+
+Personalized recommendation.
+
+Examples
+
+Recommended Course
+
+Suggested Project
+
+Skill Gap
+
+Interview Focus
+
+---
+
+## AIReviewCard
+
+Used for
+
+Resume Review
+
+Portfolio Review
+
+Project Feedback
+
+Interview Feedback
+
+---
+
+# Notes Components
+
+## NotesPanel
+
+Supports
+
+Rich text
+
+Markdown
+
+Auto Save
+
+Tags
+
+Search
+
+---
+
+## StickyNote
+
+Quick notes.
+
+Displayed inside roadmap phases.
+
+---
+
+# Assessment Components
+
+## QuizCard
+
+Contains
+
+Question
+
+Answers
+
+Explanation
+
+Score
+
+Retry
+
+---
+
+## AssessmentCard
+
+Displays
+
+Assessment Name
+
+Difficulty
+
+Passing Score
+
+Completion
+
+---
+
+## ReadinessCard
+
+Displays
+
+Career Readiness
+
+Strengths
+
+Weaknesses
+
+Recommendations
+
+---
+
+# Job Preparation Components
+
+## ResumeChecklist
+
+Interactive checklist.
+
+---
+
+## InterviewQuestionCard
+
+Displays
+
+Question
+
+Hints
+
+Sample Answer
+
+Difficulty
+
+---
+
+## CompanyCard
+
+Displays
+
+Company
+
+Industry
+
+Open Positions
+
+Official Website
+
+---
+
+## SalaryCard
+
+Displays
+
+Region
+
+Junior
+
+Mid
+
+Senior
+
+Trend
+
+---
+
+# Community Components
+
+## CommunityCard
+
+Displays
+
+Platform
+
+Purpose
+
+Members
+
+Official Link
+
+---
+
+# Dashboard Components
+
+## StatisticCard
+
+Displays
+
+Single KPI.
+
+---
+
+## ActivityCard
+
+Recent user activity.
+
+---
+
+## UpcomingCard
+
+Upcoming missions
+
+Courses
+
+Deadlines
+
+---
+
+## AchievementCard
+
+Displays earned badges.
+
+---
+
+# Utility Components
+
+## EmptyState
+
+Contains
+
+Illustration
+
+Message
+
+Primary Action
+
+---
+
+## ErrorState
+
+Contains
+
+Problem
+
+Explanation
+
+Retry Button
+
+---
+
+## LoadingSkeleton
+
+Used everywhere.
+
+Never show blank loading screens.
+
+---
+
+## Toast
+
+Supports
+
+Success
+
+Warning
+
+Info
+
+Error
+
+---
+
+## Modal
+
+Used for
+
+Editing
+
+Preview
+
+Confirmation
+
+Quick Actions
+
+---
+
+## Drawer
+
+Mobile-friendly side panel.
+
+---
+
+## Accordion
+
+Used for
+
+Roadmap
+
+FAQ
+
+Documentation
+
+Long explanations
+
+---
+
+## Tabs
+
+Used for
+
+Related content only.
+
+---
+
+# Shared Component Rules
+
+Every component must:
+
+Support Light Mode
+
+Support Dark Mode
+
+Support Mobile
+
+Support Keyboard Navigation
+
+Support Accessibility
+
+Use Shared Theme Tokens
+
+Be Fully Typed
+
+Be Reusable
+
+Remain Stateless whenever possible
+
+Expose only necessary props
+
+Avoid duplicated functionality
+
+---
+
+# Component Composition Rules
+
+Small components compose larger ones.
+
+Example
+
+CareerHero
+
+uses
+
+Button
+
+Badge
+
+ProgressRing
+
+StatisticCard
+
+BookmarkButton
+
+ShareButton
+
+Divider
+
+Never duplicate child components.
+
+---
+
+# Naming Convention
+
+Component names use PascalCase.
+
+Examples
+
+CareerHero
+
+SkillCard
+
+ProjectCard
+
+MentorCard
+
+ProgressRing
+
+CourseCard
+
+RoadmapTimeline
+
+---
+
+# Folder Organization
+
+components/
+
+layout/
+
+navigation/
+
+career/
+
+roadmap/
+
+learning/
+
+projects/
+
+portfolio/
+
+certificates/
+
+progress/
+
+mentor/
+
+assessment/
+
+dashboard/
+
+community/
+
+forms/
+
+feedback/
+
+shared/
+
+ui/
+
+---
+
+# Development Rules
+
+Never create a new component if an existing one can be extended.
+
+Prefer composition over inheritance.
+
+Prefer configuration over duplication.
+
+Keep components focused on a single responsibility.
+
+Business logic belongs outside the component.
+
+Every reusable UI element added to AI Career OS must first be documented in this specification before being implemented.
