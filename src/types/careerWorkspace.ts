@@ -1,0 +1,331 @@
+export type CareerWorkspaceSectionId =
+  | "hero"
+  | "roadmap"
+  | "notes"
+  | "resources"
+  | "projects"
+  | "portfolio"
+  | "exams"
+  | "readiness"
+  | "jobs"
+  | "interview-prep";
+
+export type CareerResourceType =
+  | "Video"
+  | "Article"
+  | "Course"
+  | "Documentation"
+  | "Practice"
+  | "Exam";
+
+export type ResourcePriority = "Essential" | "Recommended" | "Optional";
+export type ResourceCost = "Free" | "Paid" | "Free/Paid";
+export type WorkspaceDifficulty = "Beginner" | "Intermediate" | "Advanced";
+
+export interface CareerMetric {
+  label: string;
+  value: string;
+  detail: string;
+}
+
+export interface CareerMapSection {
+  id: CareerWorkspaceSectionId;
+  label: string;
+  eyebrow: string;
+  summary: string;
+  x: number;
+  y: number;
+}
+
+export type CareerJourneyStageType =
+  | "orientation"
+  | "foundation"
+  | "core-skills"
+  | "tools"
+  | "projects"
+  | "portfolio"
+  | "resume"
+  | "profile"
+  | "job-search"
+  | "jobs"
+  | "interview"
+  | "assessment"
+  | "ready";
+
+export type CareerJourneyThemeId =
+  | "treasure-map"
+  | "mountain-expedition"
+  | "island-adventure"
+  | "ai-laboratory"
+  | "cyber-fortress"
+  | "tech-city"
+  | "future-space-colony";
+
+export type CareerJourneyTerrainType =
+  | "mountain"
+  | "river"
+  | "forest"
+  | "bridge"
+  | "village"
+  | "ruins"
+  | "port"
+  | "cave"
+  | "cliff"
+  | "symbol"
+  | "mist"
+  | "ship";
+
+export interface CareerVisualMetadata {
+  nodeLabel: string;
+  sceneTitle: string;
+  sceneDescription: string;
+  imageAlt: string;
+}
+
+export interface CareerResource {
+  id: string;
+  title: string;
+  type: CareerResourceType;
+  provider: string;
+  cost: ResourceCost;
+  estimatedTime: string;
+  whyUseful: string;
+  url: string;
+  priority: ResourcePriority;
+}
+
+export interface CareerLesson {
+  id: string;
+  title: string;
+  summary: string;
+  estimatedTime: string;
+  difficulty: WorkspaceDifficulty;
+  outcomes: string[];
+  resources: CareerResource[];
+  mission: string;
+}
+
+export interface CareerQuizQuestion {
+  id: string;
+  question: string;
+  answers: string[];
+  correctAnswerIndex: number;
+  explanation: string;
+  difficulty: WorkspaceDifficulty;
+  relatedTopic: string;
+}
+
+export interface CareerQuiz {
+  id: string;
+  title: string;
+  phaseId?: string;
+  description: string;
+  questions: CareerQuizQuestion[];
+  officialPracticeLink?: {
+    title: string;
+    url: string;
+  };
+}
+
+export interface CareerAssessment {
+  id: string;
+  title: string;
+  description: string;
+  passingScore: number;
+  durationMinutes?: number;
+  questions: CareerQuizQuestion[];
+  officialPracticeLinks?: {
+    title: string;
+    url: string;
+  }[];
+}
+
+export interface CareerJourneyTask {
+  id: string;
+  title: string;
+  description: string;
+  type: "lesson" | "resource" | "project" | "portfolio" | "career" | "interview" | "job-search";
+}
+
+export interface CareerJourneyStage {
+  id: string;
+  order: number;
+  title: string;
+  label?: string;
+  type: CareerJourneyStageType;
+  landmark: string;
+  landmarkType?: CareerJourneyTerrainType;
+  theme: string;
+  x: number;
+  y: number;
+  connections?: string[];
+  terrain?: CareerJourneyTerrainType[];
+  duration: string;
+  summary: string;
+  explanation: string;
+  lessons: string[];
+  resources: CareerResource[];
+  tasks: CareerJourneyTask[];
+  test: CareerAssessment;
+  phaseExam?: CareerAssessment;
+}
+
+export interface CareerJourneyMapConfig {
+  theme: CareerJourneyThemeId;
+  overviewTitle: string;
+  overviewDescription: string;
+  width?: number;
+  height?: number;
+  worldPadding?: number;
+}
+
+export interface CareerRoadmapPhase {
+  id: string;
+  phaseNumber: number;
+  title: string;
+  duration: string;
+  goal: string;
+  status: "unlocked" | "locked";
+  mentorTip: string;
+  sections: string[];
+  lessons: CareerLesson[];
+  practicalMissions: string[];
+  expectedOutcome: string;
+  quiz: CareerQuiz;
+}
+
+export interface CareerProject {
+  id: string;
+  title: string;
+  difficulty: WorkspaceDifficulty;
+  estimatedTime: string;
+  phaseId: string;
+  description: string;
+  deliverables: string[];
+  skills: string[];
+}
+
+export interface CareerReadinessItem {
+  id: string;
+  label: string;
+  description: string;
+  weight: number;
+}
+
+export interface CareerWorkspaceData {
+  slug: string;
+  title: string;
+  category: string;
+  visual: CareerVisualMetadata;
+  shortDescription: string;
+  difficulty: string;
+  estimatedLearningTime: string;
+  salary: string;
+  hiringDemand: string;
+  remoteAvailability: string;
+  aiCompatibilityScore: string;
+  bestFor: string[];
+  programmingRequirement: string;
+  mathRequirement: string;
+  creativityLevel: string;
+  communicationLevel: string;
+  lastUpdated: string;
+  metrics: CareerMetric[];
+  overview: {
+    title: string;
+    body: string;
+    responsibilities: string[];
+    industries: string[];
+  };
+  mapSections: CareerMapSection[];
+  journeyMap: CareerJourneyMapConfig;
+  journeyStages: CareerJourneyStage[];
+  roadmap: CareerRoadmapPhase[];
+  projects: CareerProject[];
+  globalResources: CareerResource[];
+  readiness: CareerReadinessItem[];
+  finalChallenge: {
+    title: string;
+    description: string;
+    requirements: string[];
+    deliverables: string[];
+    evaluation: string[];
+  };
+  relatedCareers: string[];
+  progressRules: {
+    readinessThreshold: number;
+    minimumProjects: number;
+    minimumQuizScore: number;
+  };
+  jobBoard: {
+    title: string;
+    description: string;
+    integrationStatus: "coming-soon" | "live";
+    filters: string[];
+    sampleDisclaimer: string;
+  };
+  portfolioTasks: CareerJourneyTask[];
+  jobSearchTasks: CareerJourneyTask[];
+  interviewPrep: {
+    title: string;
+    practiceAreas: string[];
+    questions: string[];
+  };
+}
+
+export interface CareerNote {
+  id: string;
+  contextType: "career" | "phase" | "step" | "resource" | "project" | "quiz" | "exam";
+  contextId: string;
+  contextLabel: string;
+  body: string;
+  updatedAt: string;
+}
+
+export interface CareerQuizAnswer {
+  questionId: string;
+  selectedAnswerIndex: number;
+  correct: boolean;
+  answeredAt: string;
+}
+
+export interface CareerAssessmentResult {
+  assessmentId: string;
+  score: number;
+  passed: boolean;
+  submittedAt: string;
+  reviewTopics: string[];
+}
+
+export interface CareerWorkspaceProgress {
+  completedLessons: string[];
+  completedResources: string[];
+  completedProjects: string[];
+  completedStageTasks: string[];
+  completedReadinessItems: string[];
+  quizAnswers: Record<string, CareerQuizAnswer>;
+  assessmentResults: Record<string, CareerAssessmentResult>;
+  notes: CareerNote[];
+  startedAt?: string;
+}
+
+export interface CareerWorkspaceStats {
+  overallProgress: number;
+  lessonProgress: number;
+  resourceProgress: number;
+  projectProgress: number;
+  quizProgress: number;
+  readinessScore: number;
+  completedLessons: number;
+  totalLessons: number;
+  completedResources: number;
+  totalResources: number;
+  completedProjects: number;
+  totalProjects: number;
+  completedQuizzes: number;
+  totalQuizzes: number;
+  notesCount: number;
+  stageProgress: number;
+  passedAssessments: number;
+  totalAssessments: number;
+}

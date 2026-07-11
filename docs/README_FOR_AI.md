@@ -3,7 +3,7 @@
 
 ---
 
-## Welcome
+# Welcome
 
 You are contributing to **AI Career OS**, an AI-powered Career Operating System.
 
@@ -11,19 +11,31 @@ This is **not** a traditional website or an online course platform.
 
 It is a long-term AI-native product that helps users move from beginner to job-ready through structured learning, practical projects, AI mentorship, career tracking, portfolio building, and continuous growth.
 
-Before making any changes, you MUST understand the project by reading the documentation in the order below.
+Before making any changes, you MUST understand the project by reading the documentation in the required order below.
 
-Do not skip documents.
+Never skip the required documents.
+
+Never start implementation before understanding the existing architecture.
 
 ---
 
-# Documentation Order
+# Documentation Reading Order
 
-## 1. Product Vision
+## Level 1 — Core Documents (Always Read)
+
+These documents define the platform itself.
+
+They are mandatory for every implementation.
+
+---
+
+### 1. Product Vision
 
 Read:
 
+```
 docs/product/Product_Bible.md
+```
 
 Purpose:
 
@@ -36,40 +48,48 @@ Understand:
 - Career DNA
 - Knowledge Graph
 - AI Mentor
-- Long-term goals
+- Long-term Goals
 
-This document defines **WHY** the platform exists.
+Defines:
+
+**WHY the platform exists.**
 
 ---
 
-## 2. Engineering
+### 2. Engineering
 
 Read:
 
+```
 docs/engineering/Engineering_Bible.md
+```
 
 Purpose:
 
 Understand:
 
 - System Architecture
-- Project Structure
+- Folder Structure
 - Shared Systems
-- Folder Organization
+- Engineering Standards
+- Scalability
 - State Management
 - Database
-- Scalability
-- Engineering Standards
+- Performance Strategy
 
-This document defines **HOW** the platform is built.
+Defines:
+
+**HOW the platform is built.**
 
 ---
 
-## 3. Design System
+### 3. Design System
 
 Read:
 
+```
 docs/design/Design_Bible.md
+```
 
 Purpose:
 
@@ -83,62 +103,132 @@ Understand:
 - Accessibility
 - Responsive Rules
 
-This document defines **HOW** the product should look and behave.
+Defines:
+
+**HOW the platform should look and behave.**
 
 ---
 
-## 4. Career Workspace
+# Level 2 — Task-Specific Documents
 
-Read:
-
-docs/career-workspace/Career_Workspace_Specification.md
-
-Purpose:
-
-Understand:
-
-- Career Workspace architecture
-- Shared components
-- Section behaviors
-- Interactions
-- Integrations
-- Progress logic
-
----
-
-## 5. Career Page Template
-
-Read:
-
-docs/templates/Career_Page_Template_v2.md
-
-Purpose:
-
-Understand:
-
-- Required sections
-- Content hierarchy
-- Career page structure
-
----
-
-## 6. AI Rules
-
-Read:
-
-docs/ai/
-
-Read only the files relevant to your model.
+Read ONLY the documents relevant to the current task.
 
 Examples:
 
-Claude → Claude_Development_Guide.md
+---
 
-Codex → Codex_Development_Guide.md
+## Career Workspace
 
-ChatGPT → GPT_Development_Guide.md
+Read:
 
-Read AI Career OS – AI Generation Bible for the shared AI generation philosophy.
+```
+docs/career-workspace/Career_Workspace_Specification.md
+```
+
+When:
+
+- Building Career Workspace
+- Updating shared workspace logic
+- Building roadmap pages
+- Progress integration
+- Workspace navigation
+
+---
+
+## Career Journey Engine
+
+Read:
+
+```
+docs/engineering/Career_Journey_Engine_Specification.md
+```
+
+When:
+
+- Working on the Journey Engine
+- Roadmap rendering
+- Journey navigation
+- Viewport movement
+- Map rendering
+- Motion system
+
+---
+
+## Career Page Template
+
+Read:
+
+```
+docs/templates/Career_Page_Template_v2.md
+```
+
+When:
+
+- Building career pages
+- Updating page structure
+- Creating new career workspaces
+
+---
+
+Future specifications should also belong here.
+
+Examples:
+
+- Landing Page Specification
+- Career Builder Specification
+- Admin Studio Specification
+- Dashboard Specification
+- AI Mentor Specification
+
+Read only those required for the current task.
+
+---
+
+# Level 3 — AI Rules
+
+Always read:
+
+```
+docs/ai/AI_Core_Rules.md
+```
+
+Then read ONLY the guide matching your AI model.
+
+Examples:
+
+Claude
+
+```
+docs/ai/Claude_Development_Guide.md
+```
+
+Codex
+
+```
+docs/ai/Codex_Development_Guide.md
+```
+
+ChatGPT
+
+```
+docs/ai/GPT_Development_Guide.md
+```
+
+Read the following document ONLY when the task is related to content generation:
+
+```
+docs/ai/AI_Content_Generation_Bible.md
+```
+
+Examples:
+
+- Career generation
+- Prompt generation
+- Career Builder
+- AI-generated content
+- Content pipeline
+
+Do NOT read it for normal software development tasks.
 
 ---
 
@@ -146,13 +236,43 @@ Read AI Career OS – AI Generation Bible for the shared AI generation philosoph
 
 Career content is stored in:
 
+```
 content/careers/
+```
 
 These files are the single source of truth for career content.
 
-Do not rewrite or simplify the content unless explicitly instructed.
+Never simplify, rewrite, or modify career content unless explicitly instructed.
 
 Your responsibility is to transform the content into a production-ready Career Workspace.
+
+---
+
+# Repository Inspection (Mandatory)
+
+Before writing ANY code:
+
+Inspect the current repository.
+
+Search for existing:
+
+- Components
+- Hooks
+- Services
+- Utilities
+- Types
+- Stores
+- Context Providers
+- Data Models
+- Shared Layouts
+
+Reuse existing implementations whenever possible.
+
+Never create duplicate architecture.
+
+Extend existing systems instead of replacing them.
+
+Only create new modules when no reusable solution exists.
 
 ---
 
@@ -163,8 +283,9 @@ Always:
 - Follow the Product Bible.
 - Follow the Engineering Bible.
 - Follow the Design Bible.
-- Follow the Career Workspace Specification.
-- Follow the Career Page Template.
+- Follow the relevant Specification documents.
+- Follow the Career Page Template (when applicable).
+- Follow AI Core Rules.
 - Reuse existing architecture.
 - Reuse existing components.
 - Reuse existing hooks.
@@ -172,13 +293,13 @@ Always:
 - Reuse existing services.
 - Reuse existing data models.
 
-Never duplicate code or business logic.
+Never duplicate business logic.
 
 ---
 
-# Integration Requirements
+# Platform Integration
 
-Every Career Workspace should integrate with the platform where applicable.
+Every feature should integrate with the platform where applicable.
 
 Examples:
 
@@ -193,8 +314,11 @@ Examples:
 - Analytics
 - Achievements
 - Related Careers
+- User Settings
 
 Never build isolated pages.
+
+Everything should feel like one unified operating system.
 
 ---
 
@@ -202,68 +326,91 @@ Never build isolated pages.
 
 Before creating a new component:
 
-1. Search the existing project.
-2. Reuse an existing component whenever possible.
-3. Extend existing components instead of creating similar ones.
+1. Search existing components.
+2. Reuse components whenever possible.
+3. Extend components before creating new ones.
 
-Before creating new logic:
+Before writing new logic:
 
-1. Search existing hooks.
+1. Search hooks.
 2. Search utilities.
 3. Search services.
+4. Search shared stores.
 
 Never duplicate functionality.
 
 ---
 
-# Code Quality
+# Code Quality Standards
 
-All generated code must be:
+Every contribution must be:
 
-- Production-ready
-- Type-safe
+- Production Ready
+- Type Safe
 - Responsive
 - Accessible
-- Maintainable
 - Modular
 - Reusable
-- Performance optimized
+- Performance Optimized
+- Maintainable
+- Scalable
 
-Avoid placeholder implementations unless explicitly requested.
+Avoid:
+
+- Placeholder implementations
+- Temporary hacks
+- Duplicate logic
+- Unused code
+- Hardcoded data
+- Unnecessary dependencies
+
+Unless explicitly requested.
 
 ---
 
-# If Documentation Conflicts
+# Documentation Priority
 
-Follow this priority:
+If documentation conflicts, follow this order:
 
 1. Product Bible
 2. Engineering Bible
 3. Design Bible
-4. Career Workspace Specification
+4. Task-Specific Specification
 5. Career Page Template
-6. AI Generation Bible
-7. AI Development Guide
-8. User Request
+6. AI Core Rules
+7. AI Content Generation Bible (only for content-generation tasks)
+8. AI Development Guide
+9. User Request
 
 ---
 
-# If Information Is Missing
-
-Do not guess.
+# Missing Information
 
 If required information is missing:
 
+Do NOT guess.
+
+Instead:
+
 - Explain what is missing.
 - Stop implementation.
-- Ask for clarification.
+- Request clarification.
 
 ---
 
-# Final Rule
+# Final Principle
 
-Every contribution should make AI Career OS feel more like a unified Career Operating System.
+Every contribution should improve the entire AI Career OS ecosystem.
 
-Never optimize only for the requested page.
+Never optimize only for the current page or feature.
 
-Always optimize for the long-term quality, consistency, scalability, and maintainability of the entire platform.
+Always think in terms of:
+
+- Long-term scalability
+- Reusability
+- Consistency
+- Maintainability
+- Performance
+- User Experience
+
+Every decision should make AI Career OS feel more like a unified Career Operating System.

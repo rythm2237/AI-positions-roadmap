@@ -1,18 +1,25 @@
 # 📘 AI Career OS
-# AI Core Rules
+# Career Content Generation Bible
 ## Version 1.0
 
 ---
 
 # Purpose
 
-This document defines the universal rules that every AI model must follow when working on AI Career OS.
+# Purpose
 
-These rules apply regardless of whether the implementation is performed by ChatGPT, Claude, Codex, Gemini, Cursor, or any future AI assistant.
+This document defines how AI systems should generate career content inside AI Career OS.
 
-AI-specific instructions belong in their own dedicated guides.
+It does NOT define software architecture, engineering rules, UI implementation, or coding standards.
 
-This document contains only the permanent principles shared by all AI systems.
+Those belong to:
+
+- Product Bible
+- Engineering Bible
+- Design Bible
+- AI Core Rules
+
+This document only defines the standards for generating high-quality Career content.
 
 ---
 

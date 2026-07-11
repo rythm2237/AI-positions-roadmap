@@ -53,9 +53,10 @@ export const UNIVERSE_REGISTRY: {
   status: "available" | "coming-soon";
   sectorKey: string;
   roadmapSlug?: string;
+  careerPath?: string;
 }[] = [
   // ── Near field ───────────────────────────────────────────────────────────
-  { id: "ai-engineer",            title: "AI Engineer",              category: "Engineering",    status: "coming-soon", sectorKey: "near-centre"    },
+  { id: "ai-engineer",            title: "AI Engineer",              category: "Engineering",    status: "available",   sectorKey: "near-centre",    careerPath: "/careers/ai-engineer?entry=galaxy" },
   { id: "ml-engineer",            title: "ML Engineer",              category: "Engineering",    status: "coming-soon", sectorKey: "near-centre"    },
   { id: "prompt-engineer",        title: "Prompt Engineer",          category: "Engineering",    status: "coming-soon", sectorKey: "near-left"      },
   { id: "ai-automation-specialist", title: "AI Automation Specialist", category: "Automation", status: "available",    sectorKey: "near-left",     roadmapSlug: "ai-automation-specialist" },
@@ -72,7 +73,7 @@ export const UNIVERSE_REGISTRY: {
   { id: "ai-agent-developer",     title: "AI Agent Developer",       category: "Engineering",   status: "coming-soon", sectorKey: "mid-bottom-far" },
   { id: "ai-workflow-engineer",   title: "AI Workflow Engineer",     category: "Automation",    status: "coming-soon", sectorKey: "mid-bottom-far" },
   { id: "data-scientist",         title: "Data Scientist",           category: "Data",          status: "coming-soon", sectorKey: "mid-deep"       },
-  { id: "ai-data-engineer",       title: "AI Data Engineer",         category: "Data",          status: "coming-soon", sectorKey: "mid-deep"       },
+  { id: "ai-data-engineer",       title: "AI Data Engineer",         category: "Data",          status: "available",   sectorKey: "mid-deep",      careerPath: "/careers/ai-data-engineer?entry=galaxy" },
   // ── Deep field ───────────────────────────────────────────────────────────
   { id: "ml-ops-engineer",        title: "MLOps Engineer",           category: "Engineering",   status: "coming-soon", sectorKey: "deep-mlops"     },
   { id: "llm-engineer",           title: "LLM Engineer",             category: "Engineering",   status: "coming-soon", sectorKey: "deep-llm"       },
@@ -212,6 +213,24 @@ function buildStarField(scene: THREE.Scene) {
 // ─── CSS-only transition helpers (replaces framer-motion) ────────────────────
 // All UI panels use inline style transitions — zero dependency on framer-motion.
 const TRANSITION_BASE = "opacity 0.6s cubic-bezier(0.22,1,0.36,1), transform 0.6s cubic-bezier(0.22,1,0.36,1), filter 0.6s cubic-bezier(0.22,1,0.36,1)";
+const CAREER_ENTRY_EVENT = "ai-career-node-entry";
+
+type CareerEntryDetail = {
+  title: string;
+  path: string;
+};
+
+type CareerEntryState = "landing" | "zooming-to-node" | "handoff" | "career-workspace";
+
+function scheduleCareerEntry(node: CareerNode, path: string, delay = 180) {
+  if (typeof window === "undefined") return;
+  const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+  window.setTimeout(() => {
+    window.dispatchEvent(new CustomEvent<CareerEntryDetail>(CAREER_ENTRY_EVENT, {
+      detail: { title: node.title, path },
+    }));
+  }, reduceMotion ? 120 : delay);
+}
 
 // ─── Vignette overlay ─────────────────────────────────────────────────────────
 function VignetteOverlay() {
@@ -288,12 +307,17 @@ function HoverLabel({ node, screenPos }: HoverLabelProps) {
 // ─── Career preview card ─────────────────────────────────────────────────────
 function CareerPreviewCard() {
   const { phase, destination, travelTo, nodes } = useScene();
-  const show = (phase === "arrived" || phase === "exploring") && destination !== null;
+  const [isEnteringCareer, setIsEnteringCareer] = useState(false);
   const entry = destination ? UNIVERSE_REGISTRY.find((e) => e.id === destination.id) : null;
+  const show = (phase === "arrived" || phase === "exploring") && destination !== null && !entry?.careerPath;
 
   function handleOpenRoadmap() {
-    if (!entry?.roadmapSlug) { window.location.hash = "roadmaps"; return; }
-    window.location.href = `/roadmaps/${entry.roadmapSlug}`;
+    const destinationPath = entry?.careerPath ?? (entry?.roadmapSlug ? `/roadmaps/${entry.roadmapSlug}` : "/#waitlist");
+    const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    setIsEnteringCareer(true);
+    window.setTimeout(() => {
+      window.location.href = destinationPath;
+    }, reduceMotion ? 80 : 1550);
   }
 
   const nearbyNode = destination && nodes.length > 0
@@ -301,29 +325,30 @@ function CareerPreviewCard() {
     : null;
 
   return (
-    <div
-      role="dialog"
-      aria-label={destination ? `Career preview: ${destination.title}` : undefined}
-      aria-hidden={!show}
-      style={{
-        position: "absolute",
-        right: "clamp(24px,4vw,60px)", top: "50%",
-        transform: show ? "translateY(-50%) translateX(0)" : "translateY(-50%) translateX(40px)",
-        opacity: show ? 1 : 0,
-        filter: show ? "blur(0)" : "blur(12px)",
-        transition: TRANSITION_BASE,
-        zIndex: 25,
-        width: "clamp(240px,28vw,320px)",
-        background: "rgba(3,5,14,0.82)",
-        border: "1px solid rgba(99,102,241,0.28)",
-        borderRadius: 20, padding: "28px 24px",
-        backdropFilter: "blur(20px)",
-        boxShadow: "0 0 60px rgba(99,102,241,0.12), 0 0 0 1px rgba(99,102,241,0.08)",
-        pointerEvents: show ? "auto" : "none",
-      }}
-    >
-      {destination && entry && (
-        <>
+    <>
+      <div
+        role="dialog"
+        aria-label={destination ? `Career preview: ${destination.title}` : undefined}
+        aria-hidden={!show}
+        style={{
+          position: "absolute",
+          right: "clamp(24px,4vw,60px)", top: "50%",
+          transform: show ? "translateY(-50%) translateX(0)" : "translateY(-50%) translateX(40px)",
+          opacity: show ? 1 : 0,
+          filter: show ? "blur(0)" : "blur(12px)",
+          transition: TRANSITION_BASE,
+          zIndex: 25,
+          width: "clamp(240px,28vw,320px)",
+          background: "rgba(3,5,14,0.82)",
+          border: "1px solid rgba(99,102,241,0.28)",
+          borderRadius: 20, padding: "28px 24px",
+          backdropFilter: "blur(20px)",
+          boxShadow: "0 0 60px rgba(99,102,241,0.12), 0 0 0 1px rgba(99,102,241,0.08)",
+          pointerEvents: show ? "auto" : "none",
+        }}
+      >
+        {destination && entry && (
+          <>
           {/* Sector badge */}
           <p style={{
             fontSize: 10, fontWeight: 700, letterSpacing: "0.12em",
@@ -354,14 +379,16 @@ function CareerPreviewCard() {
           {/* CTA */}
           <button
             onClick={handleOpenRoadmap}
+            disabled={isEnteringCareer}
             style={{
               width: "100%", padding: "12px 0",
               background: "rgba(99,102,241,0.15)",
               border: "1px solid rgba(99,102,241,0.4)",
               borderRadius: 12, color: "#a5b4fc",
-              fontSize: 13, fontWeight: 600, cursor: "pointer",
+              fontSize: 13, fontWeight: 600, cursor: isEnteringCareer ? "default" : "pointer",
               transition: "background 0.2s, border-color 0.2s",
               fontFamily: "inherit", marginBottom: nearbyNode ? 10 : 0,
+              opacity: isEnteringCareer ? 0.72 : 1,
             }}
             onMouseEnter={(e) => {
               (e.target as HTMLButtonElement).style.background = "rgba(99,102,241,0.28)";
@@ -372,7 +399,7 @@ function CareerPreviewCard() {
               (e.target as HTMLButtonElement).style.borderColor = "rgba(99,102,241,0.4)";
             }}
           >
-            {entry.status === "available" ? "Open Roadmap →" : "Join Waitlist →"}
+            {isEnteringCareer ? "Entering Career World..." : entry.status === "available" ? "Enter Career Journey →" : "Join Waitlist →"}
           </button>
           {nearbyNode && (
             <button
@@ -390,9 +417,49 @@ function CareerPreviewCard() {
               Explore nearby: {nearbyNode.title} →
             </button>
           )}
-        </>
-      )}
-    </div>
+          </>
+        )}
+      </div>
+
+      <div
+        aria-hidden={!isEnteringCareer}
+        style={{
+          position: "fixed",
+          inset: 0,
+          zIndex: 80,
+          pointerEvents: isEnteringCareer ? "auto" : "none",
+          opacity: isEnteringCareer ? 1 : 0,
+          transform: isEnteringCareer ? "scale(1)" : "scale(0.96)",
+          transition: "opacity 0.55s ease, transform 1.45s cubic-bezier(0.16,1,0.3,1)",
+          background: "radial-gradient(circle at 50% 50%, rgba(129,140,248,0.22) 0%, rgba(15,23,42,0.82) 28%, rgba(3,5,14,0.98) 74%)",
+          display: "grid",
+          placeItems: "center",
+        }}
+      >
+        <div
+          style={{
+            width: "min(68vw, 520px)",
+            aspectRatio: "1 / 1",
+            borderRadius: "999px",
+            border: "1px solid rgba(251,191,36,0.34)",
+            background: "radial-gradient(circle, rgba(251,191,36,0.34), rgba(99,102,241,0.18) 38%, transparent 64%)",
+            boxShadow: "0 0 140px rgba(251,191,36,0.34), inset 0 0 90px rgba(103,232,249,0.18)",
+            animation: "career-node-enter 1.55s cubic-bezier(0.16,1,0.3,1) forwards",
+          }}
+        />
+        <div style={{ position: "absolute", textAlign: "center", padding: "0 24px" }}>
+          <p style={{ margin: 0, color: "#fbbf24", fontSize: 11, fontWeight: 700, letterSpacing: "0.18em", textTransform: "uppercase" }}>
+            Galaxy node locked
+          </p>
+          <h2 style={{ margin: "12px 0 0", color: "#f8fafc", fontSize: "clamp(28px,5vw,56px)", lineHeight: 1.05, fontWeight: 800 }}>
+            Entering {destination?.title ?? "Career World"}
+          </h2>
+          <p style={{ margin: "12px auto 0", maxWidth: 460, color: "rgba(226,232,240,0.72)", fontSize: 14 }}>
+            Revealing the map inside this career node.
+          </p>
+        </div>
+      </div>
+    </>
   );
 }
 
@@ -403,6 +470,7 @@ function CareerNavPanel({ allNodes }: NavPanelProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [expandedSector, setExpandedSector] = useState<string | null>(null);
   const [isMobile, setIsMobile] = useState(false);
+  const [showHint, setShowHint] = useState(false);
 
   const show = phase === "exploring" || phase === "arrived";
 
@@ -412,6 +480,16 @@ function CareerNavPanel({ allNodes }: NavPanelProps) {
     window.addEventListener("resize", check);
     return () => window.removeEventListener("resize", check);
   }, []);
+
+  useEffect(() => {
+    try { setShowHint(window.localStorage.getItem("career_map_hint_seen") !== "1"); } catch { setShowHint(true); }
+  }, []);
+
+  function togglePanel() {
+    setIsOpen((open) => !open);
+    setShowHint(false);
+    try { window.localStorage.setItem("career_map_hint_seen", "1"); } catch { /* Persistence is optional. */ }
+  }
 
   // Group nodes by sector
   const grouped = Object.entries(SECTORS).map(([key, sector]) => ({
@@ -430,7 +508,8 @@ function CareerNavPanel({ allNodes }: NavPanelProps) {
     border: "1px solid rgba(99,102,241,0.18)",
     borderRadius: "20px 20px 0 0",
     backdropFilter: "blur(24px)",
-    boxShadow: "0 -8px 40px rgba(0,0,0,0.4)",
+    boxShadow: showHint && !isOpen ? "0 -8px 46px rgba(99,102,241,.3)" : "0 -8px 40px rgba(0,0,0,0.4)",
+    animation: showHint && !isOpen ? "career-map-trigger-pulse 2.4s ease-in-out infinite" : "none",
     transition: "height 0.4s cubic-bezier(0.22,1,0.36,1), opacity 0.5s ease, transform 0.5s ease",
     opacity: show ? 1 : 0,
     transform: show ? "translateY(0)" : "translateY(100%)",
@@ -440,13 +519,14 @@ function CareerNavPanel({ allNodes }: NavPanelProps) {
     // Desktop: left sidebar
     position: "fixed", top: "50%", left: 24,
     transform: show ? "translateY(-50%)" : "translateY(-50%) translateX(-20px)",
-    width: isOpen ? 280 : 48,
+    width: isOpen ? 280 : 164,
     maxHeight: "80vh",
     background: "rgba(3,5,14,0.82)",
     border: "1px solid rgba(99,102,241,0.14)",
     borderRadius: 20,
     backdropFilter: "blur(24px)",
-    boxShadow: "0 0 60px rgba(0,0,0,0.4), 0 0 0 1px rgba(99,102,241,0.06)",
+    boxShadow: showHint && !isOpen ? "0 0 42px rgba(99,102,241,.34), 0 0 0 1px rgba(129,140,248,.26)" : "0 0 60px rgba(0,0,0,0.4), 0 0 0 1px rgba(99,102,241,0.06)",
+    animation: showHint && !isOpen ? "career-map-trigger-pulse 2.4s ease-in-out infinite" : "none",
     transition: "width 0.4s cubic-bezier(0.22,1,0.36,1), opacity 0.5s ease, transform 0.5s ease",
     opacity: show ? 1 : 0,
     zIndex: 40, overflow: "hidden", display: "flex", flexDirection: "column",
@@ -457,7 +537,7 @@ function CareerNavPanel({ allNodes }: NavPanelProps) {
     <div style={panelStyle} role="navigation" aria-label="Career Universe navigation">
       {/* Toggle / handle */}
       <button
-        onClick={() => setIsOpen((o) => !o)}
+        onClick={togglePanel}
         aria-expanded={isOpen}
         aria-label={isOpen ? "Close career list" : "Open career list"}
         style={{
@@ -474,11 +554,9 @@ function CareerNavPanel({ allNodes }: NavPanelProps) {
           <circle cx="12" cy="12" r="10"/>
           <polygon points="16.24 7.76 14.12 14.12 7.76 16.24 9.88 9.88 16.24 7.76"/>
         </svg>
-        {(isOpen || isMobile) && (
-          <span style={{ fontSize: 13, fontWeight: 600, letterSpacing: "0.04em", whiteSpace: "nowrap" }}>
-            {isMobile ? (isOpen ? "AI Careers" : "Explore Careers") : "AI Careers"}
-          </span>
-        )}
+        <span style={{ fontSize: 13, fontWeight: 600, letterSpacing: "0.04em", whiteSpace: "nowrap" }}>
+          {isOpen ? "AI Careers" : "Explore Careers"}
+        </span>
         {isOpen && !isMobile && (
           <span style={{ marginLeft: "auto", fontSize: 18, color: "rgba(165,180,252,0.5)", lineHeight: 1 }}>×</span>
         )}
@@ -512,7 +590,10 @@ function CareerNavPanel({ allNodes }: NavPanelProps) {
               return (
                 <button
                   key={node.id}
-                  onClick={() => travelTo(node)}
+                  onClick={() => {
+                    travelTo(node);
+                    if (isMobile) setIsOpen(false);
+                  }}
                   style={{
                     width: "100%", display: "flex", alignItems: "center",
                     gap: 10, padding: "7px 16px 7px 28px",
@@ -900,6 +981,7 @@ function ThreeScene() {
         const idx = doRaycast(e.clientX, e.clientY);
         if (idx >= 0) {
           const node = allNodesRef.current[idx];
+          const wasFocused = destNodeRef.current?.id === node.id;
           destNodeRef.current = node;
           destPosRef.current.set(...node.position);
           destCamPosRef.current.set(node.position[0], node.position[1]+4, node.position[2]+14);
@@ -915,6 +997,8 @@ function ThreeScene() {
           // Reset orbit offsets so new destination is centered
           o.yaw = 0; o.pitch = 0;
           travelToRef.current(node);
+          const entry = UNIVERSE_REGISTRY.find((career) => career.id === node.id);
+          if (wasFocused && entry?.careerPath) scheduleCareerEntry(node, entry.careerPath);
         }
       }
     }
@@ -1089,6 +1173,60 @@ function ThreeScene() {
   );
 }
 
+function CareerEntryTransitionOverlay() {
+  const [entry, setEntry] = useState<CareerEntryDetail | null>(null);
+  const [entryState, setEntryState] = useState<CareerEntryState>("landing");
+
+  useEffect(() => {
+    function handleEntry(event: Event) {
+      const detail = (event as CustomEvent<CareerEntryDetail>).detail;
+      if (!detail?.path || entryState !== "landing") return;
+      const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+      setEntry(detail);
+      setEntryState("zooming-to-node");
+      window.setTimeout(() => {
+        setEntryState("handoff");
+        window.location.href = detail.path;
+      }, reduceMotion ? 140 : 1500);
+    }
+
+    window.addEventListener(CAREER_ENTRY_EVENT, handleEntry);
+    return () => window.removeEventListener(CAREER_ENTRY_EVENT, handleEntry);
+  }, [entryState]);
+
+  const visible = entry !== null;
+
+  return (
+    <div
+      aria-hidden={!visible}
+      style={{
+        position: "fixed",
+        inset: 0,
+        zIndex: 90,
+        pointerEvents: visible ? "auto" : "none",
+        opacity: visible ? 1 : 0,
+        transform: visible ? "scale(1)" : "scale(0.96)",
+        transition: "opacity 0.55s ease, transform 1.35s cubic-bezier(0.16,1,0.3,1)",
+        background: "transparent",
+        display: "grid",
+        placeItems: "center",
+      }}
+    >
+      <div
+        style={{
+          width: "min(38vw, 420px)",
+          aspectRatio: "1 / 1",
+          borderRadius: "999px",
+          border: "1px solid rgba(251,191,36,0.34)",
+          background: "radial-gradient(circle at 42% 38%, #f6d47a 0%, #8170dd 34%, #28245c 68%, #080a1b 100%)",
+          boxShadow: "0 0 120px rgba(129,112,221,.58), inset 0 0 90px rgba(255,231,160,.28)",
+          animation: visible ? "career-node-enter 1.45s cubic-bezier(0.16,1,0.3,1) forwards" : undefined,
+        }}
+      />
+    </div>
+  );
+}
+
 // ─── World inner ──────────────────────────────────────────────────────────────
 function WorldInner() {
   return (
@@ -1097,6 +1235,7 @@ function WorldInner() {
       <VignetteOverlay />
       <HeroContent />
       <CareerPreviewCard />
+      <CareerEntryTransitionOverlay />
       <ExploreHint />
       <TransitionController />
     </div>
