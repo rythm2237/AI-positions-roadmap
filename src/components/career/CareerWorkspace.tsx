@@ -5,6 +5,7 @@ import Link from "next/link";
 import React, { useEffect, useMemo, useState } from "react";
 import CareerJourneyEngine from "@/components/career/journey-engine/CareerJourneyEngine";
 import LearningWorkspace from "@/components/career/learning/LearningWorkspace";
+import CareerIntelligenceWorkspace from "@/components/career/intelligence/CareerIntelligenceWorkspace";
 import { aiEngineerCareer } from "@/data/careers/ai-engineer";
 import { CAREER_NAV_ITEMS, careerSectionHref } from "@/lib/careerNavigation";
 import { resolveReferenceSegment } from "@/lib/references/referenceResolver";
@@ -480,6 +481,8 @@ export default function CareerWorkspace({ initialSection = "hero" }: { initialSe
                 startGuidedJourney={startGuidedJourney}
                 actionMessage={actionMessage}
               />
+            ) : activeSection === "intelligence" ? (
+              <CareerIntelligenceWorkspace key="intelligence" career={career} />
             ) : activeSection === "roadmap" ? (
               <RoadmapWorld
                 key="roadmap"

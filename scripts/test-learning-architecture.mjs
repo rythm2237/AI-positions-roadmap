@@ -3,7 +3,7 @@ import fs from "node:fs";
 
 const nav = fs.readFileSync("src/lib/careerNavigation.ts", "utf8");
 const labels = [...nav.matchAll(/label: "([^"]+)"/g)].map((match) => match[1]);
-assert.deepEqual(labels, ["Hero", "Roadmap", "Learning", "Project", "Portfolio", "Jobs", "Interview Brief"]);
+assert.deepEqual(labels, ["Hero", "Career Intelligence", "Roadmap", "Learning", "Project", "Portfolio", "Jobs", "Interview Brief"]);
 assert.match(nav, /\/learning/);
 
 const learning = fs.readFileSync("src/components/career/learning/LearningWorkspace.tsx", "utf8");

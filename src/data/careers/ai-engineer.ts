@@ -181,6 +181,7 @@ export const aiEngineerCareer: CareerWorkspaceData = {
   },
   mapSections: [
     { id: "hero", label: "Hero", eyebrow: "Arrival", summary: "Career node arrival scene, primary CTA, and compact progress.", x: 120, y: 120 },
+    { id: "intelligence", label: "Career Intelligence", eyebrow: "Decide", summary: "Verified labor-market, mobility, and role-alignment decision support.", x: 300, y: 130 },
     { id: "roadmap", label: "Roadmap", eyebrow: "World", summary: "Fullscreen zero-to-employment career journey map.", x: 470, y: 170 },
     { id: "learning", label: "Learning", eyebrow: "Learn", summary: "Roadmap-synchronized learning, notes, resources, and assessments.", x: 320, y: 520 },
     { id: "project", label: "Project", eyebrow: "Build", summary: "Portfolio-grade AI engineering projects and missions.", x: 980, y: 410 },

@@ -1,5 +1,6 @@
 export type CareerWorkspaceSectionId =
   | "hero"
+  | "intelligence"
   | "roadmap"
   | "learning"
   | "project"

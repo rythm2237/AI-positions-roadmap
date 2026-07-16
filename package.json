@@ -6,14 +6,19 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "next lint"
-    ,"typecheck": "tsc --noEmit"
-    ,"validate:references": "node scripts/validate-references.mjs"
-    ,"test": "node scripts/test-learning-architecture.mjs"
+    "lint": "next lint",
+    "typecheck": "tsc --noEmit",
+    "validate:references": "node scripts/validate-references.mjs",
+    "validate:intelligence": "node scripts/validate-intelligence.mjs",
+    "import:intelligence": "node scripts/import-intelligence-snapshot.mjs",
+    "test": "node scripts/test-learning-architecture.mjs && node scripts/test-career-intelligence.mjs",
+    "intelligence:refresh": "node --env-file=.env.local scripts/refresh-intelligence.mjs"
   },
   "dependencies": {
     "framer-motion": "^11.18.2",
+    "mammoth": "^1.12.0",
     "next": "^16.2.9",
+    "pdfjs-dist": "^6.1.200",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
     "three": "^0.169.0"
