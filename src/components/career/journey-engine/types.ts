@@ -41,6 +41,7 @@ export type JourneyEngineProps = {
   focusedStage: CareerJourneyStage;
   selectedStage: CareerJourneyStage;
   guidedMode: boolean;
+  navigationOpen: boolean;
   guidedIndex: number;
   cameraPhase: JourneyCameraPhase;
   learningMode: boolean;

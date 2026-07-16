@@ -7,6 +7,9 @@
     "build": "next build",
     "start": "next start",
     "lint": "next lint"
+    ,"typecheck": "tsc --noEmit"
+    ,"validate:references": "node scripts/validate-references.mjs"
+    ,"test": "node scripts/test-learning-architecture.mjs"
   },
   "dependencies": {
     "framer-motion": "^11.18.2",

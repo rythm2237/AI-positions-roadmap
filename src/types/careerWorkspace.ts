@@ -1,14 +1,11 @@
 export type CareerWorkspaceSectionId =
   | "hero"
   | "roadmap"
-  | "notes"
-  | "resources"
-  | "projects"
+  | "learning"
+  | "project"
   | "portfolio"
-  | "exams"
-  | "readiness"
   | "jobs"
-  | "interview-prep";
+  | "interview-brief";
 
 export type CareerResourceType =
   | "Video"
@@ -113,6 +110,14 @@ export interface CareerQuizQuestion {
   explanation: string;
   difficulty: WorkspaceDifficulty;
   relatedTopic: string;
+  learningObjectiveId?: string;
+  skillLevel?: WorkspaceDifficulty;
+  questionType?: "multiple-choice" | "true-false" | "scenario" | "code-interpretation";
+  referenceId?: string;
+  segmentId?: string;
+  status?: "active" | "needs-review" | "retired";
+  lastReviewedAt?: string;
+  version?: number;
 }
 
 export interface CareerQuiz {
@@ -295,6 +300,11 @@ export interface CareerAssessmentResult {
   passed: boolean;
   submittedAt: string;
   reviewTopics: string[];
+  attemptId?: string;
+  answers?: Record<string, number>;
+  bestScore?: number;
+  attemptNumber?: number;
+  completedAt?: string;
 }
 
 export interface CareerWorkspaceProgress {
@@ -306,6 +316,9 @@ export interface CareerWorkspaceProgress {
   quizAnswers: Record<string, CareerQuizAnswer>;
   assessmentResults: Record<string, CareerAssessmentResult>;
   notes: CareerNote[];
+  lastActiveStageId?: string;
+  resourceViewedAt: Record<string, string>;
+  assessmentAttempts: CareerAssessmentResult[];
   startedAt?: string;
 }
 

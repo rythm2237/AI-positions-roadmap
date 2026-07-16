@@ -83,6 +83,8 @@ export function useJourneyCamera({
       workspaceWidth,
       workspaceHeight,
       scale,
+      x,
+      y,
       transform: `translate3d(${x}px, ${y}px, 0) scale(${scale})`,
       transitionMs: guidedMode ? (isMobile ? 950 : 1200) : 700,
       overlay: {

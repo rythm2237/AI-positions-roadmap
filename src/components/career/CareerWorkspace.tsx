@@ -4,7 +4,10 @@ import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
 import Link from "next/link";
 import React, { useEffect, useMemo, useState } from "react";
 import CareerJourneyEngine from "@/components/career/journey-engine/CareerJourneyEngine";
+import LearningWorkspace from "@/components/career/learning/LearningWorkspace";
 import { aiEngineerCareer } from "@/data/careers/ai-engineer";
+import { CAREER_NAV_ITEMS, careerSectionHref } from "@/lib/careerNavigation";
+import { resolveReferenceSegment } from "@/lib/references/referenceResolver";
 import {
   defaultCareerWorkspaceProgress,
   getCareerWorkspaceStats,
@@ -66,19 +69,6 @@ type ViewportSize = {
 };
 
 const career = aiEngineerCareer;
-
-const navOrder: CareerWorkspaceSectionId[] = [
-  "hero",
-  "roadmap",
-  "notes",
-  "resources",
-  "projects",
-  "portfolio",
-  "exams",
-  "readiness",
-  "jobs",
-  "interview-prep",
-];
 
 function Icon({ name, className = "h-4 w-4" }: { name: IconName; className?: string }) {
   const paths: Record<IconName, React.ReactNode> = {
@@ -215,10 +205,10 @@ function useViewportSize(): ViewportSize {
   return viewport;
 }
 
-export default function CareerWorkspace() {
+export default function CareerWorkspace({ initialSection = "hero" }: { initialSection?: CareerWorkspaceSectionId }) {
   const reduceMotion = useReducedMotion();
   const viewport = useViewportSize();
-  const [activeSection, setActiveSection] = useState<CareerWorkspaceSectionId>("hero");
+  const [activeSection, setActiveSection] = useState<CareerWorkspaceSectionId>(initialSection);
   const [progress, setProgress] = useState<CareerWorkspaceProgress>(defaultCareerWorkspaceProgress);
   const [isLoaded, setIsLoaded] = useState(false);
   const [bookmarked, setBookmarked] = useState(false);
@@ -264,10 +254,11 @@ export default function CareerWorkspace() {
 
     const params = new URLSearchParams(window.location.search);
     const requestedSection = params.get("section");
-    if (requestedSection === "roadmap") {
-      setActiveSection("roadmap");
-    }
-  }, []);
+    const validSection = CAREER_NAV_ITEMS.find((item) => item.id === requestedSection)?.id;
+    if (validSection) setActiveSection(validSection);
+    const requestedStep = params.get("step");
+    if (requestedStep && career.journeyStages.some((stage) => stage.id === requestedStep)) setSelectedStageId(requestedStep);
+  }, [initialSection]);
 
   useEffect(() => {
     if (isLoaded) saveCareerWorkspaceProgress(career.slug, progress);
@@ -311,6 +302,7 @@ export default function CareerWorkspace() {
 
   function switchSection(section: CareerWorkspaceSectionId) {
     setActiveSection(section);
+    window.history.pushState({}, "", careerSectionHref(career.slug, section, section === "learning" ? progress.lastActiveStageId : undefined));
     if (section === "roadmap" && !selectedStageId) setSelectedStageId(career.journeyStages[0].id);
     if (section !== "roadmap") {
       setGuidedMode(false);
@@ -319,7 +311,8 @@ export default function CareerWorkspace() {
   }
 
   function startLearning() {
-    const firstUnlockedIncomplete =
+    const lastActive = career.journeyStages.find((stage) => stage.id === progress.lastActiveStageId && isJourneyStageUnlocked(stage.id, career, progress) && !progress.assessmentResults[stage.test.id]?.passed);
+    const firstUnlockedIncomplete = lastActive ??
       career.journeyStages.find((stage) => {
         const unlocked = isJourneyStageUnlocked(stage.id, career, progress);
         const passed = progress.assessmentResults[stage.test.id]?.passed;
@@ -327,9 +320,11 @@ export default function CareerWorkspace() {
       }) ?? career.journeyStages[0];
 
     setSelectedStageId(firstUnlockedIncomplete.id);
-    setLearningMode(true);
-    setStationModalStageId(firstUnlockedIncomplete.id);
-    setActiveSection("roadmap");
+    setLearningMode(false);
+    setStationModalStageId(null);
+    updateProgress((previous) => ({ ...previous, lastActiveStageId: firstUnlockedIncomplete.id }));
+    setActiveSection("learning");
+    window.history.pushState({}, "", careerSectionHref(career.slug, "learning", firstUnlockedIncomplete.id));
   }
 
   function startGuidedJourney() {
@@ -424,6 +419,11 @@ export default function CareerWorkspace() {
       passed: score >= examSession.assessment.passingScore,
       submittedAt: new Date().toISOString(),
       reviewTopics: Array.from(new Set(reviewTopics)),
+      attemptId: `attempt-${Date.now()}`,
+      answers: examSession.selectedAnswers,
+      attemptNumber: progress.assessmentAttempts.filter((attempt) => attempt.assessmentId === examSession.assessment.id).length + 1,
+      bestScore: Math.max(score, progress.assessmentResults[examSession.assessment.id]?.bestScore ?? 0),
+      completedAt: new Date().toISOString(),
     };
 
     updateProgress((previous) => ({
@@ -432,6 +432,7 @@ export default function CareerWorkspace() {
         ...previous.assessmentResults,
         [examSession.assessment.id]: result,
       },
+      assessmentAttempts: [...previous.assessmentAttempts, result],
     }));
     setExamSession({ ...examSession, submitted: true, result });
   }
@@ -487,6 +488,7 @@ export default function CareerWorkspace() {
                 focusedStage={focusedStage}
                 selectedStage={selectedStage}
                 guidedMode={guidedMode}
+                navigationOpen={roadmapMenuOpen}
                 guidedIndex={guidedIndex}
                 cameraPhase={cameraPhase}
                 learningMode={learningMode}
@@ -496,6 +498,17 @@ export default function CareerWorkspace() {
                 setGuidedIndex={setGuidedIndex}
                 startLearning={startLearning}
                 dataWarnings={dataWarnings}
+              />
+            ) : activeSection === "learning" ? (
+              <LearningWorkspace
+                key="learning"
+                career={career}
+                progress={progress}
+                selectedStageId={selectedStageId}
+                onSelectStage={(id) => { setSelectedStageId(id); updateProgress((previous) => ({ ...previous, lastActiveStageId: id })); window.history.replaceState({}, "", careerSectionHref(career.slug, "learning", id)); }}
+                onOpenNote={openNote}
+                onOpenAssessment={(stage, kind) => { const assessment = kind === "phase" ? stage.phaseExam : stage.test; if (assessment) openAssessment(assessment, stage.id); }}
+                onViewResource={(id) => updateProgress((previous) => ({ ...previous, completedResources: previous.completedResources.includes(id) ? previous.completedResources : [...previous.completedResources, id], resourceViewedAt: { ...previous.resourceViewedAt, [id]: new Date().toISOString() } }))}
               />
             ) : (
               <ModuleScene
@@ -594,8 +607,7 @@ function WorkspaceMenuContents({ activeSection, isRoadmapMode, stats, switchSect
           Career OS
         </Link>
         <nav className="space-y-1" aria-label="Career workspace navigation">
-          {navOrder.map((sectionId) => {
-            const label = career.mapSections.find((section) => section.id === sectionId)?.label ?? sectionId;
+          {CAREER_NAV_ITEMS.map(({ id: sectionId, label }) => {
             return (
               <button
                 key={sectionId}
@@ -631,8 +643,7 @@ function MobileNav({
   return (
     <nav className={`fixed inset-x-0 bottom-0 z-50 px-3 py-2 pb-[calc(0.5rem_+_env(safe-area-inset-bottom))] backdrop-blur-md transition-opacity lg:hidden ${isRoadmapMode ? guidedMode ? "border-t border-stone-700/10 bg-[#eee7d5]/55 opacity-80" : "border-t border-stone-700/10 bg-[#eee7d5]/75" : "border-t border-white/10 bg-slate-950/90"}`} aria-label="Mobile career workspace navigation">
       <div className="scrollbar-hide flex gap-2 overflow-x-auto">
-        {navOrder.map((sectionId) => {
-          const label = career.mapSections.find((section) => section.id === sectionId)?.label ?? sectionId;
+        {CAREER_NAV_ITEMS.map(({ id: sectionId, label }) => {
           return (
             <button
               key={sectionId}
@@ -727,6 +738,7 @@ function RoadmapWorld({
   focusedStage,
   selectedStage,
   guidedMode,
+  navigationOpen,
   guidedIndex,
   cameraPhase,
   learningMode,
@@ -742,6 +754,7 @@ function RoadmapWorld({
   focusedStage: CareerJourneyStage;
   selectedStage: CareerJourneyStage;
   guidedMode: boolean;
+  navigationOpen: boolean;
   guidedIndex: number;
   cameraPhase: CameraPhase;
   learningMode: boolean;
@@ -761,6 +774,7 @@ function RoadmapWorld({
       focusedStage={focusedStage}
       selectedStage={selectedStage}
       guidedMode={guidedMode}
+      navigationOpen={navigationOpen}
       guidedIndex={guidedIndex}
       cameraPhase={cameraPhase}
       learningMode={learningMode}
@@ -903,14 +917,10 @@ function ModuleScene({
           </div>
         </PanelCard>
         <div className="min-h-0 flex-1 overflow-y-auto rounded-2xl border border-white/10 bg-slate-950/55 p-4 backdrop-blur-xl">
-          {section === "resources" ? <ResourcesModule resources={resources} progress={progress} updateProgress={updateProgress} openNote={openNote} /> : null}
-          {section === "notes" ? <NotesModule progress={progress} noteFilter={noteFilter} setNoteFilter={setNoteFilter} openNote={openNote} deleteNote={deleteNote} exportNotesAsPdf={exportNotesAsPdf} /> : null}
-          {section === "projects" ? <ProjectsModule progress={progress} updateProgress={updateProgress} openNote={openNote} /> : null}
+          {section === "project" ? <ProjectsModule progress={progress} updateProgress={updateProgress} openNote={openNote} /> : null}
           {section === "portfolio" ? <TaskModule title="Portfolio proof" tasks={career.portfolioTasks} progress={progress} updateProgress={updateProgress} /> : null}
-          {section === "exams" ? <ExamsModule assessments={assessments} progress={progress} openAssessment={openAssessment} /> : null}
-          {section === "readiness" ? <ReadinessModule stats={stats} progress={progress} updateProgress={updateProgress} /> : null}
           {section === "jobs" ? <JobsModule jobFilters={jobFilters} setJobFilters={setJobFilters} /> : null}
-          {section === "interview-prep" ? <InterviewModule /> : null}
+          {section === "interview-brief" ? <InterviewModule /> : null}
         </div>
       </div>
     </motion.section>
@@ -1183,6 +1193,20 @@ function StationDetailsModal({
   updateProgress: (updater: (previous: CareerWorkspaceProgress) => CareerWorkspaceProgress) => void;
   notifyLockedStage: () => void;
 }) {
+  useEffect(() => {
+    if (!stage) return;
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape") close();
+    };
+    window.addEventListener("keydown", handleKeyDown);
+    return () => {
+      document.body.style.overflow = previousOverflow;
+      window.removeEventListener("keydown", handleKeyDown);
+    };
+  }, [close, stage]);
+
   if (!stage) return null;
 
   const unlocked = isJourneyStageUnlocked(stage.id, career, progress);
@@ -1191,7 +1215,7 @@ function StationDetailsModal({
 
   return (
     <AnimatePresence>
-      <motion.div className="fixed inset-0 z-[65] flex items-end justify-center bg-black/62 p-0 backdrop-blur-sm sm:p-4 md:items-center" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
+      <motion.div className="fixed inset-0 z-[65] flex items-end justify-center bg-black/62 p-0 backdrop-blur-sm sm:p-4 md:items-center" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onPointerDown={(event) => { if (event.target === event.currentTarget) close(); }}>
         <motion.div
           className="flex max-h-[92dvh] w-full max-w-5xl flex-col overflow-hidden rounded-t-3xl border border-white/10 bg-slate-950 shadow-premium sm:rounded-3xl"
           initial={{ y: 40, scale: 0.98 }}
@@ -1398,13 +1422,17 @@ function AssessmentModal({
                 {session.assessment.questions.map((item) => {
                   const selectedIndex = session.selectedAnswers[item.id];
                   const correct = selectedIndex === item.correctAnswerIndex;
+                  const remediation = item.referenceId ? resolveReferenceSegment(item.referenceId, item.segmentId) : null;
                   return (
                     <PanelCard key={item.id}>
                       <p className="font-semibold text-white">{item.question}</p>
                       <p className={correct ? "mt-2 text-sm text-emerald-300" : "mt-2 text-sm text-rose-300"}>
                         {correct ? "Correct" : "Review needed"}
                       </p>
-                      <p className="mt-2 text-sm leading-6 text-slate-300">{item.explanation}</p>
+                      {!correct ? <div className="mt-3 flex flex-wrap gap-2">
+                        {remediation?.available ? <a className="min-h-11 rounded-xl border border-amber-300/25 px-4 py-2 text-sm font-semibold text-amber-100" href={remediation.url} target="_blank" rel="noreferrer">Review exact resource section</a> : <span className="text-xs text-amber-200">The remediation reference needs review.</span>}
+                        <details className="w-full rounded-xl border border-white/10 p-3"><summary className="cursor-pointer text-sm font-semibold text-cyan-200">Explain It Here</summary><p className="mt-2 text-sm leading-6 text-slate-300">{item.explanation}</p></details>
+                      </div> : null}
                     </PanelCard>
                   );
                 })}

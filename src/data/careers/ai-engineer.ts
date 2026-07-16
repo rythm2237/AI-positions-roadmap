@@ -1,4 +1,5 @@
 import type { CareerWorkspaceData } from "@/types/careerWorkspace";
+import { createPhaseAssessment as phaseExam, createSectionQuestions as stageQuestions } from "@/content/assessments/assessmentBank";
 
 const officialResources = {
   openaiDocs: {
@@ -135,101 +136,6 @@ const officialResources = {
   },
 };
 
-function makeQuestion(
-  id: string,
-  question: string,
-  correct: string,
-  distractors: string[],
-  explanation: string,
-  relatedTopic: string
-) {
-  return {
-    id,
-    question,
-    answers: [correct, ...distractors],
-    correctAnswerIndex: 0,
-    explanation,
-    difficulty: "Intermediate" as const,
-    relatedTopic,
-  };
-}
-
-function stageQuestions(stageId: string, topic: string, goodSignal: string) {
-  return [
-    makeQuestion(
-      `${stageId}-q1`,
-      `Which action best proves readiness for ${topic}?`,
-      goodSignal,
-      ["Watching a video without building anything", "Skipping documentation until interview week", "Choosing tools before defining the problem"],
-      `The strongest signal for ${topic} is evidence of applied work, reflection, and measurable progress.`,
-      topic
-    ),
-    makeQuestion(
-      `${stageId}-q2`,
-      `A learner is blocked in ${topic}. What should they do first?`,
-      "Identify the smallest missing concept and practice it in a focused task",
-      ["Restart the entire career path", "Add three new frameworks immediately", "Move to job applications without evidence"],
-      "Focused review keeps momentum while protecting understanding.",
-      topic
-    ),
-    makeQuestion(
-      `${stageId}-q3`,
-      `Which artifact is most useful for future interviews about ${topic}?`,
-      "A concise note explaining trade-offs, mistakes, and decisions",
-      ["A private bookmark list only", "An untested prompt copied from a blog", "A screenshot with no explanation"],
-      "Interviewers evaluate reasoning and judgment, so artifacts should explain decisions.",
-      topic
-    ),
-    makeQuestion(
-      `${stageId}-q4`,
-      `How should AI tools be used while learning ${topic}?`,
-      "As a tutor and reviewer while still rebuilding the solution yourself",
-      ["As a substitute for understanding", "Only to generate final answers", "To avoid writing tests"],
-      "AI support is valuable when it accelerates feedback without replacing practice.",
-      topic
-    ),
-    makeQuestion(
-      `${stageId}-q5`,
-      `What is the clearest completion signal for this station?`,
-      "The learner can explain and demonstrate the outcome without reading a script",
-      ["The browser has many tabs open", "The learner saved a course link", "The station title sounds familiar"],
-      "A station is complete when knowledge is usable, explainable, and visible through work.",
-      topic
-    ),
-  ];
-}
-
-function phaseExam(stageId: string, title: string, topic: string) {
-  return {
-    id: `${stageId}-phase-exam`,
-    title,
-    description: `Exam-style practice questions for ${topic}. These are platform-generated questions inspired by reputable learning formats, not official exam questions.`,
-    passingScore: 60,
-    durationMinutes: 12,
-    officialPracticeLinks: [
-      {
-        title: "Microsoft Learn practice assessments",
-        url: "https://learn.microsoft.com/credentials/certifications/practice-assessments-for-microsoft-certifications",
-      },
-      {
-        title: "AWS Skill Builder exam prep",
-        url: "https://skillbuilder.aws/exam-prep/",
-      },
-      {
-        title: "Google Cloud certification resources",
-        url: "https://cloud.google.com/learn/certification",
-      },
-    ],
-    questions: [
-      makeQuestion(`${stageId}-exam-q1`, `Which scenario best matches professional ${topic} judgment?`, "Choosing a simple, testable architecture before adding complexity", ["Adding agents to every workflow", "Ignoring latency until launch", "Relying on a single demo prompt"], "Professional judgment starts with clear requirements, testing, and maintainability.", topic),
-      makeQuestion(`${stageId}-exam-q2`, `What should be documented for ${topic}?`, "Assumptions, trade-offs, evaluation criteria, and failure modes", ["Only the final package list", "Nothing until a recruiter asks", "Only screenshots"], "Documentation should help future teammates and interviewers understand the reasoning.", topic),
-      makeQuestion(`${stageId}-exam-q3`, `Which metric most improves trust in ${topic}?`, "A metric tied to user value and system quality", ["Total number of libraries", "Number of social posts", "Icon count"], "Useful metrics connect technical work to real outcomes.", topic),
-      makeQuestion(`${stageId}-exam-q4`, `What is the safest next step after a failed ${topic} assessment?`, "Review weak topics, rebuild a small example, and retry", ["Unlock every future station anyway", "Delete the result", "Memorize answer letters"], "Failed assessments should guide targeted review without breaking the journey.", topic),
-      makeQuestion(`${stageId}-exam-q5`, `How should official vendor resources be treated?`, "As trusted references for cloud and platform-specific behavior", ["As optional decoration only", "As proof that generated questions are official", "As a reason to skip practice"], "Official resources are high-trust references, but generated questions must be labeled as exam-style.", topic),
-    ],
-  };
-}
-
 export const aiEngineerCareer: CareerWorkspaceData = {
   slug: "ai-engineer",
   title: "AI Engineer",
@@ -276,14 +182,11 @@ export const aiEngineerCareer: CareerWorkspaceData = {
   mapSections: [
     { id: "hero", label: "Hero", eyebrow: "Arrival", summary: "Career node arrival scene, primary CTA, and compact progress.", x: 120, y: 120 },
     { id: "roadmap", label: "Roadmap", eyebrow: "World", summary: "Fullscreen zero-to-employment career journey map.", x: 470, y: 170 },
-    { id: "notes", label: "Notes", eyebrow: "Memory", summary: "Contextual notes grouped by career, phase, station, resource, quiz, and project.", x: 320, y: 520 },
-    { id: "resources", label: "Resources", eyebrow: "Library", summary: "High-quality resources connected to journey stations.", x: 840, y: 120 },
-    { id: "projects", label: "Projects", eyebrow: "Build", summary: "Portfolio-grade AI engineering projects and missions.", x: 980, y: 410 },
+    { id: "learning", label: "Learning", eyebrow: "Learn", summary: "Roadmap-synchronized learning, notes, resources, and assessments.", x: 320, y: 520 },
+    { id: "project", label: "Project", eyebrow: "Build", summary: "Portfolio-grade AI engineering projects and missions.", x: 980, y: 410 },
     { id: "portfolio", label: "Portfolio", eyebrow: "Proof", summary: "Case studies, GitHub, demos, and portfolio packaging tasks.", x: 780, y: 620 },
-    { id: "exams", label: "Exams", eyebrow: "Assess", summary: "Step tests and phase exams with gated progression.", x: 620, y: 540 },
-    { id: "readiness", label: "Career Readiness", eyebrow: "Apply", summary: "Readiness score based on learning, tests, projects, and hiring assets.", x: 900, y: 760 },
     { id: "jobs", label: "Jobs", eyebrow: "Market", summary: "Live vacancy integration placeholder with job board filters.", x: 1040, y: 650 },
-    { id: "interview-prep", label: "Interview Prep", eyebrow: "Practice", summary: "Technical, system design, behavioral, and portfolio interview preparation.", x: 520, y: 780 },
+    { id: "interview-brief", label: "Interview Brief", eyebrow: "Practice", summary: "Technical, system design, behavioral, and portfolio interview preparation.", x: 520, y: 780 },
   ],
   journeyMap: {
     theme: "treasure-map",

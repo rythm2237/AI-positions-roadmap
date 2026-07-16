@@ -221,9 +221,11 @@ type CareerEntryDetail = {
 };
 
 type CareerEntryState = "landing" | "zooming-to-node" | "handoff" | "career-workspace";
+let careerEntryScheduled = false;
 
 function scheduleCareerEntry(node: CareerNode, path: string, delay = 180) {
-  if (typeof window === "undefined") return;
+  if (typeof window === "undefined" || careerEntryScheduled) return;
+  careerEntryScheduled = true;
   const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
   window.setTimeout(() => {
     window.dispatchEvent(new CustomEvent<CareerEntryDetail>(CAREER_ENTRY_EVENT, {
@@ -1176,15 +1178,18 @@ function ThreeScene() {
 function CareerEntryTransitionOverlay() {
   const [entry, setEntry] = useState<CareerEntryDetail | null>(null);
   const [entryState, setEntryState] = useState<CareerEntryState>("landing");
+  const entryStateRef = useRef<CareerEntryState>("landing");
 
   useEffect(() => {
     function handleEntry(event: Event) {
       const detail = (event as CustomEvent<CareerEntryDetail>).detail;
-      if (!detail?.path || entryState !== "landing") return;
+      if (!detail?.path || entryStateRef.current !== "landing") return;
       const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
       setEntry(detail);
+      entryStateRef.current = "zooming-to-node";
       setEntryState("zooming-to-node");
       window.setTimeout(() => {
+        entryStateRef.current = "handoff";
         setEntryState("handoff");
         window.location.href = detail.path;
       }, reduceMotion ? 140 : 1500);
@@ -1192,7 +1197,7 @@ function CareerEntryTransitionOverlay() {
 
     window.addEventListener(CAREER_ENTRY_EVENT, handleEntry);
     return () => window.removeEventListener(CAREER_ENTRY_EVENT, handleEntry);
-  }, [entryState]);
+  }, []);
 
   const visible = entry !== null;
 
@@ -1220,7 +1225,7 @@ function CareerEntryTransitionOverlay() {
           border: "1px solid rgba(251,191,36,0.34)",
           background: "radial-gradient(circle at 42% 38%, #f6d47a 0%, #8170dd 34%, #28245c 68%, #080a1b 100%)",
           boxShadow: "0 0 120px rgba(129,112,221,.58), inset 0 0 90px rgba(255,231,160,.28)",
-          animation: visible ? "career-node-enter 1.45s cubic-bezier(0.16,1,0.3,1) forwards" : undefined,
+          animation: entryState === "zooming-to-node" ? "career-node-enter 1.45s cubic-bezier(0.16,1,0.3,1) forwards" : undefined,
         }}
       />
     </div>

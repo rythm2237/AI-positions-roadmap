@@ -21,8 +21,8 @@ type SketchProps = { stage: CareerJourneyStage; active: boolean; technologyLevel
 
 export function LandmarkSymbol({ stage, active, technologyLevel = 0 }: SketchProps) {
   const progress = Math.max(0, Math.min(1, technologyLevel));
-  const ink = progress > .66 ? "#455f68" : progress > .35 ? "#56646a" : "#625f58";
-  const accent = progress > .72 ? "#6398a3" : progress > .38 ? "#748890" : "#777269";
+  const ink = progress > .66 ? "#365f68" : progress > .35 ? "#414c4d" : "#493a2d";
+  const accent = progress > .72 ? "#477f8b" : progress > .38 ? "#566f73" : "#67513d";
   const common = { stroke: ink, strokeWidth: active ? 2.3 : 1.8, strokeLinecap: "round" as const, strokeLinejoin: "round" as const };
   const type = stage.type;
 
@@ -58,34 +58,35 @@ export function TreasureTerrainFeature({ stage, technologyLevel = 0 }: { stage: 
 
 export function InfiniteLeatherBackground() {
   return (
-    <div className="pointer-events-none absolute inset-0 overflow-hidden bg-[#a9825f]" aria-hidden="true">
+    <div className="pointer-events-none absolute inset-0 overflow-hidden bg-[#c7a477]" aria-hidden="true">
       <div
         className="absolute inset-0"
         style={{
           backgroundImage: [
-            "radial-gradient(ellipse at 18% 24%, rgba(240,219,184,.17) 0, transparent 38%)",
-            "radial-gradient(ellipse at 78% 72%, rgba(73,47,30,.16) 0, transparent 44%)",
-            "linear-gradient(118deg, rgba(244,226,195,.10), transparent 31%, rgba(74,48,31,.09) 67%, rgba(231,207,169,.08))",
+            "radial-gradient(ellipse at 22% 18%, rgba(249,228,188,.24) 0, transparent 42%)",
+            "radial-gradient(ellipse at 76% 68%, rgba(92,55,31,.14) 0, transparent 48%)",
+            "linear-gradient(117deg, rgba(255,235,198,.14), transparent 32%, rgba(91,55,33,.10) 71%, rgba(245,218,178,.12))",
           ].join(","),
         }}
       />
       <div
-        className="absolute inset-0 opacity-[.22] mix-blend-multiply"
+        className="absolute inset-0 opacity-[.34] mix-blend-multiply"
         style={{
-          backgroundImage: `url("data:image/svg+xml,%3Csvg viewBox='0 0 192 192' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='leather'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.075 .32' numOctaves='3' seed='17' stitchTiles='stitch' result='n'/%3E%3CfeColorMatrix in='n' type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='192' height='192' filter='url(%23leather)' opacity='.38'/%3E%3C/svg%3E")`,
+          backgroundImage: `url("data:image/svg+xml,%3Csvg viewBox='0 0 192 192' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='leather'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.12 .48' numOctaves='4' seed='29' stitchTiles='stitch' result='n'/%3E%3CfeColorMatrix in='n' type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='192' height='192' fill='%23b88e5f' filter='url(%23leather)' opacity='.62'/%3E%3C/svg%3E")`,
           backgroundRepeat: "repeat",
           backgroundSize: "192px 192px",
         }}
       />
       <div
-        className="absolute inset-0 opacity-[.16]"
+        className="absolute inset-0 opacity-[.34] mix-blend-multiply"
         style={{
-          backgroundImage: `url("data:image/svg+xml,%3Csvg viewBox='0 0 317 271' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' stroke='%236b4026' stroke-linecap='round'%3E%3Cpath d='M-18 74C58 48 91 102 164 76S279 49 335 83' opacity='.24'/%3E%3Cpath d='M42 215c48-25 82 17 132-9s87-8 154-31' opacity='.16'/%3E%3Cpath d='M113-12c-7 48 19 69 6 119s5 91-8 176' opacity='.12'/%3E%3Cpath d='m251 29 22-8m-31 181 17 5M67 149l12-4' opacity='.28'/%3E%3C/g%3E%3C/svg%3E")`,
+          backgroundImage: `url("data:image/svg+xml,%3Csvg viewBox='0 0 317 271' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' stroke-linecap='round'%3E%3Cpath d='M-20 52c43-18 74 22 119 1s67 13 111-5 78 10 127-8' stroke='%23714a35' opacity='.30'/%3E%3Cpath d='M-15 54c43-18 74 22 119 1s67 13 111-5 78 10 127-8' stroke='%230d0806' opacity='.42'/%3E%3Cpath d='M38 204c38-24 69 15 111-8s89 5 177-25' stroke='%2357382a' opacity='.25'/%3E%3Cpath d='M121-14c-12 47 15 72 1 119s9 94-7 180' stroke='%23634230' opacity='.20'/%3E%3Cpath d='m249 29 19-7m-27 181 16 5M67 148l11-4m137-18 8-9M22 110l12 3' stroke='%23805a43' opacity='.34'/%3E%3C/g%3E%3C/svg%3E")`,
           backgroundRepeat: "repeat",
           backgroundSize: "317px 271px",
         }}
       />
-      <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,transparent_52%,rgba(77,42,20,.16)_100%)]" />
+      <div className="absolute inset-0 opacity-[.14] mix-blend-multiply" style={{ backgroundImage: "repeating-radial-gradient(ellipse at 47% 53%,rgba(61,34,20,.5) 0 .45px,transparent .65px 3.2px)", backgroundSize: "23px 19px" }} />
+      <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,transparent_48%,rgba(78,43,22,.16)_100%)]" />
     </div>
   );
 }

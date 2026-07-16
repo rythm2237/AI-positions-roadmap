@@ -17,6 +17,8 @@ export function defaultCareerWorkspaceProgress(): CareerWorkspaceProgress {
     completedReadinessItems: [],
     quizAnswers: {},
     assessmentResults: {},
+    assessmentAttempts: [],
+    resourceViewedAt: {},
     notes: [],
   };
 }
