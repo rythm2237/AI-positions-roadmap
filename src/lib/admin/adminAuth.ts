@@ -2,10 +2,9 @@ import "server-only";
 import { cookies } from "next/headers";
 import { supabaseServerConfig, supabaseUserFetch } from "@/lib/admin/supabaseServer";
 import { evaluateAdminAuthorization, safeAdminReturnUrl, type AdminAuthorization } from "@/lib/admin/adminAuthorization";
+import { ADMIN_ACCESS_COOKIE } from "@/lib/admin/adminSession";
 
 export { safeAdminReturnUrl } from "@/lib/admin/adminAuthorization";
-
-export const ADMIN_ACCESS_COOKIE = "career_os_admin_access";
 
 export async function signInAdmin(email: string, password: string) {
   const { url, secretKey } = supabaseServerConfig();
@@ -16,8 +15,8 @@ export async function signInAdmin(email: string, password: string) {
     cache: "no-store",
   });
   if (!response.ok) return null;
-  const body = await response.json() as { access_token?: string };
-  return body.access_token ?? null;
+  const body = await response.json() as { access_token?: string; refresh_token?: string; expires_in?: number };
+  return body.access_token && body.refresh_token ? { accessToken: body.access_token, refreshToken: body.refresh_token, expiresIn: body.expires_in ?? 3600 } : null;
 }
 
 export async function authorizeAdminWithToken(accessToken: string | undefined): Promise<AdminAuthorization> {

@@ -29,7 +29,9 @@ export async function GET(request: Request) {
     try {
       return NextResponse.json(await snapshotView(career, country.toLowerCase(), type as SnapshotType), { headers: cacheHeaders });
     } catch {
-      return NextResponse.json({ availability: "no-verified-data", message: "No verified snapshot is available." }, { status: 200 });
+      const requestId=safeRequestId();
+      console.error("Single snapshot read failed",{requestId,errorCode:"SNAPSHOT_READ_FAILED"});
+      return NextResponse.json({ availability: "temporarily-unavailable", message: "Snapshot data is temporarily unavailable.",requestId }, { status: 503 });
     }
   }
 
