@@ -6,7 +6,7 @@ const sectionDefinitions=[
  {id:"snapshot",icon:"◉",title:"Market Snapshot",description:"A concise view of verified sample evidence and broad provider context.",status:"Baseline snapshot",component:MarketSnapshot},
  {id:"demand",icon:"↗",title:"Demand & Hiring Trends",description:"Understand current hiring activity and comparable historical growth.",status:"Baseline only",component:Demand},
  {id:"work-model",icon:"⌂",title:"Work Model",description:"Review explicit Remote, Hybrid, On-site, and unclassified evidence.",status:"Evidence coverage",component:WorkModel},
- {id:"salary",icon:"¤",title:"Salary Intelligence",description:"Compare validated listing salary evidence separately from broad provider context.",status:"Salary evidence",component:Salary},
+ {id:"salary",icon:"¤",title:"Global Salary Comparison",description:"Compare verified salary evidence across selected countries in local currencies.",status:"3 published markets",component:Salary},
  {id:"skills",icon:"◇",title:"Skills & Employer Expectations",description:"Separate Learning content from market-derived skill evidence.",status:"Insufficient text evidence",component:Skills},
  {id:"locations",icon:"◎",title:"Locations & Country Comparison",description:"Compare verified matches inside independently published country samples.",status:"3 published markets",component:Locations},
  {id:"mobility",icon:"✦",title:"Global Mobility & Immigration",description:"Review country-specific official evidence and provisional occupation proxies.",status:"Official sources",component:Mobility},

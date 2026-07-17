@@ -2,10 +2,18 @@
 
 Career Intelligence reads only published Supabase snapshots. Adzuna is called exclusively by protected refresh routes. The flow is Adzuna → normalization → validation → validating snapshot → atomic publication → published-only API → accordion UI. A failed refresh never supersedes the last published snapshot.
 
+## Global salary comparison
+
+The salary workspace retrieves up to ten selected countries with one validated `countries` snapshot request and one Supabase query. The complete ISO country catalog is intentionally separate from the Adzuna support registry, so users can retain unsupported countries with an honest unavailable state. GB, US, and CA are the default comparison and existing published rows appear immediately. Selection is stored under a versioned browser-local preference; malformed, obsolete, duplicate, and excessive values are discarded safely.
+
+Adding a country does not call Adzuna from the browser. This application currently has no authenticated user identity or durable public rate limiter suitable for safely authorizing provider refreshes. Missing supported countries therefore remain `Awaiting verified data` until a protected manual or scheduled refresh publishes them; unsupported countries remain explicitly unavailable. Do not expose the protected admin refresh route to implement public refresh. A future authenticated request workflow may add durable cooldown and deduplication without changing the selection or comparison response model.
+
+Cross-country results remain in original local currencies. No shared-scale chart is rendered until a verified FX provider, source attribution, and rate date are available. FX normalization must never be labeled as tax, purchasing-power, or cost-of-living adjustment.
+
 ## Setup
 
 1. Review and run `supabase/migrations/202607160001_intelligence_snapshots.sql` in the Supabase SQL Editor. It creates three RLS-protected tables and the atomic publication function. It is non-destructive.
-2. Configure `SUPABASE_URL`, `SUPABASE_SECRET_KEY`, `ADZUNA_APP_ID`, `ADZUNA_APP_KEY`, and a strong `CRON_SECRET` as server-only Vercel variables.
+2. Configure `SUPABASE_URL`, `SUPABASE_SECRET_KEY`, `ADZUNA_APP_ID`, `ADZUNA_APP_KEY`, and a strong `CRON_SECRET` as server-only Vercel variables. During key-name migration the server also accepts the existing server-only `SUPABASE_SERVICE_KEY`; prefer `SUPABASE_SECRET_KEY` for new environments and never expose either variable to client code.
 3. Set `ADZUNA_MAX_CALLS_PER_RUN` (default 60) and then set `INTELLIGENCE_REFRESH_ENABLED=true` only after the migration is verified.
 4. Deploy. `vercel.json` runs market refresh Mondays at 03:00 UTC and salary refresh on day 1 monthly at 04:00 UTC.
 

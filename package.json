@@ -11,7 +11,7 @@
     "validate:references": "node scripts/validate-references.mjs",
     "validate:intelligence": "node scripts/validate-intelligence.mjs",
     "import:intelligence": "node scripts/import-intelligence-snapshot.mjs",
-    "test": "node scripts/test-learning-architecture.mjs && node scripts/test-career-intelligence.mjs",
+    "test": "node scripts/test-learning-architecture.mjs && node scripts/test-career-intelligence.mjs && node --experimental-strip-types scripts/test-salary-comparison.ts",
     "intelligence:refresh": "node --env-file=.env.local scripts/refresh-intelligence.mjs"
   },
   "dependencies": {
@@ -21,7 +21,8 @@
     "pdfjs-dist": "^6.1.200",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
-    "three": "^0.169.0"
+    "three": "^0.169.0",
+    "world-countries": "^5.1.0"
   },
   "devDependencies": {
     "@types/node": "^20",
