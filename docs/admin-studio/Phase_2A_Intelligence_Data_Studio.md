@@ -2,6 +2,8 @@
 
 Apply `supabase/migrations/202607170002_admin_intelligence_studio.sql` after the Phase 1 Admin migration. It is additive: existing published snapshots remain published, review metadata is added, Admin read policies are enabled, queued items can be claimed atomically, and publish/reject RPCs are restricted to authenticated database-backed Admins.
 
+Apply `supabase/migrations/202607180001_salary_candidate_review.sql` next. It preserves existing snapshots, adds an audited high-change acknowledgement, and replaces the publish RPC with salary-specific structural validation.
+
 ## Execution model
 
 Manual refresh creates a persisted run and queued Career/country/type items. The run page processes one atomically claimed item per authenticated request, so Vercel work stays bounded and reloads do not lose progress. Duplicate active or recently completed Career refreshes are blocked for 30 minutes. A provider timeout or rate limit may become retryable with a five-minute delay; other failures store only safe error codes/messages.

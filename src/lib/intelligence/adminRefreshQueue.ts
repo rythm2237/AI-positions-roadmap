@@ -107,6 +107,7 @@ export async function processNextRefreshItem(runId: string) {
       unique_records_analyzed: result.uniqueRecordsAnalyzed,
       completed_at: new Date().toISOString(),
     });
+    await finalizeRun(run.id);
     return { status: "candidate", itemId, candidateId: result.candidateId };
   } catch (error) {
     const safe = safeRefreshError(error);
@@ -120,6 +121,7 @@ export async function processNextRefreshItem(runId: string) {
       retry_after: retryable ? new Date(Date.now() + 5 * 60_000).toISOString() : null,
       completed_at: new Date().toISOString(),
     });
+    await finalizeRun(run.id);
     return { status: retryable ? "retryable" : "failed", itemId, errorCode: safe.code };
   }
 }
