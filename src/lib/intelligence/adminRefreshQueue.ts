@@ -1,18 +1,11 @@
 import "server-only";
 
-import { REFRESH_COOLDOWN_MINUTES } from "@/lib/intelligence/adminRefreshValidation";
 import {
   buildCandidate,
   safeRefreshError,
   type RefreshCareerDefinition,
 } from "@/lib/intelligence/refreshEngine";
-import {
-  createItem,
-  createRun,
-  intelligenceServiceFetch,
-  updateItem,
-  updateRun,
-} from "@/lib/intelligence/snapshotRepository";
+import { intelligenceServiceFetch } from "@/lib/intelligence/snapshotRepository";
 import type { SnapshotType } from "@/lib/intelligence/snapshotRegistry";
 
 export async function queueAdminRefresh(input: {
@@ -22,47 +15,28 @@ export async function queueAdminRefresh(input: {
   sampleSize: number;
   actorUserId: string;
 }) {
-  const since = new Date(Date.now() - REFRESH_COOLDOWN_MINUTES * 60_000).toISOString();
-  const active = await intelligenceServiceFetch<Array<{ id: string }>>(
-    `intelligence_refresh_runs?status=in.(planned,running,completed,partial)&provider=eq.adzuna&started_at=gte.${encodeURIComponent(since)}&config_version=like.*${encodeURIComponent(input.definition.careerSlug)}*&select=id&limit=1`,
-  );
-  if (active.length) throw new Error("DUPLICATE_ACTIVE_REFRESH");
-
   const pageCalls = Math.ceil(input.sampleSize / 50);
-  const planned = input.countries.length * input.types.reduce(
-    (sum, type) => sum + pageCalls + (type === "salary" ? 2 : 0),
-    0,
+  const plannedCalls = input.countries.length * input.types.reduce(
+    (sum, type) => sum + pageCalls + (type === "salary" ? 2 : 0), 0,
   );
   const maximum = Math.max(1, Number(process.env.ADZUNA_MAX_CALLS_PER_RUN) || 60);
-  if (planned > maximum) throw new Error("REQUEST_BUDGET_EXCEEDED");
+  if (plannedCalls > maximum) throw new Error("REQUEST_BUDGET_EXCEEDED");
 
-  const run = await createRun({
-    refresh_type: input.types.length === 2 ? "all" : input.types[0],
-    trigger_type: "manual",
-    status: "planned",
-    planned_calls: planned,
-    config_version: `admin-${input.definition.careerSlug}-${input.definition.version}`,
-    idempotency_key: `admin:${input.definition.careerSlug}:${crypto.randomUUID()}`,
-    provider: "adzuna",
-    requested_sample_size: input.sampleSize,
-    triggered_by: input.actorUserId,
+  const run = await intelligenceServiceFetch<{ id: string }>("rpc/queue_admin_intelligence_refresh", {
+    method: "POST",
+    body: JSON.stringify({
+      p_career_slug: input.definition.careerSlug,
+      p_countries: input.countries,
+      p_types: input.types,
+      p_sample_size: input.sampleSize,
+      p_actor_user_id: input.actorUserId,
+      p_definition: input.definition,
+      p_planned_calls: plannedCalls,
+      p_config_version: `admin-${input.definition.careerSlug}-${input.definition.version}`,
+      p_idempotency_key: `admin:${input.definition.careerSlug}:${crypto.randomUUID()}`,
+    }),
   });
-
-  for (const country of input.countries) {
-    for (const type of input.types) {
-      await createItem({
-        refresh_run_id: run.id,
-        career_slug: input.definition.careerSlug,
-        country_code: country,
-        capability: type,
-        status: "queued",
-        provider: "adzuna",
-        query_metadata: input.definition,
-      });
-    }
-  }
-
-  return { runId: run.id, plannedCalls: planned };
+  return { runId: run.id, plannedCalls };
 }
 
 export async function processNextRefreshItem(runId: string) {
@@ -74,75 +48,58 @@ export async function processNextRefreshItem(runId: string) {
 
   const claimed = await intelligenceServiceFetch<{
     id?: string;
-    career_slug: string;
     country_code: string;
     capability: SnapshotType;
     query_metadata: RefreshCareerDefinition;
     attempt_count: number;
   }>("rpc/claim_next_intelligence_refresh_item", {
-    method: "POST",
-    body: JSON.stringify({ p_run_id: run.id }),
+    method: "POST", body: JSON.stringify({ p_run_id: run.id }),
   });
-  const item = claimed?.id ? claimed : null;
-  if (!item) return finalizeRun(run.id);
-  const itemId = item.id as string;
+  if (!claimed?.id) {
+    const reconciled = await intelligenceServiceFetch<{ status: string }>(
+      "rpc/recompute_intelligence_refresh_run",
+      { method: "POST", body: JSON.stringify({ p_run_id: run.id }) },
+    );
+    return { status: reconciled.status, reconciled: true };
+  }
 
-  const requestCount =
-    Math.ceil(run.requested_sample_size / 50) + (item.capability === "salary" ? 2 : 0);
+  const itemId = claimed.id;
+  const requestCount = Math.ceil(run.requested_sample_size / 50) + (claimed.capability === "salary" ? 2 : 0);
   try {
     const result = await buildCandidate(
-      item.query_metadata,
-      item.country_code,
-      item.capability,
-      run.requested_sample_size,
-      run.id,
-      `${run.idempotency_key}:${item.country_code}:${item.capability}`,
+      claimed.query_metadata, claimed.country_code, claimed.capability, run.requested_sample_size,
+      run.id, `${run.idempotency_key}:${claimed.country_code}:${claimed.capability}`,
     );
-    await updateItem(itemId, {
-      status: "candidate",
-      candidate_snapshot_id: result.candidateId,
-      request_count: requestCount,
-      pages_requested: result.pagesRequested,
-      records_retrieved: result.recordsRetrieved,
-      unique_records_analyzed: result.uniqueRecordsAnalyzed,
-      completed_at: new Date().toISOString(),
+    const parent = await completeItem({
+      itemId, status: "candidate", candidateId: result.candidateId, requestCount,
+      pages: result.pagesRequested, retrieved: result.recordsRetrieved, analyzed: result.uniqueRecordsAnalyzed,
     });
-    await finalizeRun(run.id);
-    return { status: "candidate", itemId, candidateId: result.candidateId };
+    return { status: "candidate", runStatus: parent.status, itemId, candidateId: result.candidateId };
   } catch (error) {
     const safe = safeRefreshError(error);
-    const retryable =
-      ["PROVIDER_RATE_LIMIT", "PROVIDER_TIMEOUT"].includes(safe.code) && item.attempt_count < 3;
-    await updateItem(itemId, {
-      status: retryable ? "retryable" : "failed",
-      request_count: requestCount,
-      error_code: safe.code,
-      error_message: safe.message,
-      retry_after: retryable ? new Date(Date.now() + 5 * 60_000).toISOString() : null,
-      completed_at: new Date().toISOString(),
+    const retryable = ["PROVIDER_RATE_LIMIT", "PROVIDER_TIMEOUT"].includes(safe.code) && claimed.attempt_count < 3;
+    const parent = await completeItem({
+      itemId, status: retryable ? "retryable" : "failed", requestCount,
+      errorCode: safe.code, errorMessage: safe.message,
+      retryAfter: retryable ? new Date(Date.now() + 5 * 60_000).toISOString() : null,
     });
-    await finalizeRun(run.id);
-    return { status: retryable ? "retryable" : "failed", itemId, errorCode: safe.code };
+    return { status: retryable ? "retryable" : "failed", runStatus: parent.status, itemId, errorCode: safe.code };
   }
 }
 
-async function finalizeRun(runId: string) {
-  const items = await intelligenceServiceFetch<Array<{ status: string; request_count: number }>>(
-    `intelligence_refresh_items?refresh_run_id=eq.${runId}&select=status,request_count`,
-  );
-  const pending = items.some((item) => ["queued", "running", "retryable"].includes(item.status));
-  const failed = items.filter((item) => item.status === "failed").length;
-  const candidates = items.filter((item) => item.status === "candidate").length;
-  const completedCalls = items.reduce((sum, item) => sum + (item.request_count || 0), 0);
-  const status = pending ? "pending" : failed ? (candidates ? "partial" : "failed") : "completed";
-
-  if (!pending) {
-    await updateRun(runId, {
-      status,
-      completed_calls: completedCalls,
-      failed_calls: failed,
-      completed_at: new Date().toISOString(),
-    });
-  }
-  return { status, candidates, failed, completedCalls };
+async function completeItem(input: {
+  itemId: string; status: "candidate" | "failed" | "retryable";
+  candidateId?: string; requestCount: number; pages?: number; retrieved?: number; analyzed?: number;
+  errorCode?: string; errorMessage?: string; retryAfter?: string | null;
+}) {
+  return intelligenceServiceFetch<{ status: string }>("rpc/complete_intelligence_refresh_item", {
+    method: "POST",
+    body: JSON.stringify({
+      p_item_id: input.itemId, p_status: input.status,
+      p_candidate_snapshot_id: input.candidateId ?? null, p_request_count: input.requestCount,
+      p_pages_requested: input.pages ?? 0, p_records_retrieved: input.retrieved ?? 0,
+      p_unique_records_analyzed: input.analyzed ?? 0, p_error_code: input.errorCode ?? null,
+      p_error_message: input.errorMessage ?? null, p_retry_after: input.retryAfter ?? null,
+    }),
+  });
 }

@@ -4,6 +4,8 @@ Apply `supabase/migrations/202607170002_admin_intelligence_studio.sql` after the
 
 Apply `supabase/migrations/202607180001_salary_candidate_review.sql` next. It preserves existing snapshots, adds an audited high-change acknowledgement, and replaces the publish RPC with salary-specific structural validation.
 
+Apply `supabase/migrations/202607180002_refresh_run_lifecycle.sql` after it. Queueing, item completion, and parent-run recomputation become transactional. The migration reconciles stale planned/running runs only when none of their items are queued, running, or retryable; candidates and review audit history are untouched.
+
 ## Execution model
 
 Manual refresh creates a persisted run and queued Career/country/type items. The run page processes one atomically claimed item per authenticated request, so Vercel work stays bounded and reloads do not lose progress. Duplicate active or recently completed Career refreshes are blocked for 30 minutes. A provider timeout or rate limit may become retryable with a five-minute delay; other failures store only safe error codes/messages.
