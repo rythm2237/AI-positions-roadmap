@@ -11,7 +11,7 @@
     "validate:references": "node scripts/validate-references.mjs",
     "validate:intelligence": "node scripts/validate-intelligence.mjs",
     "import:intelligence": "node scripts/import-intelligence-snapshot.mjs",
-    "test": "node scripts/test-learning-architecture.mjs && node scripts/test-career-intelligence.mjs && node --experimental-strip-types scripts/test-salary-comparison.ts && node --experimental-strip-types scripts/test-admin-studio.ts && node --experimental-strip-types scripts/test-admin-intelligence.ts && node --experimental-strip-types scripts/test-occupation-intelligence.ts && node --experimental-strip-types scripts/test-source-approval.ts && node --experimental-strip-types scripts/test-normalized-intelligence.ts && node --experimental-strip-types scripts/test-generic-refresh.ts && node --experimental-strip-types scripts/test-bls-adapter.ts",
+    "test": "node scripts/test-learning-architecture.mjs && node scripts/test-career-intelligence.mjs && node --experimental-strip-types scripts/test-salary-comparison.ts && node --experimental-strip-types scripts/test-admin-studio.ts && node --experimental-strip-types scripts/test-admin-intelligence.ts && node --experimental-strip-types scripts/test-occupation-intelligence.ts && node --experimental-strip-types scripts/test-source-approval.ts && node --experimental-strip-types scripts/test-normalized-intelligence.ts && node --experimental-strip-types scripts/test-generic-refresh.ts && node --experimental-strip-types scripts/test-bls-adapter.ts && node --experimental-strip-types scripts/test-bls-approval.ts && node --experimental-strip-types scripts/test-soc-mapping-approval.ts",
     "intelligence:refresh": "node --env-file=.env.local scripts/refresh-intelligence.mjs"
   },
   "dependencies": {
