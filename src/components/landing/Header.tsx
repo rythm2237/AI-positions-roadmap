@@ -12,6 +12,7 @@ import Link from "next/link";
 
 const NAV_LINKS = [
   { label: "Explore Careers", href: "/#roadmaps"    },
+  { label: "Career Market Intelligence", href: "/career-intelligence" },
   { label: "How It Works",    href: "/#how-it-works" },
   { label: "Pricing",         href: "/#pricing"      },
   { label: "CV Analyzer",     href: "/cv-analyzer"   },

@@ -10,6 +10,7 @@ import HowItWorksSection from "@/components/landing/HowItWorksSection";
 import PricingPreviewSection from "@/components/landing/PricingPreviewSection";
 import WaitlistSection from "@/components/landing/WaitlistSection";
 import Footer from "@/components/landing/Footer";
+import CareerIntelligenceSection from "@/components/landing/CareerIntelligenceSection";
 
 export const metadata: Metadata = {
   title: "AI Career OS — Your Personal AI Career Operating System",
@@ -30,6 +31,7 @@ export default function LandingPage() {
           <CareerPositionsSection />
         </div>
         <HowItWorksSection />
+        <CareerIntelligenceSection />
         <PricingPreviewSection />
         <WaitlistSection />
       </main>
