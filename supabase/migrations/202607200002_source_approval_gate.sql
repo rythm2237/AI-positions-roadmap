@@ -1,7 +1,7 @@
 begin;
 
-create or replace function public.valid_https_origins(values text[]) returns boolean language sql immutable set search_path=public as $$
- select not exists(select 1 from unnest(values) value where value !~ '^https://[A-Za-z0-9.-]+(:[0-9]+)?$');
+create or replace function public.valid_https_origins(p_values text[]) returns boolean language sql immutable set search_path=public as $$
+ select not exists(select 1 from unnest(p_values) value where value !~ '^https://[A-Za-z0-9.-]+(:[0-9]+)?$');
 $$;
 
 create table if not exists public.statistical_sources (
