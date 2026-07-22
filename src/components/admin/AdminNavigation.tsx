@@ -11,6 +11,7 @@ export default function AdminNavigation() {
       <Link className="block min-h-11 shrink-0 rounded-xl px-3 py-3 text-sm font-semibold text-slate-200 hover:bg-white/5 focus-visible:outline focus-visible:outline-2 focus-visible:outline-cyan-300" href="/admin/intelligence">Intelligence Data</Link>
       <Link className="block min-h-11 shrink-0 rounded-xl px-3 py-3 text-sm font-semibold text-slate-200 hover:bg-white/5 focus-visible:outline focus-visible:outline-2 focus-visible:outline-cyan-300" href="/admin/intelligence/sources">Source Approvals</Link>
       <Link className="block min-h-11 shrink-0 rounded-xl px-3 py-3 text-sm font-semibold text-slate-200 hover:bg-white/5 focus-visible:outline focus-visible:outline-2 focus-visible:outline-cyan-300" href="/admin/intelligence/manual-salary">Manual Salary</Link>
+      <Link className="block min-h-11 shrink-0 rounded-xl px-3 py-3 text-sm font-semibold text-slate-200 hover:bg-white/5 focus-visible:outline focus-visible:outline-2 focus-visible:outline-cyan-300" href="/admin/intelligence/official-salary">Official Salary Import</Link>
       {modules.map((module) => <span key={module} aria-disabled="true" className="block min-h-11 shrink-0 cursor-not-allowed rounded-xl px-3 py-3 text-sm text-slate-600"><span>{module}</span><span className="ml-2 text-[10px] font-semibold uppercase tracking-wide">Coming next</span></span>)}
     </nav>
   </aside>;
