@@ -495,14 +495,12 @@ export default function CareerWorkspace({ initialSection = "hero" }: { initialSe
     printWindow.document.close();
   }
 
-  const isRoadmapMode = activeSection === "roadmap";
-
   return (
     <div className="neural-bg h-screen overflow-hidden text-slate-200">
       <div className="flex h-full">
-        <DesktopMenu activeSection={activeSection} isRoadmapMode={isRoadmapMode} open={roadmapMenuOpen} setOpen={setRoadmapMenuOpen} switchSection={switchSection} />
+        <DesktopMenu activeSection={activeSection} open={roadmapMenuOpen} setOpen={setRoadmapMenuOpen} switchSection={switchSection} />
 
-        <main className={`relative h-full min-w-0 flex-1 overflow-hidden ${!isRoadmapMode ? "pt-[calc(3.75rem+env(safe-area-inset-top))] lg:pt-0" : ""}`}>
+        <main className="relative h-full min-w-0 flex-1 overflow-hidden pt-[calc(3.75rem+env(safe-area-inset-top))] lg:pt-0">
           <AnimatePresence mode="wait">
             {activeSection === "hero" ? (
               <HeroScene
@@ -566,7 +564,7 @@ export default function CareerWorkspace({ initialSection = "hero" }: { initialSe
         </main>
       </div>
 
-      {!isRoadmapMode ? <MobileNav activeSection={activeSection} switchSection={switchSection} /> : null}
+      <MobileNav activeSection={activeSection} switchSection={switchSection} />
 
       <NoteModal
         state={noteModal}
@@ -604,13 +602,11 @@ export default function CareerWorkspace({ initialSection = "hero" }: { initialSe
 
 function DesktopMenu({
   activeSection,
-  isRoadmapMode,
   open,
   setOpen,
   switchSection,
 }: {
   activeSection: CareerWorkspaceSectionId;
-  isRoadmapMode: boolean;
   open: boolean;
   setOpen: (open: boolean) => void;
   switchSection: (section: CareerWorkspaceSectionId) => void;
@@ -619,7 +615,7 @@ function DesktopMenu({
   const panelRef = useRef<HTMLElement>(null);
 
   useEffect(() => {
-    if (!open || isRoadmapMode) return;
+    if (!open) return;
     const handleKeyDown = (event: KeyboardEvent) => {
       if (event.key === "Escape") {
         setOpen(false);
@@ -631,21 +627,13 @@ function DesktopMenu({
     window.addEventListener("keydown", handleKeyDown);
     window.requestAnimationFrame(() => panelRef.current?.querySelector<HTMLButtonElement>("button[data-workspace-destination]")?.focus());
     return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [isRoadmapMode, open, setOpen]);
+  }, [open, setOpen]);
 
   function closePanel(returnFocus = false) {
     setOpen(false);
     if (returnFocus) window.requestAnimationFrame(() => triggerRef.current?.focus());
   }
 
-  if (isRoadmapMode) return <>
-    <button type="button" aria-label={open ? "Close navigation" : "Open navigation"} onClick={() => setOpen(!open)} className="fixed left-0 top-[max(1rem,env(safe-area-inset-top))] z-[60] grid h-12 w-8 place-items-center rounded-r-xl border border-l-0 border-stone-700/20 bg-[#eadfca]/90 text-stone-700 shadow-md backdrop-blur-sm">{open ? "‹" : "›"}</button>
-    <div className={`fixed inset-0 z-[54] bg-stone-950/15 transition-opacity ${open ? "pointer-events-auto opacity-100" : "pointer-events-none opacity-0"}`} onClick={() => setOpen(false)} aria-hidden="true" />
-    <aside className={`fixed inset-y-0 left-0 z-[55] flex w-[min(18rem,86vw)] flex-col justify-between border-r border-stone-700/15 bg-[#eadfca]/94 p-3 shadow-2xl backdrop-blur-md transition-transform duration-200 ${open ? "translate-x-0" : "-translate-x-full"}`}>
-      <button type="button" onClick={() => setOpen(false)} className="absolute right-2 top-2 grid h-11 w-11 place-items-center text-xl text-stone-700" aria-label="Close navigation">×</button>
-      <WorkspaceMenuContents activeSection={activeSection} isRoadmapMode switchSection={(section) => { switchSection(section); setOpen(false); }} />
-    </aside>
-  </>;
   return (
     <>
       <aside className="relative z-40 hidden h-full w-[76px] shrink-0 flex-col items-center border-r border-white/10 bg-slate-950/80 px-3 py-3 backdrop-blur-md lg:flex">
@@ -718,17 +706,17 @@ function DesktopMenu({
             <Icon name="x" />
           </button>
         </div>
-        <WorkspaceMenuContents activeSection={activeSection} isRoadmapMode={false} switchSection={(section) => { switchSection(section); closePanel(true); }} />
+        <WorkspaceMenuContents activeSection={activeSection} switchSection={(section) => { switchSection(section); closePanel(true); }} />
       </aside>
     </>
   );
 }
 
-function WorkspaceMenuContents({ activeSection, isRoadmapMode, switchSection }: { activeSection: CareerWorkspaceSectionId; isRoadmapMode: boolean; switchSection: (section: CareerWorkspaceSectionId) => void }) {
+function WorkspaceMenuContents({ activeSection, switchSection }: { activeSection: CareerWorkspaceSectionId; switchSection: (section: CareerWorkspaceSectionId) => void }) {
   return <>
       <div>
-        <Link href="/" className={`mb-4 flex min-h-11 items-center gap-3 rounded-xl px-3 py-2 text-sm font-semibold ${isRoadmapMode ? "text-stone-700 hover:bg-white/20" : "text-white hover:bg-white/5"}`} aria-label="Back to Career Universe">
-          <span className={`flex h-9 w-9 items-center justify-center rounded-xl ${isRoadmapMode ? "border border-stone-500/20 text-stone-700" : "bg-ai-500/20 text-ai-200"}`}>AI</span>
+        <Link href="/" className="mb-4 flex min-h-11 items-center gap-3 rounded-xl px-3 py-2 text-sm font-semibold text-white hover:bg-white/5" aria-label="Back to Career Universe">
+          <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-ai-500/20 text-ai-200">AI</span>
           Back to Career Universe
         </Link>
         <nav className="space-y-1" aria-label="Career workspace navigation">
@@ -741,7 +729,7 @@ function WorkspaceMenuContents({ activeSection, isRoadmapMode, switchSection }: 
                 aria-label={label}
                 aria-current={activeSection === sectionId ? "page" : undefined}
                 data-workspace-destination
-                className={`flex w-full items-center justify-between rounded-xl border px-3 py-2.5 text-left text-sm transition ${isRoadmapMode ? activeSection === sectionId ? "border-stone-500/15 bg-white/30 font-semibold text-stone-800" : "border-transparent bg-transparent text-stone-600 hover:bg-white/20 hover:text-stone-800" : shellButton(activeSection === sectionId)}`}
+                className={`flex w-full items-center justify-between rounded-xl border px-3 py-2.5 text-left text-sm transition ${shellButton(activeSection === sectionId)}`}
               >
                 <span className="flex items-center gap-3"><Icon name={SECTION_ICONS[sectionId]} className="h-5 w-5 shrink-0" />{label}</span>
                 {activeSection === sectionId ? <span className="h-2 w-2 rounded-full bg-cyan-300" aria-hidden="true" /> : null}
@@ -837,7 +825,7 @@ function MobileNav({
           <div><p className="font-semibold text-white">AI Engineer</p><p className="mt-1 text-xs text-slate-500">Career Workspace</p></div>
           <button type="button" onClick={() => close(true)} className={`grid h-11 w-11 place-items-center rounded-xl border ${shellButton(false)}`} aria-label="Close workspace navigation"><Icon name="x" /></button>
         </div>
-        <WorkspaceMenuContents activeSection={activeSection} isRoadmapMode={false} switchSection={(section) => { switchSection(section); close(true); }} />
+        <WorkspaceMenuContents activeSection={activeSection} switchSection={(section) => { switchSection(section); close(true); }} />
       </aside>
     </>
   );

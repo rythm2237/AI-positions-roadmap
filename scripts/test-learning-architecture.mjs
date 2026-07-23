@@ -24,4 +24,20 @@ const progress = fs.readFileSync("src/lib/careerWorkspaceProgress.ts", "utf8");
 assert.match(progress, /assessmentAttempts/);
 assert.match(progress, /resourceViewedAt/);
 
+const workspace = fs.readFileSync("src/components/career/CareerWorkspace.tsx", "utf8");
+assert.match(workspace, /<DesktopMenu activeSection=\{activeSection\} open=\{roadmapMenuOpen\}/);
+assert.match(workspace, /<MobileNav activeSection=\{activeSection\} switchSection=\{switchSection\} \/>/);
+assert.match(workspace, /aria-current=\{active \? "page" : undefined\}/);
+assert.match(workspace, /left-\[76px\]/);
+assert.doesNotMatch(workspace, /if \(isRoadmapMode\) return/);
+assert.doesNotMatch(workspace, /bg-\[#eadfca\]/);
+assert.match(workspace, /aria-label="Back to Career Universe"/);
+
+const journeyEngine = fs.readFileSync("src/components/career/journey-engine/CareerJourneyEngine.tsx", "utf8");
+assert.match(journeyEngine, /Phase: \{stage\.title\}/);
+assert.match(journeyEngine, /Current checkpoint: \{stage\.label \?\? stage\.title\}/);
+assert.match(journeyEngine, /from-cyan-400 to-teal-300/);
+assert.match(journeyEngine, /Current.*Complete.*Available.*Locked/);
+assert.match(journeyEngine, /d=\{camera\.path\}/);
+
 console.log("Learning architecture checks passed (navigation, shared Journey, resolver, gating, persistence).")
