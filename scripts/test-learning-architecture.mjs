@@ -1,10 +1,11 @@
 import assert from "node:assert/strict";
 import fs from "node:fs";
+await import("./test-public-beta.mjs");
 
 const nav = fs.readFileSync("src/lib/careerNavigation.ts", "utf8");
 const labels = [...nav.matchAll(/label: "([^"]+)"/g)].map((match) => match[1]);
-assert.deepEqual(labels, ["Hero", "Market Intelligence", "Roadmap", "Learning", "Project", "Portfolio", "Jobs", "Interview Brief"]);
-assert.match(nav, /career-intelligence\/occupations\/ai-ml-engineering/);
+assert.deepEqual(labels, ["Hero", "Roadmap", "Learning", "Project", "Portfolio", "Jobs", "Interview Brief"]);
+assert.doesNotMatch(nav, /career-intelligence/);
 assert.match(nav, /\/learning/);
 
 const learning = fs.readFileSync("src/components/career/learning/LearningWorkspace.tsx", "utf8");

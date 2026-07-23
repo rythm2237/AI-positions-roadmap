@@ -5,8 +5,24 @@ import {
   ADMIN_REFRESH_COOKIE,
   sessionCookieOptions,
 } from "@/lib/admin/adminSession";
+import { PUBLIC_BETA } from "@/config/publicBeta";
 
 export async function proxy(request: NextRequest) {
+  const pathname = request.nextUrl.pathname;
+  const isPublicIntelligenceRoute =
+    pathname.startsWith("/career-intelligence") ||
+    pathname.startsWith("/api/career-intelligence") ||
+    /^\/careers\/[^/]+\/intelligence(?:\/|$)/.test(pathname);
+  const isLegacyBetaRoute =
+    pathname === "/career-dashboard" ||
+    pathname.startsWith("/roadmap/") ||
+    pathname.startsWith("/roadmaps/") ||
+    pathname.startsWith("/careers/ai-data-engineer");
+
+  if ((!PUBLIC_BETA.publicCareerIntelligence && isPublicIntelligenceRoute) || isLegacyBetaRoute) {
+    return new NextResponse(null, { status: 404 });
+  }
+
   if (request.nextUrl.pathname === "/admin/login") return NextResponse.next();
 
   const accessToken = request.cookies.get(ADMIN_ACCESS_COOKIE)?.value;
@@ -51,4 +67,15 @@ export async function proxy(request: NextRequest) {
   return response;
 }
 
-export const config = { matcher: ["/admin/:path*"] };
+export const config = {
+  matcher: [
+    "/admin/:path*",
+    "/career-intelligence/:path*",
+    "/api/career-intelligence/:path*",
+    "/careers/:path*/intelligence/:path*",
+    "/career-dashboard",
+    "/roadmap/:path*",
+    "/roadmaps/:path*",
+    "/careers/ai-data-engineer/:path*",
+  ],
+};

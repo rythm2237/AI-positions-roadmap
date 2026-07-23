@@ -18,16 +18,16 @@ export const metadata: Metadata = {
     template: "%s · AI Career OS",
   },
   description:
-    "Discover your perfect AI career, follow a structured roadmap, build real portfolio projects, and become job-ready — guided by intelligent AI every step of the way.",
+    "Choose a career direction in AI, automation, data, or digital transformation. Follow a practical roadmap, build proof, and prepare for your next role.",
   keywords: [
     "AI career",
     "AI roadmap",
     "machine learning career",
     "AI engineer path",
-    "prompt engineer",
     "AI product manager",
-    "MLOps",
-    "LLM engineer",
+    "AI automation",
+    "data career",
+    "digital transformation career",
     "AI career OS",
     "career operating system",
   ],
@@ -40,7 +40,7 @@ export const metadata: Metadata = {
     siteName: "AI Career OS",
     title: "AI Career OS — Your Personal AI Career Operating System",
     description:
-      "The world's first AI Career Operating System. Discover, plan, and build a successful AI career with intelligent guidance.",
+      "A personal Career Operating System for AI, Automation & Digital Transformation.",
     images: [
       {
         url: "/og-image.png",
@@ -54,7 +54,7 @@ export const metadata: Metadata = {
     card: "summary_large_image",
     title: "AI Career OS — Your Personal AI Career Operating System",
     description:
-      "Discover your perfect AI career path. Structured roadmaps, real projects, intelligent guidance.",
+      "Choose an AI career direction, follow a practical roadmap, build projects, and prepare credible proof of your skills.",
     images: ["/og-image.png"],
   },
   robots: {
@@ -96,7 +96,7 @@ export default function RootLayout({
               name: "AI Career OS",
               url: "https://ai-positions-roadmap.vercel.app",
               description:
-                "The world's first AI Career Operating System — helping people discover, plan, and build successful AI careers.",
+                "A personal Career Operating System for AI, Automation & Digital Transformation.",
               sameAs: [],
             }),
           }}
@@ -110,15 +110,6 @@ export default function RootLayout({
               "@type": "WebSite",
               name: "AI Career OS",
               url: "https://ai-positions-roadmap.vercel.app",
-              potentialAction: {
-                "@type": "SearchAction",
-                target: {
-                  "@type": "EntryPoint",
-                  urlTemplate:
-                    "https://ai-positions-roadmap.vercel.app/roadmaps/{search_term_string}",
-                },
-                "query-input": "required name=search_term_string",
-              },
             }),
           }}
         />

@@ -7,6 +7,7 @@
 // The user leaves only by clicking "Open Roadmap" inside the career preview card.
 
 import { useEffect, useState } from "react";
+import Link from "next/link";
 import { useScene } from "./SceneContext";
 
 const TRANSITION_BASE = "opacity 0.6s cubic-bezier(0.22, 1, 0.36, 1), transform 0.6s cubic-bezier(0.22, 1, 0.36, 1), filter 0.6s cubic-bezier(0.22, 1, 0.36, 1)";
@@ -56,7 +57,7 @@ function CTAButton() {
         transition: "color 0.3s",
         fontFamily: "inherit",
       }}>
-        {isActivating ? "Entering Universe..." : "Enter the Career Universe"}
+        {isActivating ? "Opening Career Network..." : "Explore AI Careers"}
       </span>
     </button>
   );
@@ -73,18 +74,21 @@ export default function HeroContent() {
 
   return (
     <div
-      className="absolute inset-0 flex items-center justify-center pointer-events-none"
+      className="pointer-events-none absolute inset-x-0 bottom-0 top-[62px] flex items-center justify-center pt-[clamp(20px,5dvh,52px)]"
       style={{ zIndex: 10 }}
     >
       <div
+        className="w-full max-w-[min(680px,100vw)] lg:max-w-[min(1040px,calc(100vw-96px))]"
         style={{
           display: "flex",
           flexDirection: "column",
           alignItems: "center",
           textAlign: "center",
-          gap: "clamp(16px, 2.5vh, 28px)",
+          gap: "clamp(14px, 2.2vh, 24px)",
           padding: "0 clamp(20px, 5vw, 60px)",
-          maxWidth: 680,
+          alignSelf: "stretch",
+          margin: "0 auto",
+          boxSizing: "border-box",
           opacity: isExiting ? 0 : isMounted ? 1 : 0,
           transform: isExiting ? "translateY(20px)" : isMounted ? "translateY(0)" : "translateY(12px)",
           filter: isExiting ? "blur(6px)" : "blur(0)",
@@ -92,45 +96,41 @@ export default function HeroContent() {
           pointerEvents: "none",
         }}
       >
-        <p style={{
-          fontSize: "clamp(10px, 1vw, 12px)",
-          fontWeight: 700, letterSpacing: "0.18em",
-          textTransform: "uppercase",
-          color: "rgba(99,102,241,0.8)",
-          fontFamily: "inherit",
-          margin: 0,
-        }}>
-          AI Career OS
-        </p>
-
-        <h1 style={{
-          fontSize: "clamp(36px, 6vw, 76px)",
-          fontWeight: 800, lineHeight: 1.05,
-          letterSpacing: "-0.03em",
+        <h1 className="font-display text-[clamp(34px,10vw,48px)] font-bold lg:text-[clamp(64px,5vw,76px)]" style={{
+          lineHeight: 1,
+          letterSpacing: "-0.035em",
           color: "#e0e7ff",
+          width: "100%",
+          whiteSpace: "normal",
           margin: 0, fontFamily: "inherit",
         }}>
-          Your AI Career{" "}
-          <span style={{
+          <span className="block lg:whitespace-nowrap">Build your career in AI.</span>
+          <span className="block lg:whitespace-nowrap" style={{
             background: "linear-gradient(135deg, #818cf8 0%, #a78bfa 50%, #38bdf8 100%)",
             WebkitBackgroundClip: "text",
             WebkitTextFillColor: "transparent",
           }}>
-            Universe
+            Know what comes next.
           </span>
         </h1>
 
         <p style={{
           fontSize: "clamp(14px, 1.6vw, 18px)",
           lineHeight: 1.65, color: "rgba(165,180,252,0.65)",
-          maxWidth: 480, margin: 0, fontFamily: "inherit",
+          maxWidth: 520, margin: 0, fontFamily: "inherit",
         }}>
-          Explore every AI career path. Discover where you belong.
-          Build your future — one node at a time.
+          Choose an AI career direction, follow a practical roadmap, build proof through projects, and prepare for your next role.
         </p>
 
-        <div>
+        <div className="flex flex-col items-center gap-3 sm:flex-row">
           <CTAButton />
+          <Link
+            href="/careers/ai-engineer"
+            className="rounded-xl px-5 py-3 text-sm font-semibold text-slate-300 transition hover:bg-white/[0.05] hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-400"
+            style={{ pointerEvents: "auto" }}
+          >
+            Open AI Engineer Workspace
+          </Link>
         </div>
       </div>
     </div>
