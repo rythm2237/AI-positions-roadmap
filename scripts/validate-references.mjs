@@ -193,6 +193,8 @@ function isLikelyVideoDestination(url) {
   if (host === "owasp.org") return pathname.includes("/www-project-spotlight-series/");
   if (host === "enablement.microsoft.com") return pathname.includes("/user-training/");
   if (host === "adoption.microsoft.com") return pathname.includes("/user-training/");
+  if (host === "ibm.com") return pathname.startsWith("/think/videos/");
+  if (host === "anthropic.skilljar.com") return pathname.length > 1;
 
   return false;
 }
@@ -396,14 +398,18 @@ for (const item of Array.isArray(catalog) ? catalog : []) {
     }
   }
 
+  const requiresCompleteLearningOptions =
+    item.id.startsWith("automation-") ||
+    item.id.startsWith("journey-");
+
   if (
-    item.id.startsWith("automation-") &&
-    item.status === "active" &&
+    requiresCompleteLearningOptions &&
+    (item.status === "active" || item.status === "needs-review") &&
     (!Array.isArray(item.learningOptions) ||
       item.learningOptions.length === 0)
   ) {
     errors.push(
-      `${itemId}: active automation resources require reading, video, and practice options`
+      `${itemId}: active learning resources require reading, video, and practice options`
     );
   }
 }

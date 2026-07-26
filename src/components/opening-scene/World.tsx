@@ -196,6 +196,7 @@ function buildStarField(scene: THREE.Scene) {
 // All UI panels use inline style transitions — zero dependency on framer-motion.
 const TRANSITION_BASE = "opacity 0.6s cubic-bezier(0.22,1,0.36,1), transform 0.6s cubic-bezier(0.22,1,0.36,1), filter 0.6s cubic-bezier(0.22,1,0.36,1)";
 const CAREER_ENTRY_EVENT = "ai-career-node-entry";
+const CAREER_EXPLORER_OPEN_EVENT = "ai-career-explorer-open";
 
 type CareerEntryDetail = {
   title: string;
@@ -288,6 +289,62 @@ function HoverLabel({ node, screenPos }: HoverLabelProps) {
   );
 }
 
+// ─── Public navigation bridge ────────────────────────────────────────────────
+// Header links to #career-universe. Because the universe already fills the first
+// viewport, scrolling to that anchor has no visible effect. This bridge converts
+// that navigation intent into the actual product action: activate the universe
+// and open the Career Navigation panel.
+function CareerExplorerLinkBridge() {
+  const { phase, activate } = useScene();
+  const phaseRef = useRef(phase);
+
+  useEffect(() => {
+    phaseRef.current = phase;
+  }, [phase]);
+
+  useEffect(() => {
+    function handleExploreCareerClick(event: MouseEvent) {
+      const target = event.target;
+      if (!(target instanceof Element)) return;
+
+      const anchor = target.closest<HTMLAnchorElement>("a[href]");
+      if (!anchor) return;
+
+      const href = anchor.getAttribute("href");
+      if (
+        href !== "/#career-universe" &&
+        href !== "#career-universe"
+      ) {
+        return;
+      }
+
+      event.preventDefault();
+
+      if (phaseRef.current === "idle") {
+        activate();
+      }
+
+      window.dispatchEvent(new Event(CAREER_EXPLORER_OPEN_EVENT));
+
+      // Preserve a meaningful URL without relying on browser anchor scrolling.
+      if (window.location.hash !== "#career-universe") {
+        window.history.replaceState(
+          window.history.state,
+          "",
+          `${window.location.pathname}${window.location.search}#career-universe`
+        );
+      }
+    }
+
+    document.addEventListener("click", handleExploreCareerClick);
+    return () => {
+      document.removeEventListener("click", handleExploreCareerClick);
+    };
+  }, [activate]);
+
+  return null;
+}
+
 // ─── Career preview card ─────────────────────────────────────────────────────
 function CareerPreviewCard() {
   const { phase, destination, travelTo, nodes } = useScene();
@@ -299,7 +356,7 @@ function CareerPreviewCard() {
   const [interestError, setInterestError] = useState("");
   const [isMobile, setIsMobile] = useState(false);
   const entry = destination ? UNIVERSE_REGISTRY.find((e) => e.id === destination.id) : null;
-  const show = (phase === "arrived" || phase === "exploring") && destination !== null;
+  const show = (phase === "arrived" || phase === "exploring") && destination !== null && !entry?.careerPath;
 
   useEffect(() => {
     const update = () => setIsMobile(window.innerWidth < 640);
@@ -532,6 +589,30 @@ function CareerNavPanel({ allNodes }: NavPanelProps) {
 
   useEffect(() => {
     try { setShowHint(window.localStorage.getItem("career_map_hint_seen") !== "1"); } catch { setShowHint(true); }
+  }, []);
+
+  useEffect(() => {
+    function openCareerExplorer() {
+      setIsOpen(true);
+      setShowHint(false);
+      try {
+        window.localStorage.setItem("career_map_hint_seen", "1");
+      } catch {
+        // Persistence is optional.
+      }
+    }
+
+    window.addEventListener(
+      CAREER_EXPLORER_OPEN_EVENT,
+      openCareerExplorer
+    );
+
+    return () => {
+      window.removeEventListener(
+        CAREER_EXPLORER_OPEN_EVENT,
+        openCareerExplorer
+      );
+    };
   }, []);
 
   function togglePanel() {
@@ -1283,6 +1364,7 @@ function CareerEntryTransitionOverlay() {
 function WorldInner() {
   return (
     <div style={{ position: "relative", width: "100%", height: "100%", background: "#03050e", overflow: "hidden" }}>
+      <CareerExplorerLinkBridge />
       <ThreeScene />
       <VignetteOverlay />
       <HeroContent />
