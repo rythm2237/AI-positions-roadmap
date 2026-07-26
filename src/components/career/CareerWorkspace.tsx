@@ -5,9 +5,13 @@ import Link from "next/link";
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import CareerJourneyEngine from "@/components/career/journey-engine/CareerJourneyEngine";
 import LearningWorkspace from "@/components/career/learning/LearningWorkspace";
+import ReferenceLearningChooser from "@/components/career/resources/ReferenceLearningChooser";
 import { aiEngineerCareer } from "@/data/careers/ai-engineer";
 import { CAREER_NAV_ITEMS, careerSectionHref } from "@/lib/careerNavigation";
-import { resolveReferenceSegment } from "@/lib/references/referenceResolver";
+import {
+  resolveReference,
+  resolveReferenceSegment,
+} from "@/lib/references/referenceResolver";
 import {
   defaultCareerWorkspaceProgress,
   getCareerWorkspaceStats,
@@ -24,6 +28,7 @@ import type {
   CareerNote,
   CareerQuizQuestion,
   CareerResource,
+  CareerWorkspaceData,
   CareerWorkspaceProgress,
   CareerWorkspaceSectionId,
 } from "@/types/careerWorkspace";
@@ -75,7 +80,11 @@ type ViewportSize = {
   height: number;
 };
 
-const career = aiEngineerCareer;
+const CareerDataContext = React.createContext<CareerWorkspaceData>(aiEngineerCareer);
+
+function useCareerData(): CareerWorkspaceData {
+  return React.useContext(CareerDataContext);
+}
 
 function Icon({ name, className = "h-4 w-4" }: { name: IconName; className?: string }) {
   const paths: Record<IconName, React.ReactNode> = {
@@ -157,25 +166,59 @@ function shuffleIndexes(length: number): number[] {
   return Array.from({ length }, (_, index) => index).sort(() => Math.random() - 0.5);
 }
 
-function uniqueResources(): CareerResource[] {
+function uniqueResources(career: CareerWorkspaceData): CareerResource[] {
   const resources = new Map<string, CareerResource>();
-  career.journeyStages.forEach((stage) => stage.resources.forEach((resource) => resources.set(resource.id, resource)));
-  career.globalResources.forEach((resource) => resources.set(resource.id, resource));
+
+  career.journeyStages.forEach((stage) => {
+    stage.resources.forEach((resource) => {
+      resources.set(resource.id, resource);
+    });
+  });
+
+  career.globalResources.forEach((resource) => {
+    resources.set(resource.id, resource);
+  });
+
   return Array.from(resources.values());
 }
 
-function allAssessments(): Array<{ assessment: CareerAssessment; stage: CareerJourneyStage; type: "station" | "phase" }> {
+function allAssessments(
+  career: CareerWorkspaceData
+): Array<{
+  assessment: CareerAssessment;
+  stage: CareerJourneyStage;
+  type: "station" | "phase";
+}> {
   return career.journeyStages.flatMap((stage) => [
-    { assessment: stage.test, stage, type: "station" as const },
-    ...(stage.phaseExam ? [{ assessment: stage.phaseExam, stage, type: "phase" as const }] : []),
+    {
+      assessment: stage.test,
+      stage,
+      type: "station" as const,
+    },
+    ...(stage.phaseExam
+      ? [
+          {
+            assessment: stage.phaseExam,
+            stage,
+            type: "phase" as const,
+          },
+        ]
+      : []),
   ]);
 }
 
-function validateJourneyData(): string[] {
+function validateJourneyData(career: CareerWorkspaceData): string[] {
   return career.journeyStages.flatMap((stage) => {
     const warnings: string[] = [];
-    if (stage.test.questions.length < 5) warnings.push(`${stage.title} station test has fewer than 5 questions.`);
-    if (stage.phaseExam && stage.phaseExam.questions.length < 5) warnings.push(`${stage.title} phase exam has fewer than 5 questions.`);
+
+    if (stage.test.questions.length < 5) {
+      warnings.push(`${stage.title} station test has fewer than 5 questions.`);
+    }
+
+    if (stage.phaseExam && stage.phaseExam.questions.length < 5) {
+      warnings.push(`${stage.title} phase exam has fewer than 5 questions.`);
+    }
+
     return warnings;
   });
 }
@@ -247,7 +290,16 @@ function useViewportSize(): ViewportSize {
   return viewport;
 }
 
-export default function CareerWorkspace({ initialSection = "hero" }: { initialSection?: CareerWorkspaceSectionId }) {
+type CareerWorkspaceProps = {
+  initialSection?: CareerWorkspaceSectionId;
+  career?: CareerWorkspaceData;
+};
+
+export default function CareerWorkspace({
+  initialSection = "hero",
+  career: careerData = aiEngineerCareer,
+}: CareerWorkspaceProps) {
+  const career = careerData;
   const reduceMotion = useReducedMotion();
   const viewport = useViewportSize();
   const [activeSection, setActiveSection] = useState<CareerWorkspaceSectionId>(initialSection);
@@ -268,15 +320,27 @@ export default function CareerWorkspace({ initialSection = "hero" }: { initialSe
   const [noteFilter, setNoteFilter] = useState<CareerNote["contextType"] | "all">("all");
   const [examSession, setExamSession] = useState<ExamSession | null>(null);
 
-  const stats = useMemo(() => getCareerWorkspaceStats(career, progress), [progress]);
-  const resources = useMemo(uniqueResources, []);
-  const assessments = useMemo(allAssessments, []);
-  const dataWarnings = useMemo(validateJourneyData, []);
+  const stats = useMemo(
+    () => getCareerWorkspaceStats(career, progress),
+    [career, progress]
+  );
+  const resources = useMemo(
+    () => uniqueResources(career),
+    [career]
+  );
+  const assessments = useMemo(
+    () => allAssessments(career),
+    [career]
+  );
+  const dataWarnings = useMemo(
+    () => validateJourneyData(career),
+    [career]
+  );
   const previousGuidedIndexRef = React.useRef(guidedIndex);
   const wasGuidedRef = React.useRef(guidedMode);
   const selectedStage = useMemo(
     () => career.journeyStages.find((stage) => stage.id === selectedStageId) ?? career.journeyStages[0],
-    [selectedStageId]
+    [career, selectedStageId]
   );
   const focusedStage = guidedMode ? career.journeyStages[guidedIndex] : selectedStage;
   const modalStage = stationModalStageId
@@ -285,19 +349,36 @@ export default function CareerWorkspace({ initialSection = "hero" }: { initialSe
 
   useEffect(() => {
     setProgress(loadCareerWorkspaceProgress(career.slug));
+    setSelectedStageId(career.journeyStages[0]?.id ?? "");
+    setStationModalStageId(null);
+    setGuidedIndex(0);
     setIsLoaded(true);
 
     const params = new URLSearchParams(window.location.search);
     const requestedSection = params.get("section");
     const validSection = CAREER_NAV_ITEMS.find((item) => item.id === requestedSection)?.id;
-    if (validSection) setActiveSection(validSection);
+
+    if (validSection) {
+      setActiveSection(validSection);
+    } else {
+      setActiveSection(initialSection);
+    }
+
     const requestedStep = params.get("step");
-    if (requestedStep && career.journeyStages.some((stage) => stage.id === requestedStep)) setSelectedStageId(requestedStep);
-  }, [initialSection]);
+
+    if (
+      requestedStep &&
+      career.journeyStages.some((stage) => stage.id === requestedStep)
+    ) {
+      setSelectedStageId(requestedStep);
+    }
+  }, [career, initialSection]);
 
   useEffect(() => {
-    if (isLoaded) saveCareerWorkspaceProgress(career.slug, progress);
-  }, [isLoaded, progress]);
+    if (isLoaded) {
+      saveCareerWorkspaceProgress(career.slug, progress);
+    }
+  }, [career.slug, isLoaded, progress]);
 
   useEffect(() => {
     if (!guidedMode) {
@@ -496,7 +577,8 @@ export default function CareerWorkspace({ initialSection = "hero" }: { initialSe
   }
 
   return (
-    <div className="neural-bg h-screen overflow-hidden text-slate-200">
+    <CareerDataContext.Provider value={career}>
+      <div className="neural-bg h-screen overflow-hidden text-slate-200">
       <div className="flex h-full">
         <DesktopMenu activeSection={activeSection} open={roadmapMenuOpen} setOpen={setRoadmapMenuOpen} switchSection={switchSection} />
 
@@ -596,7 +678,8 @@ export default function CareerWorkspace({ initialSection = "hero" }: { initialSe
       <AnimatePresence>
         {roadmapNotification ? <motion.div role="status" aria-live="polite" className="fixed bottom-[calc(1rem_+_env(safe-area-inset-bottom))] left-1/2 z-[90] w-[min(30rem,calc(100%-2rem))] -translate-x-1/2 rounded-2xl border border-amber-200/25 bg-[#5f4029]/95 px-4 py-3 text-center text-sm font-medium text-[#fff1d1] shadow-premium backdrop-blur-md" initial={{opacity:0,y:12}} animate={{opacity:1,y:0}} exit={{opacity:0,y:8}}>{roadmapNotification}</motion.div> : null}
       </AnimatePresence>
-    </div>
+      </div>
+    </CareerDataContext.Provider>
   );
 }
 
@@ -611,6 +694,7 @@ function DesktopMenu({
   setOpen: (open: boolean) => void;
   switchSection: (section: CareerWorkspaceSectionId) => void;
 }) {
+  const career = useCareerData();
   const triggerRef = useRef<HTMLButtonElement>(null);
   const panelRef = useRef<HTMLElement>(null);
 
@@ -699,7 +783,7 @@ function DesktopMenu({
       >
         <div className="mb-6 flex items-center justify-between gap-3 px-2">
           <div>
-            <p className="text-xs font-semibold uppercase tracking-[0.16em] text-indigo-300">AI Engineer</p>
+            <p className="text-xs font-semibold uppercase tracking-[0.16em] text-indigo-300">{career.title}</p>
             <p className="mt-1 text-sm text-slate-400">Career Workspace</p>
           </div>
           <button type="button" onClick={() => closePanel(true)} className={`grid h-11 w-11 place-items-center rounded-xl border ${shellButton(false)}`} aria-label="Close workspace navigation">
@@ -748,6 +832,7 @@ function MobileNav({
   activeSection: CareerWorkspaceSectionId;
   switchSection: (section: CareerWorkspaceSectionId) => void;
 }) {
+  const career = useCareerData();
   const [open, setOpen] = useState(false);
   const triggerRef = useRef<HTMLButtonElement>(null);
   const drawerRef = useRef<HTMLElement>(null);
@@ -786,7 +871,7 @@ function MobileNav({
             type="button"
             onClick={() => switchSection("hero")}
             className="grid h-11 w-11 place-items-center rounded-xl text-slate-300 hover:bg-white/[0.05] hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-300"
-            aria-label="Back to AI Engineer Workspace"
+            aria-label={`Back to ${career.title} Workspace`}
           >
             <Icon name="arrow" className="h-5 w-5 rotate-180" />
           </button>
@@ -796,7 +881,7 @@ function MobileNav({
           </Link>
         </div>
         <h1 className="min-w-0 flex-1 truncate px-2 text-center font-display text-sm font-semibold text-white">
-          {activeSection === "hero" ? "AI Engineer" : CAREER_NAV_ITEMS.find((item) => item.id === activeSection)?.label ?? "AI Engineer"}
+          {activeSection === "hero" ? career.title : CAREER_NAV_ITEMS.find((item) => item.id === activeSection)?.label ?? career.title}
         </h1>
           <button
             ref={triggerRef}
@@ -822,7 +907,7 @@ function MobileNav({
         className={`fixed inset-y-0 left-0 z-[55] flex w-[min(320px,88vw)] flex-col border-r border-white/10 bg-slate-950/98 p-4 shadow-2xl transition-transform duration-300 lg:hidden ${open ? "translate-x-0" : "-translate-x-full"}`}
       >
         <div className="mb-5 flex items-center justify-between border-b border-white/10 pb-4">
-          <div><p className="font-semibold text-white">AI Engineer</p><p className="mt-1 text-xs text-slate-500">Career Workspace</p></div>
+          <div><p className="font-semibold text-white">{career.title}</p><p className="mt-1 text-xs text-slate-500">Career Workspace</p></div>
           <button type="button" onClick={() => close(true)} className={`grid h-11 w-11 place-items-center rounded-xl border ${shellButton(false)}`} aria-label="Close workspace navigation"><Icon name="x" /></button>
         </div>
         <WorkspaceMenuContents activeSection={activeSection} switchSection={(section) => { switchSection(section); close(true); }} />
@@ -848,6 +933,7 @@ function HeroScene({
   startGuidedJourney: () => void;
   actionMessage: string;
 }) {
+  const career = useCareerData();
   const hasProgress = stats.overallProgress > 0 || stats.notesCount > 0;
   return (
     <motion.section
@@ -932,6 +1018,7 @@ function RoadmapWorld({
   startLearning: () => void;
   dataWarnings: string[];
 }) {
+  const career = useCareerData();
   return (
     <CareerJourneyEngine
       map={career.journeyMap}
@@ -996,37 +1083,130 @@ function ResourceRow({
   resource: CareerResource;
   disabled?: boolean;
   progress: CareerWorkspaceProgress;
-  updateProgress: (updater: (previous: CareerWorkspaceProgress) => CareerWorkspaceProgress) => void;
-  openNote: (contextType: CareerNote["contextType"], contextId: string, contextLabel: string) => void;
+  updateProgress: (
+    updater: (
+      previous: CareerWorkspaceProgress
+    ) => CareerWorkspaceProgress
+  ) => void;
+  openNote: (
+    contextType: CareerNote["contextType"],
+    contextId: string,
+    contextLabel: string
+  ) => void;
 }) {
   const complete = progress.completedResources.includes(resource.id);
+  const registryResource = resolveReference(resource.id, true);
+
+  const markResourceViewed = () => {
+    updateProgress((previous) => ({
+      ...previous,
+      completedResources: previous.completedResources.includes(resource.id)
+        ? previous.completedResources
+        : [...previous.completedResources, resource.id],
+      resourceViewedAt: {
+        ...previous.resourceViewedAt,
+        [resource.id]: new Date().toISOString(),
+      },
+    }));
+  };
+
   return (
-    <div className={`rounded-xl border border-white/10 bg-white/[0.035] p-3 ${disabled ? "opacity-50" : ""}`}>
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
-        <div className="min-w-0">
-          <h4 className="font-semibold text-white">{resource.title}</h4>
-          <div className="mt-2 flex flex-wrap gap-2">
-            <span className="tag">{resource.type}</span>
-            <span className={resource.cost === "Free" ? "tag tag-emerald" : "tag tag-amber"}>{resource.cost}</span>
-            <span className="tag">{resource.provider}</span>
-            <span className="tag">{resource.estimatedTime}</span>
-          </div>
-          <p className="mt-2 text-xs leading-5 text-slate-400">{resource.whyUseful}</p>
+    <div
+      className={`rounded-xl border border-white/10 bg-white/[0.035] p-3 ${
+        disabled ? "opacity-50" : ""
+      }`}
+    >
+      <div className="min-w-0">
+        <h4 className="font-semibold text-white">
+          {registryResource?.title ?? resource.title}
+        </h4>
+
+        <div className="mt-2 flex flex-wrap gap-2">
+          <span className="tag">
+            {registryResource?.type ?? resource.type}
+          </span>
+          <span
+            className={
+              resource.cost === "Free"
+                ? "tag tag-emerald"
+                : "tag tag-amber"
+            }
+          >
+            {resource.cost}
+          </span>
+          <span className="tag">
+            {registryResource?.provider ?? resource.provider}
+          </span>
+          <span className="tag">
+            {registryResource?.durationLabel ?? resource.estimatedTime}
+          </span>
         </div>
-        <div className="flex shrink-0 flex-wrap gap-2">
+
+        <p className="mt-2 text-xs leading-5 text-slate-400">
+          {resource.whyUseful}
+        </p>
+
+        {registryResource ? (
+          <ReferenceLearningChooser
+            resource={registryResource}
+            disabled={disabled}
+            onOpen={markResourceViewed}
+          />
+        ) : (
           <a
             href={disabled ? undefined : resource.url}
             target="_blank"
             rel="noreferrer"
             aria-disabled={disabled}
-            className={`inline-flex min-h-11 items-center justify-center rounded-lg border px-3 py-2 text-xs font-semibold ${shellButton(false, Boolean(disabled))}`}
+            onClick={(event) => {
+              if (disabled) {
+                event.preventDefault();
+                return;
+              }
+              markResourceViewed();
+            }}
+            className={`mt-4 inline-flex min-h-11 items-center justify-center rounded-lg border px-3 py-2 text-xs font-semibold ${shellButton(
+              false,
+              Boolean(disabled)
+            )}`}
           >
-            Open
+            Open resource
           </a>
-          <button type="button" disabled={disabled} onClick={() => updateProgress((previous) => ({ ...previous, completedResources: toggleId(previous.completedResources, resource.id) }))} className={`min-h-11 rounded-lg border px-3 py-2 text-xs ${shellButton(complete, Boolean(disabled))}`}>
+        )}
+
+        <div className="mt-3 flex flex-wrap gap-2">
+          <button
+            type="button"
+            disabled={disabled}
+            onClick={() =>
+              updateProgress((previous) => ({
+                ...previous,
+                completedResources: toggleId(
+                  previous.completedResources,
+                  resource.id
+                ),
+              }))
+            }
+            className={`min-h-11 rounded-lg border px-3 py-2 text-xs ${shellButton(
+              complete,
+              Boolean(disabled)
+            )}`}
+          >
             {complete ? "Done" : "Track"}
           </button>
-          <button type="button" disabled={disabled} onClick={() => openNote("resource", resource.id, resource.title)} className={`min-h-11 rounded-lg border p-3 ${shellButton(false, Boolean(disabled))}`} aria-label={`Add note for ${resource.title}`}>
+
+          <button
+            type="button"
+            disabled={disabled}
+            onClick={() =>
+              openNote("resource", resource.id, resource.title)
+            }
+            className={`min-h-11 rounded-lg border p-3 ${shellButton(
+              false,
+              Boolean(disabled)
+            )}`}
+            aria-label={`Add note for ${resource.title}`}
+          >
             <Icon name="note" />
           </button>
         </div>
@@ -1062,6 +1242,7 @@ function ModuleScene({
   deleteNote: (id: string) => void;
   exportNotesAsPdf: () => void;
 }) {
+  const career = useCareerData();
   const current = career.mapSections.find((item) => item.id === section);
   return (
     <motion.section className="relative h-full overflow-hidden p-4 pb-24 lg:p-6 lg:pb-6" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
@@ -1116,6 +1297,7 @@ function NotesModule({
   deleteNote: (id: string) => void;
   exportNotesAsPdf: () => void;
 }) {
+  const career = useCareerData();
   const filters: Array<CareerNote["contextType"] | "all"> = ["all", "career", "phase", "step", "resource", "project", "quiz", "exam"];
   const notes = noteFilter === "all" ? progress.notes : progress.notes.filter((note) => note.contextType === noteFilter);
   return (
@@ -1170,6 +1352,7 @@ function ProjectsModule({
   updateProgress: (updater: (previous: CareerWorkspaceProgress) => CareerWorkspaceProgress) => void;
   openNote: (contextType: CareerNote["contextType"], contextId: string, contextLabel: string) => void;
 }) {
+  const career = useCareerData();
   return (
     <div className="grid gap-3 lg:grid-cols-2">
       {career.projects.map((project) => {
@@ -1223,6 +1406,7 @@ function ExamsModule({
   progress: CareerWorkspaceProgress;
   openAssessment: (assessment: CareerAssessment, stageId?: string) => void;
 }) {
+  const career = useCareerData();
   return (
     <div className="grid gap-3 lg:grid-cols-2">
       {assessments.map(({ assessment, stage, type }) => {
@@ -1258,6 +1442,7 @@ function ReadinessModule({
   progress: CareerWorkspaceProgress;
   updateProgress: (updater: (previous: CareerWorkspaceProgress) => CareerWorkspaceProgress) => void;
 }) {
+  const career = useCareerData();
   return (
     <div className="grid gap-4 lg:grid-cols-[320px_1fr]">
       <PanelCard>
@@ -1282,6 +1467,7 @@ function ReadinessModule({
 }
 
 function JobsModule({ progress }: { progress: CareerWorkspaceProgress }) {
+  const career = useCareerData();
   const hasProjectProof = progress.completedProjects.length > 0;
   const hasPortfolioProof = career.portfolioTasks.some((task) => progress.completedStageTasks.includes(task.id));
   const hasApplicationNotes = progress.notes.some((note) => note.contextType === "career" || note.contextType === "project");
@@ -1295,7 +1481,7 @@ function JobsModule({ progress }: { progress: CareerWorkspaceProgress }) {
     },
     {
       title: "LinkedIn",
-      purpose: "Use a clear AI Engineer headline, focused skills, and featured project case studies.",
+      purpose: `Use a clear ${career.title} headline, focused skills, and featured project case studies.`,
       status: hasPortfolioProof ? "Portfolio proof available" : "Needs portfolio proof",
       href: careerSectionHref(career.slug, "portfolio"),
       action: "Prepare portfolio proof",
@@ -1317,7 +1503,7 @@ function JobsModule({ progress }: { progress: CareerWorkspaceProgress }) {
     <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_minmax(280px,.75fr)]">
       <div>
         <p className="label-sm text-cyber-300">Job preparation</p>
-        <h3 className="mt-3 max-w-xl font-display text-3xl font-semibold text-white">Prepare a credible AI Engineer application.</h3>
+        <h3 className="mt-3 max-w-xl font-display text-3xl font-semibold text-white">Prepare a credible {career.title} application.</h3>
         <p className="mt-4 max-w-xl text-sm leading-7 text-slate-300">Build from evidence already captured in your journey. This workspace does not invent vacancies, salary claims, or market demand.</p>
         <div className="mt-8 rounded-2xl border border-indigo-300/15 bg-indigo-500/[0.06] p-5">
           <p className="text-sm font-semibold text-indigo-100">Recommended next step</p>
@@ -1345,6 +1531,7 @@ function JobsModule({ progress }: { progress: CareerWorkspaceProgress }) {
 }
 
 function InterviewModule() {
+  const career = useCareerData();
   return (
     <div className="grid gap-4 lg:grid-cols-2">
       <PanelCard>
@@ -1380,6 +1567,7 @@ function StationDetailsModal({
   updateProgress: (updater: (previous: CareerWorkspaceProgress) => CareerWorkspaceProgress) => void;
   notifyLockedStage: () => void;
 }) {
+  const career = useCareerData();
   useEffect(() => {
     if (!stage) return;
     const previousOverflow = document.body.style.overflow;
