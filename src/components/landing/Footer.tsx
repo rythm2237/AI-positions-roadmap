@@ -1,28 +1,26 @@
 // src/components/landing/Footer.tsx
-// Simple, clean footer with brand info and placeholder navigation links.
+// Public Beta footer aligned with the Landing Page's dark neural visual system.
 
 import Link from "next/link";
 
 const navLinks = [
-  { label: "Roadmaps", href: "#roadmaps" },
-  { label: "Pricing", href: "#pricing" },
-  { label: "About", href: "#" },
-  { label: "Contact", href: "#" },
+  { label: "Explore Careers", href: "/#roadmaps" },
+  { label: "How It Works", href: "/#how-it-works" },
+  { label: "Register Interest", href: "/#waitlist" },
 ];
 
 export default function Footer() {
   return (
-    <footer className="border-t border-gray-100 bg-white px-4 py-12 sm:px-6 lg:px-8">
+    <footer className="border-t border-white/[0.06] bg-[#03050e] px-5 py-12 sm:px-8">
       <div className="mx-auto max-w-7xl">
         <div className="flex flex-col items-start justify-between gap-8 sm:flex-row sm:items-center">
           {/* Brand */}
           <div className="max-w-xs">
-            <p className="text-base font-bold text-gray-900">
-              AI Career Roadmaps
+            <p className="font-display text-base font-bold text-white">
+              AI Career OS
             </p>
-            <p className="mt-2 text-sm text-gray-500">
-              Role-based AI career roadmaps to help you become job-ready with
-              structured learning, real projects, and progress tracking.
+            <p className="mt-2 text-sm leading-6 text-slate-500">
+              A personal Career Operating System for AI, Automation &amp; Digital Transformation.
             </p>
           </div>
 
@@ -35,7 +33,7 @@ export default function Footer() {
               <Link
                 key={link.label}
                 href={link.href}
-                className="text-sm text-gray-500 transition-colors hover:text-gray-900"
+                className="inline-flex min-h-11 items-center rounded-lg text-sm text-slate-500 transition-colors hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-400"
               >
                 {link.label}
               </Link>
@@ -44,8 +42,8 @@ export default function Footer() {
         </div>
 
         {/* Bottom bar */}
-        <div className="mt-10 border-t border-gray-100 pt-6 text-center text-xs text-gray-400">
-          © {new Date().getFullYear()} AI Career Roadmaps. All rights reserved.
+        <div className="mt-10 border-t border-white/[0.06] pt-6 text-center text-xs text-slate-600">
+          © {new Date().getFullYear()} AI Career OS. Public Beta.
         </div>
       </div>
     </footer>

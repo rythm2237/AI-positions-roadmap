@@ -6,6 +6,7 @@ node_modules/
 # Next.js build output
 .next/
 out/
+*.tsbuildinfo
 
 # Environment files
 .env
@@ -23,3 +24,6 @@ yarn-error.log*
 
 # Vercel
 .vercel
+
+# Supabase CLI local state
+/supabase/.temp/

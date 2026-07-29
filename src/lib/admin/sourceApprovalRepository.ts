@@ -1,0 +1,8 @@
+import "server-only";
+import{supabaseUserFetch}from"@/lib/admin/supabaseServer";
+export interface StatisticalSourceRow{id:string;slug:string;country_code:string;source_type:"official_statistics"|"market_salary_guide";source_name:string;agency_name:string;canonical_url:string;methodology_url:string;licence_url:string;endpoint_allowlist:string[];authentication_model:string;rate_limit_notes:string;cost_notes:string}
+export interface SourceApprovalRow{id:string;source_id:string;capability:string;approval_status:string;commercial_use:string;redistribution:string;aggregation:string;derived_statistics:string;local_storage:string;attribution_text:string;approval_conditions:string;approval_scope:string;approval_evidence_urls:string[];terms_reviewed_at:string|null;approval_expires_at:string|null;updated_at:string}
+async function read<T>(path:string,token:string,init:RequestInit={}){const response=await supabaseUserFetch(`/rest/v1/${path}`,token,{...init,headers:{Prefer:"return=representation",...init.headers}});if(!response.ok)throw new Error("SOURCE_APPROVAL_DATABASE_ERROR");return response.json() as Promise<T>}
+export function listStatisticalSources(token:string){return read<StatisticalSourceRow[]>("statistical_sources?select=*&order=country_code.asc",token)}
+export function listSourceApprovals(token:string){return read<SourceApprovalRow[]>("statistical_source_capability_approvals?select=*&order=capability.asc",token)}
+export function reviewSourceCapability(token:string,sourceId:string,capability:string,value:Record<string,string>){return read<SourceApprovalRow>("rpc/admin_review_statistical_source_capability",token,{method:"POST",body:JSON.stringify({p_source_id:sourceId,p_capability:capability,p_value:value})})}

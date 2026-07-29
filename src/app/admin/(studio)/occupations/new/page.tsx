@@ -1,0 +1,2 @@
+import{requireAdmin}from"@/lib/admin/adminAuth";import{OccupationForm}from"@/components/admin/OccupationControls";
+export default async function NewOccupationPage(){const auth=await requireAdmin();if(auth.status!=="admin")return null;return <main className="p-4 sm:p-8"><h2 className="font-display text-3xl font-semibold text-white">New occupation family</h2><div className="mt-6"><OccupationForm/></div></main>}

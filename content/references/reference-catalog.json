@@ -1,14 +1,1478 @@
 [
-  {"id":"journey-openai-docs","title":"OpenAI API Documentation","provider":"OpenAI","description":"Official API and production guidance for LLM applications.","type":"documentation","canonicalUrl":"https://platform.openai.com/docs","isOfficial":true,"topics":["llm-api","production-ai"],"skillLevels":["Intermediate","Advanced"],"languages":["en"],"priority":"essential","access":"free","durationLabel":"Reference","segments":[{"id":"overview","anchor":"overview"}],"status":"active","lastVerifiedAt":"2026-07-16","reviewIntervalDays":90,"nextReviewAt":"2026-10-14"},
-  {"id":"journey-hf-docs","title":"Hugging Face Documentation","provider":"Hugging Face","description":"Official reference for models, datasets, transformers, and deployment.","type":"documentation","canonicalUrl":"https://huggingface.co/docs","isOfficial":true,"topics":["machine-learning","transformers"],"skillLevels":["Intermediate","Advanced"],"languages":["en"],"priority":"essential","access":"free","durationLabel":"Reference","segments":[],"status":"active","lastVerifiedAt":"2026-07-16","reviewIntervalDays":90,"nextReviewAt":"2026-10-14"},
-  {"id":"journey-ms-learn-ai","title":"Microsoft Learn: Azure AI learning paths","provider":"Microsoft Learn","description":"Official enterprise AI training for Azure AI workflows.","type":"course","canonicalUrl":"https://learn.microsoft.com/training/azure/","isOfficial":true,"topics":["cloud-ai","azure"],"skillLevels":["Beginner","Intermediate"],"languages":["en"],"priority":"recommended","access":"free","durationLabel":"20+ hours","segments":[],"status":"active","lastVerifiedAt":"2026-07-16","reviewIntervalDays":90,"nextReviewAt":"2026-10-14"},
-  {"id":"journey-gcp-skills","title":"Google Cloud Skills Boost: AI and ML","provider":"Google Cloud Skills Boost","description":"Official Google Cloud labs for AI, ML, data, and Vertex AI.","type":"lab","canonicalUrl":"https://www.cloudskillsboost.google/paths","isOfficial":true,"topics":["cloud-ai","gcp"],"skillLevels":["Beginner","Intermediate"],"languages":["en"],"priority":"recommended","access":"freemium","durationLabel":"Varies","segments":[],"status":"active","lastVerifiedAt":"2026-07-16","reviewIntervalDays":90,"nextReviewAt":"2026-10-14"},
-  {"id":"journey-aws-skillbuilder","title":"AWS Skill Builder: AI and ML","provider":"AWS Skill Builder","description":"Official AWS training for cloud AI, Bedrock, and deployment.","type":"course","canonicalUrl":"https://skillbuilder.aws/","isOfficial":true,"topics":["cloud-ai","aws"],"skillLevels":["Beginner","Intermediate"],"languages":["en"],"priority":"recommended","access":"freemium","durationLabel":"Varies","segments":[],"status":"active","lastVerifiedAt":"2026-07-16","reviewIntervalDays":90,"nextReviewAt":"2026-10-14"},
-  {"id":"journey-ibm-skillsbuild","title":"IBM SkillsBuild AI learning","provider":"IBM SkillsBuild","description":"Career-oriented AI learning modules from IBM.","type":"course","canonicalUrl":"https://skillsbuild.org/","isOfficial":true,"topics":["ai-foundations","career"],"skillLevels":["Beginner"],"languages":["en"],"priority":"optional","access":"free","durationLabel":"Varies","segments":[],"status":"active","lastVerifiedAt":"2026-07-16","reviewIntervalDays":90,"nextReviewAt":"2026-10-14"},
-  {"id":"journey-dlai-prompting","title":"ChatGPT Prompt Engineering for Developers","provider":"DeepLearning.AI / OpenAI","description":"Practical course for prompt patterns and iterative development.","type":"course","canonicalUrl":"https://www.deeplearning.ai/short-courses/chatgpt-prompt-engineering-for-developers/","isOfficial":true,"topics":["prompting","llm-api"],"skillLevels":["Beginner","Intermediate"],"languages":["en"],"priority":"essential","access":"free","durationLabel":"1.5 hours","segments":[],"status":"active","lastVerifiedAt":"2026-07-16","reviewIntervalDays":90,"nextReviewAt":"2026-10-14"},
-  {"id":"journey-dlai-mlops","title":"Machine Learning Engineering for Production","provider":"DeepLearning.AI","description":"Production ML systems, monitoring, deployment, and MLOps.","type":"course","canonicalUrl":"https://www.deeplearning.ai/courses/machine-learning-engineering-for-production-mlops/","isOfficial":false,"topics":["mlops","production-ai"],"skillLevels":["Intermediate","Advanced"],"languages":["en"],"priority":"recommended","access":"freemium","durationLabel":"3 months","segments":[],"status":"active","lastVerifiedAt":"2026-07-16","reviewIntervalDays":90,"nextReviewAt":"2026-10-14"},
-  {"id":"journey-fcc-python","title":"Python Full Course","provider":"freeCodeCamp","description":"A practical beginner Python refresher.","type":"video","canonicalUrl":"https://www.youtube.com/@freecodecamp","isOfficial":false,"topics":["python"],"skillLevels":["Beginner"],"languages":["en"],"priority":"recommended","access":"free","durationLabel":"4 hours","segments":[{"id":"start","timestampSeconds":0}],"status":"needs-review","lastVerifiedAt":"2026-07-16","reviewIntervalDays":90,"nextReviewAt":"2026-10-14"},
-  {"id":"journey-github-docs","title":"GitHub Docs: Get started","provider":"GitHub","description":"Official guidance for repositories, README files, branches, and profiles.","type":"documentation","canonicalUrl":"https://docs.github.com/en/get-started","isOfficial":true,"topics":["git","portfolio"],"skillLevels":["Beginner","Intermediate"],"languages":["en"],"priority":"essential","access":"free","durationLabel":"Reference","segments":[],"status":"active","lastVerifiedAt":"2026-07-16","reviewIntervalDays":90,"nextReviewAt":"2026-10-14"},
-  {"id":"journey-anthropic-docs","title":"Anthropic Claude API Documentation","provider":"Anthropic","description":"Official Claude API guidance for prompting and tool use.","type":"documentation","canonicalUrl":"https://docs.anthropic.com/","isOfficial":true,"topics":["llm-api","tool-use"],"skillLevels":["Intermediate"],"languages":["en"],"priority":"recommended","access":"free","durationLabel":"Reference","segments":[],"status":"active","lastVerifiedAt":"2026-07-16","reviewIntervalDays":90,"nextReviewAt":"2026-10-14"},
-  {"id":"journey-google-ai-docs","title":"Google AI for Developers","provider":"Google","description":"Official Gemini developer documentation.","type":"documentation","canonicalUrl":"https://ai.google.dev/","isOfficial":true,"topics":["llm-api","gemini"],"skillLevels":["Intermediate"],"languages":["en"],"priority":"recommended","access":"free","durationLabel":"Reference","segments":[],"status":"active","lastVerifiedAt":"2026-07-16","reviewIntervalDays":90,"nextReviewAt":"2026-10-14"}
+  {
+    "id": "journey-openai-docs",
+    "title": "OpenAI API Quickstart",
+    "provider": "OpenAI",
+    "description": "A direct beginner path for creating an API key, installing the SDK, making the first request, and continuing into practical API development.",
+    "type": "documentation",
+    "canonicalUrl": "https://platform.openai.com/docs/quickstart/make-your-first-api-request",
+    "isOfficial": true,
+    "topics": [
+      "llm-api",
+      "production-ai"
+    ],
+    "skillLevels": [
+      "Intermediate",
+      "Advanced"
+    ],
+    "languages": [
+      "en"
+    ],
+    "priority": "essential",
+    "access": "free",
+    "durationLabel": "30-60 minutes",
+    "segments": [
+      {
+        "id": "overview",
+        "anchor": "overview"
+      }
+    ],
+    "status": "active",
+    "lastVerifiedAt": "2026-07-26",
+    "reviewIntervalDays": 90,
+    "nextReviewAt": "2026-10-24",
+    "learningOptions": [
+      {
+        "mode": "reading",
+        "contentType": "documentation",
+        "title": "OpenAI API quickstart",
+        "description": "Follow the official written quickstart and make your first API request.",
+        "url": "https://platform.openai.com/docs/quickstart/make-your-first-api-request",
+        "provider": "OpenAI",
+        "durationLabel": "30-60 minutes",
+        "isOfficial": true,
+        "access": "free",
+        "verifiedContentType": true,
+        "verifiedAt": "2026-07-26",
+        "verificationSource": "official-documentation"
+      },
+      {
+        "mode": "video",
+        "contentType": "video-course",
+        "title": "ChatGPT Prompt Engineering for Developers",
+        "description": "Watch the structured video course created by DeepLearning.AI in collaboration with OpenAI.",
+        "url": "https://learn.deeplearning.ai/courses/chatgpt-prompt-eng",
+        "provider": "DeepLearning.AI / OpenAI",
+        "durationLabel": "1 hour 30 minutes",
+        "isOfficial": true,
+        "access": "free",
+        "verifiedContentType": true,
+        "verifiedAt": "2026-07-26",
+        "verificationSource": "provider-course-page"
+      },
+      {
+        "mode": "practice",
+        "contentType": "hands-on-lab",
+        "title": "OpenAI Cookbook examples",
+        "description": "Run and adapt official example notebooks and production patterns from the OpenAI Cookbook.",
+        "url": "https://github.com/openai/openai-cookbook",
+        "provider": "OpenAI",
+        "durationLabel": "Self-paced",
+        "isOfficial": true,
+        "access": "free",
+        "verifiedContentType": true,
+        "verifiedAt": "2026-07-26",
+        "verificationSource": "official-github-repository"
+      }
+    ]
+  },
+  {
+    "id": "journey-hf-docs",
+    "title": "Hugging Face LLM Course",
+    "provider": "Hugging Face",
+    "description": "A structured official course covering transformer models, datasets, tokenizers, fine-tuning, reasoning models, and model demos.",
+    "type": "course",
+    "canonicalUrl": "https://huggingface.co/learn/llm-course/en/chapter1/1",
+    "isOfficial": true,
+    "topics": [
+      "machine-learning",
+      "transformers"
+    ],
+    "skillLevels": [
+      "Intermediate",
+      "Advanced"
+    ],
+    "languages": [
+      "en"
+    ],
+    "priority": "essential",
+    "access": "free",
+    "durationLabel": "6-8 hours per chapter",
+    "segments": [],
+    "status": "active",
+    "lastVerifiedAt": "2026-07-26",
+    "reviewIntervalDays": 90,
+    "nextReviewAt": "2026-10-24",
+    "learningOptions": [
+      {
+        "mode": "reading",
+        "contentType": "written-course",
+        "title": "Hugging Face LLM Course",
+        "description": "Read the official chapter-based course on LLMs, NLP, Transformers, datasets, tokenizers, and model sharing.",
+        "url": "https://huggingface.co/learn/llm-course/en/chapter1/1",
+        "provider": "Hugging Face",
+        "durationLabel": "6-8 hours per chapter",
+        "isOfficial": true,
+        "access": "free",
+        "verifiedContentType": true,
+        "verifiedAt": "2026-07-26",
+        "verificationSource": "official-course-page"
+      },
+      {
+        "mode": "video",
+        "contentType": "video",
+        "title": "Welcome to the Hugging Face LLM Course",
+        "description": "Watch the official introductory lesson embedded in the Hugging Face LLM Course.",
+        "url": "https://www.youtube.com/watch?v=00GKzGyWFEs",
+        "provider": "Hugging Face",
+        "durationLabel": "Course introduction",
+        "isOfficial": true,
+        "access": "free",
+        "verifiedContentType": true,
+        "verifiedAt": "2026-07-26",
+        "verificationSource": "official-course-embedded-video"
+      },
+      {
+        "mode": "practice",
+        "contentType": "hands-on-lab",
+        "title": "Hugging Face course notebooks",
+        "description": "Run the official Jupyter notebooks that accompany the Hugging Face course lessons.",
+        "url": "https://github.com/huggingface/notebooks",
+        "provider": "Hugging Face",
+        "durationLabel": "Self-paced",
+        "isOfficial": true,
+        "access": "free",
+        "verifiedContentType": true,
+        "verifiedAt": "2026-07-26",
+        "verificationSource": "official-github-repository"
+      }
+    ]
+  },
+  {
+    "id": "journey-ms-learn-ai",
+    "title": "Microsoft Learn AI Engineer Path",
+    "provider": "Microsoft Learn",
+    "description": "Official Microsoft role-based learning for designing, building, deploying, and operating AI applications and agents.",
+    "type": "learning-path",
+    "canonicalUrl": "https://learn.microsoft.com/en-us/training/career-paths/ai-engineer",
+    "isOfficial": true,
+    "topics": [
+      "cloud-ai",
+      "azure"
+    ],
+    "skillLevels": [
+      "Beginner",
+      "Intermediate"
+    ],
+    "languages": [
+      "en"
+    ],
+    "priority": "recommended",
+    "access": "free",
+    "durationLabel": "Multi-path curriculum",
+    "segments": [],
+    "status": "active",
+    "lastVerifiedAt": "2026-07-26",
+    "reviewIntervalDays": 90,
+    "nextReviewAt": "2026-10-24",
+    "learningOptions": [
+      {
+        "mode": "reading",
+        "contentType": "learning-path",
+        "title": "Microsoft AI Engineer career path",
+        "description": "Follow Microsoft's official role-based plan for the skills and services used by AI engineers.",
+        "url": "https://learn.microsoft.com/en-us/training/career-paths/ai-engineer",
+        "provider": "Microsoft Learn",
+        "durationLabel": "Multi-path curriculum",
+        "isOfficial": true,
+        "access": "free",
+        "verifiedContentType": true,
+        "verifiedAt": "2026-07-26",
+        "verificationSource": "official-career-path"
+      },
+      {
+        "mode": "video",
+        "contentType": "video",
+        "title": "Introduction to Azure AI",
+        "description": "Watch Microsoft's official overview of Azure AI concepts and services.",
+        "url": "https://learn.microsoft.com/en-us/shows/azure-videos/intro-to-azure-ai",
+        "provider": "Microsoft Learn",
+        "durationLabel": "Introductory video",
+        "isOfficial": true,
+        "access": "free",
+        "verifiedContentType": true,
+        "verifiedAt": "2026-07-26",
+        "verificationSource": "official-video-page"
+      },
+      {
+        "mode": "practice",
+        "contentType": "guided-module",
+        "title": "Get started with AI applications and agents on Azure",
+        "description": "Complete six guided Microsoft Learn modules covering common AI workloads and agent development.",
+        "url": "https://learn.microsoft.com/en-us/training/paths/get-started-ai-apps-agents/",
+        "provider": "Microsoft Learn",
+        "durationLabel": "6 modules",
+        "isOfficial": true,
+        "access": "free",
+        "verifiedContentType": true,
+        "verifiedAt": "2026-07-26",
+        "verificationSource": "official-guided-learning-path"
+      }
+    ]
+  },
+  {
+    "id": "journey-gcp-skills",
+    "title": "Google Cloud Vertex AI Foundations",
+    "provider": "Google Cloud Skills Boost",
+    "description": "Direct Google Cloud learning for using Gemini through Vertex AI, prototyping prompts, and building cloud AI applications.",
+    "type": "learning-path",
+    "canonicalUrl": "https://docs.cloud.google.com/vertex-ai/generative-ai/docs/start/quickstart",
+    "isOfficial": true,
+    "topics": [
+      "cloud-ai",
+      "gcp"
+    ],
+    "skillLevels": [
+      "Beginner",
+      "Intermediate"
+    ],
+    "languages": [
+      "en"
+    ],
+    "priority": "recommended",
+    "access": "freemium",
+    "durationLabel": "Self-paced",
+    "segments": [],
+    "status": "active",
+    "lastVerifiedAt": "2026-07-26",
+    "reviewIntervalDays": 90,
+    "nextReviewAt": "2026-10-24",
+    "learningOptions": [
+      {
+        "mode": "reading",
+        "contentType": "quickstart",
+        "title": "Gemini API in Vertex AI quickstart",
+        "description": "Configure Vertex AI, install the Google Gen AI SDK, authenticate, and make a first Gemini request.",
+        "url": "https://docs.cloud.google.com/vertex-ai/generative-ai/docs/start/quickstart",
+        "provider": "Google Cloud",
+        "durationLabel": "45-90 minutes",
+        "isOfficial": true,
+        "access": "free",
+        "verifiedContentType": true,
+        "verifiedAt": "2026-07-26",
+        "verificationSource": "official-quickstart"
+      },
+      {
+        "mode": "video",
+        "contentType": "video",
+        "title": "Vertex AI overview",
+        "description": "Watch an official Google Cloud introduction to the Vertex AI platform and its development workflow.",
+        "url": "https://www.youtube.com/watch?v=gT4qqHMiEpA",
+        "provider": "Google Cloud",
+        "durationLabel": "Overview video",
+        "isOfficial": true,
+        "access": "free",
+        "verifiedContentType": true,
+        "verifiedAt": "2026-07-26",
+        "verificationSource": "official-youtube-video"
+      },
+      {
+        "mode": "practice",
+        "contentType": "hands-on-lab",
+        "title": "Gemini for developers codelab",
+        "description": "Build with Gemini through a guided Google Developers codelab.",
+        "url": "https://codelabs.developers.google.com/gemini-for-developers",
+        "provider": "Google Developers",
+        "durationLabel": "Self-paced codelab",
+        "isOfficial": true,
+        "access": "free",
+        "verifiedContentType": true,
+        "verifiedAt": "2026-07-26",
+        "verificationSource": "official-codelab"
+      }
+    ]
+  },
+  {
+    "id": "journey-aws-skillbuilder",
+    "title": "AWS Generative AI for Developers",
+    "provider": "AWS Skill Builder",
+    "description": "AWS-created learning for foundation models, Amazon Bedrock, generative AI application patterns, and production examples.",
+    "type": "learning-path",
+    "canonicalUrl": "https://aws.amazon.com/ai/learn/developers/",
+    "isOfficial": true,
+    "topics": [
+      "cloud-ai",
+      "aws"
+    ],
+    "skillLevels": [
+      "Beginner",
+      "Intermediate"
+    ],
+    "languages": [
+      "en"
+    ],
+    "priority": "recommended",
+    "access": "freemium",
+    "durationLabel": "Self-paced",
+    "segments": [],
+    "status": "active",
+    "lastVerifiedAt": "2026-07-26",
+    "reviewIntervalDays": 90,
+    "nextReviewAt": "2026-10-24",
+    "learningOptions": [
+      {
+        "mode": "reading",
+        "contentType": "documentation",
+        "title": "Foundation models explained",
+        "description": "Read AWS's direct explanation of foundation models, their capabilities, constraints, and common applications.",
+        "url": "https://aws.amazon.com/what-is/foundation-models/",
+        "provider": "AWS",
+        "durationLabel": "30-45 minutes",
+        "isOfficial": true,
+        "access": "free",
+        "verifiedContentType": true,
+        "verifiedAt": "2026-07-26",
+        "verificationSource": "official-explainer"
+      },
+      {
+        "mode": "video",
+        "contentType": "youtube-playlist",
+        "title": "Generative AI Foundations on AWS",
+        "description": "Watch AWS's free technical deep-dive playlist on foundation models and generative AI engineering.",
+        "url": "https://www.youtube.com/playlist?list=PLhr1KZpdzukf-xb0lmiU3G89GJXaDbAIF",
+        "provider": "AWS",
+        "durationLabel": "Approximately 8 hours",
+        "isOfficial": true,
+        "access": "free",
+        "verifiedContentType": true,
+        "verifiedAt": "2026-07-26",
+        "verificationSource": "official-aws-playlist"
+      },
+      {
+        "mode": "practice",
+        "contentType": "hands-on-lab",
+        "title": "Amazon Bedrock samples",
+        "description": "Run official AWS examples for Bedrock, agents, RAG, evaluation, multimodal applications, and production patterns.",
+        "url": "https://github.com/aws-samples/amazon-bedrock-samples",
+        "provider": "AWS Samples",
+        "durationLabel": "Self-paced",
+        "isOfficial": true,
+        "access": "free",
+        "verifiedContentType": true,
+        "verifiedAt": "2026-07-26",
+        "verificationSource": "official-aws-samples-repository"
+      }
+    ]
+  },
+  {
+    "id": "journey-ibm-skillsbuild",
+    "title": "IBM SkillsBuild AI Foundations",
+    "provider": "IBM SkillsBuild",
+    "description": "A direct free learning route for AI concepts, generative AI, machine learning, ethics, and practical career foundations.",
+    "type": "course",
+    "canonicalUrl": "https://skillsbuild.org/adult-learners/explore-learning/artificial-intelligence",
+    "isOfficial": true,
+    "topics": [
+      "ai-foundations",
+      "career"
+    ],
+    "skillLevels": [
+      "Beginner"
+    ],
+    "languages": [
+      "en"
+    ],
+    "priority": "optional",
+    "access": "free",
+    "durationLabel": "Self-paced",
+    "segments": [],
+    "status": "active",
+    "lastVerifiedAt": "2026-07-26",
+    "reviewIntervalDays": 90,
+    "nextReviewAt": "2026-10-24",
+    "learningOptions": [
+      {
+        "mode": "reading",
+        "contentType": "learning-path",
+        "title": "IBM SkillsBuild artificial intelligence path",
+        "description": "Review IBM's structured AI learning journey and choose the appropriate foundation modules.",
+        "url": "https://skillsbuild.org/adult-learners/explore-learning/artificial-intelligence",
+        "provider": "IBM SkillsBuild",
+        "durationLabel": "Self-paced",
+        "isOfficial": true,
+        "access": "free",
+        "verifiedContentType": true,
+        "verifiedAt": "2026-07-26",
+        "verificationSource": "official-learning-path"
+      },
+      {
+        "mode": "video",
+        "contentType": "video",
+        "title": "Generative models explained",
+        "description": "Watch IBM's direct visual explanation of how generative models and large language models work.",
+        "url": "https://www.ibm.com/think/videos/generative-ai-models",
+        "provider": "IBM",
+        "durationLabel": "Short explainer",
+        "isOfficial": true,
+        "access": "free",
+        "verifiedContentType": true,
+        "verifiedAt": "2026-07-26",
+        "verificationSource": "official-ibm-video-page"
+      },
+      {
+        "mode": "practice",
+        "contentType": "interactive-course",
+        "title": "Artificial Intelligence Fundamentals",
+        "description": "Complete IBM's 10+ hour credential course covering AI, machine learning, NLP, computer vision, ethics, and applied simulations.",
+        "url": "https://skillsbuild.org/college-students/course-catalog/artificial-intelligence-fundamentals",
+        "provider": "IBM SkillsBuild",
+        "durationLabel": "10+ hours",
+        "isOfficial": true,
+        "access": "free",
+        "verifiedContentType": true,
+        "verifiedAt": "2026-07-26",
+        "verificationSource": "official-credential-course"
+      }
+    ]
+  },
+  {
+    "id": "journey-dlai-prompting",
+    "title": "Prompt Engineering for AI Applications",
+    "provider": "DeepLearning.AI / OpenAI",
+    "description": "A focused learning route for writing, testing, and iterating prompts for reliable LLM-powered applications.",
+    "type": "course",
+    "canonicalUrl": "https://learn.deeplearning.ai/courses/chatgpt-prompt-eng/information",
+    "isOfficial": true,
+    "topics": [
+      "prompting",
+      "llm-api"
+    ],
+    "skillLevels": [
+      "Beginner",
+      "Intermediate"
+    ],
+    "languages": [
+      "en"
+    ],
+    "priority": "essential",
+    "access": "free",
+    "durationLabel": "1 hour 30 minutes",
+    "segments": [],
+    "status": "active",
+    "lastVerifiedAt": "2026-07-26",
+    "reviewIntervalDays": 90,
+    "nextReviewAt": "2026-10-24",
+    "learningOptions": [
+      {
+        "mode": "reading",
+        "contentType": "documentation",
+        "title": "OpenAI prompt engineering guide",
+        "description": "Read the official prompt engineering guidance for structuring instructions, examples, context, and evaluation.",
+        "url": "https://platform.openai.com/docs/guides/prompt-engineering",
+        "provider": "OpenAI",
+        "durationLabel": "45-60 minutes",
+        "isOfficial": true,
+        "access": "free",
+        "verifiedContentType": true,
+        "verifiedAt": "2026-07-26",
+        "verificationSource": "official-documentation"
+      },
+      {
+        "mode": "video",
+        "contentType": "video-course",
+        "title": "ChatGPT Prompt Engineering for Developers",
+        "description": "Watch nine structured video lessons created by DeepLearning.AI in partnership with OpenAI.",
+        "url": "https://learn.deeplearning.ai/courses/chatgpt-prompt-eng/information",
+        "provider": "DeepLearning.AI / OpenAI",
+        "durationLabel": "1 hour 30 minutes",
+        "isOfficial": true,
+        "access": "free",
+        "verifiedContentType": true,
+        "verifiedAt": "2026-07-26",
+        "verificationSource": "official-course-information"
+      },
+      {
+        "mode": "practice",
+        "contentType": "guided-module",
+        "title": "Prompt engineering code exercises",
+        "description": "Open the course workspace and complete its seven guided notebook examples and graded quiz.",
+        "url": "https://learn.deeplearning.ai/courses/chatgpt-prompt-eng",
+        "provider": "DeepLearning.AI / OpenAI",
+        "durationLabel": "7 code examples",
+        "isOfficial": true,
+        "access": "free",
+        "verifiedContentType": true,
+        "verifiedAt": "2026-07-26",
+        "verificationSource": "official-course-workspace"
+      }
+    ]
+  },
+  {
+    "id": "journey-dlai-mlops",
+    "title": "Machine Learning in Production",
+    "provider": "DeepLearning.AI",
+    "description": "A production-focused course covering ML lifecycle design, deployment, monitoring, concept drift, data quality, and MLOps.",
+    "type": "course",
+    "canonicalUrl": "https://www.deeplearning.ai/courses/machine-learning-in-production",
+    "isOfficial": false,
+    "topics": [
+      "mlops",
+      "production-ai"
+    ],
+    "skillLevels": [
+      "Intermediate",
+      "Advanced"
+    ],
+    "languages": [
+      "en"
+    ],
+    "priority": "recommended",
+    "access": "freemium",
+    "durationLabel": "Approximately 3 weeks",
+    "segments": [],
+    "status": "active",
+    "lastVerifiedAt": "2026-07-26",
+    "reviewIntervalDays": 90,
+    "nextReviewAt": "2026-10-24",
+    "learningOptions": [
+      {
+        "mode": "reading",
+        "contentType": "written-course",
+        "title": "Machine Learning in Production course outline",
+        "description": "Review the detailed production ML curriculum, lifecycle framework, deployment patterns, monitoring, and data-quality topics.",
+        "url": "https://www.deeplearning.ai/courses/machine-learning-in-production",
+        "provider": "DeepLearning.AI",
+        "durationLabel": "Course overview",
+        "isOfficial": true,
+        "access": "freemium",
+        "verifiedContentType": true,
+        "verifiedAt": "2026-07-26",
+        "verificationSource": "official-course-outline"
+      },
+      {
+        "mode": "video",
+        "contentType": "video-course",
+        "title": "Machine Learning in Production",
+        "description": "Watch Andrew Ng's 41-lesson production ML course covering system design, deployment, monitoring, and data iteration.",
+        "url": "https://learn.deeplearning.ai/courses/machine-learning-in-production/information",
+        "provider": "DeepLearning.AI",
+        "durationLabel": "41 video lessons",
+        "isOfficial": true,
+        "access": "freemium",
+        "verifiedContentType": true,
+        "verifiedAt": "2026-07-26",
+        "verificationSource": "official-video-course"
+      },
+      {
+        "mode": "practice",
+        "contentType": "guided-module",
+        "title": "Machine Learning in Production labs",
+        "description": "Complete the course's code examples, deployment labs, quizzes, and final ML lifecycle project.",
+        "url": "https://learn.deeplearning.ai/courses/machine-learning-in-production/lesson/qjjyx6/course-outline",
+        "provider": "DeepLearning.AI",
+        "durationLabel": "4 code examples and final project",
+        "isOfficial": true,
+        "access": "freemium",
+        "verifiedContentType": true,
+        "verifiedAt": "2026-07-26",
+        "verificationSource": "official-course-lab-outline"
+      }
+    ]
+  },
+  {
+    "id": "journey-fcc-python",
+    "title": "Python Foundations for AI Engineering",
+    "provider": "freeCodeCamp",
+    "description": "A complete beginner route combining the official Python tutorial, a long-form video course, and progressive coding exercises.",
+    "type": "course",
+    "canonicalUrl": "https://docs.python.org/3/tutorial/index.html",
+    "isOfficial": false,
+    "topics": [
+      "python"
+    ],
+    "skillLevels": [
+      "Beginner"
+    ],
+    "languages": [
+      "en"
+    ],
+    "priority": "recommended",
+    "access": "free",
+    "durationLabel": "Self-paced",
+    "segments": [
+      {
+        "id": "start",
+        "timestampSeconds": 0
+      }
+    ],
+    "status": "active",
+    "lastVerifiedAt": "2026-07-26",
+    "reviewIntervalDays": 90,
+    "nextReviewAt": "2026-10-24",
+    "learningOptions": [
+      {
+        "mode": "reading",
+        "contentType": "documentation",
+        "title": "The official Python tutorial",
+        "description": "Read and practice Python syntax, control flow, data structures, functions, modules, exceptions, and classes.",
+        "url": "https://docs.python.org/3/tutorial/index.html",
+        "provider": "Python Software Foundation",
+        "durationLabel": "Self-paced",
+        "isOfficial": true,
+        "access": "free",
+        "verifiedContentType": true,
+        "verifiedAt": "2026-07-26",
+        "verificationSource": "official-documentation"
+      },
+      {
+        "mode": "video",
+        "contentType": "video",
+        "title": "Learn Python - Full Course for Beginners",
+        "description": "Watch freeCodeCamp's complete beginner Python course with practical coding demonstrations.",
+        "url": "https://www.youtube.com/watch?v=rfscVS0vtbw",
+        "provider": "freeCodeCamp",
+        "durationLabel": "4 hours 27 minutes",
+        "isOfficial": false,
+        "access": "free",
+        "verifiedContentType": true,
+        "verifiedAt": "2026-07-26",
+        "verificationSource": "youtube-video-page",
+        "curationReason": "Selected as a complete, free, long-form beginner course from a reputable nonprofit education provider."
+      },
+      {
+        "mode": "practice",
+        "contentType": "exercise-track",
+        "title": "Python practice track",
+        "description": "Solve progressive Python exercises with automated tests, feedback, and optional community mentoring.",
+        "url": "https://exercism.org/tracks/python",
+        "provider": "Exercism",
+        "durationLabel": "Self-paced",
+        "isOfficial": false,
+        "access": "free",
+        "verifiedContentType": true,
+        "verifiedAt": "2026-07-26",
+        "verificationSource": "trusted-practice-platform",
+        "curationReason": "Selected as a free, established practice platform with structured exercises and automated feedback."
+      }
+    ]
+  },
+  {
+    "id": "journey-github-docs",
+    "title": "GitHub Hello World",
+    "provider": "GitHub",
+    "description": "A direct beginner tutorial for repositories, branches, commits, pull requests, and merging.",
+    "type": "documentation",
+    "canonicalUrl": "https://docs.github.com/en/get-started/start-your-journey/hello-world",
+    "isOfficial": true,
+    "topics": [
+      "git",
+      "portfolio"
+    ],
+    "skillLevels": [
+      "Beginner",
+      "Intermediate"
+    ],
+    "languages": [
+      "en"
+    ],
+    "priority": "essential",
+    "access": "free",
+    "durationLabel": "30-60 minutes",
+    "segments": [],
+    "status": "active",
+    "lastVerifiedAt": "2026-07-26",
+    "reviewIntervalDays": 90,
+    "nextReviewAt": "2026-10-24",
+    "learningOptions": [
+      {
+        "mode": "reading",
+        "contentType": "tutorial",
+        "title": "GitHub Hello World",
+        "description": "Complete GitHub's written hands-on introduction to repositories, branches, commits, pull requests, and merging.",
+        "url": "https://docs.github.com/en/get-started/start-your-journey/hello-world",
+        "provider": "GitHub",
+        "durationLabel": "30-60 minutes",
+        "isOfficial": true,
+        "access": "free",
+        "verifiedContentType": true,
+        "verifiedAt": "2026-07-26",
+        "verificationSource": "official-documentation"
+      },
+      {
+        "mode": "video",
+        "contentType": "video",
+        "title": "Git and GitHub for Beginners",
+        "description": "Watch a complete beginner video covering Git fundamentals and the essential GitHub workflow.",
+        "url": "https://www.youtube.com/watch?v=RGOj5yH7evk",
+        "provider": "freeCodeCamp",
+        "durationLabel": "1 hour 8 minutes",
+        "isOfficial": false,
+        "access": "free",
+        "verifiedContentType": true,
+        "verifiedAt": "2026-07-26",
+        "verificationSource": "youtube-video-page",
+        "curationReason": "Selected because it is a complete, free, widely used beginner course with practical demonstrations."
+      },
+      {
+        "mode": "practice",
+        "contentType": "interactive-course",
+        "title": "Introduction to GitHub",
+        "description": "Complete the official GitHub Skills exercise inside a real repository.",
+        "url": "https://github.com/skills/introduction-to-github",
+        "provider": "GitHub Skills",
+        "durationLabel": "Under 1 hour",
+        "isOfficial": true,
+        "access": "free",
+        "verifiedContentType": true,
+        "verifiedAt": "2026-07-26",
+        "verificationSource": "official-github-skills-course"
+      }
+    ]
+  },
+  {
+    "id": "journey-anthropic-docs",
+    "title": "Claude API Development",
+    "provider": "Anthropic",
+    "description": "Official Anthropic guidance, video instruction, and hands-on coursework for building applications with the Claude API.",
+    "type": "course",
+    "canonicalUrl": "https://platform.claude.com/docs/en/get-started",
+    "isOfficial": true,
+    "topics": [
+      "llm-api",
+      "tool-use"
+    ],
+    "skillLevels": [
+      "Intermediate"
+    ],
+    "languages": [
+      "en"
+    ],
+    "priority": "recommended",
+    "access": "free",
+    "durationLabel": "Self-paced",
+    "segments": [],
+    "status": "active",
+    "lastVerifiedAt": "2026-07-26",
+    "reviewIntervalDays": 90,
+    "nextReviewAt": "2026-10-24",
+    "learningOptions": [
+      {
+        "mode": "reading",
+        "contentType": "quickstart",
+        "title": "Claude API get started guide",
+        "description": "Follow Anthropic's official setup and first-request guide for the Claude API.",
+        "url": "https://platform.claude.com/docs/en/get-started",
+        "provider": "Anthropic",
+        "durationLabel": "30-60 minutes",
+        "isOfficial": true,
+        "access": "free",
+        "verifiedContentType": true,
+        "verifiedAt": "2026-07-26",
+        "verificationSource": "official-developer-documentation"
+      },
+      {
+        "mode": "video",
+        "contentType": "video-course",
+        "title": "Claude Platform 101",
+        "description": "Watch Anthropic's official one-hour engineering course with 12 lectures and a quiz.",
+        "url": "https://anthropic.skilljar.com/claude-platform-101",
+        "provider": "Anthropic",
+        "durationLabel": "1 hour",
+        "isOfficial": true,
+        "access": "free",
+        "verifiedContentType": true,
+        "verifiedAt": "2026-07-26",
+        "verificationSource": "official-anthropic-course"
+      },
+      {
+        "mode": "practice",
+        "contentType": "interactive-course",
+        "title": "Building with the Claude API",
+        "description": "Complete Anthropic's in-depth API course with 84 lectures, practical work, and 10 quizzes.",
+        "url": "https://anthropic.skilljar.com/claude-with-the-anthropic-api",
+        "provider": "Anthropic",
+        "durationLabel": "8.1 hours",
+        "isOfficial": true,
+        "access": "free",
+        "verifiedContentType": true,
+        "verifiedAt": "2026-07-26",
+        "verificationSource": "official-anthropic-course"
+      }
+    ]
+  },
+  {
+    "id": "journey-google-ai-docs",
+    "title": "Google Gemini API Development",
+    "provider": "Google",
+    "description": "Official Google AI learning for calling Gemini, understanding model capabilities, and building practical generative AI applications.",
+    "type": "course",
+    "canonicalUrl": "https://ai.google.dev/gemini-api/docs/get-started",
+    "isOfficial": true,
+    "topics": [
+      "llm-api",
+      "gemini"
+    ],
+    "skillLevels": [
+      "Intermediate"
+    ],
+    "languages": [
+      "en"
+    ],
+    "priority": "recommended",
+    "access": "free",
+    "durationLabel": "Self-paced",
+    "segments": [],
+    "status": "active",
+    "lastVerifiedAt": "2026-07-26",
+    "reviewIntervalDays": 90,
+    "nextReviewAt": "2026-10-24",
+    "learningOptions": [
+      {
+        "mode": "reading",
+        "contentType": "quickstart",
+        "title": "Gemini API quickstart",
+        "description": "Follow Google's direct guide for installing the SDK, obtaining access, and making a first Gemini API request.",
+        "url": "https://ai.google.dev/gemini-api/docs/get-started",
+        "provider": "Google AI for Developers",
+        "durationLabel": "30-60 minutes",
+        "isOfficial": true,
+        "access": "free",
+        "verifiedContentType": true,
+        "verifiedAt": "2026-07-26",
+        "verificationSource": "official-developer-quickstart"
+      },
+      {
+        "mode": "video",
+        "contentType": "youtube-playlist",
+        "title": "Google Cloud AI Simplified",
+        "description": "Watch Google's official video series explaining generative AI concepts, models, and application patterns.",
+        "url": "https://www.youtube.com/playlist?list=PLIivdWyY5sqJ1YuMdGjRwJ3fFYZ_vWQ62",
+        "provider": "Google Cloud",
+        "durationLabel": "Video series",
+        "isOfficial": true,
+        "access": "free",
+        "verifiedContentType": true,
+        "verifiedAt": "2026-07-26",
+        "verificationSource": "official-youtube-playlist"
+      },
+      {
+        "mode": "practice",
+        "contentType": "hands-on-lab",
+        "title": "Gemini for developers codelab",
+        "description": "Build a working Gemini application through Google's guided developer codelab.",
+        "url": "https://codelabs.developers.google.com/gemini-for-developers",
+        "provider": "Google Developers",
+        "durationLabel": "Self-paced codelab",
+        "isOfficial": true,
+        "access": "free",
+        "verifiedContentType": true,
+        "verifiedAt": "2026-07-26",
+        "verificationSource": "official-codelab"
+      }
+    ]
+  },
+  {
+    "id": "automation-power-automate-docs",
+    "title": "Build and Optimize Power Automate Cloud Flows",
+    "provider": "Microsoft Learn",
+    "description": "A direct Microsoft learning path covering cloud flows, expressions, error handling, troubleshooting, and HTTP connectors.",
+    "type": "documentation",
+    "canonicalUrl": "https://learn.microsoft.com/en-us/training/paths/build-optimize-cloud-flows-power-automate/",
+    "isOfficial": true,
+    "topics": [
+      "automation",
+      "power-automate",
+      "workflow",
+      "rpa"
+    ],
+    "skillLevels": [
+      "Beginner",
+      "Intermediate",
+      "Advanced"
+    ],
+    "languages": [
+      "en"
+    ],
+    "priority": "essential",
+    "access": "free",
+    "durationLabel": "5 modules",
+    "segments": [],
+    "status": "active",
+    "lastVerifiedAt": "2026-07-26",
+    "reviewIntervalDays": 90,
+    "nextReviewAt": "2026-10-24",
+    "learningOptions": [
+      {
+        "mode": "reading",
+        "contentType": "learning-path",
+        "title": "Build and optimize Power Automate cloud flows",
+        "description": "Use the official written learning path covering cloud flows, expressions, troubleshooting, error handling, and HTTP connectors.",
+        "url": "https://learn.microsoft.com/en-us/training/paths/build-optimize-cloud-flows-power-automate/",
+        "provider": "Microsoft Learn",
+        "durationLabel": "5 modules",
+        "isOfficial": true,
+        "access": "free",
+        "verifiedContentType": true,
+        "verifiedAt": "2026-07-26",
+        "verificationSource": "official-learning-path"
+      },
+      {
+        "mode": "video",
+        "contentType": "video-series",
+        "title": "Get started with Microsoft Power Automate",
+        "description": "Use Microsoft's dedicated video-training destination for Power Automate basics and guided demonstrations.",
+        "url": "https://enablement.microsoft.com/en-us/user-training/get-started-with-microsoft-power-automate/",
+        "provider": "Microsoft",
+        "durationLabel": "Video training",
+        "isOfficial": true,
+        "access": "free",
+        "verifiedContentType": true,
+        "verifiedAt": "2026-07-26",
+        "verificationSource": "official-video-training-page"
+      },
+      {
+        "mode": "practice",
+        "contentType": "guided-module",
+        "title": "Get started with Power Automate",
+        "description": "Create flows through official exercises, then complete the module assessment.",
+        "url": "https://learn.microsoft.com/en-us/training/modules/get-started-flows/",
+        "provider": "Microsoft Learn",
+        "durationLabel": "1 hour 2 minutes",
+        "isOfficial": true,
+        "access": "free",
+        "verifiedContentType": true,
+        "verifiedAt": "2026-07-26",
+        "verificationSource": "official-exercise-module"
+      }
+    ]
+  },
+  {
+    "id": "automation-copilot-studio-docs",
+    "title": "Create Agents in Microsoft Copilot Studio",
+    "provider": "Microsoft Learn",
+    "description": "A direct Microsoft learning path for creating agents, designing conversations, grounding responses, and adding workflow tools.",
+    "type": "documentation",
+    "canonicalUrl": "https://learn.microsoft.com/en-us/training/paths/create-extend-custom-copilots-microsoft-copilot-studio/",
+    "isOfficial": true,
+    "topics": [
+      "automation",
+      "copilot-studio",
+      "agents",
+      "agent-flows",
+      "low-code-ai"
+    ],
+    "skillLevels": [
+      "Beginner",
+      "Intermediate",
+      "Advanced"
+    ],
+    "languages": [
+      "en"
+    ],
+    "priority": "essential",
+    "access": "free",
+    "durationLabel": "4 modules",
+    "segments": [],
+    "status": "active",
+    "lastVerifiedAt": "2026-07-26",
+    "reviewIntervalDays": 90,
+    "nextReviewAt": "2026-10-24",
+    "learningOptions": [
+      {
+        "mode": "reading",
+        "contentType": "learning-path",
+        "title": "Create agents in Microsoft Copilot Studio",
+        "description": "Follow the official learning path for agent creation, conversation design, knowledge grounding, and workflow tools.",
+        "url": "https://learn.microsoft.com/en-us/training/paths/create-extend-custom-copilots-microsoft-copilot-studio/",
+        "provider": "Microsoft Learn",
+        "durationLabel": "4 modules",
+        "isOfficial": true,
+        "access": "free",
+        "verifiedContentType": true,
+        "verifiedAt": "2026-07-26",
+        "verificationSource": "official-learning-path"
+      },
+      {
+        "mode": "video",
+        "contentType": "video",
+        "title": "Create your first Copilot Studio agent",
+        "description": "Watch Microsoft's step-by-step video for creating, testing, publishing, and analyzing a first agent.",
+        "url": "https://learn.microsoft.com/en-us/shows/mastering-copilot-studio/create-first-agent-copilot-studio",
+        "provider": "Microsoft Learn",
+        "durationLabel": "Guided video",
+        "isOfficial": true,
+        "access": "free",
+        "verifiedContentType": true,
+        "verifiedAt": "2026-07-26",
+        "verificationSource": "official-video-page"
+      },
+      {
+        "mode": "practice",
+        "contentType": "guided-module",
+        "title": "Build an initial agent with Copilot Studio",
+        "description": "Build and deploy an agent through a seven-unit Microsoft Learn module with a knowledge check.",
+        "url": "https://learn.microsoft.com/en-us/training/modules/create-copilots-copilot-studio/",
+        "provider": "Microsoft Learn",
+        "durationLabel": "7 units",
+        "isOfficial": true,
+        "access": "free",
+        "verifiedContentType": true,
+        "verifiedAt": "2026-07-26",
+        "verificationSource": "official-exercise-module"
+      }
+    ]
+  },
+  {
+    "id": "automation-n8n-docs",
+    "title": "n8n Essentials: Your First Workflows",
+    "provider": "n8n",
+    "description": "A direct beginner route for learning the n8n canvas, nodes, triggers, executions, data transformation, and complete workflows.",
+    "type": "documentation",
+    "canonicalUrl": "https://docs.n8n.io/courses/level-one/",
+    "isOfficial": true,
+    "topics": [
+      "automation",
+      "n8n",
+      "workflow",
+      "integrations",
+      "ai-workflows"
+    ],
+    "skillLevels": [
+      "Beginner",
+      "Intermediate",
+      "Advanced"
+    ],
+    "languages": [
+      "en"
+    ],
+    "priority": "recommended",
+    "access": "free",
+    "durationLabel": "2-4 hours",
+    "segments": [],
+    "status": "active",
+    "lastVerifiedAt": "2026-07-26",
+    "reviewIntervalDays": 90,
+    "nextReviewAt": "2026-10-24",
+    "learningOptions": [
+      {
+        "mode": "reading",
+        "contentType": "written-course",
+        "title": "n8n Level One written course",
+        "description": "Follow the official text-based course covering the editor, nodes, data, workflows, and core automation concepts.",
+        "url": "https://docs.n8n.io/courses/level-one/",
+        "provider": "n8n Docs",
+        "durationLabel": "Self-paced",
+        "isOfficial": true,
+        "access": "free",
+        "verifiedContentType": true,
+        "verifiedAt": "2026-07-26",
+        "verificationSource": "official-written-course"
+      },
+      {
+        "mode": "video",
+        "contentType": "youtube-playlist",
+        "title": "Introduction to Automation",
+        "description": "Watch the official n8n beginner playlist recommended by the n8n Help Center.",
+        "url": "https://www.youtube.com/playlist?feature=shared&list=PLlET0GsrLUL59YbxstZE71WszP3pVnZfI",
+        "provider": "n8n",
+        "durationLabel": "Video series",
+        "isOfficial": true,
+        "access": "free",
+        "verifiedContentType": true,
+        "verifiedAt": "2026-07-26",
+        "verificationSource": "official-help-center-recommendation"
+      },
+      {
+        "mode": "practice",
+        "contentType": "interactive-course",
+        "title": "N8N101 Essentials: Your First Workflows",
+        "description": "Complete the official Academy course with hands-on workflow exercises, quizzes, and a final exam.",
+        "url": "https://learn.n8n.io/courses/course-v1%3An8n%2BN8N101%2B2026H2/about",
+        "provider": "n8n Academy",
+        "durationLabel": "2-4 hours",
+        "isOfficial": true,
+        "access": "free",
+        "verifiedContentType": true,
+        "verifiedAt": "2026-07-26",
+        "verificationSource": "official-academy-course-page"
+      }
+    ]
+  },
+  {
+    "id": "automation-uipath-docs",
+    "title": "UiPath: Create a Basic Automation Process",
+    "provider": "UiPath",
+    "description": "A direct practical starting point for creating and running a basic UiPath Studio automation.",
+    "type": "documentation",
+    "canonicalUrl": "https://docs.uipath.com/studio/standalone/latest/user-guide/creating-basic-process",
+    "isOfficial": true,
+    "topics": [
+      "automation",
+      "uipath",
+      "rpa",
+      "orchestration",
+      "document-understanding"
+    ],
+    "skillLevels": [
+      "Beginner",
+      "Intermediate",
+      "Advanced"
+    ],
+    "languages": [
+      "en"
+    ],
+    "priority": "recommended",
+    "access": "free",
+    "durationLabel": "10-minute tutorial",
+    "segments": [],
+    "status": "active",
+    "lastVerifiedAt": "2026-07-26",
+    "reviewIntervalDays": 90,
+    "nextReviewAt": "2026-10-24",
+    "learningOptions": [
+      {
+        "mode": "reading",
+        "contentType": "tutorial",
+        "title": "Create a basic UiPath process",
+        "description": "Follow the official written Studio tutorial and run a working automation.",
+        "url": "https://docs.uipath.com/studio/standalone/latest/user-guide/creating-basic-process",
+        "provider": "UiPath Documentation",
+        "durationLabel": "10 minutes",
+        "isOfficial": true,
+        "access": "free",
+        "verifiedContentType": true,
+        "verifiedAt": "2026-07-26",
+        "verificationSource": "official-documentation"
+      },
+      {
+        "mode": "video",
+        "contentType": "video",
+        "title": "Basic UI Automation with StudioX",
+        "description": "Watch UiPath's official embedded video tutorial for browser, calculator, and CRM user-interface automation.",
+        "url": "https://www.uipath.com/learning/video-tutorials/basic-ui-automation-with-studiox",
+        "provider": "UiPath",
+        "durationLabel": "Guided video",
+        "isOfficial": true,
+        "access": "free",
+        "verifiedContentType": true,
+        "verifiedAt": "2026-07-26",
+        "verificationSource": "official-video-tutorial-page"
+      },
+      {
+        "mode": "practice",
+        "contentType": "interactive-course",
+        "title": "Automation Developer Associate Training",
+        "description": "Complete UiPath Academy's structured automation developer learning plan.",
+        "url": "https://academy.uipath.com/learning-plans/automation-developer-associate-training",
+        "provider": "UiPath Academy",
+        "durationLabel": "45 hours 20 minutes",
+        "isOfficial": true,
+        "access": "free",
+        "verifiedContentType": true,
+        "verifiedAt": "2026-07-26",
+        "verificationSource": "official-academy-learning-plan"
+      }
+    ]
+  },
+  {
+    "id": "automation-python-docs",
+    "title": "The Python Tutorial",
+    "provider": "Python Software Foundation",
+    "description": "The official direct tutorial for Python syntax, control flow, data structures, functions, modules, exceptions, classes, and standard workflows.",
+    "type": "documentation",
+    "canonicalUrl": "https://docs.python.org/3/tutorial/index.html",
+    "isOfficial": true,
+    "topics": [
+      "automation",
+      "python",
+      "scripting",
+      "api-integration"
+    ],
+    "skillLevels": [
+      "Beginner",
+      "Intermediate",
+      "Advanced"
+    ],
+    "languages": [
+      "en"
+    ],
+    "priority": "essential",
+    "access": "free",
+    "durationLabel": "Self-paced",
+    "segments": [],
+    "status": "active",
+    "lastVerifiedAt": "2026-07-26",
+    "reviewIntervalDays": 90,
+    "nextReviewAt": "2026-10-24",
+    "learningOptions": [
+      {
+        "mode": "reading",
+        "contentType": "documentation",
+        "title": "The official Python tutorial",
+        "description": "Read the official tutorial covering syntax, control flow, data structures, functions, modules, exceptions, and classes.",
+        "url": "https://docs.python.org/3/tutorial/index.html",
+        "provider": "Python Software Foundation",
+        "durationLabel": "Self-paced",
+        "isOfficial": true,
+        "access": "free",
+        "verifiedContentType": true,
+        "verifiedAt": "2026-07-26",
+        "verificationSource": "official-documentation"
+      },
+      {
+        "mode": "video",
+        "contentType": "video",
+        "title": "Learn Python - Full Course for Beginners",
+        "description": "Watch a complete beginner course with practical demonstrations and coding examples.",
+        "url": "https://www.youtube.com/watch?v=rfscVS0vtbw",
+        "provider": "freeCodeCamp",
+        "durationLabel": "4 hours 27 minutes",
+        "isOfficial": false,
+        "access": "free",
+        "verifiedContentType": true,
+        "verifiedAt": "2026-07-26",
+        "verificationSource": "youtube-video-page",
+        "curationReason": "Selected because it is a complete, free, long-form beginner course from a reputable nonprofit education provider."
+      },
+      {
+        "mode": "practice",
+        "contentType": "exercise-track",
+        "title": "Python practice track",
+        "description": "Solve progressive Python exercises with automated feedback and community mentoring.",
+        "url": "https://exercism.org/tracks/python",
+        "provider": "Exercism",
+        "durationLabel": "Self-paced",
+        "isOfficial": false,
+        "access": "free",
+        "verifiedContentType": true,
+        "verifiedAt": "2026-07-26",
+        "verificationSource": "trusted-practice-platform",
+        "curationReason": "Selected as a free, established practice platform with structured exercises and feedback."
+      }
+    ]
+  },
+  {
+    "id": "automation-postman-docs",
+    "title": "Postman API Quick Start",
+    "provider": "Postman",
+    "description": "A direct hands-on guide for sending a request, saving it in a collection, and writing a basic API test.",
+    "type": "documentation",
+    "canonicalUrl": "https://learning.postman.com/docs/getting-started/quick-start",
+    "isOfficial": true,
+    "topics": [
+      "automation",
+      "api",
+      "postman",
+      "integration-testing"
+    ],
+    "skillLevels": [
+      "Beginner",
+      "Intermediate"
+    ],
+    "languages": [
+      "en"
+    ],
+    "priority": "recommended",
+    "access": "free",
+    "durationLabel": "20-30 minutes",
+    "segments": [],
+    "status": "active",
+    "lastVerifiedAt": "2026-07-26",
+    "reviewIntervalDays": 90,
+    "nextReviewAt": "2026-10-24",
+    "learningOptions": [
+      {
+        "mode": "reading",
+        "contentType": "quickstart",
+        "title": "Postman API quick start",
+        "description": "Send a request, save it in a collection, and write a basic test through the official quick start.",
+        "url": "https://learning.postman.com/docs/getting-started/quick-start",
+        "provider": "Postman",
+        "durationLabel": "20-30 minutes",
+        "isOfficial": true,
+        "access": "free",
+        "verifiedContentType": true,
+        "verifiedAt": "2026-07-26",
+        "verificationSource": "official-documentation"
+      },
+      {
+        "mode": "video",
+        "contentType": "webinar",
+        "title": "Postman: Introduction for Developers",
+        "description": "Watch Postman's one-hour beginner session covering requests, tests, variables, authorization, and debugging.",
+        "url": "https://www.postman.com/events/intergalactic/postman-introduction-for-developers/",
+        "provider": "Postman",
+        "durationLabel": "1 hour",
+        "isOfficial": true,
+        "access": "free",
+        "verifiedContentType": true,
+        "verifiedAt": "2026-07-26",
+        "verificationSource": "official-video-event-page"
+      },
+      {
+        "mode": "practice",
+        "contentType": "interactive-course",
+        "title": "Postman Classroom Program",
+        "description": "Work through Postman's hands-on classroom missions and API exercises.",
+        "url": "https://www.postman.com/postman/postman-classroom-program/overview",
+        "provider": "Postman",
+        "durationLabel": "Self-paced",
+        "isOfficial": true,
+        "access": "free",
+        "verifiedContentType": true,
+        "verifiedAt": "2026-07-26",
+        "verificationSource": "official-practice-program"
+      }
+    ]
+  },
+  {
+    "id": "automation-ms-power-platform-training",
+    "title": "AI-Powered Automation with Microsoft Power Automate",
+    "provider": "Microsoft Learn",
+    "description": "A direct Microsoft learning path for event-driven flows, Dataverse, approvals, AI Builder, and grounded generative AI automation.",
+    "type": "course",
+    "canonicalUrl": "https://learn.microsoft.com/en-us/training/paths/automate-business-processes-power-automate/",
+    "isOfficial": true,
+    "topics": [
+      "automation",
+      "power-automate",
+      "power-platform",
+      "workflow",
+      "rpa"
+    ],
+    "skillLevels": [
+      "Beginner",
+      "Intermediate"
+    ],
+    "languages": [
+      "en"
+    ],
+    "priority": "essential",
+    "access": "free",
+    "durationLabel": "4 modules",
+    "segments": [],
+    "status": "active",
+    "lastVerifiedAt": "2026-07-26",
+    "reviewIntervalDays": 90,
+    "nextReviewAt": "2026-10-24",
+    "learningOptions": [
+      {
+        "mode": "reading",
+        "contentType": "learning-path",
+        "title": "AI-powered automation with Power Automate",
+        "description": "Study event-driven flows, Dataverse, approvals, AI Builder, and grounded generative AI automation.",
+        "url": "https://learn.microsoft.com/en-us/training/paths/automate-business-processes-power-automate/",
+        "provider": "Microsoft Learn",
+        "durationLabel": "4 modules",
+        "isOfficial": true,
+        "access": "free",
+        "verifiedContentType": true,
+        "verifiedAt": "2026-07-26",
+        "verificationSource": "official-learning-path"
+      },
+      {
+        "mode": "video",
+        "contentType": "video-series",
+        "title": "Get started with Microsoft Power Automate",
+        "description": "Use Microsoft's dedicated Power Automate video-training destination before building the guided solution.",
+        "url": "https://enablement.microsoft.com/en-us/user-training/get-started-with-microsoft-power-automate/",
+        "provider": "Microsoft",
+        "durationLabel": "Video training",
+        "isOfficial": true,
+        "access": "free",
+        "verifiedContentType": true,
+        "verifiedAt": "2026-07-26",
+        "verificationSource": "official-video-training-page"
+      },
+      {
+        "mode": "practice",
+        "contentType": "guided-module",
+        "title": "Build a Microsoft Power Automate flow",
+        "description": "Build, test, monitor, troubleshoot, and share a cloud flow in a guided Microsoft Learn module.",
+        "url": "https://learn.microsoft.com/en-us/training/modules/build-microsoft-power-automate-flow/",
+        "provider": "Microsoft Learn",
+        "durationLabel": "1 hour 11 minutes",
+        "isOfficial": true,
+        "access": "free",
+        "verifiedContentType": true,
+        "verifiedAt": "2026-07-26",
+        "verificationSource": "official-exercise-module"
+      }
+    ]
+  },
+  {
+    "id": "automation-owasp-genai",
+    "title": "OWASP Top 10 for LLM and GenAI Applications",
+    "provider": "OWASP",
+    "description": "A direct security learning destination for the major risks and mitigations affecting LLM, generative AI, and agentic applications.",
+    "type": "documentation",
+    "canonicalUrl": "https://genai.owasp.org/llm-top-10/",
+    "isOfficial": true,
+    "topics": [
+      "automation",
+      "genai-security",
+      "agent-security",
+      "governance",
+      "responsible-ai"
+    ],
+    "skillLevels": [
+      "Intermediate",
+      "Advanced"
+    ],
+    "languages": [
+      "en"
+    ],
+    "priority": "recommended",
+    "access": "free",
+    "durationLabel": "60-90 minutes",
+    "segments": [],
+    "status": "active",
+    "lastVerifiedAt": "2026-07-26",
+    "reviewIntervalDays": 90,
+    "nextReviewAt": "2026-10-24",
+    "learningOptions": [
+      {
+        "mode": "reading",
+        "contentType": "security-guide",
+        "title": "OWASP Top 10 for LLM and GenAI applications",
+        "description": "Read the current risks and mitigations for secure LLM, generative AI, and agentic application development.",
+        "url": "https://genai.owasp.org/llm-top-10/",
+        "provider": "OWASP GenAI Security Project",
+        "durationLabel": "60-90 minutes",
+        "isOfficial": true,
+        "access": "free",
+        "verifiedContentType": true,
+        "verifiedAt": "2026-07-26",
+        "verificationSource": "official-security-guide"
+      },
+      {
+        "mode": "video",
+        "contentType": "video",
+        "title": "OWASP Project Spotlight: LLM Top 10",
+        "description": "Watch the OWASP Foundation project spotlight video for the LLM Top 10.",
+        "url": "https://owasp.org/www-project-spotlight-series/#owasp-spotlight---project-27---owasp-llm-top-10",
+        "provider": "OWASP Foundation",
+        "durationLabel": "Project spotlight",
+        "isOfficial": true,
+        "access": "free",
+        "verifiedContentType": true,
+        "verifiedAt": "2026-07-26",
+        "verificationSource": "official-video-page"
+      },
+      {
+        "mode": "practice",
+        "contentType": "ctf",
+        "title": "OWASP FinBot CTF",
+        "description": "Practice prompt injection, tool misuse, policy bypass, data exfiltration, privilege escalation, and other agentic risks in a live CTF.",
+        "url": "https://owasp-finbot-ctf.org/",
+        "provider": "OWASP GenAI Security Project",
+        "durationLabel": "Self-paced",
+        "isOfficial": true,
+        "access": "free",
+        "verifiedContentType": true,
+        "verifiedAt": "2026-07-26",
+        "verificationSource": "official-ctf-platform"
+      }
+    ]
+  }
 ]

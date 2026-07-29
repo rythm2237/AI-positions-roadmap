@@ -2,6 +2,7 @@
 
 ## Product
 - Product_Bible.md — Product vision and philosophy.
+- Public_Beta_Scope.md — Temporary public exposure, catalog, and completeness rules.
 
 ## Engineering
 - Engineering_Bible.md — Architecture and engineering standards.

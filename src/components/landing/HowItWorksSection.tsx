@@ -13,7 +13,7 @@ const steps = [
     ),
     title: "Discover your AI role",
     description:
-      "Browse 10+ AI career paths or use the CV Analyzer to receive a personalized recommendation based on your background, goals, and learning style.",
+      "Explore the focused catalog, understand how each role contributes to AI and digital transformation, and choose a direction with confidence.",
     accent: "from-indigo-500 to-violet-600",
     glow:   "rgba(99,102,241,0.35)",
     dim:    "rgba(99,102,241,0.06)",
@@ -58,7 +58,7 @@ const steps = [
     ),
     title: "Become job-ready",
     description:
-      "Track your progress, complete milestones, earn certificates, and finish with a portfolio that proves you are ready for the AI job market.",
+      "Track your progress, complete milestones, and finish with practical evidence that supports your next career move.",
     accent: "from-cyan-500 to-blue-600",
     glow:   "rgba(6,182,212,0.35)",
     dim:    "rgba(6,182,212,0.06)",
