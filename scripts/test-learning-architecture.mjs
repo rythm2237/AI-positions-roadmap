@@ -14,6 +14,34 @@ assert.doesNotMatch(learning, /const\s+(phases|modules)\s*=\s*\[/);
 assert.match(learning, /isJourneyStageUnlocked/);
 assert.match(learning, /resolveCareerStepReferences/);
 assert.match(learning, /Career OS Role Validation/);
+assert.match(learning, /<EffortEstimate estimate=\{current\.estimatedEffort\}/);
+assert.doesNotMatch(learning, /label="Duration"/);
+
+const effortComponent = fs.readFileSync("src/components/career/EffortEstimate.tsx", "utf8");
+assert.match(effortComponent, /Estimated effort/);
+assert.match(effortComponent, /Resources/);
+assert.match(effortComponent, /Activities/);
+assert.match(effortComponent, /Assessment/);
+assert.match(effortComponent, /estimate\.ongoing/);
+
+const aiEngineer = fs.readFileSync("src/data/careers/ai-engineer.ts", "utf8");
+const journeyStageSource = aiEngineer.slice(
+  aiEngineer.indexOf("journeyStages: ["),
+  aiEngineer.indexOf("phases: [")
+);
+const effortPattern =
+  /estimatedEffort:\s*\{\s*minMinutes:\s*(\d+),\s*maxMinutes:\s*(\d+),\s*breakdown:\s*\{\s*resources:\s*\{\s*minMinutes:\s*(\d+),\s*maxMinutes:\s*(\d+)\s*\},\s*activities:\s*\{\s*minMinutes:\s*(\d+),\s*maxMinutes:\s*(\d+)\s*\},\s*assessment:\s*\{\s*minMinutes:\s*(\d+),\s*maxMinutes:\s*(\d+)\s*\}/g;
+const effortEstimates = [...journeyStageSource.matchAll(effortPattern)];
+assert.equal(effortEstimates.length, 13);
+for (const estimate of effortEstimates) {
+  const [min, max, resourcesMin, resourcesMax, activitiesMin, activitiesMax, assessmentMin, assessmentMax] =
+    estimate.slice(1).map(Number);
+  assert.equal(min, resourcesMin + activitiesMin + assessmentMin);
+  assert.equal(max, resourcesMax + activitiesMax + assessmentMax);
+  assert.ok(min > 0 && max >= min);
+}
+assert.equal((journeyStageSource.match(/ongoing:\s*\{/g) ?? []).length, 2);
+assert.doesNotMatch(journeyStageSource, /\bduration:\s*"(?:Ongoing|\d)/);
 
 const resolver = fs.readFileSync("src/lib/references/referenceResolver.ts", "utf8");
 assert.match(resolver, /timestampSeconds/);
@@ -32,6 +60,8 @@ assert.match(workspace, /left-\[76px\]/);
 assert.doesNotMatch(workspace, /if \(isRoadmapMode\) return/);
 assert.doesNotMatch(workspace, /bg-\[#eadfca\]/);
 assert.match(workspace, /aria-label="Back to Career Universe"/);
+assert.match(workspace, /<EffortEstimate estimate=\{stage\.estimatedEffort\} compact/);
+assert.doesNotMatch(workspace, /Duration: \{stage\.duration\}/);
 
 const journeyEngine = fs.readFileSync("src/components/career/journey-engine/CareerJourneyEngine.tsx", "utf8");
 assert.match(journeyEngine, /Phase: \{stage\.title\}/);

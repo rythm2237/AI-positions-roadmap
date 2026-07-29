@@ -2,6 +2,7 @@
 
 import { motion, useReducedMotion } from "framer-motion";
 import ReferenceLearningChooser from "@/components/career/resources/ReferenceLearningChooser";
+import { EffortEstimate } from "@/components/career/EffortEstimate";
 import {
   getJourneyStageProgress,
   isJourneyStageUnlocked,
@@ -193,8 +194,8 @@ export default function LearningWorkspace({
               </p>
             ) : null}
 
-            <div className="mt-5 grid gap-3 sm:grid-cols-3">
-              <Info label="Duration" value={current.duration} />
+            <div className="mt-5 grid gap-3 lg:grid-cols-[2fr_1fr_1fr]">
+              <EffortEstimate estimate={current.estimatedEffort} />
               <Info label="Required level" value="Intermediate" />
               <Info
                 label="Step progress"

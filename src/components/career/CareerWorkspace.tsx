@@ -6,6 +6,7 @@ import React, { useEffect, useMemo, useRef, useState } from "react";
 import CareerJourneyEngine from "@/components/career/journey-engine/CareerJourneyEngine";
 import LearningWorkspace from "@/components/career/learning/LearningWorkspace";
 import ReferenceLearningChooser from "@/components/career/resources/ReferenceLearningChooser";
+import { EffortEstimate } from "@/components/career/EffortEstimate";
 import { aiEngineerCareer } from "@/data/careers/ai-engineer";
 import { CAREER_NAV_ITEMS, careerSectionHref } from "@/lib/careerNavigation";
 import {
@@ -1611,7 +1612,7 @@ function StationDetailsModal({
             {!unlocked ? <p className="mt-3 rounded-xl border border-amber-300/25 bg-amber-500/10 p-3 text-sm text-amber-100">Complete the previous stations to unlock this step. Starting activities is disabled, but you can review the station plan and requirements.</p> : null}
             <div className="mt-4 grid gap-3 sm:grid-cols-3">
               <ProgressBar value={getJourneyStageProgress(stage.id, career, progress)} label="Station progress" />
-              <div className="rounded-xl border border-white/10 bg-white/[0.035] p-3 text-sm text-slate-300">Duration: {stage.duration}</div>
+              <EffortEstimate estimate={stage.estimatedEffort} compact />
               <div className="rounded-xl border border-white/10 bg-white/[0.035] p-3 text-sm text-slate-300">Passing score: {stage.test.passingScore}%</div>
             </div>
           </div>

@@ -1,4 +1,5 @@
 import { aiEngineerCareer } from "@/data/careers/ai-engineer";
+import { formatEffortRange } from "@/lib/careerEffort";
 import { validateJourneyData } from "@/lib/journey/validateJourneyData";
 import type { CareerResource, CareerJourneyStage } from "@/types/careerWorkspace";
 import type { CareerJourneyData, JourneyResource, JourneyStationVisualType } from "@/types/careerJourney";
@@ -25,7 +26,9 @@ const stations = aiEngineerCareer.journeyStages.map((stage, index, stages) => ({
   description: stage.explanation,
   position: { x: stage.x, y: stage.y },
   visualType: visualType[stage.type],
-  estimatedTime: stage.duration,
+  estimatedTime: stage.estimatedEffort
+    ? formatEffortRange(stage.estimatedEffort)
+    : "Estimate pending",
   prerequisites: index ? [stages[index - 1].id] : [],
   lessons: stage.lessons.map((title, lessonIndex) => ({ id: `${stage.id}-lesson-${lessonIndex + 1}`, title })),
   resources: stage.resources.map((resource) => ({

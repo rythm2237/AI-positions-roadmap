@@ -153,6 +153,22 @@ export interface CareerJourneyTask {
   type: "lesson" | "resource" | "project" | "portfolio" | "career" | "interview" | "job-search";
 }
 
+export interface CareerEffortRange {
+  minMinutes: number;
+  maxMinutes: number;
+}
+
+export interface CareerJourneyEffortEstimate extends CareerEffortRange {
+  breakdown: {
+    resources: CareerEffortRange;
+    activities: CareerEffortRange;
+    assessment: CareerEffortRange;
+  };
+  ongoing?: {
+    note: string;
+  };
+}
+
 export interface CareerJourneyStage {
   id: string;
   order: number;
@@ -166,7 +182,9 @@ export interface CareerJourneyStage {
   y: number;
   connections?: string[];
   terrain?: CareerJourneyTerrainType[];
-  duration: string;
+  /** @deprecated Use estimatedEffort for planning and UI. */
+  duration?: string;
+  estimatedEffort?: CareerJourneyEffortEstimate;
   summary: string;
   explanation: string;
   lessons: string[];
