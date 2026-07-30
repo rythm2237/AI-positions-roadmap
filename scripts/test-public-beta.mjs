@@ -11,10 +11,10 @@ const waitlist = fs.readFileSync("src/components/landing/WaitlistSection.tsx", "
 const world = fs.readFileSync("src/components/opening-scene/World.tsx", "utf8");
 const proxy = fs.readFileSync("src/proxy.ts", "utf8");
 
-const approvedTitles = ["AI Engineer", "AI Product Manager", "AI Automation Engineer", "Intelligent Automation Engineer", "Microsoft Copilot Consultant", "AI Integration Specialist", "AI Workflow Architect", "AI Solutions Consultant", "AI Transformation Consultant", "Business AI Consultant", "Enterprise AI Consultant", "AI Adoption Consultant", "Data Analyst", "BI Developer", "Data Engineer", "Data Scientist", "AI Knowledge Engineer", "Cloud Engineer", "DevOps Engineer", "Cybersecurity Analyst", "Generative Engine Optimization (GEO) Specialist", "AI Marketing Specialist", "AI Content Strategist"];
+const approvedTitles = ["AI Engineer", "AI Product Manager", "AI Automation Specialist", "Intelligent Automation Engineer", "Microsoft Copilot Consultant", "AI Integration Specialist", "AI Workflow Architect", "AI Solutions Consultant", "AI Transformation Consultant", "Business AI Consultant", "Enterprise AI Consultant", "AI Adoption Consultant", "Data Analyst", "BI Developer", "Data Engineer", "Data Scientist", "AI Knowledge Engineer", "Cloud Engineer", "DevOps Engineer", "Cybersecurity Analyst", "Generative Engine Optimization (GEO) Specialist", "AI Marketing Specialist", "AI Content Strategist"];
 for (const title of approvedTitles) assert.ok(catalog.includes(`"${title}"`), `Missing approved career: ${title}`);
 for (const generic of ["Software Engineer", "Frontend Developer", "Backend Developer", "Full Stack Developer"]) assert.ok(!catalog.includes(`"${generic}"`), `Generic career leaked into catalog: ${generic}`);
-assert.equal((catalog.match(/"available", "\/careers\//g) ?? []).length, 1, "Only AI Engineer should have an available public route");
+assert.equal((catalog.match(/"available",\s*"\/careers\//g) ?? []).length, 2, "AI Engineer and AI Automation Specialist should have available public routes");
 assert.match(positions, /CAREER_DOMAINS/);
 assert.match(waitlist, /CAREER_CATALOG/);
 assert.match(world, /CAREER_CATALOG\.map/);

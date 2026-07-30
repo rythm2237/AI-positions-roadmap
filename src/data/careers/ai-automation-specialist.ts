@@ -7,6 +7,7 @@ import {
   createPhaseAssessment as phaseExam,
   createSectionQuestions as stageQuestions,
 } from "@/content/assessments/assessmentBank";
+import { CAREER_ASSESSMENT_PASSING_SCORE } from "@/lib/assessmentPolicy";
 
 const resources = {
   powerAutomateDocs: {
@@ -142,7 +143,7 @@ function stationTest(
     id: `${id}-test`,
     title,
     description: `Complete this Career OS station check for ${topic}. Questions are original and non-official.`,
-    passingScore: 80,
+    passingScore: CAREER_ASSESSMENT_PASSING_SCORE,
     durationMinutes,
     questions: stageQuestions(id, topic, completionSignal),
   };
@@ -321,6 +322,15 @@ export const aiAutomationSpecialistCareer: CareerWorkspaceData = {
       x: 150,
       y: 250,
       duration: "2-3 days",
+      estimatedEffort: {
+        minMinutes: 300,
+        maxMinutes: 480,
+        breakdown: {
+          resources: { minMinutes: 120, maxMinutes: 180 },
+          activities: { minMinutes: 150, maxMinutes: 240 },
+          assessment: { minMinutes: 30, maxMinutes: 60 },
+        },
+      },
       summary:
         "Understand the role, choose a target stack, assess your starting point, and define the business problems you want to solve.",
       explanation:
@@ -375,6 +385,15 @@ export const aiAutomationSpecialistCareer: CareerWorkspaceData = {
       x: 430,
       y: 430,
       duration: "4-6 weeks",
+      estimatedEffort: {
+        minMinutes: 2400,
+        maxMinutes: 3600,
+        breakdown: {
+          resources: { minMinutes: 900, maxMinutes: 1200 },
+          activities: { minMinutes: 1200, maxMinutes: 1800 },
+          assessment: { minMinutes: 300, maxMinutes: 600 },
+        },
+      },
       summary:
         "Learn process discovery, BPMN-style thinking, requirements, data basics, APIs, authentication, Git, and scripting fundamentals.",
       explanation:
@@ -434,6 +453,15 @@ export const aiAutomationSpecialistCareer: CareerWorkspaceData = {
       x: 730,
       y: 230,
       duration: "6-8 weeks",
+      estimatedEffort: {
+        minMinutes: 3600,
+        maxMinutes: 5400,
+        breakdown: {
+          resources: { minMinutes: 1200, maxMinutes: 1800 },
+          activities: { minMinutes: 1980, maxMinutes: 3000 },
+          assessment: { minMinutes: 420, maxMinutes: 600 },
+        },
+      },
       summary:
         "Build deterministic workflows with triggers, conditions, loops, connectors, approvals, reusable components, and controlled state.",
       explanation:
@@ -493,6 +521,15 @@ export const aiAutomationSpecialistCareer: CareerWorkspaceData = {
       x: 1030,
       y: 470,
       duration: "8-10 weeks",
+      estimatedEffort: {
+        minMinutes: 4200,
+        maxMinutes: 6000,
+        breakdown: {
+          resources: { minMinutes: 1500, maxMinutes: 2100 },
+          activities: { minMinutes: 2100, maxMinutes: 3000 },
+          assessment: { minMinutes: 600, maxMinutes: 900 },
+        },
+      },
       summary:
         "Integrate language models, structured outputs, prompt systems, tools, retrieval, agents, and human review into business workflows.",
       explanation:
@@ -553,6 +590,15 @@ export const aiAutomationSpecialistCareer: CareerWorkspaceData = {
       x: 1360,
       y: 250,
       duration: "6-8 weeks",
+      estimatedEffort: {
+        minMinutes: 3000,
+        maxMinutes: 4500,
+        breakdown: {
+          resources: { minMinutes: 1080, maxMinutes: 1500 },
+          activities: { minMinutes: 1500, maxMinutes: 2400 },
+          assessment: { minMinutes: 420, maxMinutes: 600 },
+        },
+      },
       summary:
         "Connect business systems securely using APIs, webhooks, databases, files, queues, connectors, and reusable integration services.",
       explanation:
@@ -612,6 +658,15 @@ export const aiAutomationSpecialistCareer: CareerWorkspaceData = {
       x: 1680,
       y: 440,
       duration: "6-8 weeks",
+      estimatedEffort: {
+        minMinutes: 3000,
+        maxMinutes: 4500,
+        breakdown: {
+          resources: { minMinutes: 1080, maxMinutes: 1500 },
+          activities: { minMinutes: 1500, maxMinutes: 2400 },
+          assessment: { minMinutes: 420, maxMinutes: 600 },
+        },
+      },
       summary:
         "Make automations observable, secure, supportable, testable, compliant, and resilient to changing systems and data.",
       explanation:
@@ -672,6 +727,15 @@ export const aiAutomationSpecialistCareer: CareerWorkspaceData = {
       x: 1990,
       y: 250,
       duration: "8-12 weeks",
+      estimatedEffort: {
+        minMinutes: 4800,
+        maxMinutes: 7200,
+        breakdown: {
+          resources: { minMinutes: 1200, maxMinutes: 1800 },
+          activities: { minMinutes: 3000, maxMinutes: 4500 },
+          assessment: { minMinutes: 600, maxMinutes: 900 },
+        },
+      },
       summary:
         "Deliver realistic automation systems that combine workflow logic, AI, integrations, controls, documentation, and measurable impact.",
       explanation:
@@ -733,6 +797,15 @@ export const aiAutomationSpecialistCareer: CareerWorkspaceData = {
       x: 1930,
       y: 820,
       duration: "2-4 weeks",
+      estimatedEffort: {
+        minMinutes: 1200,
+        maxMinutes: 2400,
+        breakdown: {
+          resources: { minMinutes: 240, maxMinutes: 480 },
+          activities: { minMinutes: 840, maxMinutes: 1680 },
+          assessment: { minMinutes: 120, maxMinutes: 240 },
+        },
+      },
       summary:
         "Package your strongest systems as business-focused case studies with architecture, demos, metrics, controls, and lessons learned.",
       explanation:
@@ -783,6 +856,15 @@ export const aiAutomationSpecialistCareer: CareerWorkspaceData = {
       x: 1580,
       y: 1080,
       duration: "1-2 weeks",
+      estimatedEffort: {
+        minMinutes: 480,
+        maxMinutes: 960,
+        breakdown: {
+          resources: { minMinutes: 120, maxMinutes: 240 },
+          activities: { minMinutes: 300, maxMinutes: 600 },
+          assessment: { minMinutes: 60, maxMinutes: 120 },
+        },
+      },
       summary:
         "Translate automation work into credible resume bullets, LinkedIn positioning, GitHub proof, and role-specific professional language.",
       explanation:
@@ -833,6 +915,15 @@ export const aiAutomationSpecialistCareer: CareerWorkspaceData = {
       x: 1210,
       y: 840,
       duration: "1-2 weeks",
+      estimatedEffort: {
+        minMinutes: 480,
+        maxMinutes: 960,
+        breakdown: {
+          resources: { minMinutes: 120, maxMinutes: 240 },
+          activities: { minMinutes: 300, maxMinutes: 600 },
+          assessment: { minMinutes: 60, maxMinutes: 120 },
+        },
+      },
       summary:
         "Target the right titles, companies, industries, stacks, and seniority levels while running a measurable application and networking system.",
       explanation:
@@ -887,6 +978,15 @@ export const aiAutomationSpecialistCareer: CareerWorkspaceData = {
       x: 850,
       y: 1110,
       duration: "2-4 weeks",
+      estimatedEffort: {
+        minMinutes: 1200,
+        maxMinutes: 2400,
+        breakdown: {
+          resources: { minMinutes: 300, maxMinutes: 600 },
+          activities: { minMinutes: 720, maxMinutes: 1440 },
+          assessment: { minMinutes: 180, maxMinutes: 360 },
+        },
+      },
       summary:
         "Practice process discovery, workflow architecture, AI boundaries, integration design, reliability, governance, ROI, and stakeholder communication.",
       explanation:
@@ -942,6 +1042,15 @@ export const aiAutomationSpecialistCareer: CareerWorkspaceData = {
       x: 500,
       y: 860,
       duration: "1 week",
+      estimatedEffort: {
+        minMinutes: 480,
+        maxMinutes: 900,
+        breakdown: {
+          resources: { minMinutes: 120, maxMinutes: 180 },
+          activities: { minMinutes: 240, maxMinutes: 480 },
+          assessment: { minMinutes: 120, maxMinutes: 240 },
+        },
+      },
       summary:
         "Review technical skill, business analysis, portfolio evidence, governance, communication, and job readiness as one professional system.",
       explanation:
@@ -1002,6 +1111,18 @@ export const aiAutomationSpecialistCareer: CareerWorkspaceData = {
       x: 240,
       y: 1240,
       duration: "Ongoing",
+      estimatedEffort: {
+        minMinutes: 300,
+        maxMinutes: 600,
+        breakdown: {
+          resources: { minMinutes: 60, maxMinutes: 120 },
+          activities: { minMinutes: 180, maxMinutes: 360 },
+          assessment: { minMinutes: 60, maxMinutes: 120 },
+        },
+        ongoing: {
+          note: "Repeat this weekly while applying, interviewing, and improving portfolio evidence.",
+        },
+      },
       summary:
         "Run a disciplined application, networking, interview, and continuous-learning system while improving your portfolio from market feedback.",
       explanation:
@@ -1642,7 +1763,7 @@ export const aiAutomationSpecialistCareer: CareerWorkspaceData = {
   progressRules: {
     readinessThreshold: 80,
     minimumProjects: 3,
-    minimumQuizScore: 80,
+    minimumQuizScore: 60,
   },
   jobBoard: {
     title: "AI Automation Career Opportunities",

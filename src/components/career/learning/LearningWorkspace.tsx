@@ -3,8 +3,10 @@
 import { motion, useReducedMotion } from "framer-motion";
 import ReferenceLearningChooser from "@/components/career/resources/ReferenceLearningChooser";
 import { EffortEstimate } from "@/components/career/EffortEstimate";
+import { isQualifiedResult } from "@/lib/assessmentPolicy";
 import {
   getJourneyStageProgress,
+  isJourneyAssessmentUnlocked,
   isJourneyStageUnlocked,
 } from "@/lib/careerWorkspaceProgress";
 import { resolveCareerStepReferences } from "@/lib/references/referenceResolver";
@@ -68,19 +70,22 @@ export default function LearningWorkspace({
   );
 
   const completed = career.journeyStages.filter(
-    (stage) => progress.assessmentResults[stage.test.id]?.passed
+    (stage) => isQualifiedResult(progress.assessmentResults[stage.test.id])
   ).length;
 
   const overall = Math.round(
     (completed / career.journeyStages.length) * 100
   );
 
-  const phaseAssessmentUnlocked = Boolean(
-    progress.assessmentResults[current.test.id]?.passed
+  const phaseAssessmentUnlocked = isJourneyAssessmentUnlocked(
+    current.id,
+    "phase",
+    career,
+    progress
   );
 
   const allComplete = career.journeyStages.every(
-    (stage) => progress.assessmentResults[stage.test.id]?.passed
+    (stage) => isQualifiedResult(progress.assessmentResults[stage.test.id])
   );
 
   return (
@@ -132,8 +137,8 @@ export default function LearningWorkspace({
               career,
               progress
             );
-            const passed = Boolean(
-              progress.assessmentResults[stage.test.id]?.passed
+            const passed = isQualifiedResult(
+              progress.assessmentResults[stage.test.id]
             );
 
             return (
@@ -299,8 +304,8 @@ export default function LearningWorkspace({
                 onClick={() => onOpenAssessment(current, "section")}
                 className="btn-primary disabled:cursor-not-allowed disabled:opacity-40"
               >
-                {progress.assessmentResults[current.test.id]?.passed
-                  ? "Retry Section Check"
+                {isQualifiedResult(progress.assessmentResults[current.test.id])
+                  ? "Qualified · Retry Section Check"
                   : "Start Section Check"}
               </button>
               <button

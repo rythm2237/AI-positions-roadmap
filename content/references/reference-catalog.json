@@ -221,6 +221,79 @@
     ]
   },
   {
+    "id": "journey-ms-ai-credentials",
+    "title": "Microsoft AI Certification Study Guides",
+    "provider": "Microsoft Learn",
+    "description": "Official Microsoft study guides and practice-oriented objectives for current Azure AI engineering and AI fundamentals credentials.",
+    "type": "learning-path",
+    "canonicalUrl": "https://learn.microsoft.com/en-us/credentials/certifications/resources/study-guides/ai-103",
+    "isOfficial": true,
+    "topics": [
+      "cloud-ai",
+      "azure",
+      "certification"
+    ],
+    "skillLevels": [
+      "Beginner",
+      "Intermediate"
+    ],
+    "languages": [
+      "en"
+    ],
+    "priority": "recommended",
+    "access": "free",
+    "durationLabel": "Objective-based study guides",
+    "segments": [],
+    "status": "active",
+    "lastVerifiedAt": "2026-07-30",
+    "reviewIntervalDays": 60,
+    "nextReviewAt": "2026-09-28",
+    "learningOptions": [
+      {
+        "mode": "reading",
+        "contentType": "learning-path",
+        "title": "AI-103 study guide",
+        "description": "Review the official skills measured for designing and implementing Microsoft Azure AI solutions.",
+        "url": "https://learn.microsoft.com/en-us/credentials/certifications/resources/study-guides/ai-103",
+        "provider": "Microsoft Learn",
+        "durationLabel": "Objective-based guide",
+        "isOfficial": true,
+        "access": "free",
+        "verifiedContentType": true,
+        "verifiedAt": "2026-07-30",
+        "verificationSource": "official-study-guide"
+      },
+      {
+        "mode": "video",
+        "contentType": "video",
+        "title": "Introduction to Azure AI",
+        "description": "Watch Microsoft's official overview of Azure AI concepts and services before using the objective-based study guides.",
+        "url": "https://learn.microsoft.com/en-us/shows/azure-videos/intro-to-azure-ai",
+        "provider": "Microsoft Learn",
+        "durationLabel": "Introductory video",
+        "isOfficial": true,
+        "access": "free",
+        "verifiedContentType": true,
+        "verifiedAt": "2026-07-30",
+        "verificationSource": "official-study-guide"
+      },
+      {
+        "mode": "practice",
+        "contentType": "guided-module",
+        "title": "Microsoft certification practice assessments",
+        "description": "Use Microsoft's official practice assessments where available to identify learning gaps.",
+        "url": "https://learn.microsoft.com/en-us/credentials/certifications/practice-assessments-for-microsoft-certifications",
+        "provider": "Microsoft Learn",
+        "durationLabel": "Varies by credential",
+        "isOfficial": true,
+        "access": "free",
+        "verifiedContentType": true,
+        "verifiedAt": "2026-07-30",
+        "verificationSource": "official-practice-assessment-index"
+      }
+    ]
+  },
+  {
     "id": "journey-gcp-skills",
     "title": "Google Cloud Vertex AI Foundations",
     "provider": "Google Cloud Skills Boost",

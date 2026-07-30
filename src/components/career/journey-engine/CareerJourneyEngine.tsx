@@ -2,6 +2,7 @@
 
 import { motion, useReducedMotion } from "framer-motion";
 import React from "react";
+import { isQualifiedResult } from "@/lib/assessmentPolicy";
 import type { CareerJourneyStage } from "@/types/careerWorkspace";
 import type { JourneyEngineProps } from "./types";
 import { getWorldSize, useJourneyCamera } from "./useJourneyCamera";
@@ -141,7 +142,7 @@ export default function CareerJourneyEngine(props: JourneyEngineProps) {
               <path d={camera.path} stroke="url(#expedition-route)" strokeOpacity=".48" strokeWidth="3.4" strokeLinecap="round"/>
               <path d={camera.path} stroke="url(#expedition-route)" strokeOpacity=".92" strokeWidth="1.3" strokeLinecap="round" strokeDasharray="3 12"/>
             </svg>
-            {stages.map((stage, index) => <StationLandmark key={stage.id} stage={stage} active={(guidedMode ? focusedStage : selectedStage).id === stage.id} unlocked={isStageUnlocked(stage.id)} passed={Boolean(progress.assessmentResults[stage.test.id]?.passed)} progress={getStageProgress(stage.id)} technologyLevel={index / Math.max(1, stages.length - 1)} guidedMode={guidedMode} transitioning={travelling} onSelect={() => onSelectStage(stage)}/>)}
+            {stages.map((stage, index) => <StationLandmark key={stage.id} stage={stage} active={(guidedMode ? focusedStage : selectedStage).id === stage.id} unlocked={isStageUnlocked(stage.id)} passed={isQualifiedResult(progress.assessmentResults[stage.test.id])} progress={getStageProgress(stage.id)} technologyLevel={index / Math.max(1, stages.length - 1)} guidedMode={guidedMode} transitioning={travelling} onSelect={() => onSelectStage(stage)}/>)}
           </TreasureMapSurface>
         </div>
       </div>

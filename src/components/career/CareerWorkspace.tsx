@@ -10,6 +10,10 @@ import { EffortEstimate } from "@/components/career/EffortEstimate";
 import { aiEngineerCareer } from "@/data/careers/ai-engineer";
 import { CAREER_NAV_ITEMS, careerSectionHref } from "@/lib/careerNavigation";
 import {
+  isQualifiedResult,
+  isQualifiedScore,
+} from "@/lib/assessmentPolicy";
+import {
   resolveReference,
   resolveReferenceSegment,
 } from "@/lib/references/referenceResolver";
@@ -17,6 +21,7 @@ import {
   defaultCareerWorkspaceProgress,
   getCareerWorkspaceStats,
   getJourneyStageProgress,
+  isJourneyAssessmentUnlocked,
   isJourneyStageUnlocked,
   loadCareerWorkspaceProgress,
   saveCareerWorkspaceProgress,
@@ -428,12 +433,19 @@ export default function CareerWorkspace({
   }
 
   function startLearning() {
-    const lastActive = career.journeyStages.find((stage) => stage.id === progress.lastActiveStageId && isJourneyStageUnlocked(stage.id, career, progress) && !progress.assessmentResults[stage.test.id]?.passed);
+    const lastActive = career.journeyStages.find(
+      (stage) =>
+        stage.id === progress.lastActiveStageId &&
+        isJourneyStageUnlocked(stage.id, career, progress) &&
+        !isQualifiedResult(progress.assessmentResults[stage.test.id])
+    );
     const firstUnlockedIncomplete = lastActive ??
       career.journeyStages.find((stage) => {
         const unlocked = isJourneyStageUnlocked(stage.id, career, progress);
-        const passed = progress.assessmentResults[stage.test.id]?.passed;
-        return unlocked && !passed;
+        const qualified = isQualifiedResult(
+          progress.assessmentResults[stage.test.id]
+        );
+        return unlocked && !qualified;
       }) ?? career.journeyStages[0];
 
     setSelectedStageId(firstUnlockedIncomplete.id);
@@ -508,6 +520,30 @@ export default function CareerWorkspace({
   }
 
   function openAssessment(assessment: CareerAssessment, stageId?: string) {
+    if (stageId) {
+      const stage = career.journeyStages.find((item) => item.id === stageId);
+      const assessmentType =
+        stage?.phaseExam?.id === assessment.id ? "phase" : "station";
+
+      if (
+        !stage ||
+        !isJourneyAssessmentUnlocked(
+          stageId,
+          assessmentType,
+          career,
+          progress
+        )
+      ) {
+        setRoadmapNotification(
+          assessmentType === "phase"
+            ? "Qualify in this step’s Section Check before starting the Phase Assessment."
+            : "You can’t start this step yet. Qualify in every previous step first."
+        );
+        window.setTimeout(() => setRoadmapNotification(""), 4000);
+        return;
+      }
+    }
+
     const answerOrders = Object.fromEntries(
       assessment.questions.map((question) => [question.id, shuffleIndexes(question.answers.length)])
     );
@@ -533,7 +569,7 @@ export default function CareerWorkspace({
     const result: CareerAssessmentResult = {
       assessmentId: examSession.assessment.id,
       score,
-      passed: score >= examSession.assessment.passingScore,
+      passed: isQualifiedScore(score),
       submittedAt: new Date().toISOString(),
       reviewTopics: Array.from(new Set(reviewTopics)),
       attemptId: `attempt-${Date.now()}`,
@@ -1412,7 +1448,13 @@ function ExamsModule({
     <div className="grid gap-3 lg:grid-cols-2">
       {assessments.map(({ assessment, stage, type }) => {
         const result = progress.assessmentResults[assessment.id];
-        const unlocked = isJourneyStageUnlocked(stage.id, career, progress);
+        const unlocked = isJourneyAssessmentUnlocked(
+          stage.id,
+          type,
+          career,
+          progress
+        );
+        const qualified = isQualifiedResult(result);
         return (
           <PanelCard key={assessment.id}>
             <div className="flex items-start justify-between gap-3">
@@ -1423,9 +1465,9 @@ function ExamsModule({
               </div>
               {!unlocked ? <Icon name="lock" className="h-5 w-5 text-slate-500" /> : null}
             </div>
-            {result ? <p className={`mt-3 text-sm ${result.passed ? "text-emerald-300" : "text-rose-300"}`}>Latest score: {result.score}%</p> : null}
+            {result ? <p className={`mt-3 text-sm ${qualified ? "text-emerald-300" : "text-rose-300"}`}>{qualified ? "Qualified" : "Needs review"} · Latest score: {result.score}%</p> : null}
             <button type="button" disabled={!unlocked} onClick={() => openAssessment(assessment, stage.id)} className={`mt-4 min-h-11 rounded-xl border px-3 py-2 text-xs font-semibold ${shellButton(false, !unlocked)}`}>
-              {result?.passed ? "Retake" : "Start"}
+              {qualified ? "Retake" : "Start"}
             </button>
           </PanelCard>
         );
@@ -1588,6 +1630,14 @@ function StationDetailsModal({
   const unlocked = isJourneyStageUnlocked(stage.id, career, progress);
   const testResult = progress.assessmentResults[stage.test.id];
   const phaseResult = stage.phaseExam ? progress.assessmentResults[stage.phaseExam.id] : undefined;
+  const testQualified = isQualifiedResult(testResult);
+  const phaseQualified = isQualifiedResult(phaseResult);
+  const phaseUnlocked = isJourneyAssessmentUnlocked(
+    stage.id,
+    "phase",
+    career,
+    progress
+  );
 
   return (
     <AnimatePresence>
@@ -1636,8 +1686,8 @@ function StationDetailsModal({
                 <PanelCard>
                   <h3 className="text-lg font-semibold text-white">Assessment</h3>
                   <p className="mt-2 text-sm leading-6 text-slate-400">{stage.test.description}</p>
-                  {testResult ? <p className={`mt-2 text-sm ${testResult.passed ? "text-emerald-300" : "text-rose-300"}`}>Latest station score: {testResult.score}%</p> : null}
-                  {testResult && !testResult.passed && testResult.reviewTopics.length > 0 ? <p className="mt-2 text-sm text-amber-200">Review: {testResult.reviewTopics.join(", ")}</p> : null}
+                  {testResult ? <p className={`mt-2 text-sm ${testQualified ? "text-emerald-300" : "text-rose-300"}`}>{testQualified ? "Qualified" : "Needs review"} · Latest station score: {testResult.score}%</p> : null}
+                  {testResult && !testQualified && testResult.reviewTopics.length > 0 ? <p className="mt-2 text-sm text-amber-200">Review: {testResult.reviewTopics.join(", ")}</p> : null}
                   <div className="mt-3 flex flex-wrap gap-2">
                     <button type="button" aria-disabled={!unlocked} onClick={() => unlocked ? openAssessment(stage.test, stage.id) : notifyLockedStage()} className={`min-h-11 rounded-xl border px-4 py-2 text-sm font-semibold ${shellButton(false, !unlocked)}`}>
                       Take Test
@@ -1651,9 +1701,10 @@ function StationDetailsModal({
                   <PanelCard>
                     <h3 className="text-lg font-semibold text-white">Phase exam-style assessment</h3>
                     <p className="mt-2 text-sm leading-6 text-slate-400">{stage.phaseExam.description}</p>
-                    {phaseResult ? <p className={`mt-2 text-sm ${phaseResult.passed ? "text-emerald-300" : "text-rose-300"}`}>Latest exam score: {phaseResult.score}%</p> : null}
-                    <button type="button" aria-disabled={!unlocked} onClick={() => unlocked ? openAssessment(stage.phaseExam as CareerAssessment, stage.id) : notifyLockedStage()} className={`mt-3 min-h-11 rounded-xl border px-4 py-2 text-sm font-semibold ${shellButton(false, !unlocked)}`}>
-                      Start Phase Exam
+                    {phaseResult ? <p className={`mt-2 text-sm ${phaseQualified ? "text-emerald-300" : "text-rose-300"}`}>{phaseQualified ? "Qualified" : "Needs review"} · Latest exam score: {phaseResult.score}%</p> : null}
+                    {!phaseUnlocked ? <p className="mt-2 text-sm text-amber-200">Qualify in the Section Check to unlock this assessment.</p> : null}
+                    <button type="button" disabled={!phaseUnlocked} onClick={() => openAssessment(stage.phaseExam as CareerAssessment, stage.id)} className={`mt-3 min-h-11 rounded-xl border px-4 py-2 text-sm font-semibold ${shellButton(false, !phaseUnlocked)}`}>
+                      {phaseQualified ? "Retake Phase Assessment" : "Start Phase Assessment"}
                     </button>
                   </PanelCard>
                 ) : null}
@@ -1788,8 +1839,8 @@ function AssessmentModal({
             ) : (
               <div className="space-y-4">
                 <PanelCard>
-                  <p className={session.result?.passed ? "text-emerald-300" : "text-rose-300"}>
-                    Score: {session.result?.score}% / {session.result?.passed ? "Passed" : "Needs review"}
+                  <p className={isQualifiedResult(session.result) ? "text-emerald-300" : "text-rose-300"}>
+                    Score: {session.result?.score}% / {isQualifiedResult(session.result) ? "Qualified" : "Needs review"}
                   </p>
                   {session.result?.reviewTopics.length ? (
                     <p className="mt-2 text-sm text-slate-300">Review: {session.result.reviewTopics.join(", ")}</p>
