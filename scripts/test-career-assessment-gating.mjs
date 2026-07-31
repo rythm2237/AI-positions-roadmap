@@ -38,13 +38,18 @@ assert.match(policy, /CAREER_ASSESSMENT_QUESTION_COUNT\s*=\s*5/);
 assert.match(policy, /CAREER_SECTION_QUESTION_POOL_SIZE\s*=\s*15/);
 assert.match(policy, /CAREER_PHASE_ASSESSMENT_PASSING_SCORE\s*=\s*70/);
 assert.match(policy, /CAREER_PHASE_ASSESSMENT_QUESTION_COUNT\s*=\s*20/);
+assert.match(policy, /CAREER_TOPIC_REQUIRED_CORRECT_ANSWERS\s*=\s*3/);
+assert.match(policy, /CAREER_COMPREHENSIVE_REQUIRED_CORRECT_ANSWERS\s*=\s*14/);
+assert.match(policy, /didPassAssessment/);
+assert.match(policy, /assessmentType\s*===\s*"comprehensive"/);
 assert.match(policy, /return Boolean\(result\?\.passed\)/);
 assert.match(progress, /\.slice\(0,\s*stageIndex\)[\s\S]*\.every\(/);
-assert.match(progress, /const requiredAssessment = stage\.phaseExam \?\? stage\.test/);
+assert.match(progress, /stage\.phaseExam[\s\S]*progress\.assessmentResults\[stage\.phaseExam\.id\]/);
 assert.match(progress, /isAssessmentQualified\(/);
 assert.match(progress, /isJourneyAssessmentUnlocked/);
+assert.match(progress, /stage\.topicAssessments[\s\S]*\.every\(\(assessment\)/);
 assert.match(workspace, /isJourneyAssessmentUnlocked\([\s\S]*assessmentType/);
-assert.match(learning, /"phase"[\s\S]*career,[\s\S]*progress/);
+assert.match(learning, /"comprehensive"[\s\S]*career,[\s\S]*progress/);
 
 for (const stageId of activeStageIds) {
   assert.match(
@@ -60,13 +65,25 @@ const sectionFactory = bank.slice(
 );
 assert.match(sectionFactory, /CAREER_SECTION_QUESTION_POOL_SIZE/);
 assert.match(sectionFactory, /\`\$\{stageId\}-q15\`/);
+assert.match(sectionFactory, /createTopicAssessment/);
+assert.match(sectionFactory, /assessmentType:\s*"topic"/);
+assert.match(sectionFactory, /questionsPerAttempt:\s*CAREER_ASSESSMENT_QUESTION_COUNT/);
 assert.match(bank, /passingScore:\s*CAREER_ASSESSMENT_PASSING_SCORE/);
 assert.match(bank, /passingScore:\s*CAREER_PHASE_ASSESSMENT_PASSING_SCORE/);
+assert.match(bank, /assessmentType:\s*"comprehensive"/);
 assert.match(bank, /questionsPerAttempt:\s*CAREER_PHASE_ASSESSMENT_QUESTION_COUNT/);
 assert.match(bank, /Array\.from\(\{\s*length:\s*15\s*\}/);
 assert.match(bank, /applyCareerAssessmentPolicy/);
+assert.match(bank, /stage\.lessons\.map\(\(topic,\s*topicIndex\)/);
+assert.match(bank, /topicAssessments:\s*stage\.lessons\.map/);
+assert.match(bank, /stage\.lessons\.join\(", "\)/);
 assert.match(workspace, /questionsPerAttempt\s*\?\?\s*assessment\.questions\.length/);
-assert.match(workspace, /passed:\s*score\s*>=\s*examSession\.assessment\.passingScore/);
+assert.match(workspace, /shuffleIndexes\(question\.answers\.length\)/);
+assert.match(workspace, /passed:\s*didPassAssessment\(examSession\.assessment,\s*correctCount\)/);
+assert.match(workspace, /topicAssessments\.map\(\(assessment\)/);
+assert.match(learning, /current\.topicAssessments[\s\S]*\.map\(\(assessment\)/);
+assert.doesNotMatch(workspace, /stage\.phaseExam\s*\?\?\s*stage\.test/);
+assert.doesNotMatch(learning, /stage\.phaseExam\s*\?\?\s*stage\.test/);
 
 const automationJourney = automation.slice(
   automation.indexOf("journeyStages:"),

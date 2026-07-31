@@ -10,6 +10,7 @@ import { EffortEstimate } from "@/components/career/EffortEstimate";
 import { aiEngineerCareer } from "@/data/careers/ai-engineer";
 import { CAREER_NAV_ITEMS, careerSectionHref } from "@/lib/careerNavigation";
 import {
+  didPassAssessment,
   isAssessmentQualified,
   isQualifiedResult,
 } from "@/lib/assessmentPolicy";
@@ -193,20 +194,20 @@ function allAssessments(
 ): Array<{
   assessment: CareerAssessment;
   stage: CareerJourneyStage;
-  type: "station" | "phase";
+  type: "topic" | "comprehensive";
 }> {
   return career.journeyStages.flatMap((stage) => [
-    {
-      assessment: stage.test,
+    ...(stage.topicAssessments ?? []).map((assessment) => ({
+      assessment,
       stage,
-      type: "station" as const,
-    },
+      type: "topic" as const,
+    })),
     ...(stage.phaseExam
       ? [
           {
             assessment: stage.phaseExam,
             stage,
-            type: "phase" as const,
+            type: "comprehensive" as const,
           },
         ]
       : []),
@@ -217,12 +218,15 @@ function validateJourneyData(career: CareerWorkspaceData): string[] {
   return career.journeyStages.flatMap((stage) => {
     const warnings: string[] = [];
 
-    if (stage.test.questions.length < 5) {
-      warnings.push(`${stage.title} station test has fewer than 5 questions.`);
+    if ((stage.topicAssessments ?? []).length !== stage.lessons.length) {
+      warnings.push(`${stage.title} does not have one assessment per topic.`);
+    }
+    if ((stage.topicAssessments ?? []).some((assessment) => assessment.questions.length !== 15)) {
+      warnings.push(`${stage.title} has a topic assessment without 15 questions.`);
     }
 
-    if (stage.phaseExam && stage.phaseExam.questions.length < 5) {
-      warnings.push(`${stage.title} phase exam has fewer than 5 questions.`);
+    if (!stage.phaseExam || stage.phaseExam.questions.length !== 20) {
+      warnings.push(`${stage.title} comprehensive assessment must have 20 questions.`);
     }
 
     return warnings;
@@ -435,13 +439,15 @@ export default function CareerWorkspace({
   function startLearning() {
     const lastActive = career.journeyStages.find(
       (stage) => {
-        const requiredAssessment = stage.phaseExam ?? stage.test;
         return (
           stage.id === progress.lastActiveStageId &&
           isJourneyStageUnlocked(stage.id, career, progress) &&
-          !isAssessmentQualified(
-            requiredAssessment,
-            progress.assessmentResults[requiredAssessment.id]
+          !Boolean(
+            stage.phaseExam &&
+              isAssessmentQualified(
+                stage.phaseExam,
+                progress.assessmentResults[stage.phaseExam.id]
+              )
           )
         );
       }
@@ -449,10 +455,12 @@ export default function CareerWorkspace({
     const firstUnlockedIncomplete = lastActive ??
       career.journeyStages.find((stage) => {
         const unlocked = isJourneyStageUnlocked(stage.id, career, progress);
-        const requiredAssessment = stage.phaseExam ?? stage.test;
-        const qualified = isAssessmentQualified(
-          requiredAssessment,
-          progress.assessmentResults[requiredAssessment.id]
+        const qualified = Boolean(
+          stage.phaseExam &&
+            isAssessmentQualified(
+              stage.phaseExam,
+              progress.assessmentResults[stage.phaseExam.id]
+            )
         );
         return unlocked && !qualified;
       }) ?? career.journeyStages[0];
@@ -532,7 +540,9 @@ export default function CareerWorkspace({
     if (stageId) {
       const stage = career.journeyStages.find((item) => item.id === stageId);
       const assessmentType =
-        stage?.phaseExam?.id === assessment.id ? "phase" : "station";
+        assessment.assessmentType === "comprehensive"
+          ? "comprehensive"
+          : "topic";
 
       if (
         !stage ||
@@ -544,8 +554,8 @@ export default function CareerWorkspace({
         )
       ) {
         setRoadmapNotification(
-          assessmentType === "phase"
-            ? "Qualify in this step’s Section Check before starting the Phase Assessment."
+          assessmentType === "comprehensive"
+            ? "Pass every topic assessment in this step before starting the comprehensive assessment."
             : "You can’t start this step yet. Qualify in every previous step first."
         );
         window.setTimeout(() => setRoadmapNotification(""), 4000);
@@ -588,8 +598,9 @@ export default function CareerWorkspace({
       .map((question) => question.relatedTopic);
     const result: CareerAssessmentResult = {
       assessmentId: examSession.assessment.id,
+      assessmentType: examSession.assessment.assessmentType,
       score,
-      passed: score >= examSession.assessment.passingScore,
+      passed: didPassAssessment(examSession.assessment, correctCount),
       submittedAt: new Date().toISOString(),
       reviewTopics: Array.from(new Set(reviewTopics)),
       attemptId: `attempt-${Date.now()}`,
@@ -679,7 +690,7 @@ export default function CareerWorkspace({
                 selectedStageId={selectedStageId}
                 onSelectStage={(id) => { setSelectedStageId(id); updateProgress((previous) => ({ ...previous, lastActiveStageId: id })); window.history.replaceState({}, "", careerSectionHref(career.slug, "learning", id)); }}
                 onOpenNote={openNote}
-                onOpenAssessment={(stage, kind) => { const assessment = kind === "phase" ? stage.phaseExam : stage.test; if (assessment) openAssessment(assessment, stage.id); }}
+                onOpenAssessment={(assessment, stageId) => openAssessment(assessment, stageId)}
                 onViewResource={(id) => updateProgress((previous) => ({ ...previous, completedResources: previous.completedResources.includes(id) ? previous.completedResources : [...previous.completedResources, id], resourceViewedAt: { ...previous.resourceViewedAt, [id]: new Date().toISOString() } }))}
               />
             ) : (
@@ -1290,7 +1301,7 @@ function ModuleScene({
   progress: CareerWorkspaceProgress;
   stats: ReturnType<typeof getCareerWorkspaceStats>;
   resources: CareerResource[];
-  assessments: Array<{ assessment: CareerAssessment; stage: CareerJourneyStage; type: "station" | "phase" }>;
+  assessments: Array<{ assessment: CareerAssessment; stage: CareerJourneyStage; type: "topic" | "comprehensive" }>;
   noteFilter: CareerNote["contextType"] | "all";
   setNoteFilter: (filter: CareerNote["contextType"] | "all") => void;
   openNote: (contextType: CareerNote["contextType"], contextId: string, contextLabel: string) => void;
@@ -1459,7 +1470,7 @@ function ExamsModule({
   progress,
   openAssessment,
 }: {
-  assessments: Array<{ assessment: CareerAssessment; stage: CareerJourneyStage; type: "station" | "phase" }>;
+  assessments: Array<{ assessment: CareerAssessment; stage: CareerJourneyStage; type: "topic" | "comprehensive" }>;
   progress: CareerWorkspaceProgress;
   openAssessment: (assessment: CareerAssessment, stageId?: string) => void;
 }) {
@@ -1474,12 +1485,12 @@ function ExamsModule({
           career,
           progress
         );
-        const qualified = isQualifiedResult(result);
+        const qualified = isAssessmentQualified(assessment, result);
         return (
           <PanelCard key={assessment.id}>
             <div className="flex items-start justify-between gap-3">
               <div>
-                <p className="label-sm text-ai-300">{type === "phase" ? "Phase exam" : "Station test"} / {stage.title}</p>
+                <p className="label-sm text-ai-300">{type === "comprehensive" ? "Comprehensive assessment" : `Topic assessment · ${assessment.topicLabel}`} / {stage.title}</p>
                 <h3 className="mt-2 font-semibold text-white">{assessment.title}</h3>
                 <p className="mt-2 text-sm leading-6 text-slate-400">{assessment.description}</p>
               </div>
@@ -1648,15 +1659,20 @@ function StationDetailsModal({
   if (!stage) return null;
 
   const unlocked = isJourneyStageUnlocked(stage.id, career, progress);
-  const testResult = progress.assessmentResults[stage.test.id];
+  const topicAssessments = stage.topicAssessments ?? [];
+  const passedTopicCount = topicAssessments.filter((assessment) =>
+    isAssessmentQualified(
+      assessment,
+      progress.assessmentResults[assessment.id]
+    )
+  ).length;
   const phaseResult = stage.phaseExam ? progress.assessmentResults[stage.phaseExam.id] : undefined;
-  const testQualified = isQualifiedResult(testResult);
   const phaseQualified = stage.phaseExam
     ? isAssessmentQualified(stage.phaseExam, phaseResult)
     : false;
   const phaseUnlocked = isJourneyAssessmentUnlocked(
     stage.id,
-    "phase",
+    "comprehensive",
     career,
     progress
   );
@@ -1685,7 +1701,7 @@ function StationDetailsModal({
             <div className="mt-4 grid gap-3 sm:grid-cols-3">
               <ProgressBar value={getJourneyStageProgress(stage.id, career, progress)} label="Station progress" />
               <EffortEstimate estimate={stage.estimatedEffort} compact />
-              <div className="rounded-xl border border-white/10 bg-white/[0.035] p-3 text-sm text-slate-300">Passing score: {stage.test.passingScore}%</div>
+              <div className="rounded-xl border border-white/10 bg-white/[0.035] p-3 text-sm text-slate-300">Topic pass mark: 3 of 5 correct</div>
             </div>
           </div>
 
@@ -1706,18 +1722,25 @@ function StationDetailsModal({
                   </div>
                 </PanelCard>
                 <PanelCard>
-                  <h3 className="text-lg font-semibold text-white">Assessment</h3>
-                  <p className="mt-2 text-sm leading-6 text-slate-400">{stage.test.description}</p>
-                  {testResult ? <p className={`mt-2 text-sm ${testQualified ? "text-emerald-300" : "text-rose-300"}`}>{testQualified ? "Qualified" : "Needs review"} · Latest station score: {testResult.score}%</p> : null}
-                  {testResult && !testQualified && testResult.reviewTopics.length > 0 ? <p className="mt-2 text-sm text-amber-200">Review: {testResult.reviewTopics.join(", ")}</p> : null}
-                  <div className="mt-3 flex flex-wrap gap-2">
-                    <button type="button" aria-disabled={!unlocked} onClick={() => unlocked ? openAssessment(stage.test, stage.id) : notifyLockedStage()} className={`min-h-11 rounded-xl border px-4 py-2 text-sm font-semibold ${shellButton(false, !unlocked)}`}>
-                      Take Test
-                    </button>
-                    <button type="button" onClick={() => openNote("step", stage.id, stage.title)} className={`min-h-11 rounded-xl border px-4 py-2 text-sm font-semibold ${shellButton(false)}`}>
-                      Note
-                    </button>
+                  <h3 className="text-lg font-semibold text-white">Topic assessments</h3>
+                  <p className="mt-2 text-sm leading-6 text-slate-400">Pass every topic independently. Each attempt selects 5 random questions from that topic’s 15-question bank.</p>
+                  <p className="mt-2 text-sm text-slate-300">{passedTopicCount} of {topicAssessments.length} topics qualified</p>
+                  <div className="mt-3 space-y-2">
+                    {topicAssessments.map((assessment) => {
+                      const result = progress.assessmentResults[assessment.id];
+                      const qualified = isAssessmentQualified(assessment, result);
+                      return (
+                        <div key={assessment.id} className="rounded-xl border border-white/10 p-3">
+                          <p className="text-sm font-medium text-white">{assessment.topicLabel}</p>
+                          {result ? <p className={`mt-1 text-xs ${qualified ? "text-emerald-300" : "text-rose-300"}`}>{qualified ? "Qualified" : "Needs review"} · {result.score}%</p> : null}
+                          <button type="button" aria-disabled={!unlocked} onClick={() => unlocked ? openAssessment(assessment, stage.id) : notifyLockedStage()} className={`mt-2 min-h-11 rounded-xl border px-4 py-2 text-sm font-semibold ${shellButton(false, !unlocked)}`}>
+                            {qualified ? "Retake Topic Assessment" : "Start Topic Assessment"}
+                          </button>
+                        </div>
+                      );
+                    })}
                   </div>
+                  <button type="button" onClick={() => openNote("step", stage.id, stage.title)} className={`mt-3 min-h-11 rounded-xl border px-4 py-2 text-sm font-semibold ${shellButton(false)}`}>Note</button>
                 </PanelCard>
                 {stage.phaseExam ? (
                   <PanelCard>
@@ -1725,7 +1748,7 @@ function StationDetailsModal({
                     <p className="mt-2 text-sm leading-6 text-slate-400">{stage.phaseExam.description}</p>
                     {phaseResult ? <p className={`mt-2 text-sm ${phaseQualified ? "text-emerald-300" : "text-rose-300"}`}>{phaseQualified ? "Qualified" : "Needs review"} · Latest exam score: {phaseResult.score}%</p> : null}
                     <p className="mt-2 text-sm text-slate-400">20 scenario questions · 70% required · passing unlocks the next step.</p>
-                    {!phaseUnlocked ? <p className="mt-2 text-sm text-amber-200">Qualify in the Section Check to unlock this assessment.</p> : null}
+                    {!phaseUnlocked ? <p className="mt-2 text-sm text-amber-200">Pass all {topicAssessments.length} topic assessments to unlock this assessment.</p> : null}
                     <button type="button" disabled={!phaseUnlocked} onClick={() => openAssessment(stage.phaseExam as CareerAssessment, stage.id)} className={`mt-3 min-h-11 rounded-xl border px-4 py-2 text-sm font-semibold ${shellButton(false, !phaseUnlocked)}`}>
                       {phaseQualified ? "Retake Comprehensive Assessment" : "Start Comprehensive Assessment"}
                     </button>

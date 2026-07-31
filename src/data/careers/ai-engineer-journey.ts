@@ -1,7 +1,7 @@
 import { aiEngineerCareer } from "@/data/careers/ai-engineer";
 import { formatEffortRange } from "@/lib/careerEffort";
 import { validateJourneyData } from "@/lib/journey/validateJourneyData";
-import type { CareerResource, CareerJourneyStage } from "@/types/careerWorkspace";
+import type { CareerAssessment, CareerResource, CareerJourneyStage } from "@/types/careerWorkspace";
 import type { CareerJourneyData, JourneyResource, JourneyStationVisualType } from "@/types/careerJourney";
 
 const access = (cost: CareerResource["cost"]): JourneyResource["access"] =>
@@ -37,7 +37,11 @@ const stations = aiEngineerCareer.journeyStages.map((stage, index, stages) => ({
     priority: resource.priority.toLowerCase() as JourneyResource["priority"], description: resource.whyUseful,
   })),
   missions: stage.tasks.map((task) => ({ ...task, required: true })),
-  test: { ...stage.test, required: true, kind: stage.type === "assessment" ? "final" as const : "station" as const },
+  test: {
+    ...(stage.topicAssessments?.[0] as CareerAssessment),
+    required: true,
+    kind: stage.type === "assessment" ? "final" as const : "station" as const,
+  },
   phaseTest: stage.phaseExam ? { ...stage.phaseExam, required: true, kind: "phase" as const } : undefined,
   noteContext: { careerId: aiEngineerCareer.slug, phaseId: `journey-phase-${stage.order}`, stationId: stage.id },
   previousStationId: stages[index - 1]?.id,

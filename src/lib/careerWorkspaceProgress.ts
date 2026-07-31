@@ -5,7 +5,6 @@ import type {
 } from "@/types/careerWorkspace";
 import {
   isAssessmentQualified,
-  isQualifiedResult,
   normalizeAssessmentProgress,
 } from "@/lib/assessmentPolicy";
 
@@ -69,7 +68,10 @@ export function getCareerWorkspaceStats(
   const resources = hasJourneyStages
     ? career.journeyStages.flatMap((stage) => stage.resources)
     : career.roadmap.flatMap((phase) => phase.lessons).flatMap((lesson) => lesson.resources);
-  const assessments = career.journeyStages.flatMap((stage) => [stage.test, stage.phaseExam].filter(Boolean));
+  const assessments = career.journeyStages.flatMap((stage) => [
+    ...(stage.topicAssessments ?? []),
+    stage.phaseExam,
+  ].filter(Boolean));
   const questions = hasJourneyStages
     ? assessments.flatMap((assessment) => assessment?.questions ?? [])
     : career.roadmap.flatMap((phase) => phase.quiz.questions);
@@ -156,26 +158,35 @@ export function isJourneyStageUnlocked(
   return career.journeyStages
     .slice(0, stageIndex)
     .every((stage) => {
-      const requiredAssessment = stage.phaseExam ?? stage.test;
-      return isAssessmentQualified(
-        requiredAssessment,
-        progress.assessmentResults[requiredAssessment.id]
+      return Boolean(
+        stage.phaseExam &&
+          isAssessmentQualified(
+            stage.phaseExam,
+            progress.assessmentResults[stage.phaseExam.id]
+          )
       );
     });
 }
 
 export function isJourneyAssessmentUnlocked(
   stageId: string,
-  assessmentType: "station" | "phase",
+  assessmentType: "topic" | "comprehensive",
   career: CareerWorkspaceData,
   progress: CareerWorkspaceProgress
 ): boolean {
   if (!isJourneyStageUnlocked(stageId, career, progress)) return false;
-  if (assessmentType === "station") return true;
+  if (assessmentType === "topic") return true;
 
   const stage = career.journeyStages.find((item) => item.id === stageId);
   return Boolean(
-    stage && isQualifiedResult(progress.assessmentResults[stage.test.id])
+    stage &&
+      (stage.topicAssessments ?? []).length === stage.lessons.length &&
+      (stage.topicAssessments ?? []).every((assessment) =>
+        isAssessmentQualified(
+          assessment,
+          progress.assessmentResults[assessment.id]
+        )
+      )
   );
 }
 
@@ -189,10 +200,14 @@ export function getJourneyStageProgress(
 
   const taskCount = stage.tasks.length;
   const resourceCount = stage.resources.length;
-  const assessmentCount = 1 + (stage.phaseExam ? 1 : 0);
+  const assessmentCount =
+    (stage.topicAssessments?.length ?? 0) + (stage.phaseExam ? 1 : 0);
   const completedTasks = stage.tasks.filter((task) => progress.completedStageTasks.includes(task.id)).length;
   const completedResources = stage.resources.filter((resource) => progress.completedResources.includes(resource.id)).length;
-  const passedAssessments = [stage.test, stage.phaseExam].filter(
+  const passedAssessments = [
+    ...(stage.topicAssessments ?? []),
+    stage.phaseExam,
+  ].filter(
     (assessment) =>
       assessment &&
       isAssessmentQualified(

@@ -477,6 +477,27 @@ export function createSectionQuestions(
   return questions;
 }
 
+export function createTopicAssessment(
+  stageId: string,
+  topic: string,
+  topicIndex: number,
+  completionSignal: string
+): CareerAssessment {
+  const topicId = `${stageId}-topic-${topicIndex + 1}`;
+  return {
+    id: `${topicId}-assessment`,
+    title: `${topic} topic assessment`,
+    description: `Five questions are selected from a 15-question bank focused on ${topic}.`,
+    assessmentType: "topic",
+    topicId,
+    topicLabel: topic,
+    passingScore: CAREER_ASSESSMENT_PASSING_SCORE,
+    durationMinutes: 10,
+    questionsPerAttempt: CAREER_ASSESSMENT_QUESTION_COUNT,
+    questions: createSectionQuestions(topicId, topic, completionSignal),
+  };
+}
+
 export function createPhaseAssessment(
   stageId: string,
   title: string,
@@ -489,6 +510,7 @@ export function createPhaseAssessment(
     id: `${stageId}-phase-exam`,
     title,
     description: `Original Career OS scenario assessment aligned with reputable learning objectives for ${topic}; it is not an official vendor exam.`,
+    assessmentType: "comprehensive",
     passingScore: CAREER_PHASE_ASSESSMENT_PASSING_SCORE,
     durationMinutes: 25,
     questionsPerAttempt: CAREER_PHASE_ASSESSMENT_QUESTION_COUNT,
@@ -672,20 +694,19 @@ export function applyCareerAssessmentPolicy(
 ): CareerWorkspaceData {
   return {
     ...career,
-    journeyStages: career.journeyStages.map((stage) => ({
-      ...stage,
-      test: {
-        ...stage.test,
-        passingScore: CAREER_ASSESSMENT_PASSING_SCORE,
-        questionsPerAttempt: CAREER_ASSESSMENT_QUESTION_COUNT,
-      },
-      phaseExam:
-        stage.phaseExam ??
-        createPhaseAssessment(
+    journeyStages: career.journeyStages.map((stage) => {
+      const { test: _legacyStepTest, ...activeStage } = stage;
+      return {
+        ...activeStage,
+        topicAssessments: stage.lessons.map((topic, topicIndex) =>
+          createTopicAssessment(stage.id, topic, topicIndex, stage.summary)
+        ),
+        phaseExam: createPhaseAssessment(
           stage.id,
           `${stage.title} comprehensive assessment`,
-          stage.summary
+          stage.lessons.join(", ")
         ),
-    })),
+      };
+    }),
   };
 }

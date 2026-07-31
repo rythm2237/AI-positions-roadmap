@@ -5,7 +5,6 @@ import ReferenceLearningChooser from "@/components/career/resources/ReferenceLea
 import { EffortEstimate } from "@/components/career/EffortEstimate";
 import {
   isAssessmentQualified,
-  isQualifiedResult,
 } from "@/lib/assessmentPolicy";
 import {
   getJourneyStageProgress,
@@ -14,7 +13,7 @@ import {
 } from "@/lib/careerWorkspaceProgress";
 import { resolveCareerStepReferences } from "@/lib/references/referenceResolver";
 import type {
-  CareerJourneyStage,
+  CareerAssessment,
   CareerNote,
   CareerWorkspaceData,
   CareerWorkspaceProgress,
@@ -31,8 +30,8 @@ type Props = {
     label: string
   ) => void;
   onOpenAssessment: (
-    stage: CareerJourneyStage,
-    kind: "section" | "phase"
+    assessment: CareerAssessment,
+    stageId: string
   ) => void;
   onViewResource: (id: string) => void;
 };
@@ -73,10 +72,12 @@ export default function LearningWorkspace({
   );
 
   const completed = career.journeyStages.filter((stage) => {
-    const requiredAssessment = stage.phaseExam ?? stage.test;
-    return isAssessmentQualified(
-      requiredAssessment,
-      progress.assessmentResults[requiredAssessment.id]
+    return Boolean(
+      stage.phaseExam &&
+        isAssessmentQualified(
+          stage.phaseExam,
+          progress.assessmentResults[stage.phaseExam.id]
+        )
     );
   }).length;
 
@@ -86,16 +87,18 @@ export default function LearningWorkspace({
 
   const phaseAssessmentUnlocked = isJourneyAssessmentUnlocked(
     current.id,
-    "phase",
+    "comprehensive",
     career,
     progress
   );
 
   const allComplete = career.journeyStages.every((stage) => {
-    const requiredAssessment = stage.phaseExam ?? stage.test;
-    return isAssessmentQualified(
-      requiredAssessment,
-      progress.assessmentResults[requiredAssessment.id]
+    return Boolean(
+      stage.phaseExam &&
+        isAssessmentQualified(
+          stage.phaseExam,
+          progress.assessmentResults[stage.phaseExam.id]
+        )
     );
   });
 
@@ -148,10 +151,12 @@ export default function LearningWorkspace({
               career,
               progress
             );
-            const requiredAssessment = stage.phaseExam ?? stage.test;
-            const passed = isAssessmentQualified(
-              requiredAssessment,
-              progress.assessmentResults[requiredAssessment.id]
+            const passed = Boolean(
+              stage.phaseExam &&
+                isAssessmentQualified(
+                  stage.phaseExam,
+                  progress.assessmentResults[stage.phaseExam.id]
+                )
             );
 
             return (
@@ -206,7 +211,7 @@ export default function LearningWorkspace({
 
             {!unlocked ? (
               <p className="mt-4 rounded-xl border border-amber-300/20 bg-amber-400/10 p-3 text-sm text-amber-100">
-                Complete the previous Roadmap station’s Section Check to
+                Complete the previous Roadmap step’s comprehensive assessment to
                 unlock actions. Objectives and requirements remain available
                 for planning.
               </p>
@@ -302,35 +307,33 @@ export default function LearningWorkspace({
           </article>
 
           <article className="rounded-3xl border border-white/10 bg-slate-950/70 p-5">
-            <h3 className="text-lg font-semibold text-white">
-              Section Check
-            </h3>
+            <h3 className="text-lg font-semibold text-white">Topic assessments</h3>
             <p className="mt-2 text-sm text-slate-400">
-              Answer {current.test.questionsPerAttempt ?? 5} questions selected
-              from a {current.test.questions.length}-question bank. A score of{" "}
-              {current.test.passingScore}% unlocks the comprehensive assessment.
+              Each learning topic has its own 15-question bank. Every attempt
+              randomly selects 5 questions; answer at least 3 correctly.
             </p>
-            <div className="mt-4 flex flex-wrap gap-2">
-              <button
-                type="button"
-                disabled={!unlocked}
-                onClick={() => onOpenAssessment(current, "section")}
-                className="btn-primary disabled:cursor-not-allowed disabled:opacity-40"
-              >
-                {isQualifiedResult(progress.assessmentResults[current.test.id])
-                  ? "Qualified · Retry Section Check"
-                  : "Start Section Check"}
-              </button>
-              <button
-                type="button"
-                onClick={() =>
-                  onOpenNote("step", current.id, current.title)
-                }
-                className="btn-secondary"
-              >
-                Open step notes
-              </button>
+            <div className="mt-4 grid gap-3 md:grid-cols-2">
+              {(current.topicAssessments ?? []).map((assessment) => {
+                const result = progress.assessmentResults[assessment.id];
+                const qualified = isAssessmentQualified(assessment, result);
+                return (
+                  <div key={assessment.id} className="rounded-2xl border border-white/10 bg-white/[.035] p-4">
+                    <h4 className="font-semibold text-white">{assessment.topicLabel}</h4>
+                    <p className="mt-1 text-xs text-slate-400">5 of 15 questions · 60% required</p>
+                    {result ? <p className={`mt-2 text-sm ${qualified ? "text-emerald-300" : "text-rose-300"}`}>{qualified ? "Qualified" : "Needs review"} · {result.score}%</p> : null}
+                    <button
+                      type="button"
+                      disabled={!unlocked}
+                      onClick={() => onOpenAssessment(assessment, current.id)}
+                      className="btn-primary mt-3 disabled:cursor-not-allowed disabled:opacity-40"
+                    >
+                      {qualified ? "Retry topic assessment" : "Start topic assessment"}
+                    </button>
+                  </div>
+                );
+              })}
             </div>
+            <button type="button" onClick={() => onOpenNote("step", current.id, current.title)} className="btn-secondary mt-4">Open step notes</button>
           </article>
         </main>
 
@@ -371,7 +374,7 @@ export default function LearningWorkspace({
             <button
               type="button"
               disabled={!phaseAssessmentUnlocked || !current.phaseExam}
-              onClick={() => onOpenAssessment(current, "phase")}
+              onClick={() => current.phaseExam && onOpenAssessment(current.phaseExam, current.id)}
               className="btn-secondary mt-3 w-full disabled:opacity-40"
             >
               {current.phaseExam

@@ -9,9 +9,30 @@ export const CAREER_ASSESSMENT_QUESTION_COUNT = 5;
 export const CAREER_SECTION_QUESTION_POOL_SIZE = 15;
 export const CAREER_PHASE_ASSESSMENT_PASSING_SCORE = 70;
 export const CAREER_PHASE_ASSESSMENT_QUESTION_COUNT = 20;
+export const CAREER_TOPIC_REQUIRED_CORRECT_ANSWERS = 3;
+export const CAREER_COMPREHENSIVE_REQUIRED_CORRECT_ANSWERS = 14;
 
-export function isQualifiedScore(score: number): boolean {
-  return Number.isFinite(score) && score >= CAREER_ASSESSMENT_PASSING_SCORE;
+export function getAssessmentPassingScore(
+  assessmentType: CareerAssessment["assessmentType"]
+): number {
+  return assessmentType === "comprehensive"
+    ? CAREER_PHASE_ASSESSMENT_PASSING_SCORE
+    : CAREER_ASSESSMENT_PASSING_SCORE;
+}
+
+export function getRequiredCorrectAnswers(
+  assessmentType: CareerAssessment["assessmentType"]
+): number {
+  return assessmentType === "comprehensive"
+    ? CAREER_COMPREHENSIVE_REQUIRED_CORRECT_ANSWERS
+    : CAREER_TOPIC_REQUIRED_CORRECT_ANSWERS;
+}
+
+export function didPassAssessment(
+  assessment: CareerAssessment,
+  correctCount: number
+): boolean {
+  return correctCount >= getRequiredCorrectAnswers(assessment.assessmentType);
 }
 
 export function isQualifiedResult(
@@ -37,10 +58,7 @@ function normalizeResult(
 ): CareerAssessmentResult {
   return {
     ...result,
-    passed:
-      typeof result.passed === "boolean"
-        ? result.passed
-        : isQualifiedScore(result.score),
+    passed: Boolean(result.passed),
     bestScore: Math.max(result.score, result.bestScore ?? result.score),
   };
 }
