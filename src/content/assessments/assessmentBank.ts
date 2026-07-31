@@ -481,20 +481,26 @@ export function createTopicAssessment(
   stageId: string,
   topic: string,
   topicIndex: number,
-  completionSignal: string
+  completionSignal: string,
+  courseId?: string
 ): CareerAssessment {
-  const topicId = `${stageId}-topic-${topicIndex + 1}`;
+  const assessmentScopeId = `${stageId}-course-${topicIndex + 1}`;
+  const topicId = courseId ?? assessmentScopeId;
   return {
-    id: `${topicId}-assessment`,
-    title: `${topic} topic assessment`,
-    description: `Five questions are selected from a 15-question bank focused on ${topic}.`,
+    id: `${assessmentScopeId}-assessment`,
+    title: `${topic} knowledge check`,
+    description: `A short knowledge check focused on the skills covered in ${topic}.`,
     assessmentType: "topic",
     topicId,
     topicLabel: topic,
     passingScore: CAREER_ASSESSMENT_PASSING_SCORE,
     durationMinutes: 10,
     questionsPerAttempt: CAREER_ASSESSMENT_QUESTION_COUNT,
-    questions: createSectionQuestions(topicId, topic, completionSignal),
+    questions: createSectionQuestions(
+      assessmentScopeId,
+      topic,
+      completionSignal
+    ),
   };
 }
 
@@ -698,13 +704,19 @@ export function applyCareerAssessmentPolicy(
       const { test: _legacyStepTest, ...activeStage } = stage;
       return {
         ...activeStage,
-        topicAssessments: stage.lessons.map((topic, topicIndex) =>
-          createTopicAssessment(stage.id, topic, topicIndex, stage.summary)
+        topicAssessments: stage.resources.map((course, courseIndex) =>
+          createTopicAssessment(
+            stage.id,
+            course.title,
+            courseIndex,
+            stage.summary,
+            course.id
+          )
         ),
         phaseExam: createPhaseAssessment(
           stage.id,
           `${stage.title} comprehensive assessment`,
-          stage.lessons.join(", ")
+          stage.resources.map((course) => course.title).join(", ")
         ),
       };
     }),
