@@ -555,7 +555,7 @@ export default function CareerWorkspace({
       ) {
         setRoadmapNotification(
           assessmentType === "comprehensive"
-            ? "Pass every topic assessment in this step before starting the comprehensive assessment."
+            ? "Pass every course check in this step before starting the comprehensive assessment."
             : "You can’t start this step yet. Qualify in every previous step first."
         );
         window.setTimeout(() => setRoadmapNotification(""), 4000);
@@ -1722,9 +1722,9 @@ function StationDetailsModal({
                   </div>
                 </PanelCard>
                 <PanelCard>
-                  <h3 className="text-lg font-semibold text-white">Topic assessments</h3>
-                  <p className="mt-2 text-sm leading-6 text-slate-400">Pass every topic independently. Each attempt selects 5 random questions from that topic’s 15-question bank.</p>
-                  <p className="mt-2 text-sm text-slate-300">{passedTopicCount} of {topicAssessments.length} topics qualified</p>
+                  <h3 className="text-lg font-semibold text-white">Course checks</h3>
+                  <p className="mt-2 text-sm leading-6 text-slate-400">Complete a short, fresh knowledge check after each course before moving to the step checkpoint.</p>
+                  <p className="mt-2 text-sm text-slate-300">{passedTopicCount} of {topicAssessments.length} course checks passed</p>
                   <div className="mt-3 space-y-2">
                     {topicAssessments.map((assessment) => {
                       const result = progress.assessmentResults[assessment.id];
@@ -1734,7 +1734,7 @@ function StationDetailsModal({
                           <p className="text-sm font-medium text-white">{assessment.topicLabel}</p>
                           {result ? <p className={`mt-1 text-xs ${qualified ? "text-emerald-300" : "text-rose-300"}`}>{qualified ? "Qualified" : "Needs review"} · {result.score}%</p> : null}
                           <button type="button" aria-disabled={!unlocked} onClick={() => unlocked ? openAssessment(assessment, stage.id) : notifyLockedStage()} className={`mt-2 min-h-11 rounded-xl border px-4 py-2 text-sm font-semibold ${shellButton(false, !unlocked)}`}>
-                            {qualified ? "Retake Topic Assessment" : "Start Topic Assessment"}
+                            {qualified ? "Try a New Check" : "Start Check"}
                           </button>
                         </div>
                       );
@@ -1748,7 +1748,7 @@ function StationDetailsModal({
                     <p className="mt-2 text-sm leading-6 text-slate-400">{stage.phaseExam.description}</p>
                     {phaseResult ? <p className={`mt-2 text-sm ${phaseQualified ? "text-emerald-300" : "text-rose-300"}`}>{phaseQualified ? "Qualified" : "Needs review"} · Latest exam score: {phaseResult.score}%</p> : null}
                     <p className="mt-2 text-sm text-slate-400">20 scenario questions · 70% required · passing unlocks the next step.</p>
-                    {!phaseUnlocked ? <p className="mt-2 text-sm text-amber-200">Pass all {topicAssessments.length} topic assessments to unlock this assessment.</p> : null}
+                    {!phaseUnlocked ? <p className="mt-2 text-sm text-amber-200">Pass all {topicAssessments.length} course checks to unlock this assessment.</p> : null}
                     <button type="button" disabled={!phaseUnlocked} onClick={() => openAssessment(stage.phaseExam as CareerAssessment, stage.id)} className={`mt-3 min-h-11 rounded-xl border px-4 py-2 text-sm font-semibold ${shellButton(false, !phaseUnlocked)}`}>
                       {phaseQualified ? "Retake Comprehensive Assessment" : "Start Comprehensive Assessment"}
                     </button>
