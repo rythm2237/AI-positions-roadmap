@@ -10,8 +10,8 @@ import { EffortEstimate } from "@/components/career/EffortEstimate";
 import { aiEngineerCareer } from "@/data/careers/ai-engineer";
 import { CAREER_NAV_ITEMS, careerSectionHref } from "@/lib/careerNavigation";
 import {
+  isAssessmentQualified,
   isQualifiedResult,
-  isQualifiedScore,
 } from "@/lib/assessmentPolicy";
 import {
   resolveReference,
@@ -434,16 +434,25 @@ export default function CareerWorkspace({
 
   function startLearning() {
     const lastActive = career.journeyStages.find(
-      (stage) =>
-        stage.id === progress.lastActiveStageId &&
-        isJourneyStageUnlocked(stage.id, career, progress) &&
-        !isQualifiedResult(progress.assessmentResults[stage.test.id])
+      (stage) => {
+        const requiredAssessment = stage.phaseExam ?? stage.test;
+        return (
+          stage.id === progress.lastActiveStageId &&
+          isJourneyStageUnlocked(stage.id, career, progress) &&
+          !isAssessmentQualified(
+            requiredAssessment,
+            progress.assessmentResults[requiredAssessment.id]
+          )
+        );
+      }
     );
     const firstUnlockedIncomplete = lastActive ??
       career.journeyStages.find((stage) => {
         const unlocked = isJourneyStageUnlocked(stage.id, career, progress);
-        const qualified = isQualifiedResult(
-          progress.assessmentResults[stage.test.id]
+        const requiredAssessment = stage.phaseExam ?? stage.test;
+        const qualified = isAssessmentQualified(
+          requiredAssessment,
+          progress.assessmentResults[requiredAssessment.id]
         );
         return unlocked && !qualified;
       }) ?? career.journeyStages[0];
@@ -544,14 +553,25 @@ export default function CareerWorkspace({
       }
     }
 
+    const attemptQuestionCount = Math.min(
+      assessment.questionsPerAttempt ?? assessment.questions.length,
+      assessment.questions.length
+    );
+    const attemptQuestions = shuffleIndexes(assessment.questions.length)
+      .slice(0, attemptQuestionCount)
+      .map((index) => assessment.questions[index]);
+    const attemptAssessment = {
+      ...assessment,
+      questions: attemptQuestions,
+    };
     const answerOrders = Object.fromEntries(
-      assessment.questions.map((question) => [question.id, shuffleIndexes(question.answers.length)])
+      attemptQuestions.map((question) => [question.id, shuffleIndexes(question.answers.length)])
     );
 
     setExamSession({
-      assessment,
+      assessment: attemptAssessment,
       stageId,
-      questionOrder: shuffleIndexes(assessment.questions.length),
+      questionOrder: shuffleIndexes(attemptQuestions.length),
       answerOrders,
       currentIndex: 0,
       selectedAnswers: {},
@@ -569,7 +589,7 @@ export default function CareerWorkspace({
     const result: CareerAssessmentResult = {
       assessmentId: examSession.assessment.id,
       score,
-      passed: isQualifiedScore(score),
+      passed: score >= examSession.assessment.passingScore,
       submittedAt: new Date().toISOString(),
       reviewTopics: Array.from(new Set(reviewTopics)),
       attemptId: `attempt-${Date.now()}`,
@@ -1631,7 +1651,9 @@ function StationDetailsModal({
   const testResult = progress.assessmentResults[stage.test.id];
   const phaseResult = stage.phaseExam ? progress.assessmentResults[stage.phaseExam.id] : undefined;
   const testQualified = isQualifiedResult(testResult);
-  const phaseQualified = isQualifiedResult(phaseResult);
+  const phaseQualified = stage.phaseExam
+    ? isAssessmentQualified(stage.phaseExam, phaseResult)
+    : false;
   const phaseUnlocked = isJourneyAssessmentUnlocked(
     stage.id,
     "phase",
@@ -1699,12 +1721,13 @@ function StationDetailsModal({
                 </PanelCard>
                 {stage.phaseExam ? (
                   <PanelCard>
-                    <h3 className="text-lg font-semibold text-white">Phase exam-style assessment</h3>
+                    <h3 className="text-lg font-semibold text-white">Comprehensive step assessment</h3>
                     <p className="mt-2 text-sm leading-6 text-slate-400">{stage.phaseExam.description}</p>
                     {phaseResult ? <p className={`mt-2 text-sm ${phaseQualified ? "text-emerald-300" : "text-rose-300"}`}>{phaseQualified ? "Qualified" : "Needs review"} · Latest exam score: {phaseResult.score}%</p> : null}
+                    <p className="mt-2 text-sm text-slate-400">20 scenario questions · 70% required · passing unlocks the next step.</p>
                     {!phaseUnlocked ? <p className="mt-2 text-sm text-amber-200">Qualify in the Section Check to unlock this assessment.</p> : null}
                     <button type="button" disabled={!phaseUnlocked} onClick={() => openAssessment(stage.phaseExam as CareerAssessment, stage.id)} className={`mt-3 min-h-11 rounded-xl border px-4 py-2 text-sm font-semibold ${shellButton(false, !phaseUnlocked)}`}>
-                      {phaseQualified ? "Retake Phase Assessment" : "Start Phase Assessment"}
+                      {phaseQualified ? "Retake Comprehensive Assessment" : "Start Comprehensive Assessment"}
                     </button>
                   </PanelCard>
                 ) : null}

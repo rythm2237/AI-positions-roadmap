@@ -1,10 +1,14 @@
 import {
   CAREER_ASSESSMENT_PASSING_SCORE,
   CAREER_ASSESSMENT_QUESTION_COUNT,
+  CAREER_PHASE_ASSESSMENT_PASSING_SCORE,
+  CAREER_PHASE_ASSESSMENT_QUESTION_COUNT,
+  CAREER_SECTION_QUESTION_POOL_SIZE,
 } from "@/lib/assessmentPolicy";
 import type {
   CareerAssessment,
   CareerQuizQuestion,
+  CareerWorkspaceData,
 } from "@/types/careerWorkspace";
 
 type StageAssessmentProfile = {
@@ -334,10 +338,140 @@ export function createSectionQuestions(
       topic,
       profile.referenceId
     ),
+    question(
+      `${stageId}-q6`,
+      `Before claiming proficiency in ${topic}, what should the learner verify?`,
+      `That the claimed capability is demonstrated by ${completionSignal}`,
+      [
+        "That the tool name appears on the resume",
+        "That one tutorial was watched without practice",
+        "That no limitations are mentioned",
+      ],
+      "A qualification claim should be supported by observable work and a clear completion signal.",
+      topic,
+      profile.referenceId
+    ),
+    question(
+      `${stageId}-q7`,
+      `A first attempt in ${topic} succeeds only on the happy path. What is the best next step?`,
+      "Test boundary, invalid, permission, and recovery scenarios before treating it as reliable",
+      [
+        "Publish it immediately",
+        "Remove error reporting",
+        "Add unrelated features",
+      ],
+      "Reliable work demonstrates how important failure paths are detected and handled.",
+      topic,
+      profile.referenceId
+    ),
+    question(
+      `${stageId}-q8`,
+      `Which review comment is most useful for improving work in ${topic}?`,
+      "A specific observation linked to a requirement, risk, or measurable outcome",
+      [
+        "Make it more impressive",
+        "Use more tools",
+        "It looks fine",
+      ],
+      "Actionable feedback is specific, evidence-based, and connected to the intended outcome.",
+      topic,
+      profile.referenceId
+    ),
+    question(
+      `${stageId}-q9`,
+      `When an official source and an old tutorial disagree about ${topic}, what should guide the implementation?`,
+      "Verify current behavior in the official documentation and record the applicable version",
+      [
+        "Use the oldest source",
+        "Choose the shortest explanation",
+        "Combine both without testing",
+      ],
+      "Current first-party documentation is the stronger source for platform-specific behavior.",
+      topic,
+      profile.referenceId
+    ),
+    question(
+      `${stageId}-q10`,
+      `Which practice best makes progress in ${topic} durable?`,
+      "Apply the concept in a bounded task, review the result, and record what failed and why",
+      [
+        "Repeat the same answer wording",
+        "Collect bookmarks without using them",
+        "Avoid feedback until the end",
+      ],
+      "Application, feedback, and reflection create stronger evidence than passive familiarity.",
+      topic,
+      profile.referenceId
+    ),
+    question(
+      `${stageId}-q11`,
+      `A solution for ${topic} meets the goal but is difficult to maintain. What is the strongest response?`,
+      "Simplify the design or document a justified trade-off with clear ownership",
+      [
+        "Hide the complexity",
+        "Assume future maintainers will understand it",
+        "Add another platform",
+      ],
+      "Maintainability and ownership are part of professional solution quality.",
+      topic,
+      profile.referenceId
+    ),
+    question(
+      `${stageId}-q12`,
+      `Which evidence best supports a decision made during ${topic}?`,
+      "A documented comparison using requirements, test results, risks, and constraints",
+      [
+        "Personal preference alone",
+        "A vendor logo",
+        "The number of available features",
+      ],
+      "A defensible decision connects the selected approach to evidence and constraints.",
+      topic,
+      profile.referenceId
+    ),
+    question(
+      `${stageId}-q13`,
+      `A learner repeatedly misses one objective in ${topic}. What is the most effective remediation?`,
+      "Return to the exact source section, build a focused example, and test the objective again",
+      [
+        "Retake immediately without review",
+        "Memorize the option position",
+        "Skip the objective permanently",
+      ],
+      "Targeted remediation addresses the missed objective before a fresh assessment attempt.",
+      topic,
+      profile.referenceId
+    ),
+    question(
+      `${stageId}-q14`,
+      `What should be recorded when completing practical work in ${topic}?`,
+      "Inputs, assumptions, decisions, results, failures, and the next improvement",
+      [
+        "Only the successful screenshot",
+        "Only time spent",
+        "Only the tool list",
+      ],
+      "A useful learning record preserves both evidence and reasoning.",
+      topic,
+      profile.referenceId
+    ),
+    question(
+      `${stageId}-q15`,
+      `Which outcome most strongly indicates readiness to continue beyond ${topic}?`,
+      "The learner can apply the objective in a new scenario and explain the trade-offs",
+      [
+        "The learner recognizes the terminology",
+        "The learner has opened every link",
+        "The learner can repeat one example exactly",
+      ],
+      "Transfer to a new scenario is stronger evidence of understanding than recognition or repetition.",
+      topic,
+      profile.referenceId
+    ),
   ];
 
-  if (questions.length !== CAREER_ASSESSMENT_QUESTION_COUNT) {
-    throw new Error(`Expected ${CAREER_ASSESSMENT_QUESTION_COUNT} questions for ${stageId}.`);
+  if (questions.length !== CAREER_SECTION_QUESTION_POOL_SIZE) {
+    throw new Error(`Expected ${CAREER_SECTION_QUESTION_POOL_SIZE} questions for ${stageId}.`);
   }
 
   return questions;
@@ -355,8 +489,9 @@ export function createPhaseAssessment(
     id: `${stageId}-phase-exam`,
     title,
     description: `Original Career OS scenario assessment aligned with reputable learning objectives for ${topic}; it is not an official vendor exam.`,
-    passingScore: CAREER_ASSESSMENT_PASSING_SCORE,
-    durationMinutes: 12,
+    passingScore: CAREER_PHASE_ASSESSMENT_PASSING_SCORE,
+    durationMinutes: 25,
+    questionsPerAttempt: CAREER_PHASE_ASSESSMENT_QUESTION_COUNT,
     questions: [
       question(
         `${stageId}-exam-q1`,
@@ -423,6 +558,134 @@ export function createPhaseAssessment(
         topic,
         referenceId
       ),
+      ...Array.from({ length: 15 }, (_, offset) => {
+        const number = offset + 6;
+        const scenarios = [
+          {
+            prompt: `A stakeholder asks to expand the ${topic} solution before its baseline is measured. What should happen first?`,
+            correct: "Measure the baseline and agree on acceptance criteria before expanding scope",
+            distractors: ["Expand immediately", "Remove the baseline", "Measure only feature count"],
+            explanation: "A baseline makes improvement and trade-offs measurable.",
+          },
+          {
+            prompt: `An important assumption in ${topic} has not been validated. What is the safest decision?`,
+            correct: "Make the assumption explicit and validate it with a bounded test before relying on it",
+            distractors: ["Treat it as fact", "Hide it from the review", "Add more dependencies"],
+            explanation: "Unverified assumptions should remain visible and be tested before consequential use.",
+          },
+          {
+            prompt: `A ${topic} implementation passes average-quality checks but fails for one high-impact group. How should it be evaluated?`,
+            correct: "Segment the results, address the high-impact failure, and define an appropriate release gate",
+            distractors: ["Report only the average", "Delete the segment", "Lower every quality check"],
+            explanation: "Important segmented failures cannot be hidden by an acceptable average.",
+          },
+          {
+            prompt: `The owner of a ${topic} control is leaving the team. What protects continuity?`,
+            correct: "Assign a new owner and verify the runbook, access, alerts, and recovery procedure",
+            distractors: ["Rely on memory", "Disable monitoring", "Remove the control"],
+            explanation: "Operational controls require explicit ownership and usable recovery documentation.",
+          },
+          {
+            prompt: `A lower-cost approach to ${topic} performs nearly as well as the preferred option. What is the best choice process?`,
+            correct: "Compare quality, risk, latency, maintenance, and total cost against the actual requirement",
+            distractors: ["Always choose the expensive option", "Ignore quality", "Select by brand recognition"],
+            explanation: "The correct trade-off depends on requirements and total operating impact.",
+          },
+          {
+            prompt: `A test set for ${topic} contains examples copied from the development work. What is the main concern?`,
+            correct: "The evaluation may overstate generalization because the evidence is not sufficiently independent",
+            distractors: ["The test set is too documented", "The project has too many owners", "The interface may be too simple"],
+            explanation: "Evaluation evidence should represent unseen or independently selected cases.",
+          },
+          {
+            prompt: `A change to ${topic} improves one metric but worsens a critical safety measure. What should the team do?`,
+            correct: "Apply the agreed safety gate and investigate the trade-off before release",
+            distractors: ["Release based on the improved metric", "Stop measuring safety", "Average the metrics without context"],
+            explanation: "Critical release gates should not be overridden by unrelated aggregate improvement.",
+          },
+          {
+            prompt: `Which handoff best supports another person maintaining ${topic}?`,
+            correct: "A reproducible setup, decision record, tests, monitoring, known limitations, and recovery steps",
+            distractors: ["A demo video only", "A tool list only", "An undocumented working environment"],
+            explanation: "A professional handoff covers reproduction, reasoning, validation, and operations.",
+          },
+          {
+            prompt: `A requirement for ${topic} conflicts with data-access policy. What is the correct response?`,
+            correct: "Redesign the solution within policy or obtain formal approval before accessing the data",
+            distractors: ["Bypass the policy for testing", "Use personal credentials", "Omit the access from documentation"],
+            explanation: "Policy and access boundaries are design constraints, not optional implementation details.",
+          },
+          {
+            prompt: `Users work around a technically successful ${topic} solution. What should be investigated first?`,
+            correct: "Observe the real workflow and identify usability, exception, trust, or incentive gaps",
+            distractors: ["Force adoption without review", "Add more dashboards", "Count deployment as success"],
+            explanation: "Adoption problems require evidence from the real operating workflow.",
+          },
+          {
+            prompt: `A retry in ${topic} can repeat a consequential side effect. Which control is most important?`,
+            correct: "Use idempotency or a durable state check before repeating the side effect",
+            distractors: ["Retry indefinitely", "Hide duplicate records", "Increase permissions"],
+            explanation: "Retries must not duplicate consequential actions.",
+          },
+          {
+            prompt: `A reviewer cannot reproduce the claimed result for ${topic}. What is the strongest correction?`,
+            correct: "Provide versioned inputs, dependencies, instructions, and evaluation steps, then rerun the result",
+            distractors: ["Ask the reviewer to trust the screenshot", "Remove the claim", "Change the metric"],
+            explanation: "Reproducibility turns a result into credible evidence.",
+          },
+          {
+            prompt: `A ${topic} release has no defined rollback. How should readiness be judged?`,
+            correct: "Treat recovery as incomplete and define a safe rollback or containment plan before release",
+            distractors: ["Release because rollback is rarely needed", "Disable alerts", "Assign recovery after an incident"],
+            explanation: "Safe recovery is part of production readiness.",
+          },
+          {
+            prompt: `What makes a limitation statement for ${topic} professionally useful?`,
+            correct: "It names the affected scenario, impact, evidence, and current mitigation",
+            distractors: ["It says results may vary", "It avoids all detail", "It blames the user"],
+            explanation: "Specific limitations help users and maintainers make safe decisions.",
+          },
+          {
+            prompt: `After completing ${topic}, what best demonstrates transferable understanding?`,
+            correct: "Solving a new scenario while explaining requirements, evidence, controls, and trade-offs",
+            distractors: ["Repeating the original tutorial", "Reciting definitions", "Selecting the same answer order"],
+            explanation: "Transfer requires applying the underlying objectives to a new scenario.",
+          },
+        ] as const;
+        const scenario = scenarios[offset];
+        return question(
+          `${stageId}-exam-q${number}`,
+          scenario.prompt,
+          scenario.correct,
+          [...scenario.distractors] as [string, string, string],
+          scenario.explanation,
+          topic,
+          referenceId
+        );
+      }),
     ],
+  };
+}
+
+export function applyCareerAssessmentPolicy(
+  career: CareerWorkspaceData
+): CareerWorkspaceData {
+  return {
+    ...career,
+    journeyStages: career.journeyStages.map((stage) => ({
+      ...stage,
+      test: {
+        ...stage.test,
+        passingScore: CAREER_ASSESSMENT_PASSING_SCORE,
+        questionsPerAttempt: CAREER_ASSESSMENT_QUESTION_COUNT,
+      },
+      phaseExam:
+        stage.phaseExam ??
+        createPhaseAssessment(
+          stage.id,
+          `${stage.title} comprehensive assessment`,
+          stage.summary
+        ),
+    })),
   };
 }

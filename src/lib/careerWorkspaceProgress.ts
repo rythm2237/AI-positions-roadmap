@@ -4,6 +4,7 @@ import type {
   CareerWorkspaceStats,
 } from "@/types/careerWorkspace";
 import {
+  isAssessmentQualified,
   isQualifiedResult,
   normalizeAssessmentProgress,
 } from "@/lib/assessmentPolicy";
@@ -80,7 +81,10 @@ export function getCareerWorkspaceStats(
   const passedAssessments = assessments.filter(
     (assessment) =>
       assessment &&
-      isQualifiedResult(progress.assessmentResults[assessment.id])
+      isAssessmentQualified(
+        assessment,
+        progress.assessmentResults[assessment.id]
+      )
   ).length;
   const completedQuizzes = hasJourneyStages ? passedAssessments : questions.filter((question) => progress.quizAnswers[question.id]?.correct).length;
   const completedTasks = tasks.filter((task) => progress.completedStageTasks.includes(task.id)).length;
@@ -151,9 +155,13 @@ export function isJourneyStageUnlocked(
 
   return career.journeyStages
     .slice(0, stageIndex)
-    .every((stage) =>
-      isQualifiedResult(progress.assessmentResults[stage.test.id])
-    );
+    .every((stage) => {
+      const requiredAssessment = stage.phaseExam ?? stage.test;
+      return isAssessmentQualified(
+        requiredAssessment,
+        progress.assessmentResults[requiredAssessment.id]
+      );
+    });
 }
 
 export function isJourneyAssessmentUnlocked(
@@ -187,7 +195,10 @@ export function getJourneyStageProgress(
   const passedAssessments = [stage.test, stage.phaseExam].filter(
     (assessment) =>
       assessment &&
-      isQualifiedResult(progress.assessmentResults[assessment.id])
+      isAssessmentQualified(
+        assessment,
+        progress.assessmentResults[assessment.id]
+      )
   ).length;
 
   return percent(completedTasks + completedResources + passedAssessments, taskCount + resourceCount + assessmentCount);

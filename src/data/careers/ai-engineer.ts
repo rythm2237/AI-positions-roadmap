@@ -1,5 +1,9 @@
 import type { CareerWorkspaceData } from "@/types/careerWorkspace";
-import { createPhaseAssessment as phaseExam, createSectionQuestions as stageQuestions } from "@/content/assessments/assessmentBank";
+import {
+  applyCareerAssessmentPolicy,
+  createPhaseAssessment as phaseExam,
+  createSectionQuestions as stageQuestions,
+} from "@/content/assessments/assessmentBank";
 
 const officialResources = {
   openaiDocs: {
@@ -147,7 +151,7 @@ const officialResources = {
   },
 };
 
-export const aiEngineerCareer: CareerWorkspaceData = {
+const aiEngineerCareerBase: CareerWorkspaceData = {
   slug: "ai-engineer",
   title: "AI Engineer",
   category: "Software Engineering / Artificial Intelligence",
@@ -1577,3 +1581,6 @@ export const aiEngineerCareer: CareerWorkspaceData = {
     ],
   },
 };
+
+export const aiEngineerCareer =
+  applyCareerAssessmentPolicy(aiEngineerCareerBase);

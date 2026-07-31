@@ -35,8 +35,13 @@ assert.equal(new Set(activeStageIds).size, 26, "active Journey step IDs must be 
 
 assert.match(policy, /CAREER_ASSESSMENT_PASSING_SCORE\s*=\s*60/);
 assert.match(policy, /CAREER_ASSESSMENT_QUESTION_COUNT\s*=\s*5/);
-assert.match(policy, /passed:\s*isQualifiedScore\(result\.score\)/);
+assert.match(policy, /CAREER_SECTION_QUESTION_POOL_SIZE\s*=\s*15/);
+assert.match(policy, /CAREER_PHASE_ASSESSMENT_PASSING_SCORE\s*=\s*70/);
+assert.match(policy, /CAREER_PHASE_ASSESSMENT_QUESTION_COUNT\s*=\s*20/);
+assert.match(policy, /return Boolean\(result\?\.passed\)/);
 assert.match(progress, /\.slice\(0,\s*stageIndex\)[\s\S]*\.every\(/);
+assert.match(progress, /const requiredAssessment = stage\.phaseExam \?\? stage\.test/);
+assert.match(progress, /isAssessmentQualified\(/);
 assert.match(progress, /isJourneyAssessmentUnlocked/);
 assert.match(workspace, /isJourneyAssessmentUnlocked\([\s\S]*assessmentType/);
 assert.match(learning, /"phase"[\s\S]*career,[\s\S]*progress/);
@@ -53,13 +58,15 @@ const sectionFactory = bank.slice(
   bank.indexOf("export function createSectionQuestions"),
   bank.indexOf("export function createPhaseAssessment")
 );
-assert.equal(
-  [...sectionFactory.matchAll(/\`\$\{stageId\}-q[1-5]\`/g)].length,
-  5,
-  "every Section Check must generate exactly five questions"
-);
+assert.match(sectionFactory, /CAREER_SECTION_QUESTION_POOL_SIZE/);
+assert.match(sectionFactory, /\`\$\{stageId\}-q15\`/);
 assert.match(bank, /passingScore:\s*CAREER_ASSESSMENT_PASSING_SCORE/);
-assert.doesNotMatch(bank, /passingScore:\s*(70|80)/);
+assert.match(bank, /passingScore:\s*CAREER_PHASE_ASSESSMENT_PASSING_SCORE/);
+assert.match(bank, /questionsPerAttempt:\s*CAREER_PHASE_ASSESSMENT_QUESTION_COUNT/);
+assert.match(bank, /Array\.from\(\{\s*length:\s*15\s*\}/);
+assert.match(bank, /applyCareerAssessmentPolicy/);
+assert.match(workspace, /questionsPerAttempt\s*\?\?\s*assessment\.questions\.length/);
+assert.match(workspace, /passed:\s*score\s*>=\s*examSession\.assessment\.passingScore/);
 
 const automationJourney = automation.slice(
   automation.indexOf("journeyStages:"),
@@ -82,5 +89,5 @@ for (const estimate of automationJourney.matchAll(
 }
 
 console.log(
-  `Career assessment gating validated: ${activeStageIds.length} steps, five questions each, 60% qualification.`
+  `Career assessment gating validated: ${activeStageIds.length} steps, randomized five-question checks, and 20-question comprehensive assessments at 70%.`
 );

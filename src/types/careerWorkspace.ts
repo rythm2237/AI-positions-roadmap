@@ -139,6 +139,7 @@ export interface CareerAssessment {
   description: string;
   passingScore: number;
   durationMinutes?: number;
+  questionsPerAttempt?: number;
   questions: CareerQuizQuestion[];
   officialPracticeLinks?: {
     title: string;

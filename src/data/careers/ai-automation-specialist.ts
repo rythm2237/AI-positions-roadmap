@@ -4,6 +4,7 @@ import type {
   CareerWorkspaceData,
 } from "@/types/careerWorkspace";
 import {
+  applyCareerAssessmentPolicy,
   createPhaseAssessment as phaseExam,
   createSectionQuestions as stageQuestions,
 } from "@/content/assessments/assessmentBank";
@@ -149,7 +150,7 @@ function stationTest(
   };
 }
 
-export const aiAutomationSpecialistCareer: CareerWorkspaceData = {
+const aiAutomationSpecialistCareerBase: CareerWorkspaceData = {
   slug: "ai-automation-specialist",
   title: "AI Automation Specialist",
   category: "AI / Automation / Business Systems",
@@ -1876,3 +1877,7 @@ export const aiAutomationSpecialistCareer: CareerWorkspaceData = {
     ],
   },
 };
+
+export const aiAutomationSpecialistCareer = applyCareerAssessmentPolicy(
+  aiAutomationSpecialistCareerBase
+);

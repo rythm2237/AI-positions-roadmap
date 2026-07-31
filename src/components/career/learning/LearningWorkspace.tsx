@@ -3,7 +3,10 @@
 import { motion, useReducedMotion } from "framer-motion";
 import ReferenceLearningChooser from "@/components/career/resources/ReferenceLearningChooser";
 import { EffortEstimate } from "@/components/career/EffortEstimate";
-import { isQualifiedResult } from "@/lib/assessmentPolicy";
+import {
+  isAssessmentQualified,
+  isQualifiedResult,
+} from "@/lib/assessmentPolicy";
 import {
   getJourneyStageProgress,
   isJourneyAssessmentUnlocked,
@@ -69,9 +72,13 @@ export default function LearningWorkspace({
     current.resources.map((item) => item.id)
   );
 
-  const completed = career.journeyStages.filter(
-    (stage) => isQualifiedResult(progress.assessmentResults[stage.test.id])
-  ).length;
+  const completed = career.journeyStages.filter((stage) => {
+    const requiredAssessment = stage.phaseExam ?? stage.test;
+    return isAssessmentQualified(
+      requiredAssessment,
+      progress.assessmentResults[requiredAssessment.id]
+    );
+  }).length;
 
   const overall = Math.round(
     (completed / career.journeyStages.length) * 100
@@ -84,9 +91,13 @@ export default function LearningWorkspace({
     progress
   );
 
-  const allComplete = career.journeyStages.every(
-    (stage) => isQualifiedResult(progress.assessmentResults[stage.test.id])
-  );
+  const allComplete = career.journeyStages.every((stage) => {
+    const requiredAssessment = stage.phaseExam ?? stage.test;
+    return isAssessmentQualified(
+      requiredAssessment,
+      progress.assessmentResults[requiredAssessment.id]
+    );
+  });
 
   return (
     <motion.section
@@ -137,8 +148,10 @@ export default function LearningWorkspace({
               career,
               progress
             );
-            const passed = isQualifiedResult(
-              progress.assessmentResults[stage.test.id]
+            const requiredAssessment = stage.phaseExam ?? stage.test;
+            const passed = isAssessmentQualified(
+              requiredAssessment,
+              progress.assessmentResults[requiredAssessment.id]
             );
 
             return (
@@ -293,9 +306,9 @@ export default function LearningWorkspace({
               Section Check
             </h3>
             <p className="mt-2 text-sm text-slate-400">
-              Answer {current.test.questions.length} stored questions. A
-              score of {current.test.passingScore}% verifies this same
-              Roadmap step.
+              Answer {current.test.questionsPerAttempt ?? 5} questions selected
+              from a {current.test.questions.length}-question bank. A score of{" "}
+              {current.test.passingScore}% unlocks the comprehensive assessment.
             </p>
             <div className="mt-4 flex flex-wrap gap-2">
               <button
@@ -349,10 +362,11 @@ export default function LearningWorkspace({
 
           <div className="rounded-3xl border border-white/10 bg-slate-950/75 p-5">
             <h3 className="font-semibold text-white">
-              Phase assessment
+              Comprehensive step assessment
             </h3>
             <p className="mt-2 text-sm text-slate-400">
-              Unlocks after this phase’s required step is verified.
+              20 scenario questions with a 70% pass requirement. Passing this
+              assessment unlocks the next Roadmap step.
             </p>
             <button
               type="button"
@@ -361,7 +375,7 @@ export default function LearningWorkspace({
               className="btn-secondary mt-3 w-full disabled:opacity-40"
             >
               {current.phaseExam
-                ? "Start phase assessment"
+                ? "Start comprehensive assessment"
                 : "Assessment not available yet"}
             </button>
           </div>
