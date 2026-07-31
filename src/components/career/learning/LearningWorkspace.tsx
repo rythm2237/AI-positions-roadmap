@@ -254,49 +254,140 @@ export default function LearningWorkspace({
             </ul>
           </article>
 
-          <article className="rounded-3xl border border-white/10 bg-slate-950/70 p-5">
+          <article className="rounded-3xl border border-white/10 bg-slate-950/70 p-5 sm:p-6">
             <div className="flex items-center justify-between gap-3">
               <div>
                 <h3 className="text-lg font-semibold text-white">
-                  Trusted resources
+                  Your learning path
                 </h3>
                 <p className="mt-1 text-xs text-slate-500">
-                  Choose reading, video, or hands-on practice before opening the exact learning
-                  destination.
+                  Complete each course, check your knowledge, then continue to
+                  the next milestone.
                 </p>
               </div>
-              <span className="tag">Registry resolved</span>
+              <span className="tag">{resources.length} milestones</span>
             </div>
 
-            <div className="mt-3 grid gap-3 md:grid-cols-2">
+            <div className="relative mt-6 space-y-4">
+              <div
+                aria-hidden="true"
+                className="absolute bottom-8 left-[1.18rem] top-8 w-px bg-gradient-to-b from-cyan-300/60 via-violet-400/35 to-emerald-300/60"
+              />
               {resources.length ? (
-                resources.map((resource) => (
-                  <div
-                    key={resource.id}
-                    className="rounded-2xl border border-white/10 bg-white/[.035] p-4"
-                  >
-                    <p className="text-xs uppercase tracking-wider text-violet-300">
-                      {resource.type} · {resource.provider}
-                    </p>
-                    <h4 className="mt-2 font-semibold text-white">
-                      {resource.title}
-                    </h4>
-                    <p className="mt-2 text-sm leading-5 text-slate-400">
-                      {resource.description}
-                    </p>
-                    {resource.warning ? (
-                      <p className="mt-2 text-xs text-amber-200">
-                        {resource.warning}
-                      </p>
-                    ) : null}
+                resources.map((resource, index) => {
+                  const assessment = (current.topicAssessments ?? []).find(
+                    (item) => item.topicId === resource.id
+                  );
+                  const result = assessment
+                    ? progress.assessmentResults[assessment.id]
+                    : undefined;
+                  const qualified = Boolean(
+                    assessment && isAssessmentQualified(assessment, result)
+                  );
 
-                    <ReferenceLearningChooser
-                      resource={resource}
-                      disabled={!unlocked}
-                      onOpen={() => onViewResource(resource.id)}
-                    />
-                  </div>
-                ))
+                  return (
+                    <div key={resource.id} className="relative pl-12">
+                      <div
+                        className={`absolute left-0 top-5 z-10 grid h-10 w-10 place-items-center rounded-full border text-sm font-bold shadow-lg ${
+                          qualified
+                            ? "border-emerald-300/50 bg-emerald-400/15 text-emerald-200"
+                            : "border-cyan-300/40 bg-slate-950 text-cyan-200"
+                        }`}
+                      >
+                        {qualified ? "✓" : index + 1}
+                      </div>
+
+                      <div className="overflow-hidden rounded-2xl border border-white/10 bg-[linear-gradient(145deg,rgba(255,255,255,.055),rgba(255,255,255,.018))]">
+                        <div className="p-5">
+                          <div className="flex flex-wrap items-start justify-between gap-3">
+                            <div>
+                              <p className="text-xs uppercase tracking-wider text-violet-300">
+                                {resource.type} · {resource.provider}
+                              </p>
+                              <h4 className="mt-2 text-lg font-semibold text-white">
+                                {resource.title}
+                              </h4>
+                            </div>
+                            {qualified ? (
+                              <span className="tag tag-cyan">Completed</span>
+                            ) : (
+                              <span className="tag">In your path</span>
+                            )}
+                          </div>
+                          <p className="mt-2 text-sm leading-6 text-slate-400">
+                            {resource.description}
+                          </p>
+                          {resource.warning ? (
+                            <p className="mt-2 text-xs text-amber-200">
+                              {resource.warning}
+                            </p>
+                          ) : null}
+
+                          <div className="mt-4 flex flex-wrap items-end gap-3">
+                            <div className="min-w-[15rem] flex-1">
+                              <ReferenceLearningChooser
+                                resource={resource}
+                                disabled={!unlocked}
+                                onOpen={() => onViewResource(resource.id)}
+                              />
+                            </div>
+                            <button
+                              type="button"
+                              onClick={() =>
+                                onOpenNote(
+                                  "resource",
+                                  resource.id,
+                                  resource.title
+                                )
+                              }
+                              className="btn-secondary min-h-11"
+                            >
+                              Add notes
+                            </button>
+                          </div>
+                        </div>
+
+                        <div className="border-t border-white/10 bg-slate-950/45 p-5">
+                          <div className="flex flex-col justify-between gap-3 sm:flex-row sm:items-center">
+                            <div>
+                              <p className="label-sm text-cyan-300">
+                                Knowledge check
+                              </p>
+                              <p className="mt-1 text-sm text-slate-300">
+                                Five fresh questions · pass with 3 correct
+                              </p>
+                              {result ? (
+                                <p
+                                  className={`mt-1 text-xs ${
+                                    qualified
+                                      ? "text-emerald-300"
+                                      : "text-rose-300"
+                                  }`}
+                                >
+                                  {qualified
+                                    ? "Passed — next milestone ready"
+                                    : "Review the course and try again"}{" "}
+                                  · {result.score}%
+                                </p>
+                              ) : null}
+                            </div>
+                            <button
+                              type="button"
+                              disabled={!unlocked || !assessment}
+                              onClick={() =>
+                                assessment &&
+                                onOpenAssessment(assessment, current.id)
+                              }
+                              className="btn-primary min-h-11 disabled:cursor-not-allowed disabled:opacity-40"
+                            >
+                              {qualified ? "Try a new check" : "Start check"}
+                            </button>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })
               ) : (
                 <p className="text-sm text-amber-200">
                   Resources need review. No valid Registry references are
@@ -307,33 +398,44 @@ export default function LearningWorkspace({
           </article>
 
           <article className="rounded-3xl border border-white/10 bg-slate-950/70 p-5">
-            <h3 className="text-lg font-semibold text-white">Topic assessments</h3>
-            <p className="mt-2 text-sm text-slate-400">
-              Each learning topic has its own 15-question bank. Every attempt
-              randomly selects 5 questions; answer at least 3 correctly.
+            <p className="label-sm text-violet-300">Step checkpoint</p>
+            <h3 className="mt-2 text-xl font-semibold text-white">
+              Comprehensive step assessment
+            </h3>
+            <p className="mt-2 text-sm leading-6 text-slate-400">
+              This final checkpoint becomes available after every course check
+              in this step is passed. Passing it unlocks the next Roadmap step.
             </p>
-            <div className="mt-4 grid gap-3 md:grid-cols-2">
-              {(current.topicAssessments ?? []).map((assessment) => {
-                const result = progress.assessmentResults[assessment.id];
-                const qualified = isAssessmentQualified(assessment, result);
-                return (
-                  <div key={assessment.id} className="rounded-2xl border border-white/10 bg-white/[.035] p-4">
-                    <h4 className="font-semibold text-white">{assessment.topicLabel}</h4>
-                    <p className="mt-1 text-xs text-slate-400">5 of 15 questions · 60% required</p>
-                    {result ? <p className={`mt-2 text-sm ${qualified ? "text-emerald-300" : "text-rose-300"}`}>{qualified ? "Qualified" : "Needs review"} · {result.score}%</p> : null}
-                    <button
-                      type="button"
-                      disabled={!unlocked}
-                      onClick={() => onOpenAssessment(assessment, current.id)}
-                      className="btn-primary mt-3 disabled:cursor-not-allowed disabled:opacity-40"
-                    >
-                      {qualified ? "Retry topic assessment" : "Start topic assessment"}
-                    </button>
-                  </div>
-                );
-              })}
+            {!phaseAssessmentUnlocked ? (
+              <p className="mt-3 rounded-xl border border-amber-300/20 bg-amber-400/10 p-3 text-sm text-amber-100">
+                Continue through the learning path above to unlock this
+                checkpoint.
+              </p>
+            ) : null}
+            <div className="mt-4 flex flex-wrap gap-3">
+              <button
+                type="button"
+                disabled={!phaseAssessmentUnlocked || !current.phaseExam}
+                onClick={() =>
+                  current.phaseExam &&
+                  onOpenAssessment(current.phaseExam, current.id)
+                }
+                className="btn-primary min-h-11 disabled:opacity-40"
+              >
+                {current.phaseExam
+                  ? "Start step assessment"
+                  : "Assessment not available yet"}
+              </button>
+              <button
+                type="button"
+                onClick={() =>
+                  onOpenNote("step", current.id, current.title)
+                }
+                className="btn-secondary min-h-11"
+              >
+                Step notes
+              </button>
             </div>
-            <button type="button" onClick={() => onOpenNote("step", current.id, current.title)} className="btn-secondary mt-4">Open step notes</button>
           </article>
         </main>
 
@@ -361,26 +463,6 @@ export default function LearningWorkspace({
                 </div>
               ))}
             </div>
-          </div>
-
-          <div className="rounded-3xl border border-white/10 bg-slate-950/75 p-5">
-            <h3 className="font-semibold text-white">
-              Comprehensive step assessment
-            </h3>
-            <p className="mt-2 text-sm text-slate-400">
-              20 scenario questions with a 70% pass requirement. Passing this
-              assessment unlocks the next Roadmap step.
-            </p>
-            <button
-              type="button"
-              disabled={!phaseAssessmentUnlocked || !current.phaseExam}
-              onClick={() => current.phaseExam && onOpenAssessment(current.phaseExam, current.id)}
-              className="btn-secondary mt-3 w-full disabled:opacity-40"
-            >
-              {current.phaseExam
-                ? "Start comprehensive assessment"
-                : "Assessment not available yet"}
-            </button>
           </div>
 
           <div className="rounded-3xl border border-white/10 bg-slate-950/75 p-5">
