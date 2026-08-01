@@ -36,47 +36,15 @@ export const CAREER_TITLE_ALIASES: Readonly<Record<string, readonly CareerTitleA
       keywords: ["Hyperautomation Developer", "Hyperautomation Specialist"],
       note: "Often used where process mining, orchestration, RPA, APIs, and AI are delivered as one automation capability.",
     },
-    {
-      title: "RPA Engineer",
-      keywords: ["Robotic Process Automation Engineer", "RPA Developer"],
-      note: "May describe the same role when desktop automation remains the dominant delivery platform.",
-    },
-    {
-      title: "Process Automation Engineer",
-      keywords: ["Business Process Automation Engineer", "Digital Process Automation Engineer"],
-    },
-    {
-      title: "Automation Engineer",
-      keywords: ["Enterprise Automation Engineer", "Business Automation Engineer"],
-      note: "Read the responsibilities carefully because this title can also refer to industrial or test automation.",
-    },
-    {
-      title: "Automation Solutions Engineer",
-      keywords: ["Automation Solution Engineer", "Intelligent Automation Solutions Engineer"],
-    },
-    {
-      title: "Workflow Automation Engineer",
-      keywords: ["Workflow Engineer", "Digital Workflow Engineer"],
-    },
-    {
-      title: "Intelligent Process Automation Engineer",
-      keywords: ["IPA Engineer", "Cognitive Automation Engineer"],
-    },
-    {
-      title: "Automation Platform Engineer",
-      keywords: ["RPA Platform Engineer", "Automation Infrastructure Engineer"],
-      note: "More common when the position includes platform operations, environments, governance, and release engineering.",
-    },
-    {
-      title: "UiPath Developer",
-      companies: ["UiPath ecosystem"],
-      keywords: ["UiPath Automation Developer", "UiPath Engineer"],
-    },
-    {
-      title: "Power Automate Developer",
-      companies: ["Microsoft ecosystem"],
-      keywords: ["Microsoft Power Platform Developer", "Power Platform Automation Engineer"],
-    },
+    { title: "RPA Engineer", keywords: ["Robotic Process Automation Engineer", "RPA Developer"] },
+    { title: "Process Automation Engineer", keywords: ["Business Process Automation Engineer", "Digital Process Automation Engineer"] },
+    { title: "Automation Engineer", keywords: ["Enterprise Automation Engineer", "Business Automation Engineer"] },
+    { title: "Automation Solutions Engineer", keywords: ["Automation Solution Engineer", "Intelligent Automation Solutions Engineer"] },
+    { title: "Workflow Automation Engineer", keywords: ["Workflow Engineer", "Digital Workflow Engineer"] },
+    { title: "Intelligent Process Automation Engineer", keywords: ["IPA Engineer", "Cognitive Automation Engineer"] },
+    { title: "Automation Platform Engineer", keywords: ["RPA Platform Engineer", "Automation Infrastructure Engineer"] },
+    { title: "UiPath Developer", companies: ["UiPath ecosystem"], keywords: ["UiPath Automation Developer", "UiPath Engineer"] },
+    { title: "Power Automate Developer", companies: ["Microsoft ecosystem"], keywords: ["Microsoft Power Platform Developer", "Power Platform Automation Engineer"] },
   ],
   "ai-integration-specialist": [
     { title: "AI Integration Engineer", keywords: ["AI Integrations Engineer"] },
@@ -87,6 +55,50 @@ export const CAREER_TITLE_ALIASES: Readonly<Record<string, readonly CareerTitleA
     { title: "AI Application Integration Engineer", keywords: ["AI Applications Integrator"] },
     { title: "AI Systems Integrator", keywords: ["AI System Integration Specialist"] },
     { title: "Conversational AI Integration Specialist", keywords: ["Chatbot Integration Engineer"] },
+  ],
+  "ai-workflow-architect": [
+    {
+      title: "AI Workflow Solution Architect",
+      keywords: ["AI Workflow Solutions Architect", "AI Process Solution Architect"],
+      note: "Common where workflow architecture is positioned inside a broader solution-architecture function.",
+    },
+    {
+      title: "Agentic Workflow Architect",
+      keywords: ["Agent Workflow Architect", "Agentic Process Architect"],
+      note: "Used for roles designing governed multi-agent and tool-using workflows.",
+    },
+    {
+      title: "AI Orchestration Architect",
+      keywords: ["Agent Orchestration Architect", "AI Process Orchestration Architect"],
+    },
+    {
+      title: "Intelligent Workflow Architect",
+      keywords: ["Intelligent Process Architect", "Cognitive Workflow Architect"],
+    },
+    {
+      title: "Automation Solution Architect",
+      keywords: ["Automation Solutions Architect", "Intelligent Automation Architect"],
+    },
+    {
+      title: "Enterprise Workflow Architect",
+      keywords: ["Business Workflow Architect", "Digital Workflow Architect"],
+    },
+    {
+      title: "Human-AI Workflow Architect",
+      keywords: ["Human AI Collaboration Architect", "Human-in-the-Loop Architect"],
+    },
+    {
+      title: "AI Process Architect",
+      keywords: ["AI Business Process Architect", "AI-Enabled Process Architect"],
+    },
+    {
+      title: "Agentic Systems Architect",
+      keywords: ["AI Agent Systems Architect", "Multi-Agent Systems Architect"],
+    },
+    {
+      title: "Workflow Automation Architect",
+      keywords: ["Process Automation Architect", "Automation Workflow Architect"],
+    },
   ],
 };
 
