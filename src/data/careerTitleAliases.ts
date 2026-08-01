@@ -18,14 +18,65 @@ export const CAREER_TITLE_ALIASES: Readonly<Record<string, readonly CareerTitleA
     { title: "Applied Machine Learning Engineer", keywords: ["Applied ML Engineer"] },
   ],
   "ai-automation-specialist": [
-    { title: "Intelligent Automation Specialist", keywords: ["Intelligent Automation Engineer"] },
+    { title: "Intelligent Automation Specialist", keywords: ["AI Automation Specialist"] },
     { title: "AI Workflow Specialist", keywords: ["AI Workflow Automation Specialist"] },
-    { title: "Automation Solutions Specialist", keywords: ["Automation Solution Engineer"] },
+    { title: "Automation Solutions Specialist", keywords: ["Automation Solution Specialist"] },
     { title: "Business Automation Specialist", keywords: ["Business Process Automation Specialist"] },
-    { title: "Hyperautomation Specialist", keywords: ["Hyperautomation Consultant"] },
     { title: "Power Platform Automation Specialist", companies: ["Microsoft ecosystem"] },
-    { title: "RPA and AI Developer", keywords: ["RPA AI Developer"] },
     { title: "Automation Consultant", keywords: ["Digital Automation Consultant"] },
+  ],
+  "intelligent-automation-engineer": [
+    {
+      title: "Intelligent Automation Developer",
+      keywords: ["Intelligent Automation Programmer", "IA Developer"],
+      note: "Common delivery-focused title for engineers building RPA, workflow, integration, and AI solutions.",
+    },
+    {
+      title: "Hyperautomation Engineer",
+      keywords: ["Hyperautomation Developer", "Hyperautomation Specialist"],
+      note: "Often used where process mining, orchestration, RPA, APIs, and AI are delivered as one automation capability.",
+    },
+    {
+      title: "RPA Engineer",
+      keywords: ["Robotic Process Automation Engineer", "RPA Developer"],
+      note: "May describe the same role when desktop automation remains the dominant delivery platform.",
+    },
+    {
+      title: "Process Automation Engineer",
+      keywords: ["Business Process Automation Engineer", "Digital Process Automation Engineer"],
+    },
+    {
+      title: "Automation Engineer",
+      keywords: ["Enterprise Automation Engineer", "Business Automation Engineer"],
+      note: "Read the responsibilities carefully because this title can also refer to industrial or test automation.",
+    },
+    {
+      title: "Automation Solutions Engineer",
+      keywords: ["Automation Solution Engineer", "Intelligent Automation Solutions Engineer"],
+    },
+    {
+      title: "Workflow Automation Engineer",
+      keywords: ["Workflow Engineer", "Digital Workflow Engineer"],
+    },
+    {
+      title: "Intelligent Process Automation Engineer",
+      keywords: ["IPA Engineer", "Cognitive Automation Engineer"],
+    },
+    {
+      title: "Automation Platform Engineer",
+      keywords: ["RPA Platform Engineer", "Automation Infrastructure Engineer"],
+      note: "More common when the position includes platform operations, environments, governance, and release engineering.",
+    },
+    {
+      title: "UiPath Developer",
+      companies: ["UiPath ecosystem"],
+      keywords: ["UiPath Automation Developer", "UiPath Engineer"],
+    },
+    {
+      title: "Power Automate Developer",
+      companies: ["Microsoft ecosystem"],
+      keywords: ["Microsoft Power Platform Developer", "Power Platform Automation Engineer"],
+    },
   ],
   "ai-integration-specialist": [
     { title: "AI Integration Engineer", keywords: ["AI Integrations Engineer"] },
