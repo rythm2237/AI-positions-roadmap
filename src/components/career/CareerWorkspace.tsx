@@ -2,12 +2,17 @@
 
 import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
 import Link from "next/link";
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import CareerJourneyEngine from "@/components/career/journey-engine/CareerJourneyEngine";
 import LearningWorkspace from "@/components/career/learning/LearningWorkspace";
+import ReferenceLearningChooser from "@/components/career/resources/ReferenceLearningChooser";
+import { EffortEstimate } from "@/components/career/EffortEstimate";
 import { aiEngineerCareer } from "@/data/careers/ai-engineer";
 import { CAREER_NAV_ITEMS, careerSectionHref } from "@/lib/careerNavigation";
-import { resolveReferenceSegment } from "@/lib/references/referenceResolver";
+import {
+  resolveReference,
+  resolveReferenceSegment,
+} from "@/lib/references/referenceResolver";
 import {
   defaultCareerWorkspaceProgress,
   getCareerWorkspaceStats,
@@ -24,6 +29,7 @@ import type {
   CareerNote,
   CareerQuizQuestion,
   CareerResource,
+  CareerWorkspaceData,
   CareerWorkspaceProgress,
   CareerWorkspaceSectionId,
 } from "@/types/careerWorkspace";
@@ -33,14 +39,21 @@ type IconName =
   | "bookmark"
   | "check"
   | "copy"
+  | "code"
   | "download"
+  | "folder"
+  | "home"
+  | "interview"
+  | "jobs"
   | "lock"
   | "map"
   | "menu"
   | "note"
   | "play"
+  | "learning"
   | "target"
   | "timer"
+  | "universe"
   | "x";
 
 type NoteModalState = {
@@ -68,7 +81,11 @@ type ViewportSize = {
   height: number;
 };
 
-const career = aiEngineerCareer;
+const CareerDataContext = React.createContext<CareerWorkspaceData>(aiEngineerCareer);
+
+function useCareerData(): CareerWorkspaceData {
+  return React.useContext(CareerDataContext);
+}
 
 function Icon({ name, className = "h-4 w-4" }: { name: IconName; className?: string }) {
   const paths: Record<IconName, React.ReactNode> = {
@@ -76,14 +93,21 @@ function Icon({ name, className = "h-4 w-4" }: { name: IconName; className?: str
     bookmark: <path d="M7 4h10v16l-5-3-5 3V4z" />,
     check: <path d="M20 6 9 17l-5-5" />,
     copy: <><rect x="9" y="9" width="11" height="11" rx="2" /><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" /></>,
+    code: <><path d="m8 9-4 3 4 3" /><path d="m16 9 4 3-4 3" /><path d="m14 5-4 14" /></>,
     download: <><path d="M12 3v12" /><path d="m7 10 5 5 5-5" /><path d="M5 21h14" /></>,
+    folder: <path d="M3 6a2 2 0 0 1 2-2h5l2 2h7a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V6z" />,
+    home: <><path d="m4 11 8-7 8 7" /><path d="M6 10v10h12V10" /><path d="M10 20v-6h4v6" /></>,
+    interview: <><path d="M21 15a4 4 0 0 1-4 4H8l-5 3V7a4 4 0 0 1 4-4h10a4 4 0 0 1 4 4v8z" /><path d="M8 9h8M8 13h5" /></>,
+    jobs: <><rect x="3" y="7" width="18" height="13" rx="2" /><path d="M8 7V5a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2M3 12h18M10 12v2h4v-2" /></>,
     lock: <><rect x="5" y="11" width="14" height="10" rx="2" /><path d="M8 11V8a4 4 0 0 1 8 0v3" /></>,
     map: <><path d="m3 6 6-3 6 3 6-3v15l-6 3-6-3-6 3V6z" /><path d="M9 3v15" /><path d="M15 6v15" /></>,
     menu: <><path d="M4 7h16" /><path d="M4 12h16" /><path d="M4 17h16" /></>,
     note: <><path d="M4 4h16v16H4z" /><path d="M8 8h8" /><path d="M8 12h8" /><path d="M8 16h5" /></>,
     play: <path d="m8 5 11 7-11 7V5z" />,
+    learning: <><path d="M4 5.5A2.5 2.5 0 0 1 6.5 3H11v16H6.5A2.5 2.5 0 0 0 4 21.5v-16z" /><path d="M20 5.5A2.5 2.5 0 0 0 17.5 3H13v16h4.5a2.5 2.5 0 0 1 2.5 2.5v-16z" /></>,
     target: <><circle cx="12" cy="12" r="8" /><circle cx="12" cy="12" r="3" /></>,
     timer: <><circle cx="12" cy="13" r="8" /><path d="M12 9v5l3 2" /><path d="M9 2h6" /></>,
+    universe: <><circle cx="12" cy="12" r="3" /><circle cx="5" cy="6" r="2" /><circle cx="19" cy="7" r="2" /><circle cx="18" cy="18" r="2" /><path d="m6.7 7.1 3 3M14.8 10.4l2.5-2.1M14.6 14.2l2 2.1" /></>,
     x: <><path d="M18 6 6 18" /><path d="m6 6 12 12" /></>,
   };
 
@@ -103,6 +127,34 @@ function Icon({ name, className = "h-4 w-4" }: { name: IconName; className?: str
   );
 }
 
+const SECTION_ICONS: Record<CareerWorkspaceSectionId, IconName> = {
+  hero: "home",
+  roadmap: "map",
+  learning: "learning",
+  project: "code",
+  portfolio: "folder",
+  jobs: "jobs",
+  "interview-brief": "interview",
+  intelligence: "target",
+};
+
+function keepFocusInside(event: KeyboardEvent, container: HTMLElement | null) {
+  if (event.key !== "Tab" || !container) return;
+  const focusable = Array.from(container.querySelectorAll<HTMLElement>(
+    'a[href], button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])'
+  ));
+  if (focusable.length === 0) return;
+  const first = focusable[0];
+  const last = focusable[focusable.length - 1];
+  if (event.shiftKey && document.activeElement === first) {
+    event.preventDefault();
+    last.focus();
+  } else if (!event.shiftKey && document.activeElement === last) {
+    event.preventDefault();
+    first.focus();
+  }
+}
+
 function percentLabel(value: number) {
   return `${Math.max(0, Math.min(100, value))}%`;
 }
@@ -115,25 +167,59 @@ function shuffleIndexes(length: number): number[] {
   return Array.from({ length }, (_, index) => index).sort(() => Math.random() - 0.5);
 }
 
-function uniqueResources(): CareerResource[] {
+function uniqueResources(career: CareerWorkspaceData): CareerResource[] {
   const resources = new Map<string, CareerResource>();
-  career.journeyStages.forEach((stage) => stage.resources.forEach((resource) => resources.set(resource.id, resource)));
-  career.globalResources.forEach((resource) => resources.set(resource.id, resource));
+
+  career.journeyStages.forEach((stage) => {
+    stage.resources.forEach((resource) => {
+      resources.set(resource.id, resource);
+    });
+  });
+
+  career.globalResources.forEach((resource) => {
+    resources.set(resource.id, resource);
+  });
+
   return Array.from(resources.values());
 }
 
-function allAssessments(): Array<{ assessment: CareerAssessment; stage: CareerJourneyStage; type: "station" | "phase" }> {
+function allAssessments(
+  career: CareerWorkspaceData
+): Array<{
+  assessment: CareerAssessment;
+  stage: CareerJourneyStage;
+  type: "station" | "phase";
+}> {
   return career.journeyStages.flatMap((stage) => [
-    { assessment: stage.test, stage, type: "station" as const },
-    ...(stage.phaseExam ? [{ assessment: stage.phaseExam, stage, type: "phase" as const }] : []),
+    {
+      assessment: stage.test,
+      stage,
+      type: "station" as const,
+    },
+    ...(stage.phaseExam
+      ? [
+          {
+            assessment: stage.phaseExam,
+            stage,
+            type: "phase" as const,
+          },
+        ]
+      : []),
   ]);
 }
 
-function validateJourneyData(): string[] {
+function validateJourneyData(career: CareerWorkspaceData): string[] {
   return career.journeyStages.flatMap((stage) => {
     const warnings: string[] = [];
-    if (stage.test.questions.length < 5) warnings.push(`${stage.title} station test has fewer than 5 questions.`);
-    if (stage.phaseExam && stage.phaseExam.questions.length < 5) warnings.push(`${stage.title} phase exam has fewer than 5 questions.`);
+
+    if (stage.test.questions.length < 5) {
+      warnings.push(`${stage.title} station test has fewer than 5 questions.`);
+    }
+
+    if (stage.phaseExam && stage.phaseExam.questions.length < 5) {
+      warnings.push(`${stage.title} phase exam has fewer than 5 questions.`);
+    }
+
     return warnings;
   });
 }
@@ -205,7 +291,16 @@ function useViewportSize(): ViewportSize {
   return viewport;
 }
 
-export default function CareerWorkspace({ initialSection = "hero" }: { initialSection?: CareerWorkspaceSectionId }) {
+type CareerWorkspaceProps = {
+  initialSection?: CareerWorkspaceSectionId;
+  career?: CareerWorkspaceData;
+};
+
+export default function CareerWorkspace({
+  initialSection = "hero",
+  career: careerData = aiEngineerCareer,
+}: CareerWorkspaceProps) {
+  const career = careerData;
   const reduceMotion = useReducedMotion();
   const viewport = useViewportSize();
   const [activeSection, setActiveSection] = useState<CareerWorkspaceSectionId>(initialSection);
@@ -225,23 +320,28 @@ export default function CareerWorkspace({ initialSection = "hero" }: { initialSe
   const [noteDraft, setNoteDraft] = useState("");
   const [noteFilter, setNoteFilter] = useState<CareerNote["contextType"] | "all">("all");
   const [examSession, setExamSession] = useState<ExamSession | null>(null);
-  const [jobFilters, setJobFilters] = useState<Record<string, string>>({
-    Location: "",
-    Remote: "Any",
-    Level: "Any",
-    Salary: "",
-    Company: "",
-  });
 
-  const stats = useMemo(() => getCareerWorkspaceStats(career, progress), [progress]);
-  const resources = useMemo(uniqueResources, []);
-  const assessments = useMemo(allAssessments, []);
-  const dataWarnings = useMemo(validateJourneyData, []);
+  const stats = useMemo(
+    () => getCareerWorkspaceStats(career, progress),
+    [career, progress]
+  );
+  const resources = useMemo(
+    () => uniqueResources(career),
+    [career]
+  );
+  const assessments = useMemo(
+    () => allAssessments(career),
+    [career]
+  );
+  const dataWarnings = useMemo(
+    () => validateJourneyData(career),
+    [career]
+  );
   const previousGuidedIndexRef = React.useRef(guidedIndex);
   const wasGuidedRef = React.useRef(guidedMode);
   const selectedStage = useMemo(
     () => career.journeyStages.find((stage) => stage.id === selectedStageId) ?? career.journeyStages[0],
-    [selectedStageId]
+    [career, selectedStageId]
   );
   const focusedStage = guidedMode ? career.journeyStages[guidedIndex] : selectedStage;
   const modalStage = stationModalStageId
@@ -250,19 +350,36 @@ export default function CareerWorkspace({ initialSection = "hero" }: { initialSe
 
   useEffect(() => {
     setProgress(loadCareerWorkspaceProgress(career.slug));
+    setSelectedStageId(career.journeyStages[0]?.id ?? "");
+    setStationModalStageId(null);
+    setGuidedIndex(0);
     setIsLoaded(true);
 
     const params = new URLSearchParams(window.location.search);
     const requestedSection = params.get("section");
     const validSection = CAREER_NAV_ITEMS.find((item) => item.id === requestedSection)?.id;
-    if (validSection) setActiveSection(validSection);
+
+    if (validSection) {
+      setActiveSection(validSection);
+    } else {
+      setActiveSection(initialSection);
+    }
+
     const requestedStep = params.get("step");
-    if (requestedStep && career.journeyStages.some((stage) => stage.id === requestedStep)) setSelectedStageId(requestedStep);
-  }, [initialSection]);
+
+    if (
+      requestedStep &&
+      career.journeyStages.some((stage) => stage.id === requestedStep)
+    ) {
+      setSelectedStageId(requestedStep);
+    }
+  }, [career, initialSection]);
 
   useEffect(() => {
-    if (isLoaded) saveCareerWorkspaceProgress(career.slug, progress);
-  }, [isLoaded, progress]);
+    if (isLoaded) {
+      saveCareerWorkspaceProgress(career.slug, progress);
+    }
+  }, [career.slug, isLoaded, progress]);
 
   useEffect(() => {
     if (!guidedMode) {
@@ -460,14 +577,13 @@ export default function CareerWorkspace({ initialSection = "hero" }: { initialSe
     printWindow.document.close();
   }
 
-  const isRoadmapMode = activeSection === "roadmap";
-
   return (
-    <div className="neural-bg h-screen overflow-hidden text-slate-200">
+    <CareerDataContext.Provider value={career}>
+      <div className="neural-bg h-screen overflow-hidden text-slate-200">
       <div className="flex h-full">
-        <DesktopMenu activeSection={activeSection} isRoadmapMode={isRoadmapMode} open={roadmapMenuOpen} setOpen={setRoadmapMenuOpen} stats={stats} switchSection={switchSection} />
+        <DesktopMenu activeSection={activeSection} open={roadmapMenuOpen} setOpen={setRoadmapMenuOpen} switchSection={switchSection} />
 
-        <main className="relative h-full min-w-0 flex-1 overflow-hidden">
+        <main className="relative h-full min-w-0 flex-1 overflow-hidden pt-[calc(3.75rem+env(safe-area-inset-top))] lg:pt-0">
           <AnimatePresence mode="wait">
             {activeSection === "hero" ? (
               <HeroScene
@@ -525,15 +641,13 @@ export default function CareerWorkspace({ initialSection = "hero" }: { initialSe
                 updateProgress={updateProgress}
                 deleteNote={deleteNote}
                 exportNotesAsPdf={exportNotesAsPdf}
-                jobFilters={jobFilters}
-                setJobFilters={setJobFilters}
               />
             )}
           </AnimatePresence>
         </main>
       </div>
 
-      {!isRoadmapMode ? <MobileNav activeSection={activeSection} guidedMode={guidedMode} switchSection={switchSection} /> : null}
+      <MobileNav activeSection={activeSection} switchSection={switchSection} />
 
       <NoteModal
         state={noteModal}
@@ -565,46 +679,130 @@ export default function CareerWorkspace({ initialSection = "hero" }: { initialSe
       <AnimatePresence>
         {roadmapNotification ? <motion.div role="status" aria-live="polite" className="fixed bottom-[calc(1rem_+_env(safe-area-inset-bottom))] left-1/2 z-[90] w-[min(30rem,calc(100%-2rem))] -translate-x-1/2 rounded-2xl border border-amber-200/25 bg-[#5f4029]/95 px-4 py-3 text-center text-sm font-medium text-[#fff1d1] shadow-premium backdrop-blur-md" initial={{opacity:0,y:12}} animate={{opacity:1,y:0}} exit={{opacity:0,y:8}}>{roadmapNotification}</motion.div> : null}
       </AnimatePresence>
-    </div>
+      </div>
+    </CareerDataContext.Provider>
   );
 }
 
 function DesktopMenu({
   activeSection,
-  isRoadmapMode,
   open,
   setOpen,
-  stats,
   switchSection,
 }: {
   activeSection: CareerWorkspaceSectionId;
-  isRoadmapMode: boolean;
   open: boolean;
   setOpen: (open: boolean) => void;
-  stats: ReturnType<typeof getCareerWorkspaceStats>;
   switchSection: (section: CareerWorkspaceSectionId) => void;
 }) {
-  if (isRoadmapMode) return <>
-    <button type="button" aria-label={open ? "Close navigation" : "Open navigation"} onClick={() => setOpen(!open)} className="fixed left-0 top-[max(1rem,env(safe-area-inset-top))] z-[60] grid h-12 w-8 place-items-center rounded-r-xl border border-l-0 border-stone-700/20 bg-[#eadfca]/90 text-stone-700 shadow-md backdrop-blur-sm">{open ? "‹" : "›"}</button>
-    <div className={`fixed inset-0 z-[54] bg-stone-950/15 transition-opacity ${open ? "pointer-events-auto opacity-100" : "pointer-events-none opacity-0"}`} onClick={() => setOpen(false)} aria-hidden="true" />
-    <aside className={`fixed inset-y-0 left-0 z-[55] flex w-[min(18rem,86vw)] flex-col justify-between border-r border-stone-700/15 bg-[#eadfca]/94 p-3 shadow-2xl backdrop-blur-md transition-transform duration-200 ${open ? "translate-x-0" : "-translate-x-full"}`}>
-      <button type="button" onClick={() => setOpen(false)} className="absolute right-2 top-2 grid h-11 w-11 place-items-center text-xl text-stone-700" aria-label="Close navigation">×</button>
-      <WorkspaceMenuContents activeSection={activeSection} isRoadmapMode stats={stats} switchSection={(section) => { switchSection(section); setOpen(false); }} />
-    </aside>
-  </>;
+  const career = useCareerData();
+  const triggerRef = useRef<HTMLButtonElement>(null);
+  const panelRef = useRef<HTMLElement>(null);
+
+  useEffect(() => {
+    if (!open) return;
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape") {
+        setOpen(false);
+        window.requestAnimationFrame(() => triggerRef.current?.focus());
+        return;
+      }
+      keepFocusInside(event, panelRef.current);
+    };
+    window.addEventListener("keydown", handleKeyDown);
+    window.requestAnimationFrame(() => panelRef.current?.querySelector<HTMLButtonElement>("button[data-workspace-destination]")?.focus());
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [open, setOpen]);
+
+  function closePanel(returnFocus = false) {
+    setOpen(false);
+    if (returnFocus) window.requestAnimationFrame(() => triggerRef.current?.focus());
+  }
+
   return (
-    <aside className="z-40 hidden h-full w-64 shrink-0 flex-col justify-between border-r border-white/10 bg-slate-950/80 p-3 backdrop-blur-md lg:flex">
-      <WorkspaceMenuContents activeSection={activeSection} isRoadmapMode={false} stats={stats} switchSection={switchSection} />
-    </aside>
+    <>
+      <aside className="relative z-40 hidden h-full w-[76px] shrink-0 flex-col items-center border-r border-white/10 bg-slate-950/80 px-3 py-3 backdrop-blur-md lg:flex">
+        <button
+          ref={triggerRef}
+          type="button"
+          onClick={() => setOpen(!open)}
+          className={`mb-4 grid h-11 w-11 place-items-center rounded-xl border ${shellButton(open)}`}
+          aria-label={open ? "Close workspace navigation" : "Open workspace navigation"}
+          aria-expanded={open}
+          aria-controls="desktop-workspace-navigation"
+        >
+          <Icon name={open ? "x" : "menu"} className="h-5 w-5" />
+        </button>
+        <nav className="flex w-full flex-col items-center gap-1.5" aria-label="Career workspace navigation">
+          {CAREER_NAV_ITEMS.map(({ id: sectionId, label }) => {
+            const active = activeSection === sectionId;
+            return (
+              <div key={sectionId} className="group relative">
+                <button
+                  type="button"
+                  onClick={() => switchSection(sectionId)}
+                  aria-label={label}
+                  aria-current={active ? "page" : undefined}
+                  aria-describedby={`workspace-tooltip-${sectionId}`}
+                  className={`grid h-11 w-11 place-items-center rounded-xl border transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-300 focus-visible:ring-offset-2 focus-visible:ring-offset-slate-950 ${active ? "border-indigo-300/35 bg-indigo-500/18 text-indigo-100 shadow-[inset_3px_0_0_rgba(103,232,249,.7)]" : "border-transparent text-slate-500 hover:border-white/10 hover:bg-white/[0.05] hover:text-slate-200"}`}
+                >
+                  <Icon name={SECTION_ICONS[sectionId]} className="h-5 w-5" />
+                </button>
+                <span
+                  id={`workspace-tooltip-${sectionId}`}
+                  role="tooltip"
+                  className="pointer-events-none absolute left-[calc(100%+12px)] top-1/2 z-[70] -translate-y-1/2 whitespace-nowrap rounded-lg border border-white/10 bg-slate-950/95 px-3 py-2 text-xs font-semibold text-white opacity-0 shadow-xl transition-opacity group-hover:opacity-100 group-focus-within:opacity-100"
+                >
+                  {label}
+                </span>
+              </div>
+            );
+          })}
+        </nav>
+        <div className="group relative mt-auto">
+          <Link href="/" aria-label="Back to Career Universe" aria-describedby="workspace-tooltip-universe" className="grid h-11 w-11 place-items-center rounded-xl border border-transparent text-slate-500 transition hover:border-white/10 hover:bg-white/[0.05] hover:text-slate-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-300">
+            <Icon name="universe" className="h-5 w-5" />
+          </Link>
+          <span id="workspace-tooltip-universe" role="tooltip" className="pointer-events-none absolute left-[calc(100%+12px)] top-1/2 z-[70] -translate-y-1/2 whitespace-nowrap rounded-lg border border-white/10 bg-slate-950/95 px-3 py-2 text-xs font-semibold text-white opacity-0 shadow-xl transition-opacity group-hover:opacity-100 group-focus-within:opacity-100">Back to Career Universe</span>
+        </div>
+      </aside>
+
+      <button
+        type="button"
+        tabIndex={open ? 0 : -1}
+        aria-label="Close workspace navigation"
+        className={`fixed inset-0 z-[44] hidden bg-black/35 backdrop-blur-[2px] transition-opacity lg:block ${open ? "pointer-events-auto opacity-100" : "pointer-events-none opacity-0"}`}
+        onClick={() => closePanel(true)}
+      />
+      <aside
+        ref={panelRef}
+        id="desktop-workspace-navigation"
+        aria-label="Expanded career workspace navigation"
+        aria-hidden={!open}
+        inert={!open}
+        className={`fixed inset-y-0 left-[76px] z-[45] hidden w-[min(300px,calc(100vw-76px))] border-r border-white/10 bg-slate-950/95 p-4 shadow-2xl backdrop-blur-xl transition-transform duration-300 lg:block ${open ? "translate-x-0" : "-translate-x-[calc(100%+76px)]"}`}
+      >
+        <div className="mb-6 flex items-center justify-between gap-3 px-2">
+          <div>
+            <p className="text-xs font-semibold uppercase tracking-[0.16em] text-indigo-300">{career.title}</p>
+            <p className="mt-1 text-sm text-slate-400">Career Workspace</p>
+          </div>
+          <button type="button" onClick={() => closePanel(true)} className={`grid h-11 w-11 place-items-center rounded-xl border ${shellButton(false)}`} aria-label="Close workspace navigation">
+            <Icon name="x" />
+          </button>
+        </div>
+        <WorkspaceMenuContents activeSection={activeSection} switchSection={(section) => { switchSection(section); closePanel(true); }} />
+      </aside>
+    </>
   );
 }
 
-function WorkspaceMenuContents({ activeSection, isRoadmapMode, stats, switchSection }: { activeSection: CareerWorkspaceSectionId; isRoadmapMode: boolean; stats: ReturnType<typeof getCareerWorkspaceStats>; switchSection: (section: CareerWorkspaceSectionId) => void }) {
+function WorkspaceMenuContents({ activeSection, switchSection }: { activeSection: CareerWorkspaceSectionId; switchSection: (section: CareerWorkspaceSectionId) => void }) {
   return <>
       <div>
-        <Link href="/" className={`mb-4 flex items-center gap-3 rounded-xl px-3 py-2 text-sm font-semibold ${isRoadmapMode ? "text-stone-700 hover:bg-white/20" : "text-white hover:bg-white/5"}`}>
-          <span className={`flex h-9 w-9 items-center justify-center rounded-xl ${isRoadmapMode ? "border border-stone-500/20 text-stone-700" : "bg-ai-500/20 text-ai-200"}`}>AI</span>
-          Career OS
+        <Link href="/" className="mb-4 flex min-h-11 items-center gap-3 rounded-xl px-3 py-2 text-sm font-semibold text-white hover:bg-white/5" aria-label="Back to Career Universe">
+          <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-ai-500/20 text-ai-200">AI</span>
+          Back to Career Universe
         </Link>
         <nav className="space-y-1" aria-label="Career workspace navigation">
           {CAREER_NAV_ITEMS.map(({ id: sectionId, label }) => {
@@ -613,50 +811,109 @@ function WorkspaceMenuContents({ activeSection, isRoadmapMode, stats, switchSect
                 key={sectionId}
                 type="button"
                 onClick={() => switchSection(sectionId)}
-                className={`flex w-full items-center justify-between rounded-xl border px-3 py-2.5 text-left text-sm transition ${isRoadmapMode ? activeSection === sectionId ? "border-stone-500/15 bg-white/30 font-semibold text-stone-800" : "border-transparent bg-transparent text-stone-600 hover:bg-white/20 hover:text-stone-800" : shellButton(activeSection === sectionId)}`}
+                aria-label={label}
+                aria-current={activeSection === sectionId ? "page" : undefined}
+                data-workspace-destination
+                className={`flex w-full items-center justify-between rounded-xl border px-3 py-2.5 text-left text-sm transition ${shellButton(activeSection === sectionId)}`}
               >
-                <span>{label}</span>
-                {activeSection === sectionId ? <Icon name="target" className="h-4 w-4 text-cyber-300" /> : null}
+                <span className="flex items-center gap-3"><Icon name={SECTION_ICONS[sectionId]} className="h-5 w-5 shrink-0" />{label}</span>
+                {activeSection === sectionId ? <span className="h-2 w-2 rounded-full bg-cyan-300" aria-hidden="true" /> : null}
               </button>
             );
           })}
         </nav>
       </div>
-      <div className={isRoadmapMode ? "hidden" : "block"}><PanelCard>
-        <p className="text-xs uppercase tracking-[0.16em] text-slate-500">Career readiness</p>
-        <p className="mt-2 text-3xl font-semibold text-white">{stats.readinessScore}%</p>
-        <ProgressBar value={stats.readinessScore} />
-      </PanelCard></div>
     </>;
 }
 
 function MobileNav({
   activeSection,
-  guidedMode,
   switchSection,
 }: {
   activeSection: CareerWorkspaceSectionId;
-  guidedMode: boolean;
   switchSection: (section: CareerWorkspaceSectionId) => void;
 }) {
-  const isRoadmapMode = activeSection === "roadmap";
+  const career = useCareerData();
+  const [open, setOpen] = useState(false);
+  const triggerRef = useRef<HTMLButtonElement>(null);
+  const drawerRef = useRef<HTMLElement>(null);
+
+  useEffect(() => {
+    if (!open) return;
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape") {
+        setOpen(false);
+        window.requestAnimationFrame(() => triggerRef.current?.focus());
+        return;
+      }
+      keepFocusInside(event, drawerRef.current);
+    };
+    window.addEventListener("keydown", handleKeyDown);
+    window.requestAnimationFrame(() => drawerRef.current?.querySelector<HTMLButtonElement>("button[data-workspace-destination]")?.focus());
+    return () => {
+      document.body.style.overflow = previousOverflow;
+      window.removeEventListener("keydown", handleKeyDown);
+    };
+  }, [open]);
+
+  function close(returnFocus = false) {
+    setOpen(false);
+    if (returnFocus) window.requestAnimationFrame(() => triggerRef.current?.focus());
+  }
+
   return (
-    <nav className={`fixed inset-x-0 bottom-0 z-50 px-3 py-2 pb-[calc(0.5rem_+_env(safe-area-inset-bottom))] backdrop-blur-md transition-opacity lg:hidden ${isRoadmapMode ? guidedMode ? "border-t border-stone-700/10 bg-[#eee7d5]/55 opacity-80" : "border-t border-stone-700/10 bg-[#eee7d5]/75" : "border-t border-white/10 bg-slate-950/90"}`} aria-label="Mobile career workspace navigation">
-      <div className="scrollbar-hide flex gap-2 overflow-x-auto">
-        {CAREER_NAV_ITEMS.map(({ id: sectionId, label }) => {
-          return (
-            <button
-              key={sectionId}
-              type="button"
-              onClick={() => switchSection(sectionId)}
-              className={`min-h-11 shrink-0 rounded-xl border px-3 py-2 text-xs font-semibold transition ${isRoadmapMode ? activeSection === sectionId ? "border-stone-500/20 bg-white/35 text-stone-800" : "border-transparent text-stone-600" : shellButton(activeSection === sectionId)}`}
-            >
-              {label}
-            </button>
-          );
-        })}
-      </div>
-    </nav>
+    <>
+      <header className="fixed inset-x-0 top-0 z-50 flex h-[calc(3.75rem+env(safe-area-inset-top))] items-end border-b border-white/10 bg-slate-950/92 px-2 pb-2 pt-[env(safe-area-inset-top)] backdrop-blur-xl lg:hidden">
+        <div className="flex min-w-[88px] items-center">
+          {activeSection !== "hero" ? (
+          <button
+            type="button"
+            onClick={() => switchSection("hero")}
+            className="grid h-11 w-11 place-items-center rounded-xl text-slate-300 hover:bg-white/[0.05] hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-300"
+            aria-label={`Back to ${career.title} Workspace`}
+          >
+            <Icon name="arrow" className="h-5 w-5 rotate-180" />
+          </button>
+          ) : <span className="h-11 w-11" aria-hidden="true" />}
+          <Link href="/" className="grid h-11 w-11 place-items-center rounded-xl text-slate-300 hover:bg-white/[0.05] hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-300" aria-label="Back to Career Universe">
+            <Icon name="universe" className="h-5 w-5" />
+          </Link>
+        </div>
+        <h1 className="min-w-0 flex-1 truncate px-2 text-center font-display text-sm font-semibold text-white">
+          {activeSection === "hero" ? career.title : CAREER_NAV_ITEMS.find((item) => item.id === activeSection)?.label ?? career.title}
+        </h1>
+          <button
+            ref={triggerRef}
+            type="button"
+            onClick={() => setOpen(true)}
+            className="grid h-11 w-11 place-items-center rounded-xl text-slate-300 hover:bg-white/[0.05] hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-300"
+            aria-label="Open workspace navigation"
+            aria-expanded={open}
+            aria-controls="mobile-workspace-navigation"
+          >
+            <Icon name="menu" className="h-5 w-5" />
+          </button>
+      </header>
+      <button type="button" tabIndex={open ? 0 : -1} onClick={() => close(true)} aria-label="Close workspace navigation" className={`fixed inset-0 z-[54] bg-black/55 backdrop-blur-sm transition-opacity lg:hidden ${open ? "pointer-events-auto opacity-100" : "pointer-events-none opacity-0"}`} />
+      <aside
+        ref={drawerRef}
+        id="mobile-workspace-navigation"
+        role="dialog"
+        aria-modal="true"
+        aria-label="Career workspace navigation"
+        aria-hidden={!open}
+        inert={!open}
+        className={`fixed inset-y-0 left-0 z-[55] flex w-[min(320px,88vw)] flex-col border-r border-white/10 bg-slate-950/98 p-4 shadow-2xl transition-transform duration-300 lg:hidden ${open ? "translate-x-0" : "-translate-x-full"}`}
+      >
+        <div className="mb-5 flex items-center justify-between border-b border-white/10 pb-4">
+          <div><p className="font-semibold text-white">{career.title}</p><p className="mt-1 text-xs text-slate-500">Career Workspace</p></div>
+          <button type="button" onClick={() => close(true)} className={`grid h-11 w-11 place-items-center rounded-xl border ${shellButton(false)}`} aria-label="Close workspace navigation"><Icon name="x" /></button>
+        </div>
+        <WorkspaceMenuContents activeSection={activeSection} switchSection={(section) => { switchSection(section); close(true); }} />
+      </aside>
+    </>
   );
 }
 
@@ -677,6 +934,8 @@ function HeroScene({
   startGuidedJourney: () => void;
   actionMessage: string;
 }) {
+  const career = useCareerData();
+  const hasProgress = stats.overallProgress > 0 || stats.notesCount > 0;
   return (
     <motion.section
       className="relative h-full overflow-hidden px-4 py-5 pb-24 lg:px-8 lg:pb-5"
@@ -685,23 +944,25 @@ function HeroScene({
       exit={{ opacity: 0, scale: 0.98 }}
     >
       <div className="absolute inset-0 bg-[radial-gradient(circle_at_48%_35%,rgba(79,70,229,0.24),transparent_30%),radial-gradient(circle_at_70%_68%,rgba(6,182,212,0.12),transparent_34%)]" />
-      <div className="absolute left-1/2 top-1/2 h-[620px] w-[620px] -translate-x-1/2 -translate-y-1/2 rounded-full border border-ai-300/10 bg-ai-500/5 shadow-glow-md" />
-      <div className="absolute left-1/2 top-1/2 h-[420px] w-[420px] -translate-x-1/2 -translate-y-1/2 rounded-full border border-cyber-300/20 bg-slate-950/60" />
       <div className="absolute inset-0 bg-[linear-gradient(rgba(129,140,248,0.06)_1px,transparent_1px),linear-gradient(90deg,rgba(129,140,248,0.05)_1px,transparent_1px)] bg-[size:56px_56px]" />
+      <div aria-hidden="true" className="absolute right-[8%] top-1/2 hidden h-80 w-80 -translate-y-1/2 lg:block">
+        <div className="absolute left-1/2 top-1/2 h-24 w-24 -translate-x-1/2 -translate-y-1/2 rounded-full border border-amber-200/30 bg-[radial-gradient(circle_at_40%_35%,#fde68a,#6366f1_48%,#11152d_75%)] shadow-[0_0_90px_rgba(99,102,241,.55)]" />
+        {[[8,20],[78,12],[88,68],[14,82]].map(([left,top], index) => <React.Fragment key={index}><span className="absolute h-3 w-3 rounded-full bg-cyan-300/70 shadow-[0_0_18px_rgba(103,232,249,.8)]" style={{left:`${left}%`,top:`${top}%`}} /><span className="absolute left-1/2 top-1/2 h-px origin-left bg-gradient-to-r from-indigo-300/50 to-transparent" style={{width:"42%",transform:`rotate(${index * 86 - 145}deg)`}} /></React.Fragment>)}
+      </div>
 
-      <div className="relative z-10 mx-auto flex h-full max-w-6xl flex-col justify-center">
-        <div className="max-w-4xl">
+      <div className="relative z-10 mx-auto flex h-full max-w-7xl flex-col justify-center">
+        <div className="max-w-3xl">
           <p className="eyebrow">{career.visual.nodeLabel}</p>
           <h1 className="mt-5 max-w-4xl font-display text-5xl font-semibold leading-none text-white md:text-7xl">{career.title}</h1>
           <p className="mt-5 max-w-2xl text-base leading-7 text-slate-300 md:text-lg">{career.shortDescription}</p>
           <div className="mt-7 flex flex-wrap gap-3">
-            <button type="button" onClick={startLearning} className="btn-primary gap-2">
-              <Icon name="play" />
-              Start Learning
-            </button>
-            <button type="button" onClick={startGuidedJourney} className="btn-secondary gap-2">
+            <button type="button" onClick={startGuidedJourney} className="btn-primary gap-2">
               <Icon name="map" />
-              Start Journey
+              {hasProgress ? "Continue Journey" : "Start Journey"}
+            </button>
+            <button type="button" onClick={startLearning} className="btn-secondary gap-2">
+              <Icon name="play" />
+              Explore Learning
             </button>
             <button type="button" aria-label="Bookmark career" onClick={() => setBookmarked(!bookmarked)} className={`rounded-xl border p-3 ${shellButton(bookmarked)}`}>
               <Icon name="bookmark" />
@@ -713,19 +974,12 @@ function HeroScene({
           {actionMessage ? <p className="mt-3 text-sm text-cyber-200">{actionMessage}</p> : null}
         </div>
 
-        <div className="mt-10 grid max-w-4xl gap-3 sm:grid-cols-2 xl:grid-cols-4">
-          {[
-            ["Readiness", `${stats.readinessScore}%`, "Career readiness score"],
-            ["Journey", `${stats.passedAssessments}/${stats.totalAssessments}`, "Assessments passed"],
-            ["Projects", `${stats.completedProjects}/${stats.totalProjects}`, "Portfolio projects"],
-            ["Notes", `${stats.notesCount}`, "Saved insights"],
-          ].map(([label, value, detail]) => (
-            <PanelCard key={label}>
-              <p className="text-xs text-slate-500">{label}</p>
-              <p className="mt-1 text-2xl font-semibold text-white">{value}</p>
-              <p className="mt-1 text-xs text-slate-400">{detail}</p>
-            </PanelCard>
-          ))}
+        <div className="mt-10 max-w-3xl border-t border-white/10 pt-5">
+          {hasProgress ? <div className="grid gap-4 sm:grid-cols-[1fr_auto_auto] sm:items-end">
+            <ProgressBar value={stats.overallProgress} label="Journey progress" />
+            <p className="text-sm text-slate-300"><strong className="text-white">{stats.completedProjects}</strong> projects completed</p>
+            <p className="text-sm text-slate-300"><strong className="text-white">{stats.notesCount}</strong> saved notes</p>
+          </div> : <p className="text-sm text-slate-400">No journey progress recorded yet. Start at the first station when you are ready.</p>}
         </div>
       </div>
     </motion.section>
@@ -765,6 +1019,7 @@ function RoadmapWorld({
   startLearning: () => void;
   dataWarnings: string[];
 }) {
+  const career = useCareerData();
   return (
     <CareerJourneyEngine
       map={career.journeyMap}
@@ -829,37 +1084,130 @@ function ResourceRow({
   resource: CareerResource;
   disabled?: boolean;
   progress: CareerWorkspaceProgress;
-  updateProgress: (updater: (previous: CareerWorkspaceProgress) => CareerWorkspaceProgress) => void;
-  openNote: (contextType: CareerNote["contextType"], contextId: string, contextLabel: string) => void;
+  updateProgress: (
+    updater: (
+      previous: CareerWorkspaceProgress
+    ) => CareerWorkspaceProgress
+  ) => void;
+  openNote: (
+    contextType: CareerNote["contextType"],
+    contextId: string,
+    contextLabel: string
+  ) => void;
 }) {
   const complete = progress.completedResources.includes(resource.id);
+  const registryResource = resolveReference(resource.id, true);
+
+  const markResourceViewed = () => {
+    updateProgress((previous) => ({
+      ...previous,
+      completedResources: previous.completedResources.includes(resource.id)
+        ? previous.completedResources
+        : [...previous.completedResources, resource.id],
+      resourceViewedAt: {
+        ...previous.resourceViewedAt,
+        [resource.id]: new Date().toISOString(),
+      },
+    }));
+  };
+
   return (
-    <div className={`rounded-xl border border-white/10 bg-white/[0.035] p-3 ${disabled ? "opacity-50" : ""}`}>
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
-        <div className="min-w-0">
-          <h4 className="font-semibold text-white">{resource.title}</h4>
-          <div className="mt-2 flex flex-wrap gap-2">
-            <span className="tag">{resource.type}</span>
-            <span className={resource.cost === "Free" ? "tag tag-emerald" : "tag tag-amber"}>{resource.cost}</span>
-            <span className="tag">{resource.provider}</span>
-            <span className="tag">{resource.estimatedTime}</span>
-          </div>
-          <p className="mt-2 text-xs leading-5 text-slate-400">{resource.whyUseful}</p>
+    <div
+      className={`rounded-xl border border-white/10 bg-white/[0.035] p-3 ${
+        disabled ? "opacity-50" : ""
+      }`}
+    >
+      <div className="min-w-0">
+        <h4 className="font-semibold text-white">
+          {registryResource?.title ?? resource.title}
+        </h4>
+
+        <div className="mt-2 flex flex-wrap gap-2">
+          <span className="tag">
+            {registryResource?.type ?? resource.type}
+          </span>
+          <span
+            className={
+              resource.cost === "Free"
+                ? "tag tag-emerald"
+                : "tag tag-amber"
+            }
+          >
+            {resource.cost}
+          </span>
+          <span className="tag">
+            {registryResource?.provider ?? resource.provider}
+          </span>
+          <span className="tag">
+            {registryResource?.durationLabel ?? resource.estimatedTime}
+          </span>
         </div>
-        <div className="flex shrink-0 flex-wrap gap-2">
+
+        <p className="mt-2 text-xs leading-5 text-slate-400">
+          {resource.whyUseful}
+        </p>
+
+        {registryResource ? (
+          <ReferenceLearningChooser
+            resource={registryResource}
+            disabled={disabled}
+            onOpen={markResourceViewed}
+          />
+        ) : (
           <a
             href={disabled ? undefined : resource.url}
             target="_blank"
             rel="noreferrer"
             aria-disabled={disabled}
-            className={`inline-flex min-h-11 items-center justify-center rounded-lg border px-3 py-2 text-xs font-semibold ${shellButton(false, Boolean(disabled))}`}
+            onClick={(event) => {
+              if (disabled) {
+                event.preventDefault();
+                return;
+              }
+              markResourceViewed();
+            }}
+            className={`mt-4 inline-flex min-h-11 items-center justify-center rounded-lg border px-3 py-2 text-xs font-semibold ${shellButton(
+              false,
+              Boolean(disabled)
+            )}`}
           >
-            Open
+            Open resource
           </a>
-          <button type="button" disabled={disabled} onClick={() => updateProgress((previous) => ({ ...previous, completedResources: toggleId(previous.completedResources, resource.id) }))} className={`min-h-11 rounded-lg border px-3 py-2 text-xs ${shellButton(complete, Boolean(disabled))}`}>
+        )}
+
+        <div className="mt-3 flex flex-wrap gap-2">
+          <button
+            type="button"
+            disabled={disabled}
+            onClick={() =>
+              updateProgress((previous) => ({
+                ...previous,
+                completedResources: toggleId(
+                  previous.completedResources,
+                  resource.id
+                ),
+              }))
+            }
+            className={`min-h-11 rounded-lg border px-3 py-2 text-xs ${shellButton(
+              complete,
+              Boolean(disabled)
+            )}`}
+          >
             {complete ? "Done" : "Track"}
           </button>
-          <button type="button" disabled={disabled} onClick={() => openNote("resource", resource.id, resource.title)} className={`min-h-11 rounded-lg border p-3 ${shellButton(false, Boolean(disabled))}`} aria-label={`Add note for ${resource.title}`}>
+
+          <button
+            type="button"
+            disabled={disabled}
+            onClick={() =>
+              openNote("resource", resource.id, resource.title)
+            }
+            className={`min-h-11 rounded-lg border p-3 ${shellButton(
+              false,
+              Boolean(disabled)
+            )}`}
+            aria-label={`Add note for ${resource.title}`}
+          >
             <Icon name="note" />
           </button>
         </div>
@@ -881,8 +1229,6 @@ function ModuleScene({
   updateProgress,
   deleteNote,
   exportNotesAsPdf,
-  jobFilters,
-  setJobFilters,
 }: {
   section: CareerWorkspaceSectionId;
   progress: CareerWorkspaceProgress;
@@ -896,30 +1242,22 @@ function ModuleScene({
   updateProgress: (updater: (previous: CareerWorkspaceProgress) => CareerWorkspaceProgress) => void;
   deleteNote: (id: string) => void;
   exportNotesAsPdf: () => void;
-  jobFilters: Record<string, string>;
-  setJobFilters: (filters: Record<string, string>) => void;
 }) {
+  const career = useCareerData();
   const current = career.mapSections.find((item) => item.id === section);
   return (
     <motion.section className="relative h-full overflow-hidden p-4 pb-24 lg:p-6 lg:pb-6" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
       <div className="absolute inset-0 bg-[radial-gradient(circle_at_30%_25%,rgba(79,70,229,0.16),transparent_36%),radial-gradient(circle_at_80%_70%,rgba(6,182,212,0.1),transparent_32%)]" />
       <div className="relative z-10 flex h-full flex-col gap-4">
-        <PanelCard>
+        <div className="border-b border-white/10 pb-4">
           <p className="label-sm text-cyber-300">{current?.eyebrow ?? "Workspace"}</p>
-          <div className="flex flex-col gap-3 md:flex-row md:items-end md:justify-between">
-            <div>
-              <h2 className="mt-2 font-display text-3xl font-semibold text-white">{current?.label ?? section}</h2>
-              <p className="mt-2 max-w-2xl text-sm leading-6 text-slate-400">{current?.summary}</p>
-            </div>
-            <div className="w-full md:w-64">
-              <ProgressBar value={stats.readinessScore} label="Readiness" />
-            </div>
-          </div>
-        </PanelCard>
-        <div className="min-h-0 flex-1 overflow-y-auto rounded-2xl border border-white/10 bg-slate-950/55 p-4 backdrop-blur-xl">
+          <h2 className="mt-2 font-display text-3xl font-semibold text-white">{current?.label ?? section}</h2>
+          <p className="mt-2 max-w-2xl text-sm leading-6 text-slate-400">{current?.summary}</p>
+        </div>
+        <div className="min-h-0 flex-1 overflow-y-auto">
           {section === "project" ? <ProjectsModule progress={progress} updateProgress={updateProgress} openNote={openNote} /> : null}
           {section === "portfolio" ? <TaskModule title="Portfolio proof" tasks={career.portfolioTasks} progress={progress} updateProgress={updateProgress} /> : null}
-          {section === "jobs" ? <JobsModule jobFilters={jobFilters} setJobFilters={setJobFilters} /> : null}
+          {section === "jobs" ? <JobsModule progress={progress} /> : null}
           {section === "interview-brief" ? <InterviewModule /> : null}
         </div>
       </div>
@@ -960,6 +1298,7 @@ function NotesModule({
   deleteNote: (id: string) => void;
   exportNotesAsPdf: () => void;
 }) {
+  const career = useCareerData();
   const filters: Array<CareerNote["contextType"] | "all"> = ["all", "career", "phase", "step", "resource", "project", "quiz", "exam"];
   const notes = noteFilter === "all" ? progress.notes : progress.notes.filter((note) => note.contextType === noteFilter);
   return (
@@ -1014,6 +1353,7 @@ function ProjectsModule({
   updateProgress: (updater: (previous: CareerWorkspaceProgress) => CareerWorkspaceProgress) => void;
   openNote: (contextType: CareerNote["contextType"], contextId: string, contextLabel: string) => void;
 }) {
+  const career = useCareerData();
   return (
     <div className="grid gap-3 lg:grid-cols-2">
       {career.projects.map((project) => {
@@ -1067,6 +1407,7 @@ function ExamsModule({
   progress: CareerWorkspaceProgress;
   openAssessment: (assessment: CareerAssessment, stageId?: string) => void;
 }) {
+  const career = useCareerData();
   return (
     <div className="grid gap-3 lg:grid-cols-2">
       {assessments.map(({ assessment, stage, type }) => {
@@ -1102,6 +1443,7 @@ function ReadinessModule({
   progress: CareerWorkspaceProgress;
   updateProgress: (updater: (previous: CareerWorkspaceProgress) => CareerWorkspaceProgress) => void;
 }) {
+  const career = useCareerData();
   return (
     <div className="grid gap-4 lg:grid-cols-[320px_1fr]">
       <PanelCard>
@@ -1125,39 +1467,72 @@ function ReadinessModule({
   );
 }
 
-function JobsModule({
-  jobFilters,
-  setJobFilters,
-}: {
-  jobFilters: Record<string, string>;
-  setJobFilters: (filters: Record<string, string>) => void;
-}) {
+function JobsModule({ progress }: { progress: CareerWorkspaceProgress }) {
+  const career = useCareerData();
+  const hasProjectProof = progress.completedProjects.length > 0;
+  const hasPortfolioProof = career.portfolioTasks.some((task) => progress.completedStageTasks.includes(task.id));
+  const hasApplicationNotes = progress.notes.some((note) => note.contextType === "career" || note.contextType === "project");
+  const steps = [
+    {
+      title: "Resume",
+      purpose: "Turn project decisions and measurable outcomes into concise, role-specific evidence.",
+      status: hasProjectProof ? "Proof available" : "Needs project evidence",
+      href: careerSectionHref(career.slug, "project"),
+      action: hasProjectProof ? "Review project evidence" : "Build project evidence",
+    },
+    {
+      title: "LinkedIn",
+      purpose: `Use a clear ${career.title} headline, focused skills, and featured project case studies.`,
+      status: hasPortfolioProof ? "Portfolio proof available" : "Needs portfolio proof",
+      href: careerSectionHref(career.slug, "portfolio"),
+      action: "Prepare portfolio proof",
+    },
+    {
+      title: "Applications",
+      purpose: "Target roles that match your demonstrated scope and tailor evidence without overstating experience.",
+      status: hasApplicationNotes ? "Preparation notes saved" : "Not started",
+    },
+    {
+      title: "Positioning",
+      purpose: "Explain the AI systems you can build, evaluate, deploy, and improve—not just the tools you have tried.",
+      status: "Practice available",
+      href: careerSectionHref(career.slug, "interview-brief"),
+      action: "Open interview brief",
+    },
+  ];
   return (
-    <div className="space-y-4">
-      <PanelCard>
-        <p className="label-sm text-cyber-300">{career.jobBoard.integrationStatus.replace("-", " ")}</p>
-        <h3 className="mt-2 text-xl font-semibold text-white">{career.jobBoard.title}</h3>
-        <p className="mt-2 text-sm leading-6 text-slate-400">{career.jobBoard.description}</p>
-        <p className="mt-3 rounded-xl border border-amber-300/20 bg-amber-500/10 p-3 text-sm text-amber-100">{career.jobBoard.sampleDisclaimer}</p>
-      </PanelCard>
-      <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-5">
-        {career.jobBoard.filters.map((filter) => (
-          <label key={filter} className="rounded-xl border border-white/10 bg-white/[0.035] p-3 text-sm text-slate-300">
-            <span className="text-xs text-slate-500">{filter}</span>
-            <input
-              value={jobFilters[filter] ?? ""}
-              onChange={(event) => setJobFilters({ ...jobFilters, [filter]: event.target.value })}
-              placeholder={filter === "Remote" || filter === "Level" ? "Any" : filter}
-              className="input-field mt-2 py-2"
-            />
-          </label>
-        ))}
+    <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_minmax(280px,.75fr)]">
+      <div>
+        <p className="label-sm text-cyber-300">Job preparation</p>
+        <h3 className="mt-3 max-w-xl font-display text-3xl font-semibold text-white">Prepare a credible {career.title} application.</h3>
+        <p className="mt-4 max-w-xl text-sm leading-7 text-slate-300">Build from evidence already captured in your journey. This workspace does not invent vacancies, salary claims, or market demand.</p>
+        <div className="mt-8 rounded-2xl border border-indigo-300/15 bg-indigo-500/[0.06] p-5">
+          <p className="text-sm font-semibold text-indigo-100">Recommended next step</p>
+          <p className="mt-2 text-sm leading-6 text-slate-300">{hasProjectProof ? "Shape your strongest completed project into a concise case study." : "Complete one practical project before drafting application claims."}</p>
+          <Link href={careerSectionHref(career.slug, "project")} className="mt-4 inline-flex min-h-11 items-center rounded-xl border border-indigo-300/25 px-4 py-2 text-sm font-semibold text-indigo-100 hover:bg-indigo-400/10">
+            {hasProjectProof ? "Review project proof" : "Go to projects"}
+          </Link>
+        </div>
       </div>
+      <ol className="relative space-y-0 border-l border-white/10 pl-6">
+        {steps.map((step, index) => (
+          <li key={step.title} className="relative pb-6 last:pb-0">
+            <span aria-hidden="true" className="absolute -left-[31px] top-0 grid h-4 w-4 place-items-center rounded-full border border-indigo-300/30 bg-[#080b1c] text-[9px] text-indigo-200">{index + 1}</span>
+            <div className="flex items-start justify-between gap-3">
+              <h4 className="font-semibold text-white">{step.title}</h4>
+              <span className="rounded-full bg-white/[0.05] px-2 py-1 text-[10px] font-medium text-slate-400">{step.status}</span>
+            </div>
+            <p className="mt-2 text-sm leading-6 text-slate-400">{step.purpose}</p>
+            {step.href && step.action ? <Link href={step.href} className="mt-2 inline-flex min-h-11 items-center text-sm font-semibold text-cyan-200 hover:text-white">{step.action} <span className="ml-1" aria-hidden="true">→</span></Link> : null}
+          </li>
+        ))}
+      </ol>
     </div>
   );
 }
 
 function InterviewModule() {
+  const career = useCareerData();
   return (
     <div className="grid gap-4 lg:grid-cols-2">
       <PanelCard>
@@ -1193,6 +1568,7 @@ function StationDetailsModal({
   updateProgress: (updater: (previous: CareerWorkspaceProgress) => CareerWorkspaceProgress) => void;
   notifyLockedStage: () => void;
 }) {
+  const career = useCareerData();
   useEffect(() => {
     if (!stage) return;
     const previousOverflow = document.body.style.overflow;
@@ -1236,7 +1612,7 @@ function StationDetailsModal({
             {!unlocked ? <p className="mt-3 rounded-xl border border-amber-300/25 bg-amber-500/10 p-3 text-sm text-amber-100">Complete the previous stations to unlock this step. Starting activities is disabled, but you can review the station plan and requirements.</p> : null}
             <div className="mt-4 grid gap-3 sm:grid-cols-3">
               <ProgressBar value={getJourneyStageProgress(stage.id, career, progress)} label="Station progress" />
-              <div className="rounded-xl border border-white/10 bg-white/[0.035] p-3 text-sm text-slate-300">Duration: {stage.duration}</div>
+              <EffortEstimate estimate={stage.estimatedEffort} compact />
               <div className="rounded-xl border border-white/10 bg-white/[0.035] p-3 text-sm text-slate-300">Passing score: {stage.test.passingScore}%</div>
             </div>
           </div>

@@ -1,0 +1,11 @@
+[
+  {"productCode":"gb","adzunaCode":"gb","name":"United Kingdom","currencyCode":"GBP","configured":true,"scheduled":true},
+  {"productCode":"us","adzunaCode":"us","name":"United States","currencyCode":"USD","configured":true,"scheduled":true},
+  {"productCode":"ca","adzunaCode":"ca","name":"Canada","currencyCode":"CAD","configured":true,"scheduled":true},
+  {"productCode":"au","adzunaCode":"au","name":"Australia","currencyCode":"AUD","configured":true,"scheduled":true},
+  {"productCode":"de","adzunaCode":"de","name":"Germany","currencyCode":"EUR","configured":true,"scheduled":true},
+  {"productCode":"fr","adzunaCode":"fr","name":"France","currencyCode":"EUR","configured":true,"scheduled":false},
+  {"productCode":"nl","adzunaCode":"nl","name":"Netherlands","currencyCode":"EUR","configured":true,"scheduled":false},
+  {"productCode":"nz","adzunaCode":"nz","name":"New Zealand","currencyCode":"NZD","configured":true,"scheduled":false},
+  {"productCode":"ch","adzunaCode":"ch","name":"Switzerland","currencyCode":"CHF","configured":true,"scheduled":false}
+]

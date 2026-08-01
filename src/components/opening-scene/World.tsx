@@ -28,11 +28,12 @@
 //   • Pixel ratio capped at 2 to prevent 3x/4x renders on HiDPI
 //   • Delta time capped at 50ms to prevent spiral-of-death on tab restore
 
-import { useCallback, useEffect, useRef, useState } from "react";
+import { type FormEvent, useCallback, useEffect, useRef, useState } from "react";
 import * as THREE from "three";
 import { SceneProvider, useScene, CareerNode } from "./SceneContext";
 import HeroContent from "./HeroContent";
 import TransitionController from "./TransitionController";
+import { CAREER_CATALOG } from "@/data/careerCatalog";
 
 // ─── Seeded deterministic RNG ─────────────────────────────────────────────────
 function seededRng(seed: number) {
@@ -44,51 +45,32 @@ function seededRng(seed: number) {
 }
 
 // ─── Universe registry ────────────────────────────────────────────────────────
-// Every entry here becomes a named, reachable career node in the universe.
-// Add new careers here — they appear in the world and navigation panel automatically.
-export const UNIVERSE_REGISTRY: {
-  id: string;
-  title: string;
-  category: string;
-  status: "available" | "coming-soon";
-  sectorKey: string;
-  roadmapSlug?: string;
-  careerPath?: string;
-}[] = [
-  // ── Near field ───────────────────────────────────────────────────────────
-  { id: "ai-engineer",            title: "AI Engineer",              category: "Engineering",    status: "available",   sectorKey: "near-centre",    careerPath: "/careers/ai-engineer?entry=galaxy" },
-  { id: "ml-engineer",            title: "ML Engineer",              category: "Engineering",    status: "coming-soon", sectorKey: "near-centre"    },
-  { id: "prompt-engineer",        title: "Prompt Engineer",          category: "Engineering",    status: "coming-soon", sectorKey: "near-left"      },
-  { id: "ai-automation-specialist", title: "AI Automation Specialist", category: "Automation", status: "available",    sectorKey: "near-left",     roadmapSlug: "ai-automation-specialist" },
-  { id: "no-code-ai",             title: "No-Code AI Builder",       category: "Automation",    status: "coming-soon", sectorKey: "near-right"     },
-  { id: "ai-product-manager",     title: "AI Product Manager",       category: "Product",       status: "coming-soon", sectorKey: "near-top"       },
-  { id: "ai-ux-designer",         title: "AI UX Designer",           category: "Design",        status: "coming-soon", sectorKey: "near-top"       },
-  { id: "ai-business-analyst",    title: "AI Business Analyst",      category: "Business",      status: "coming-soon", sectorKey: "near-bottom"    },
-  { id: "ai-consultant",          title: "AI Consultant",            category: "Business",      status: "coming-soon", sectorKey: "near-bottom"    },
-  // ── Mid field ────────────────────────────────────────────────────────────
-  { id: "ai-content-creator",     title: "AI Content Creator",       category: "Content",       status: "coming-soon", sectorKey: "mid-top-far"    },
-  { id: "ai-marketing-specialist",title: "AI Marketing Specialist",  category: "Marketing",     status: "coming-soon", sectorKey: "mid-left-far"   },
-  { id: "ai-sales-specialist",    title: "AI Sales Specialist",      category: "Sales",         status: "coming-soon", sectorKey: "mid-right-far"  },
-  { id: "ai-support-specialist",  title: "AI Support Specialist",    category: "Support",       status: "coming-soon", sectorKey: "mid-right-far"  },
-  { id: "ai-agent-developer",     title: "AI Agent Developer",       category: "Engineering",   status: "coming-soon", sectorKey: "mid-bottom-far" },
-  { id: "ai-workflow-engineer",   title: "AI Workflow Engineer",     category: "Automation",    status: "coming-soon", sectorKey: "mid-bottom-far" },
-  { id: "data-scientist",         title: "Data Scientist",           category: "Data",          status: "coming-soon", sectorKey: "mid-deep"       },
-  { id: "ai-data-engineer",       title: "AI Data Engineer",         category: "Data",          status: "available",   sectorKey: "mid-deep",      careerPath: "/careers/ai-data-engineer?entry=galaxy" },
-  // ── Deep field ───────────────────────────────────────────────────────────
-  { id: "ml-ops-engineer",        title: "MLOps Engineer",           category: "Engineering",   status: "coming-soon", sectorKey: "deep-mlops"     },
-  { id: "llm-engineer",           title: "LLM Engineer",             category: "Engineering",   status: "coming-soon", sectorKey: "deep-llm"       },
-  { id: "ai-architect",           title: "AI Architect",             category: "Architecture",  status: "coming-soon", sectorKey: "deep-arch"      },
-  { id: "ai-solutions-architect", title: "AI Solutions Architect",   category: "Architecture",  status: "coming-soon", sectorKey: "deep-arch"      },
-  { id: "ai-researcher",          title: "AI Researcher",            category: "Research",      status: "coming-soon", sectorKey: "deep-research"  },
-  { id: "computer-vision-engineer",title:"Computer Vision Engineer", category: "Engineering",   status: "coming-soon", sectorKey: "deep-vision"    },
-  { id: "ai-security-engineer",   title: "AI Security Engineer",     category: "Security",      status: "coming-soon", sectorKey: "deep-security"  },
-  { id: "robotics-ai-engineer",   title: "Robotics AI Engineer",     category: "Robotics",      status: "coming-soon", sectorKey: "deep-robotics"  },
-  { id: "ai-infrastructure-engineer", title: "AI Infrastructure Engineer", category: "Infrastructure", status: "coming-soon", sectorKey: "deep-infra" },
-  { id: "generative-ai-engineer", title: "Generative AI Engineer",   category: "Engineering",   status: "coming-soon", sectorKey: "deep-ml"        },
-  { id: "ai-developer",           title: "AI Developer",             category: "Engineering",   status: "coming-soon", sectorKey: "deep-ml"        },
-  { id: "ai-developer-advocate",  title: "AI Developer Advocate",    category: "Community",     status: "coming-soon", sectorKey: "deep-data"      },
-  { id: "ai-ethicist",            title: "AI Ethicist",              category: "Research",      status: "coming-soon", sectorKey: "deep-research"  },
-];
+const DOMAIN_SECTORS = {
+  "AI Engineering": ["near-centre", "deep-ml"],
+  "AI Product": ["near-top"],
+  "AI Automation": ["near-left", "near-right", "mid-bottom-far"],
+  "Enterprise AI & Consulting": ["near-bottom", "mid-right-far", "deep-arch"],
+  "AI Data & Analytics": ["mid-deep", "deep-data", "deep-research"],
+  "AI Infrastructure & Security": ["deep-infra", "deep-mlops", "deep-security"],
+  "AI Marketing": ["mid-left-far", "mid-top-far"],
+} as const;
+
+// Public nodes and labels are generated from the canonical catalog. This map
+// contains scene layout metadata only; it does not duplicate career identity.
+export const UNIVERSE_REGISTRY = CAREER_CATALOG.map((career) => {
+  const domainCareers = CAREER_CATALOG.filter((item) => item.domain === career.domain);
+  const domainIndex = domainCareers.findIndex((item) => item.id === career.id);
+  const sectors = DOMAIN_SECTORS[career.domain];
+  return {
+    id: career.id,
+    title: career.title,
+    category: career.domain,
+    status: career.availability === "available" ? "available" as const : "coming-soon" as const,
+    sectorKey: sectors[domainIndex % sectors.length],
+    careerPath: career.route,
+    roadmapSlug: undefined as string | undefined,
+  };
+});
 
 // ─── Sector definitions ───────────────────────────────────────────────────────
 export const SECTORS: Record<string, {
@@ -214,6 +196,7 @@ function buildStarField(scene: THREE.Scene) {
 // All UI panels use inline style transitions — zero dependency on framer-motion.
 const TRANSITION_BASE = "opacity 0.6s cubic-bezier(0.22,1,0.36,1), transform 0.6s cubic-bezier(0.22,1,0.36,1), filter 0.6s cubic-bezier(0.22,1,0.36,1)";
 const CAREER_ENTRY_EVENT = "ai-career-node-entry";
+const CAREER_EXPLORER_OPEN_EVENT = "ai-career-explorer-open";
 
 type CareerEntryDetail = {
   title: string;
@@ -306,20 +289,119 @@ function HoverLabel({ node, screenPos }: HoverLabelProps) {
   );
 }
 
+// ─── Public navigation bridge ────────────────────────────────────────────────
+// Header links to #career-universe. Because the universe already fills the first
+// viewport, scrolling to that anchor has no visible effect. This bridge converts
+// that navigation intent into the actual product action: activate the universe
+// and open the Career Navigation panel.
+function CareerExplorerLinkBridge() {
+  const { phase, activate } = useScene();
+  const phaseRef = useRef(phase);
+
+  useEffect(() => {
+    phaseRef.current = phase;
+  }, [phase]);
+
+  useEffect(() => {
+    function handleExploreCareerClick(event: MouseEvent) {
+      const target = event.target;
+      if (!(target instanceof Element)) return;
+
+      const anchor = target.closest<HTMLAnchorElement>("a[href]");
+      if (!anchor) return;
+
+      const href = anchor.getAttribute("href");
+      if (
+        href !== "/#career-universe" &&
+        href !== "#career-universe"
+      ) {
+        return;
+      }
+
+      event.preventDefault();
+
+      if (phaseRef.current === "idle") {
+        activate();
+      }
+
+      window.dispatchEvent(new Event(CAREER_EXPLORER_OPEN_EVENT));
+
+      // Preserve a meaningful URL without relying on browser anchor scrolling.
+      if (window.location.hash !== "#career-universe") {
+        window.history.replaceState(
+          window.history.state,
+          "",
+          `${window.location.pathname}${window.location.search}#career-universe`
+        );
+      }
+    }
+
+    document.addEventListener("click", handleExploreCareerClick);
+    return () => {
+      document.removeEventListener("click", handleExploreCareerClick);
+    };
+  }, [activate]);
+
+  return null;
+}
+
 // ─── Career preview card ─────────────────────────────────────────────────────
 function CareerPreviewCard() {
   const { phase, destination, travelTo, nodes } = useScene();
   const [isEnteringCareer, setIsEnteringCareer] = useState(false);
+  const [showInterest, setShowInterest] = useState(false);
+  const [interestName, setInterestName] = useState("");
+  const [interestEmail, setInterestEmail] = useState("");
+  const [interestState, setInterestState] = useState<"idle" | "submitting" | "success" | "error">("idle");
+  const [interestError, setInterestError] = useState("");
+  const [isMobile, setIsMobile] = useState(false);
   const entry = destination ? UNIVERSE_REGISTRY.find((e) => e.id === destination.id) : null;
   const show = (phase === "arrived" || phase === "exploring") && destination !== null && !entry?.careerPath;
 
+  useEffect(() => {
+    const update = () => setIsMobile(window.innerWidth < 640);
+    update();
+    window.addEventListener("resize", update);
+    return () => window.removeEventListener("resize", update);
+  }, []);
+
+  useEffect(() => {
+    setShowInterest(false);
+    setInterestState("idle");
+    setInterestError("");
+  }, [destination?.id]);
+
   function handleOpenRoadmap() {
-    const destinationPath = entry?.careerPath ?? (entry?.roadmapSlug ? `/roadmaps/${entry.roadmapSlug}` : "/#waitlist");
+    const destinationPath = entry?.careerPath ?? (entry?.roadmapSlug ? `/roadmaps/${entry.roadmapSlug}` : null);
+    if (!destinationPath) {
+      setShowInterest(true);
+      return;
+    }
     const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
     setIsEnteringCareer(true);
     window.setTimeout(() => {
       window.location.href = destinationPath;
     }, reduceMotion ? 80 : 1550);
+  }
+
+  async function submitInterest(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    if (!interestName.trim() || !interestEmail.trim() || !destination) return;
+    setInterestState("submitting");
+    setInterestError("");
+    try {
+      const response = await fetch("/api/waitlist", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ name: interestName, email: interestEmail, interest: destination.id }),
+      });
+      const body = await response.json();
+      if (!response.ok) throw new Error(body.error ?? "Registration could not be saved.");
+      setInterestState("success");
+    } catch (error) {
+      setInterestError(error instanceof Error ? error.message : "Registration could not be saved.");
+      setInterestState("error");
+    }
   }
 
   const nearbyNode = destination && nodes.length > 0
@@ -334,16 +416,17 @@ function CareerPreviewCard() {
         aria-hidden={!show}
         style={{
           position: "absolute",
-          right: "clamp(24px,4vw,60px)", top: "50%",
-          transform: show ? "translateY(-50%) translateX(0)" : "translateY(-50%) translateX(40px)",
+          right: isMobile ? 12 : "clamp(24px,4vw,60px)", top: isMobile ? "auto" : "50%",
+          left: isMobile ? 12 : "auto", bottom: isMobile ? 72 : "auto",
+          transform: show ? (isMobile ? "translateY(0)" : "translateY(-50%) translateX(0)") : (isMobile ? "translateY(24px)" : "translateY(-50%) translateX(40px)"),
           opacity: show ? 1 : 0,
           filter: show ? "blur(0)" : "blur(12px)",
           transition: TRANSITION_BASE,
           zIndex: 25,
-          width: "clamp(240px,28vw,320px)",
+          width: isMobile ? "auto" : "clamp(240px,28vw,320px)",
           background: "rgba(3,5,14,0.82)",
           border: "1px solid rgba(99,102,241,0.28)",
-          borderRadius: 20, padding: "28px 24px",
+          borderRadius: 20, padding: isMobile ? "18px 18px" : "28px 24px",
           backdropFilter: "blur(20px)",
           boxShadow: "0 0 60px rgba(99,102,241,0.12), 0 0 0 1px rgba(99,102,241,0.08)",
           pointerEvents: show ? "auto" : "none",
@@ -378,8 +461,29 @@ function CareerPreviewCard() {
               {entry.status === "available" ? "Roadmap available" : "Coming soon"}
             </span>
           </div>
-          {/* CTA */}
-          <button
+          {showInterest ? (
+            interestState === "success" ? (
+              <div role="status" style={{ border: "1px solid rgba(52,211,153,.25)", borderRadius: 12, padding: 14, color: "#a7f3d0", fontSize: 13 }}>
+                Interest registered. Your response helps us choose which complete workspace to build next.
+              </div>
+            ) : (
+              <form onSubmit={submitInterest} style={{ display: "grid", gap: 10 }}>
+                <label style={{ color: "#c7d2fe", fontSize: 11 }}>Name
+                  <input required autoComplete="name" value={interestName} onChange={(event) => setInterestName(event.target.value)} style={{ marginTop: 5, width: "100%", minHeight: 44, borderRadius: 10, border: "1px solid rgba(129,140,248,.3)", background: "rgba(15,23,42,.8)", padding: "10px 12px", color: "white" }} />
+                </label>
+                <label style={{ color: "#c7d2fe", fontSize: 11 }}>Email
+                  <input required type="email" autoComplete="email" value={interestEmail} onChange={(event) => setInterestEmail(event.target.value)} style={{ marginTop: 5, width: "100%", minHeight: 44, borderRadius: 10, border: "1px solid rgba(129,140,248,.3)", background: "rgba(15,23,42,.8)", padding: "10px 12px", color: "white" }} />
+                </label>
+                <input type="hidden" value={destination.id} readOnly />
+                {interestError ? <p role="alert" style={{ margin: 0, color: "#fda4af", fontSize: 11 }}>{interestError}</p> : null}
+                <div style={{ display: "flex", gap: 8 }}>
+                  <button type="button" onClick={() => setShowInterest(false)} style={{ minHeight: 44, flex: 1, borderRadius: 10, border: "1px solid rgba(148,163,184,.2)", background: "transparent", color: "#cbd5e1" }}>Back</button>
+                  <button disabled={interestState === "submitting"} type="submit" style={{ minHeight: 44, flex: 1.4, borderRadius: 10, border: "1px solid rgba(129,140,248,.5)", background: "rgba(99,102,241,.22)", color: "#e0e7ff" }}>{interestState === "submitting" ? "Saving…" : "Register interest"}</button>
+                </div>
+                <p style={{ margin: 0, color: "rgba(203,213,225,.55)", fontSize: 10, lineHeight: 1.5 }}>We use these details only to record interest in this career direction.</p>
+              </form>
+            )
+          ) : <button
             onClick={handleOpenRoadmap}
             disabled={isEnteringCareer}
             style={{
@@ -402,7 +506,7 @@ function CareerPreviewCard() {
             }}
           >
             {isEnteringCareer ? "Entering Career World..." : entry.status === "available" ? "Enter Career Journey →" : "Join Waitlist →"}
-          </button>
+          </button>}
           {nearbyNode && (
             <button
               onClick={() => travelTo(nearbyNode)}
@@ -485,6 +589,30 @@ function CareerNavPanel({ allNodes }: NavPanelProps) {
 
   useEffect(() => {
     try { setShowHint(window.localStorage.getItem("career_map_hint_seen") !== "1"); } catch { setShowHint(true); }
+  }, []);
+
+  useEffect(() => {
+    function openCareerExplorer() {
+      setIsOpen(true);
+      setShowHint(false);
+      try {
+        window.localStorage.setItem("career_map_hint_seen", "1");
+      } catch {
+        // Persistence is optional.
+      }
+    }
+
+    window.addEventListener(
+      CAREER_EXPLORER_OPEN_EVENT,
+      openCareerExplorer
+    );
+
+    return () => {
+      window.removeEventListener(
+        CAREER_EXPLORER_OPEN_EVENT,
+        openCareerExplorer
+      );
+    };
   }, []);
 
   function togglePanel() {
@@ -1236,6 +1364,7 @@ function CareerEntryTransitionOverlay() {
 function WorldInner() {
   return (
     <div style={{ position: "relative", width: "100%", height: "100%", background: "#03050e", overflow: "hidden" }}>
+      <CareerExplorerLinkBridge />
       <ThreeScene />
       <VignetteOverlay />
       <HeroContent />

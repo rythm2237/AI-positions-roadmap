@@ -4,7 +4,7 @@
 // Client component — real API call to /api/waitlist → Supabase + Resend.
 
 import { useState, FormEvent } from "react";
-import { careerPositions } from "@/data/careerRoadmaps";
+import { CAREER_CATALOG } from "@/data/careerCatalog";
 
 type FormState = "idle" | "submitting" | "success" | "error";
 
@@ -45,15 +45,16 @@ export default function WaitlistSection() {
   }
 
   return (
-    <section id="waitlist" className="bg-indigo-600 px-4 py-20 sm:px-6 lg:px-8">
-      <div className="mx-auto max-w-2xl text-center">
+    <section id="waitlist" className="relative overflow-hidden border-t border-white/[0.06] bg-[#07091a] px-5 py-24 sm:px-8">
+      <div aria-hidden="true" className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_50%_0%,rgba(99,102,241,0.28),transparent_48%),radial-gradient(circle_at_15%_100%,rgba(139,92,246,0.12),transparent_38%)]" />
+      <div className="relative mx-auto max-w-2xl text-center">
         {/* Headline */}
         <h2 className="text-3xl font-extrabold text-white sm:text-4xl">
-          Be the first to access the AI career roadmap platform.
+          Register interest in a planned Career Workspace.
         </h2>
-        <p className="mx-auto mt-4 max-w-lg text-base text-indigo-200">
-          Join the early access waitlist and get notified the moment your chosen
-          roadmap goes live — plus early-bird pricing when we launch.
+        <p className="mx-auto mt-4 max-w-lg text-base leading-7 text-slate-300">
+          AI Engineer is available in Public Beta now. Tell us which role-specific
+          workspace should come next.
         </p>
 
         {/* ── Success state ── */}
@@ -79,10 +80,10 @@ export default function WaitlistSection() {
               </svg>
             </div>
             <p className="text-xl font-bold text-white">
-              Thanks! You&apos;re on the early access list.
+              Thanks — your interest has been registered.
             </p>
             <p className="mt-2 text-sm text-indigo-200">
-              Check your inbox — we&apos;ve sent you a confirmation email.
+              Your response helps us prioritize the next complete workspace.
             </p>
           </div>
         ) : (
@@ -147,7 +148,7 @@ export default function WaitlistSection() {
                 className="w-full rounded-xl border border-indigo-400 bg-indigo-700 px-4 py-3 text-sm text-white backdrop-blur-sm transition focus:border-white focus:outline-none focus:ring-2 focus:ring-white/50"
               >
                 <option value="">Select a career path…</option>
-                {careerPositions.map((pos) => (
+                {CAREER_CATALOG.filter((career) => career.availability === "planned").map((pos) => (
                   <option key={pos.id} value={pos.id}>
                     {pos.title}
                   </option>

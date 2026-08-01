@@ -4,7 +4,7 @@
 //
 // Environment variables required (add to .env.local and Vercel dashboard):
 //   SUPABASE_URL           — your project URL from supabase.com → Settings → API
-//   SUPABASE_SERVICE_KEY   — service_role secret key (NOT the anon key)
+//   SUPABASE_SECRET_KEY    — sb_secret_ key for server-side use only
 //   RESEND_API_KEY         — from resend.com → API Keys
 //   RESEND_FROM_EMAIL      — verified sender address e.g. hello@yourdomain.com
 
@@ -28,13 +28,14 @@ interface SupabaseErrorResponse {
 /** Minimal Supabase REST insert — no SDK needed, keeps bundle small. */
 async function insertToSupabase(data: WaitlistPayload): Promise<void> {
   const url = `${process.env.SUPABASE_URL}/rest/v1/waitlist`;
+  const secretKey = process.env.SUPABASE_SECRET_KEY!;
 
   const res = await fetch(url, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
-      apikey: process.env.SUPABASE_SERVICE_KEY!,
-      Authorization: `Bearer ${process.env.SUPABASE_SERVICE_KEY!}`,
+      // Supabase's opaque sb_secret_ keys are API keys, not JWT bearer tokens.
+      apikey: secretKey,
       Prefer: "return=minimal",
     },
     body: JSON.stringify({
@@ -218,7 +219,7 @@ export async function POST(req: NextRequest) {
     }
 
     // 3. Check env vars are configured
-    if (!process.env.SUPABASE_URL || !process.env.SUPABASE_SERVICE_KEY) {
+    if (!process.env.SUPABASE_URL || !process.env.SUPABASE_SECRET_KEY) {
       console.error("[Waitlist] Missing Supabase env vars.");
       return NextResponse.json(
         { error: "Server configuration error. Please try again later." },

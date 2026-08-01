@@ -1,0 +1,1 @@
+{"version":"1.0.0","defaultMaxCallsPerRun":60,"sampleSize":50,"concurrency":2,"market":{"schedule":"weekly","staleAfterDays":10,"capabilities":["market"]},"salary":{"schedule":"monthly","staleAfterDays":35,"capabilities":["salary"]}}
