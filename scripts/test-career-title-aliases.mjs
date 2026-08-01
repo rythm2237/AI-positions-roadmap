@@ -8,6 +8,7 @@ const migrationSource = fs.readFileSync("scripts/patch-career-title-aliases.mjs"
 for (const slug of [
   "ai-engineer",
   "ai-automation-specialist",
+  "intelligent-automation-engineer",
   "ai-integration-specialist",
 ]) {
   if (!aliasesSource.includes(`\"${slug}\"`)) {
@@ -17,7 +18,8 @@ for (const slug of [
 
 for (const expectedAlias of [
   "LLM Engineer",
-  "Hyperautomation Specialist",
+  "Intelligent Automation Specialist",
+  "Hyperautomation Engineer",
   "AI Integration Engineer",
 ]) {
   if (!aliasesSource.includes(expectedAlias)) {
@@ -42,5 +44,5 @@ if (!migrationSource.includes("CareerTitleAliasPanel career={career}")) {
 }
 
 console.log(
-  "Career title aliases validated for 3 active careers, landing search, Hero display, and Admin requirements."
+  "Career title aliases validated for 4 active careers, landing search, Hero display, and Admin requirements."
 );
