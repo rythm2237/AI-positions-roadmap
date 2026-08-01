@@ -1,1 +1,2 @@
 Normalize the restored Learning and assessment source files to UTF-8.
+Retry: tolerate undefined legacy bytes.
