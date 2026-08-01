@@ -18,48 +18,16 @@ export const CAREER_TITLE_ALIASES: Readonly<Record<string, readonly CareerTitleA
     { title: "Applied Machine Learning Engineer", keywords: ["Applied ML Engineer"] },
   ],
   "ai-product-manager": [
-    {
-      title: "Machine Learning Product Manager",
-      keywords: ["ML Product Manager", "Machine Learning PM"],
-      note: "Common where the product portfolio is centered on predictive models, ML platforms, or data products.",
-    },
-    {
-      title: "Generative AI Product Manager",
-      keywords: ["GenAI Product Manager", "Generative AI PM"],
-    },
-    {
-      title: "AI Technical Product Manager",
-      keywords: ["Technical Product Manager AI", "Technical AI Product Manager"],
-    },
-    {
-      title: "AI Platform Product Manager",
-      keywords: ["AI Platform PM", "Machine Learning Platform Product Manager"],
-    },
-    {
-      title: "Data and AI Product Manager",
-      keywords: ["Data AI Product Manager", "Data Product Manager AI"],
-    },
-    {
-      title: "Applied AI Product Manager",
-      keywords: ["Applied AI PM", "AI Applications Product Manager"],
-    },
-    {
-      title: "AI Product Lead",
-      keywords: ["Head of AI Product", "AI Product Owner"],
-      note: "Scope and seniority vary; compare ownership, team size, and decision authority.",
-    },
-    {
-      title: "Conversational AI Product Manager",
-      keywords: ["Chatbot Product Manager", "Conversational AI PM"],
-    },
-    {
-      title: "AI Solutions Product Manager",
-      keywords: ["AI Solution Product Manager", "Enterprise AI Product Manager"],
-    },
-    {
-      title: "Intelligent Products Manager",
-      keywords: ["Intelligent Product Manager", "Cognitive Product Manager"],
-    },
+    { title: "Machine Learning Product Manager", keywords: ["ML Product Manager", "Machine Learning PM"] },
+    { title: "Generative AI Product Manager", keywords: ["GenAI Product Manager", "Generative AI PM"] },
+    { title: "AI Technical Product Manager", keywords: ["Technical Product Manager AI", "Technical AI Product Manager"] },
+    { title: "AI Platform Product Manager", keywords: ["AI Platform PM", "Machine Learning Platform Product Manager"] },
+    { title: "Data and AI Product Manager", keywords: ["Data AI Product Manager", "Data Product Manager AI"] },
+    { title: "Applied AI Product Manager", keywords: ["Applied AI PM", "AI Applications Product Manager"] },
+    { title: "AI Product Lead", keywords: ["Head of AI Product", "AI Product Owner"] },
+    { title: "Conversational AI Product Manager", keywords: ["Chatbot Product Manager", "Conversational AI PM"] },
+    { title: "AI Solutions Product Manager", keywords: ["AI Solution Product Manager", "Enterprise AI Product Manager"] },
+    { title: "Intelligent Products Manager", keywords: ["Intelligent Product Manager", "Cognitive Product Manager"] },
   ],
   "ai-automation-specialist": [
     { title: "Intelligent Automation Specialist", keywords: ["AI Automation Specialist"] },
@@ -70,16 +38,8 @@ export const CAREER_TITLE_ALIASES: Readonly<Record<string, readonly CareerTitleA
     { title: "Automation Consultant", keywords: ["Digital Automation Consultant"] },
   ],
   "intelligent-automation-engineer": [
-    {
-      title: "Intelligent Automation Developer",
-      keywords: ["Intelligent Automation Programmer", "IA Developer"],
-      note: "Common delivery-focused title for engineers building RPA, workflow, integration, and AI solutions.",
-    },
-    {
-      title: "Hyperautomation Engineer",
-      keywords: ["Hyperautomation Developer", "Hyperautomation Specialist"],
-      note: "Often used where process mining, orchestration, RPA, APIs, and AI are delivered as one automation capability.",
-    },
+    { title: "Intelligent Automation Developer", keywords: ["Intelligent Automation Programmer", "IA Developer"] },
+    { title: "Hyperautomation Engineer", keywords: ["Hyperautomation Developer", "Hyperautomation Specialist"] },
     { title: "RPA Engineer", keywords: ["Robotic Process Automation Engineer", "RPA Developer"] },
     { title: "Process Automation Engineer", keywords: ["Business Process Automation Engineer", "Digital Process Automation Engineer"] },
     { title: "Automation Engineer", keywords: ["Enterprise Automation Engineer", "Business Automation Engineer"] },
@@ -101,16 +61,8 @@ export const CAREER_TITLE_ALIASES: Readonly<Record<string, readonly CareerTitleA
     { title: "Conversational AI Integration Specialist", keywords: ["Chatbot Integration Engineer"] },
   ],
   "ai-workflow-architect": [
-    {
-      title: "AI Workflow Solution Architect",
-      keywords: ["AI Workflow Solutions Architect", "AI Process Solution Architect"],
-      note: "Common where workflow architecture is positioned inside a broader solution-architecture function.",
-    },
-    {
-      title: "Agentic Workflow Architect",
-      keywords: ["Agent Workflow Architect", "Agentic Process Architect"],
-      note: "Used for roles designing governed multi-agent and tool-using workflows.",
-    },
+    { title: "AI Workflow Solution Architect", keywords: ["AI Workflow Solutions Architect", "AI Process Solution Architect"] },
+    { title: "Agentic Workflow Architect", keywords: ["Agent Workflow Architect", "Agentic Process Architect"] },
     { title: "AI Orchestration Architect", keywords: ["Agent Orchestration Architect", "AI Process Orchestration Architect"] },
     { title: "Intelligent Workflow Architect", keywords: ["Intelligent Process Architect", "Cognitive Workflow Architect"] },
     { title: "Automation Solution Architect", keywords: ["Automation Solutions Architect", "Intelligent Automation Architect"] },
@@ -119,6 +71,51 @@ export const CAREER_TITLE_ALIASES: Readonly<Record<string, readonly CareerTitleA
     { title: "AI Process Architect", keywords: ["AI Business Process Architect", "AI-Enabled Process Architect"] },
     { title: "Agentic Systems Architect", keywords: ["AI Agent Systems Architect", "Multi-Agent Systems Architect"] },
     { title: "Workflow Automation Architect", keywords: ["Process Automation Architect", "Automation Workflow Architect"] },
+  ],
+  "ai-solutions-consultant": [
+    {
+      title: "Generative AI Consultant",
+      keywords: ["GenAI Consultant", "Generative AI Solutions Consultant"],
+      note: "Common where the consulting portfolio focuses on generative AI use cases and adoption.",
+    },
+    {
+      title: "AI Solution Consultant",
+      keywords: ["Artificial Intelligence Solution Consultant", "AI Solutions Advisor"],
+    },
+    {
+      title: "AI Advisory Consultant",
+      keywords: ["AI Advisor", "Artificial Intelligence Advisory Consultant"],
+    },
+    {
+      title: "AI Strategy Consultant",
+      keywords: ["Artificial Intelligence Strategy Consultant", "GenAI Strategy Consultant"],
+    },
+    {
+      title: "AI Presales Consultant",
+      keywords: ["AI Pre-Sales Consultant", "AI Sales Engineer", "AI Solutions Engineer"],
+      note: "May include discovery, demonstrations, solution framing, proposals, and commercial support.",
+    },
+    {
+      title: "Enterprise AI Consultant",
+      keywords: ["Enterprise Generative AI Consultant", "Enterprise AI Advisor"],
+    },
+    {
+      title: "Applied AI Consultant",
+      keywords: ["Applied Artificial Intelligence Consultant", "AI Applications Consultant"],
+    },
+    {
+      title: "AI Transformation Consultant",
+      keywords: ["Generative AI Transformation Consultant", "Digital AI Transformation Consultant"],
+    },
+    {
+      title: "AI Solutions Specialist",
+      keywords: ["AI Solution Specialist", "AI Business Solutions Specialist"],
+    },
+    {
+      title: "Cloud AI Consultant",
+      keywords: ["Azure AI Consultant", "AWS AI Consultant", "Google Cloud AI Consultant"],
+      companies: ["Cloud and technology providers"],
+    },
   ],
 };
 
