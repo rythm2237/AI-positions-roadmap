@@ -9,6 +9,7 @@
 // Dynamic import with ssr:false is REQUIRED — Three.js needs browser APIs.
 
 import dynamic from "next/dynamic";
+import CareerAliasSearch from "@/components/landing/CareerAliasSearch";
 
 const World = dynamic(() => import("./World"), {
   ssr: false,
@@ -36,7 +37,6 @@ export default function OpeningScene() {
         overflow: "hidden",
       }}
     >
-      {/* Skip to content — keyboard accessibility */}
       <a
         href="#universe-utilities"
         className="sr-only focus:not-sr-only focus:absolute focus:top-4 focus:left-4 focus:z-[100] focus:px-4 focus:py-2 focus:bg-indigo-600 focus:text-white focus:rounded-lg focus:text-sm focus:font-medium"
@@ -45,6 +45,7 @@ export default function OpeningScene() {
       </a>
 
       <World />
+      <CareerAliasSearch />
       <div
         id="universe-utilities"
         className="pointer-events-auto absolute inset-x-0 bottom-0 z-20 hidden items-center justify-end gap-4 px-6 py-4 text-[11px] text-slate-500 sm:flex"
