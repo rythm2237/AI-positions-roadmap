@@ -38,38 +38,38 @@ function validateJourneyData(career: CareerWorkspaceData): string[] {
 
     if (topicAssessments.length !== stage.lessons.length) {
       warnings.push(
-        \\`${stage.title} must provide one topic assessment for every learning topic.\\`
+        stage.title + " must provide one topic assessment for every learning topic."
       );
     }
 
     topicAssessments.forEach((assessment) => {
       if ((assessment.questionsPerAttempt ?? 0) !== 5) {
-        warnings.push(\\`${assessment.title} must select 5 questions per attempt.\\`);
+        warnings.push(assessment.title + " must select 5 questions per attempt.");
       }
       if (assessment.questions.length < 5) {
-        warnings.push(\\`${assessment.title} has fewer than 5 questions.\\`);
+        warnings.push(assessment.title + " has fewer than 5 questions.");
       }
       if (assessment.passingScore !== 60) {
-        warnings.push(\\`${assessment.title} must use a 60% passing score.\\`);
+        warnings.push(assessment.title + " must use a 60% passing score.");
       }
     });
 
     if (!stage.phaseExam) {
-      warnings.push(\\`${stage.title} is missing its comprehensive assessment.\\`);
+      warnings.push(stage.title + " is missing its comprehensive assessment.");
     } else {
       if ((stage.phaseExam.questionsPerAttempt ?? 0) !== 20) {
         warnings.push(
-          \\`${stage.title} comprehensive assessment must select 20 questions.\\`
+          stage.title + " comprehensive assessment must select 20 questions."
         );
       }
       if (stage.phaseExam.questions.length < 20) {
         warnings.push(
-          \\`${stage.title} comprehensive assessment has fewer than 20 questions.\\`
+          stage.title + " comprehensive assessment has fewer than 20 questions."
         );
       }
       if (stage.phaseExam.passingScore !== 70) {
         warnings.push(
-          \\`${stage.title} comprehensive assessment must use a 70% passing score.\\`
+          stage.title + " comprehensive assessment must use a 70% passing score."
         );
       }
     }
