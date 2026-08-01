@@ -1,4 +1,5 @@
 Restore the complete clean vertical Learning and gated assessment implementation.
-Preserve the current three-career Public Beta test.
-Apply and persist type-safe optional assessment narrowing after restoration.
-Validate all restored files, tests, and production build.
+Validate topic assessments at 5 questions and 60%.
+Validate comprehensive assessments at 20 questions and 70%.
+Reject deprecated stage.test consumers.
+Run the complete test suite and production build.
