@@ -74,7 +74,7 @@ export default function HeroContent() {
 
   return (
     <div
-      className="pointer-events-none absolute inset-x-0 bottom-0 top-[62px] flex items-center justify-center pt-[clamp(20px,5dvh,52px)]"
+      className="pointer-events-none absolute inset-x-0 bottom-0 top-[62px] flex items-center justify-center pt-[clamp(12px,3dvh,32px)]"
       style={{ zIndex: 10 }}
     >
       <div
@@ -84,7 +84,7 @@ export default function HeroContent() {
           flexDirection: "column",
           alignItems: "center",
           textAlign: "center",
-          gap: "clamp(14px, 2.2vh, 24px)",
+          gap: "clamp(12px, 1.8vh, 20px)",
           padding: "0 clamp(20px, 5vw, 60px)",
           alignSelf: "stretch",
           margin: "0 auto",
@@ -96,28 +96,21 @@ export default function HeroContent() {
           pointerEvents: "none",
         }}
       >
-        <h1 className="font-display text-[clamp(34px,10vw,48px)] font-bold lg:text-[clamp(64px,5vw,76px)]" style={{
-          lineHeight: 1,
-          letterSpacing: "-0.035em",
+        <h1 className="font-display text-[clamp(38px,11vw,54px)] font-bold lg:text-[clamp(68px,5.4vw,84px)]" style={{
+          lineHeight: 0.98,
+          letterSpacing: "-0.04em",
           color: "#e0e7ff",
           width: "100%",
           whiteSpace: "normal",
           margin: 0, fontFamily: "inherit",
         }}>
           <span className="block lg:whitespace-nowrap">Build your career in AI.</span>
-          <span className="block lg:whitespace-nowrap" style={{
-            background: "linear-gradient(135deg, #818cf8 0%, #a78bfa 50%, #38bdf8 100%)",
-            WebkitBackgroundClip: "text",
-            WebkitTextFillColor: "transparent",
-          }}>
-            Know what comes next.
-          </span>
         </h1>
 
         <p style={{
           fontSize: "clamp(14px, 1.6vw, 18px)",
           lineHeight: 1.65, color: "rgba(165,180,252,0.65)",
-          maxWidth: 520, margin: 0, fontFamily: "inherit",
+          maxWidth: 560, margin: 0, fontFamily: "inherit",
         }}>
           Choose an AI career direction, follow a practical roadmap, build proof through projects, and prepare for your next role.
         </p>
