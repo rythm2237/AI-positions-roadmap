@@ -44,7 +44,6 @@ jobs:
           text = Path(sys.argv[1]).read_text(encoding="utf-8")
           Path(sys.argv[2]).write_text(text, encoding="utf-8", newline="\n")
           PY
-          echo "$path reconstructed with stable Production conflict resolution"
 
           for path in \
             "src/data/careers/ai-automation-specialist.ts" \
@@ -58,8 +57,35 @@ jobs:
           text = path.read_text(encoding="utf-8")
           path.write_text(text, encoding="utf-8", newline="\n")
           PY
-            echo "$path restored from clean assessment redesign"
           done
+
+      - name: Restore missing automation interview assessment profile
+        shell: bash
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+
+          path = Path("src/content/assessments/assessmentBank.ts")
+          text = path.read_text(encoding="utf-8")
+          if '"automation-interview": {' not in text:
+              marker = '  "final-assessment": {'
+              block = '''  "automation-interview": {
+            referenceId: "automation-ms-power-platform-training",
+            evidence: "Recorded automation interviews that explain process discovery, architecture, exception handling, governance, testing, monitoring, and measurable business impact",
+            firstDecision: "Clarify the process, users, systems, constraints, exception paths, data sensitivity, and success measures before proposing an automation design",
+            control: "State assumptions explicitly and include access control, approvals, auditability, monitoring, fallback, and ownership in the solution",
+            metric: "The percentage of mock answers that connect technical decisions to process outcomes, risks, controls, and measurable value",
+            judgment: "Prefer a bounded maintainable automation with clear ownership over a broad demo that cannot be governed or supported",
+          },
+'''
+              if marker not in text:
+                  raise SystemExit("Could not locate final-assessment profile insertion point")
+              text = text.replace(marker, block + marker, 1)
+              path.write_text(text, encoding="utf-8", newline="\n")
+              print("Added automation-interview assessment profile")
+          else:
+              print("automation-interview assessment profile already present")
+          PY
 
       - name: Verify UTF-8 and conflict-free source
         shell: bash
@@ -70,15 +96,15 @@ jobs:
               Path("src/components/career/CareerWorkspace.tsx"),
               Path("src/data/careers/ai-automation-specialist.ts"),
               Path("src/data/careers/ai-engineer.ts"),
+              Path("src/content/assessments/assessmentBank.ts"),
           ]
           for path in paths:
               text = path.read_bytes().decode("utf-8")
               if "<<<<<<<" in text or ">>>>>>>" in text:
                   raise SystemExit(f"Conflict marker remains in {path}")
-              print(f"{path}: valid UTF-8 and conflict-free")
           PY
 
-      - name: Commit reconstructed files
+      - name: Commit restored files
         shell: bash
         run: |
           if git diff --quiet; then
@@ -86,8 +112,8 @@ jobs:
           else
             git config user.name "github-actions[bot]"
             git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-            git add src/components/career/CareerWorkspace.tsx src/data/careers/ai-automation-specialist.ts src/data/careers/ai-engineer.ts
-            git commit -m "fix: restore clean Learning and assessment sources"
+            git add src/components/career/CareerWorkspace.tsx src/data/careers/ai-automation-specialist.ts src/data/careers/ai-engineer.ts src/content/assessments/assessmentBank.ts
+            git commit -m "fix: restore clean Learning assessment implementation"
             git push origin HEAD:${{ github.head_ref }}
           fi
 
