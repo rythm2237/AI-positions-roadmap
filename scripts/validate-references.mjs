@@ -434,9 +434,22 @@ if (careerFiles.length === 0) warnings.push(`${relative(careerDirectory)}: no ca
 for (const filePath of careerFiles) {
   const source = fs.readFileSync(filePath, "utf8");
   const objectIds = collectResourceObjectIds(source);
+  const journeyStart = source.indexOf("journeyStages:");
+  const legacyRoadmapStart = source.indexOf("roadmap:", journeyStart);
+  const hasJourneyStages = journeyStart >= 0;
+  const journeySource = hasJourneyStages
+    ? source.slice(
+        journeyStart,
+        legacyRoadmapStart >= 0 ? legacyRoadmapStart : source.length
+      )
+    : source;
 
   for (const propertyName of ["resources", "globalResources", "resourceIds"]) {
-    for (const body of extractArrayBodies(source, propertyName)) {
+    const propertySource =
+      hasJourneyStages && propertyName !== "globalResources"
+        ? journeySource
+        : source;
+    for (const body of extractArrayBodies(propertySource, propertyName)) {
       for (const match of body.matchAll(/\bid\s*:\s*["'`]([^"'`]+)["'`]/g)) {
         recordUsage(match[1], filePath, propertyName, catalogIds);
       }

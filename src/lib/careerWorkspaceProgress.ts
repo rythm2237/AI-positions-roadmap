@@ -3,6 +3,10 @@ import type {
   CareerWorkspaceProgress,
   CareerWorkspaceStats,
 } from "@/types/careerWorkspace";
+import {
+  isAssessmentQualified,
+  normalizeAssessmentProgress,
+} from "@/lib/assessmentPolicy";
 
 function storageKey(slug: string): string {
   return `career_workspace_progress__${slug}`;
@@ -29,10 +33,10 @@ export function loadCareerWorkspaceProgress(slug: string): CareerWorkspaceProgre
   try {
     const raw = window.localStorage.getItem(storageKey(slug));
     if (!raw) return defaultCareerWorkspaceProgress();
-    return {
+    return normalizeAssessmentProgress({
       ...defaultCareerWorkspaceProgress(),
       ...JSON.parse(raw),
-    };
+    });
   } catch {
     return defaultCareerWorkspaceProgress();
   }
@@ -64,7 +68,10 @@ export function getCareerWorkspaceStats(
   const resources = hasJourneyStages
     ? career.journeyStages.flatMap((stage) => stage.resources)
     : career.roadmap.flatMap((phase) => phase.lessons).flatMap((lesson) => lesson.resources);
-  const assessments = career.journeyStages.flatMap((stage) => [stage.test, stage.phaseExam].filter(Boolean));
+  const assessments = career.journeyStages.flatMap((stage) => [
+    ...(stage.topicAssessments ?? []),
+    stage.phaseExam,
+  ].filter(Boolean));
   const questions = hasJourneyStages
     ? assessments.flatMap((assessment) => assessment?.questions ?? [])
     : career.roadmap.flatMap((phase) => phase.quiz.questions);
@@ -73,7 +80,14 @@ export function getCareerWorkspaceStats(
   const completedLessons = lessons.filter((lesson) => progress.completedLessons.includes(lesson.id)).length;
   const completedResources = resources.filter((resource) => progress.completedResources.includes(resource.id)).length;
   const completedProjects = career.projects.filter((project) => progress.completedProjects.includes(project.id)).length;
-  const passedAssessments = assessments.filter((assessment) => assessment && progress.assessmentResults[assessment.id]?.passed).length;
+  const passedAssessments = assessments.filter(
+    (assessment) =>
+      assessment &&
+      isAssessmentQualified(
+        assessment,
+        progress.assessmentResults[assessment.id]
+      )
+  ).length;
   const completedQuizzes = hasJourneyStages ? passedAssessments : questions.filter((question) => progress.quizAnswers[question.id]?.correct).length;
   const completedTasks = tasks.filter((task) => progress.completedStageTasks.includes(task.id)).length;
 
@@ -141,8 +155,39 @@ export function isJourneyStageUnlocked(
   const stageIndex = career.journeyStages.findIndex((stage) => stage.id === stageId);
   if (stageIndex <= 0) return stageIndex === 0;
 
-  const previousStage = career.journeyStages[stageIndex - 1];
-  return Boolean(progress.assessmentResults[previousStage.test.id]?.passed);
+  return career.journeyStages
+    .slice(0, stageIndex)
+    .every((stage) => {
+      return Boolean(
+        stage.phaseExam &&
+          isAssessmentQualified(
+            stage.phaseExam,
+            progress.assessmentResults[stage.phaseExam.id]
+          )
+      );
+    });
+}
+
+export function isJourneyAssessmentUnlocked(
+  stageId: string,
+  assessmentType: "topic" | "comprehensive",
+  career: CareerWorkspaceData,
+  progress: CareerWorkspaceProgress
+): boolean {
+  if (!isJourneyStageUnlocked(stageId, career, progress)) return false;
+  if (assessmentType === "topic") return true;
+
+  const stage = career.journeyStages.find((item) => item.id === stageId);
+  return Boolean(
+    stage &&
+      (stage.topicAssessments ?? []).length === stage.lessons.length &&
+      (stage.topicAssessments ?? []).every((assessment) =>
+        isAssessmentQualified(
+          assessment,
+          progress.assessmentResults[assessment.id]
+        )
+      )
+  );
 }
 
 export function getJourneyStageProgress(
@@ -155,10 +200,21 @@ export function getJourneyStageProgress(
 
   const taskCount = stage.tasks.length;
   const resourceCount = stage.resources.length;
-  const assessmentCount = 1 + (stage.phaseExam ? 1 : 0);
+  const assessmentCount =
+    (stage.topicAssessments?.length ?? 0) + (stage.phaseExam ? 1 : 0);
   const completedTasks = stage.tasks.filter((task) => progress.completedStageTasks.includes(task.id)).length;
   const completedResources = stage.resources.filter((resource) => progress.completedResources.includes(resource.id)).length;
-  const passedAssessments = [stage.test, stage.phaseExam].filter((assessment) => assessment && progress.assessmentResults[assessment.id]?.passed).length;
+  const passedAssessments = [
+    ...(stage.topicAssessments ?? []),
+    stage.phaseExam,
+  ].filter(
+    (assessment) =>
+      assessment &&
+      isAssessmentQualified(
+        assessment,
+        progress.assessmentResults[assessment.id]
+      )
+  ).length;
 
   return percent(completedTasks + completedResources + passedAssessments, taskCount + resourceCount + assessmentCount);
 }

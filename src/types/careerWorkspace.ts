@@ -138,7 +138,11 @@ export interface CareerAssessment {
   title: string;
   description: string;
   passingScore: number;
+  assessmentType?: "topic" | "comprehensive";
+  topicId?: string;
+  topicLabel?: string;
   durationMinutes?: number;
+  questionsPerAttempt?: number;
   questions: CareerQuizQuestion[];
   officialPracticeLinks?: {
     title: string;
@@ -190,7 +194,9 @@ export interface CareerJourneyStage {
   lessons: string[];
   resources: CareerResource[];
   tasks: CareerJourneyTask[];
-  test: CareerAssessment;
+  /** @deprecated Active Journey UI uses topicAssessments. */
+  test?: CareerAssessment;
+  topicAssessments?: CareerAssessment[];
   phaseExam?: CareerAssessment;
 }
 
@@ -315,6 +321,7 @@ export interface CareerQuizAnswer {
 
 export interface CareerAssessmentResult {
   assessmentId: string;
+  assessmentType?: "topic" | "comprehensive";
   score: number;
   passed: boolean;
   submittedAt: string;
