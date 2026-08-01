@@ -1,6 +1,7 @@
 name: Normalize restored source encoding
 
 on:
+  workflow_dispatch:
   push:
     branches: [main]
     paths:
@@ -19,8 +20,9 @@ jobs:
           token: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Convert restored source files to UTF-8
-        shell: python
+        shell: bash
         run: |
+          python - <<'PY'
           from pathlib import Path
 
           paths = [
@@ -41,8 +43,10 @@ jobs:
               text = raw.decode("cp1252")
               path.write_text(text, encoding="utf-8", newline="\n")
               print(f"{path}: converted from Windows-1252 to UTF-8")
+          PY
 
       - name: Commit normalized files
+        shell: bash
         run: |
           if git diff --quiet; then
             echo "No encoding changes required."
