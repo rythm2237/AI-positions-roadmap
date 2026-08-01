@@ -17,6 +17,10 @@ import {
   dataEngineerCareer,
   devOpsEngineerCareer,
 } from "@/data/careers/activation-batch-six";
+import {
+  cloudEngineerCareer,
+  cybersecurityAnalystCareer,
+} from "@/data/careers/activation-batch-seven";
 import { getPublishedCareer } from "@/lib/publishedCareerRepository";
 import type { CareerWorkspaceData } from "@/types/careerWorkspace";
 
@@ -33,6 +37,8 @@ const builtIn: Record<string, CareerWorkspaceData> = {
   "data-engineer": dataEngineerCareer,
   "devops-engineer": devOpsEngineerCareer,
   "business-ai-consultant": businessAiConsultantCareer,
+  "cybersecurity-analyst": cybersecurityAnalystCareer,
+  "cloud-engineer": cloudEngineerCareer,
 };
 
 async function resolveCareer(slug: string) {
