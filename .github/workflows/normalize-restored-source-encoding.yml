@@ -2,6 +2,11 @@ name: Normalize restored source encoding
 
 on:
   workflow_dispatch:
+  pull_request:
+    branches: [main]
+    paths:
+      - .github/encoding-normalization-trigger
+      - .github/workflows/normalize-restored-source-encoding.yml
   push:
     branches: [main]
     paths:
@@ -17,6 +22,7 @@ jobs:
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
+          ref: ${{ github.event_name == 'pull_request' && github.head_ref || github.ref_name }}
           token: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Convert restored source files to UTF-8
@@ -56,4 +62,4 @@ jobs:
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add src/components/career/CareerWorkspace.tsx src/data/careers/ai-automation-specialist.ts src/data/careers/ai-engineer.ts
           git commit -m "fix: normalize restored learning sources to UTF-8"
-          git push
+          git push origin HEAD:${{ github.event_name == 'pull_request' && github.head_ref || github.ref_name }}
