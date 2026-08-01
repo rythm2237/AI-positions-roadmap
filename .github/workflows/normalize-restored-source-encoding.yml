@@ -43,12 +43,26 @@ jobs:
                   raw.decode("utf-8")
                   print(f"{path}: already UTF-8")
                   continue
-              except UnicodeDecodeError:
-                  pass
+              except UnicodeDecodeError as error:
+                  print(f"{path}: invalid UTF-8 at byte {error.start}")
 
-              text = raw.decode("cp1252")
+              text = raw.decode("cp1252", errors="replace")
               path.write_text(text, encoding="utf-8", newline="\n")
-              print(f"{path}: converted from Windows-1252 to UTF-8")
+              print(f"{path}: normalized to UTF-8")
+          PY
+
+      - name: Verify UTF-8 source encoding
+        shell: bash
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          for path in [
+              Path("src/components/career/CareerWorkspace.tsx"),
+              Path("src/data/careers/ai-automation-specialist.ts"),
+              Path("src/data/careers/ai-engineer.ts"),
+          ]:
+              path.read_bytes().decode("utf-8")
+              print(f"{path}: valid UTF-8")
           PY
 
       - name: Commit normalized files
