@@ -7,6 +7,29 @@ const validationPath = "src/lib/careerContentValidation.ts";
 let workspaceSource = fs.readFileSync(workspacePath, "utf8");
 let validationSource = fs.readFileSync(validationPath, "utf8");
 
+const assessmentPolicyImport = `import {
+  didPassAssessment,
+  isAssessmentQualified,
+  isQualifiedResult,
+} from "@/lib/assessmentPolicy";
+`;
+
+if (!workspaceSource.includes('from "@/lib/assessmentPolicy"')) {
+  const navigationImport =
+    'import { CAREER_NAV_ITEMS, careerSectionHref } from "@/lib/careerNavigation";\n';
+
+  if (!workspaceSource.includes(navigationImport)) {
+    throw new Error(
+      "Could not locate the CareerWorkspace navigation import anchor."
+    );
+  }
+
+  workspaceSource = workspaceSource.replace(
+    navigationImport,
+    navigationImport + assessmentPolicyImport
+  );
+}
+
 const legacyBlock = /function allAssessments\([\s\S]*?\n}\n\nfunction shellButton/;
 
 const canonicalBlock = `function allAssessments(
@@ -175,6 +198,16 @@ if (deprecatedConsumers.length > 0) {
   );
 }
 
+for (const requiredSymbol of [
+  "didPassAssessment",
+  "isAssessmentQualified",
+  "isQualifiedResult",
+]) {
+  if (!workspaceSource.includes(requiredSymbol)) {
+    throw new Error(`Missing assessment policy symbol: ${requiredSymbol}`);
+  }
+}
+
 console.log(
-  "Applied canonical topic/comprehensive assessment contract; no stage.test consumers remain."
+  "Applied canonical assessment contract, imports, and validation; no stage.test consumers remain."
 );
