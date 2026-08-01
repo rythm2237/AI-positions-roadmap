@@ -12,6 +12,7 @@ for (const slug of [
   "intelligent-automation-engineer",
   "ai-integration-specialist",
   "ai-workflow-architect",
+  "ai-solutions-consultant",
 ]) {
   if (!aliasesSource.includes(`\"${slug}\"`)) {
     throw new Error(`Missing career alias registry entry for ${slug}.`);
@@ -25,6 +26,7 @@ for (const expectedAlias of [
   "Hyperautomation Engineer",
   "AI Integration Engineer",
   "Agentic Workflow Architect",
+  "Generative AI Consultant",
 ]) {
   if (!aliasesSource.includes(expectedAlias)) {
     throw new Error(`Missing representative alias: ${expectedAlias}.`);
@@ -48,5 +50,5 @@ if (!migrationSource.includes("CareerTitleAliasPanel career={career}")) {
 }
 
 console.log(
-  "Career title aliases validated for 6 active careers, landing search, Hero display, and Admin requirements."
+  "Career title aliases validated for 7 active careers, landing search, Hero display, and Admin requirements."
 );
