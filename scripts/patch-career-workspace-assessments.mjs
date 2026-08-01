@@ -11,20 +11,20 @@ const canonicalBlock = `function allAssessments(
 ): Array<{
   assessment: CareerAssessment;
   stage: CareerJourneyStage;
-  type: "station" | "phase";
+  type: "topic" | "comprehensive";
 }> {
   return career.journeyStages.flatMap((stage) => [
     ...(stage.topicAssessments ?? []).map((assessment) => ({
       assessment,
       stage,
-      type: "station" as const,
+      type: "topic" as const,
     })),
     ...(stage.phaseExam
       ? [
           {
             assessment: stage.phaseExam,
             stage,
-            type: "phase" as const,
+            type: "comprehensive" as const,
           },
         ]
       : []),
@@ -109,5 +109,5 @@ if (deprecatedConsumers.length > 0) {
 }
 
 console.log(
-  "Applied canonical topic-assessment and comprehensive-assessment contract; no stage.test consumers remain."
+  "Applied canonical topic/comprehensive assessment contract; no stage.test consumers remain."
 );
