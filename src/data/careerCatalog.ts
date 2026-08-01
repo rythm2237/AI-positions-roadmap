@@ -71,7 +71,9 @@ const catalog = [
     "ai-workflow-architect",
     "AI Workflow Architect",
     "AI Automation",
-    "Design scalable human-and-AI workflows with clear controls, handoffs, and outcomes.",
+    "Design scalable, governed human-and-AI workflows across agents, models, tools, APIs, enterprise systems, decisions, state, handoffs, and operations.",
+    "available",
+    "/careers/ai-workflow-architect?entry=galaxy",
   ],
   [
     "ai-solutions-consultant",
