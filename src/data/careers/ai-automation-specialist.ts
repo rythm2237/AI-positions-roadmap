@@ -397,4 +397,1487 @@ const aiAutomationSpecialistCareerBase: CareerWorkspaceData = {
       },
       summary:
         "Learn process discovery, BPMN-style thinking, requirements, data basics, APIs, authentication, Git, and scripting fundamentals.",
-      explana×�µÖÚ$z{-®éÜj×�Wf–FVæ6RÂ&öfW76–öæÂ÷6—F–öæ–ærÂÆ–6F–öç2ÂæB–çFW'f–Ww2â"ÀÐ¢VW7F–öç3¢7FvUVW7F–öç2€Ð¢&WFöÖF–öâ×†6RÓR"ÀÐ¢$’WFöÖF–öâV×Æ÷–ÖVçB&VF–æW72"ÀÐ¢$6ö×ÆWFR÷'FföÆ–òÂfö7W6VB&öfW76–öæÂ&öf–ÆRÂF&vWFVBÆ–6F–öâ7—7FVÒÂæB6öæf–FVçB6öÇWF–öâ–çFW'f–WrW&f÷&Öæ6R Ð¢’ÀÐ¢ÒÀÐ¢ÒÀÐ¢ÒÀÐ¢&ö¦V7G3¢°Ð¢°Ð¢–C¢&WFöÖF–öâ×&ö¦V7BÖ–çFVÆÆ–vVçBÖ–æ&÷‚"ÀÐ¢F—FÆS¢$–çFVÆÆ–vVçB&WVW7BæBVÖ–ÂG&–vR"ÀÐ¢F–ff–7VÇG“¢$–çFW&ÖVF–FR"ÀÐ¢W7F–ÖFVEF–ÖS¢#"Ó2vVV·2"ÀÐ¢†6T–C¢&WFöÖF–öâ×†6RÓ2"ÀÐ¢FW67&—F–öã Ð¢$6Æ76–g’–æ6öÖ–ær&WVW7G2ÂW‡G&7B7G'V7GW&VBFWF–Ç2ÂfÆ–FFR&WV—&VBf–VÆG2Â&–÷&—F—¦RW&vVæ7’Â&÷WFR÷væW'6†—ÂæBW66ÆFRÆ÷rÖ6öæf–FVæ6R66W2â"ÀÐ¢FVÆ—fW&&ÆW3¢°Ð¢%&ö6W72ÖæB66WFæ6R7&—FW&–"ÀÐ¢%v÷&¶–ærv÷&¶fÆ÷r"ÀÐ¢%7G'V7GW&VB’÷WGWB66†VÖ"ÀÐ¢$6öæf–FVæ6RæB‡VÖâ×&Wf–WrÆöv–2"ÀÐ¢$Ööæ—F÷&–ærF6†&ö&B"ÀÐ¢$&6†—FV7GW&RF–w&ÒæB$TDÔR"ÀÐ¢ÒÀÐ¢6¶–ÆÇ3¢°Ð¢%÷vW"WFöÖFR÷"ã†â"ÀÐ¢$ÄÄÒ—2"ÀÐ¢%7G'V7GW&VB÷WGWG2"ÀÐ¢$‡VÖâ–âF†RÆö÷"ÀÐ¢$Ööæ—F÷&–ær"ÀÐ¢ÒÀÐ¢ÒÀÐ¢°Ð¢–C¢&WFöÖF–öâ×&ö¦V7BÖFö7VÖVçB×&ö6W76–ær"ÀÐ¢F—FÆS¢$’Fö7VÖVçB&ö6W76–ær—VÆ–æR"ÀÐ¢F–ff–7VÇG“¢$–çFW&ÖVF–FR"ÀÐ¢W7F–ÖFVEF–ÖS¢#2ÓBvVV·2"ÀÐ¢†6T–C¢&WFöÖF–öâ×†6RÓ2"ÀÐ¢FW67&—F–öã Ð¢%&ö6W72–çfö–6W2Âf÷&×2Â÷"÷W&F–öæÂFö7VÖVçG2W6–ærW‡G&7F–öâÂ6Æ76–f–6F–öâÂfÆ–FF–öâÂ&÷fÇ2ÂæBF÷vç7G&VÒ7—7FVÒWFFW2â"ÀÐ¢FVÆ—fW&&ÆW3¢°Ð¢$Fö7VÖVçB66†VÖ"ÀÐ¢$W‡G&7F–öâæBfÆ–FF–öâv÷&¶fÆ÷r"ÀÐ¢$W†6WF–öâVWVR"ÀÐ¢$‡VÖâfW&–f–6F–öâ67&VVâ÷"&÷fÂ"ÀÐ¢$67W&7’æBf–ÇW&R&W÷'B"ÀÐ¢%6V7W&—G’æBFFÖ†æFÆ–æræ÷FW2"ÀÐ¢ÒÀÐ¢6¶–ÆÇ3¢°Ð¢$Fö7VÖVçB’"ÀÐ¢%%"ÀÐ¢%fÆ–FF–öâ"ÀÐ¢$&÷fÇ2"ÀÐ¢$FF–çFVw&F–öâ"ÀÐ¢ÒÀÐ¢ÒÀÐ¢°Ð¢–C¢&WFöÖF–öâ×&ö¦V7BÖV×Æ÷–VRÖvVçB"ÀÐ¢F—FÆS¢$V×Æ÷–VR¶æ÷vÆVFvRæB7F–öâvVçB"ÀÐ¢F–ff–7VÇG“¢$Gfæ6VB"ÀÐ¢W7F–ÖFVEF–ÖS¢#2ÓRvVV·2"ÀÐ¢†6T–C¢&WFöÖF–öâ×†6RÓ2"ÀÐ¢FW67&—F–öã Ð¢$'V–ÆBw&÷VæFVB–çFW&æÂvVçBF†Bç7vW'2VW7F–öç2g&öÒ&÷fVB¶æ÷vÆVFvRæBW&f÷&×2Æ–Ö—FVB7F–öç2F‡&÷Vv‚WF†VçF–6FVBFööÇ2â"ÀÐ¢FVÆ—fW&&ÆW3¢°Ð¢$¶æ÷vÆVFvR&6†—FV7GW&R"ÀÐ¢$vVçB–ç7G'V7F–öç2æBFööÂFVf–æ—F–öç2"ÀÐ¢$WF†VçF–6F–öâæBWF†÷&—¦F–öâÖöFVÂ"ÀÐ¢$WfÇVF–öâFW7B6WB"ÀÐ¢$‡VÖâW66ÆF–öâæBfÆÆ&6²"ÀÐ¢$æÇ—F–72æB6fWG’&W÷'B"ÀÐ¢ÒÀÐ¢6¶–ÆÇ3¢°Ð¢$6÷–Æ÷B7GVF–ò÷"vVçB4D²"ÀÐ¢%&WG&–WfÂ"ÀÐ¢%FööÂ6ÆÆ–ær"ÀÐ¢$66W726öçG&öÂ"ÀÐ¢$WfÇVF–öâ"ÀÐ¢ÒÀÐ¢ÒÀÐ¢°Ð¢–C¢&WFöÖF–öâ×&ö¦V7BÖ÷W&F–öç2ÖW†6WF–öç2"ÀÐ¢F—FÆS¢$÷W&F–öç2W†6WF–öâÖævVÖVçB7—7FVÒ"ÀÐ¢F–ff–7VÇG“¢$Gfæ6VB"ÀÐ¢W7F–ÖFVEF–ÖS¢#BÓbvVV·2"ÀÐ¢†6T–C¢&WFöÖF–öâ×†6RÓB"ÀÐ¢FW67&—F–öã Ð¢$FWFV7BW†6WF–öç2g&öÒ÷W&F–öæÂFFÂVç&–6‚F†VÒv—F‚’ÖvVæW&FVB6öçFW‡BÂ76–vâ7F–öç2ÂG&6²&W6öÇWF–öâÂæBÖV7W&R&V7W'&–ær&ö÷B6W6W2â"ÀÐ¢FVÆ—fW&&ÆW3¢°Ð¢$W†6WF–öâ'VÆW2æBF†öæö×’"ÀÐ¢$FF–ævW7F–öâæBVç&–6†ÖVçB—VÆ–æR"ÀÐ¢%F6²÷"&÷fÂv÷&¶fÆ÷r"ÀÐ¢$F6†&ö&BæBÆW'G2"ÀÐ¢%&ö÷BÖ6W6R7VÖÖ'’"ÀÐ¢%'Væ&öö²æB÷væW'6†—ÖöFVÂ"ÀÐ¢ÒÀÐ¢6¶–ÆÇ3¢°Ð¢$÷W&F–öæÂæÇ—F–72"ÀÐ¢%v÷&¶fÆ÷r÷&6†W7G&F–öâ"ÀÐ¢$’7VÖÖ&—¦F–öâ"ÀÐ¢%F6²ÖævVÖVçB"ÀÐ¢%÷vW"$’"ÀÐ¢ÒÀÐ¢ÒÀÐ¢°Ð¢–C¢&WFöÖF–öâ×&ö¦V7B×7—7FVÒ×7–æ2"ÀÐ¢F—FÆS¢%&VÆ–&ÆR7&÷72Õ7—7FVÒ7–æ6‡&öæ—¦F–öâ"ÀÐ¢F–ff–7VÇG“¢$–çFW&ÖVF–FR"ÀÐ¢W7F–ÖFVEF–ÖS¢#"ÓBvVV·2"ÀÐ¢†6T–C¢&WFöÖF–öâ×†6RÓ""ÀÐ¢FW67&—F–öã Ð¢%7–æ6‡&öæ—¦R&V6÷&G2&WGvVVâGvò7—7FV×2v†–ÆR†æFÆ–ærWF†VçF–6F–öâÂv–æF–öâÂWFFW2ÂGWÆ–6FW2Â&FRÆ–Ö—G2Â&WG&–W2ÂæB&V6öæ6–Æ–F–öââ"ÀÐ¢FVÆ—fW&&ÆW3¢°Ð¢$–çFVw&F–öâ6öçG&7B"ÀÐ¢$–æ7&VÖVçFÂ7–æ6‡&öæ—¦F–öâv÷&¶fÆ÷r"ÀÐ¢$–FV×÷FVæ7’7G&FVw’"ÀÐ¢$W'&÷"æB&WG'’†æFÆ–ær"ÀÐ¢%&V6öæ6–Æ–F–öâ&W÷'B"ÀÐ¢$FWÆ÷–ÖVçBFö7VÖVçFF–öâ"ÀÐ¢ÒÀÐ¢6¶–ÆÇ3¢²%$U5B—2"Â$ôWF‚"Â$FFÖ–ær"Â$–FV×÷FVæ7’"Â%&V6öæ6–Æ–F–öâ%ÒÀÐ¢ÒÀÐ¢°Ð¢–C¢&WFöÖF–öâ×&ö¦V7BÖv÷fW&ææ6RÖ6VçFW""ÀÐ¢F—FÆS¢$WFöÖF–öâv÷fW&ææ6RæBÖöæ—F÷&–ær6VçFW""ÀÐ¢F–ff–7VÇG“¢$Gfæ6VB"ÀÐ¢W7F–ÖFVEF–ÖS¢#2ÓRvVV·2"ÀÐ¢†6T–C¢&WFöÖF–öâ×†6RÓB"ÀÐ¢FW67&—F–öã Ð¢$7&VFR6VçG&Â–çfVçF÷'’æBÖöæ—F÷&–ærÆ–W"f÷"WFöÖF–öç2Â÷væW'2ÂFWVæFVæ6–W2Â&—6·2Â'Vâ†VÇF‚Â–æ6–FVçG2Â&VæVf—G2ÂæB&Wf–WrFFW2â"ÀÐ¢FVÆ—fW&&ÆW3¢°Ð¢$WFöÖF–öâ–çfVçF÷'’66†VÖ"ÀÐ¢$†VÇF‚æBfÇVRF6†&ö&B"ÀÐ¢$f–ÇW&RF†öæö×’"ÀÐ¢$÷væW'6†—æB&Wf–Wrv÷&¶fÆ÷r"ÀÐ¢%&—6²æB6ö×Æ–æ6R6†V6¶Æ—7B"ÀÐ¢$–æ6–FVçBæB–×&÷fVÖVçB&6¶Æör"ÀÐ¢ÒÀÐ¢6¶–ÆÇ3¢²$v÷fW&ææ6R"Â$Ööæ—F÷&–ær"Â%÷vW"$’"Â%&—6²ÖævVÖVçB"Â$÷W&F–öç2%ÒÀÐ¢ÒÀÐ¢ÒÀÐ¢vÆö&Å&W6÷W&6W3¢ö&¦V7BçfÇVW2‡&W6÷W&6W2’ÀÐ¢&VF–æW73¢°Ð¢°Ð¢–C¢&WFöÖF–öâ×&VF–æW72×&ö6W72"ÀÐ¢Æ&VÃ¢%&ö6W72F—66÷fW'’Wf–FVæ6R"ÀÐ¢FW67&—F–öã Ð¢%–÷R6âÖ&ö6W72Â–FVçF–g’W†6WF–öç2ÂFVf–æR&WV—&VÖVçG2ÂæBVçF–g’F†RW‡V7FVBfÇVR&Vf÷&R6VÆV7F–ærFööÇ2â"ÀÐ¢vV–v‡C¢"ÀÐ¢ÒÀÐ¢°Ð¢–C¢&WFöÖF–öâ×&VF–æW72×v÷&¶fÆ÷w2"ÀÐ¢Æ&VÃ¢%v÷&¶fÆ÷rVæv–æVW&–ærWf–FVæ6R"ÀÐ¢FW67&—F–öã Ð¢%–÷R†fR'V–ÇBÖöGVÆ"v÷&¶fÆ÷w2v—F‚7FFRÂfÆ–FF–öâÂ&÷fÇ2Â&WG&–W2ÂGWÆ–6FR&÷FV7F–öâÂæBFö7VÖVçFF–öââ"ÀÐ¢vV–v‡C¢BÀÐ¢ÒÀÐ¢°Ð¢–C¢&WFöÖF–öâ×&VF–æW72Ö–çFVw&F–öç2"ÀÐ¢Æ&VÃ¢$’æB–çFVw&F–öâWf–FVæ6R"ÀÐ¢FW67&—F–öã Ð¢%–÷R6âWF†VçF–6FRÂ–çFVw&FR7—7FV×2ÂfÆ–FFRFFÂ†æFÆRÆ–Ö—G2ÂæB&V6öæ6–ÆR÷WF6öÖW2â"ÀÐ¢vV–v‡C¢BÀÐ¢ÒÀÐ¢°Ð¢–C¢&WFöÖF–öâ×&VF–æW72Ö’"ÀÐ¢Æ&VÃ¢%&W7öç6–&ÆR’–çFVw&F–öâ"ÀÐ¢FW67&—F–öã Ð¢%–÷R6âW6R7G'V7GW&VB÷WGWG2Âw&÷VæF–ærÂWfÇVF–öâÂ‡VÖâ&Wf–WrÂæB6öçG&öÆÆVBFööÇ2&F†W"F†â&VÇ––æröâVæ6öçG&öÆÆVB&ö×G2â"ÀÐ¢vV–v‡C¢bÀÐ¢ÒÀÐ¢°Ð¢–C¢&WFöÖF–öâ×&VF–æW72×&öGV7F–öâ"ÀÐ¢Æ&VÃ¢%&öGV7F–öâ&VÆ–&–Æ—G’æBv÷fW&ææ6R"ÀÐ¢FW67&—F–öã Ð¢%–÷W"&ö¦V7G2–æ6ÇVFRÖöæ—F÷&–ærÂÆW'G2ÂFW7G2Â6V7W&—G’Â'Væ&öö·2Â÷væW'6†—Â&V6÷fW'’ÂæB6†ævRÖævVÖVçBâ"ÀÐ¢vV–v‡C¢bÀÐ¢ÒÀÐ¢°Ð¢–C¢&WFöÖF–öâ×&VF–æW72Ö–×7B"ÀÐ¢Æ&VÃ¢$'W6–æW72–×7BÖV7W&VÖVçB"ÀÐ¢FW67&—F–öã Ð¢%–÷R6âW‡Æ–âF–ÖR6fVBÂW'&÷"&VGV7F–öâÂF÷F–öâÂ÷W&F–ær6÷7BÂ&—6²&VGV7F–öâÂæB&VÆ—¦VBfÇVRâ"ÀÐ¢vV–v‡C¢ÀÐ¢ÒÀÐ¢°Ð¢–C¢&WFöÖF–öâ×&VF–æW72×÷'FföÆ–ò"ÀÐ¢Æ&VÃ¢%÷'FföÆ–òæB6öÖ×Væ–6F–öâ"ÀÐ¢FW67&—F–öã Ð¢%–÷R†fRF‡&VR7G&öær66R7GVF–W2æB6âFVfVæB&ö6W72Â&6†—FV7GW&RÂ6öçG&öÇ2ÂG&FRÖöfg2ÂæB÷WF6öÖW2â"ÀÐ¢vV–v‡C¢ÀÐ¢ÒÀÐ¢°Ð¢–C¢&WFöÖF–öâ×&VF–æW72Ö6&VW""ÀÐ¢Æ&VÃ¢$Æ–6F–öâæB–çFW'f–Wr&VF–æW72"ÀÐ¢FW67&—F–öã Ð¢%–÷W"&W7VÖRÂÆ–æ¶VD–âÂv—D‡V"ÂF&vWB&öÆW2ÂÆ–6F–öâ7—7FVÒÂæB–çFW'f–Wr7F÷&–W2&RÆ–væVBFò–÷W"Wf–FVæ6Râ"ÀÐ¢vV–v‡C¢‚ÀÐ¢ÒÀÐ¢ÒÀÐ¢f–æÄ6†ÆÆVævS¢°Ð¢F—FÆS¢$VçFW'&—6R’WFöÖF–öâ67FöæR"ÀÐ¢FW67&—F–öã Ð¢$FW6–vâæBFVÆ—fW"âVæB×FòÖVæB–çFVÆÆ–vVçBWFöÖF–öâf÷"&VÂ÷W&F–öæÂ&ö6W72âF†R6öÇWF–öâ×W7B6öÖ&–æR&ö6W72F—66÷fW'’ÂFWFW&Ö–æ—7F–2v÷&¶fÆ÷rÆöv–2Â’Â6V7W&R–çFVw&F–öç2Â‡VÖâ6öçG&öÇ2ÂÖöæ—F÷&–ærÂv÷fW&ææ6RÂæBÖV7W&&ÆRfÇVRâ"ÀÐ¢&WV—&VÖVçG3¢°Ð¢$&VÂ÷"&VÆ—7F–6ÆÇ’6–×VÆFVB'W6–æW72&ö&ÆVÒv—F‚Fö7VÖVçFVB&6VÆ–æRVff÷'BæB–âö–çG2"ÀÐ¢$7W'&VçB×7FFRæBgWGW&R×7FFR&ö6W72Ö2"ÀÐ¢$6ÆV"gVæ7F–öæÂæBæöâÖgVæ7F–öæÂ&WV—&VÖVçG2"ÀÐ¢$BÆV7BGvò7—7FVÒ–çFVw&F–öç2"ÀÐ¢$BÆV7BöæR§W7F–f–VB’6&–Æ—G’"ÀÐ¢%7G'V7GW&VBfÆ–FF–öâæB‡VÖâ×&Wf–WrÆöv–2"ÀÐ¢$WF†VçF–6F–öâÂ66W726öçG&öÂÂæB6Vç6—F—fRÖFF†æFÆ–ær"ÀÐ¢$W'&÷"†æFÆ–ærÂ&WG&–W2ÂGWÆ–6FR&÷FV7F–öâÂæB&V6÷fW'’"ÀÐ¢$Ööæ—F÷&–ærÂÆöw2ÂÆW'G2Â÷væW'6†—ÂæB'Væ&öö²"ÀÐ¢$ÖV7W&&ÆR–×7BæB$ô’ÖöFVÂ"ÀÐ¢ÒÀÐ¢FVÆ—fW&&ÆW3¢°Ð¢%v÷&¶–ær6öÇWF–öâ÷"&öGV7F–öâ×VÆ—G’&÷F÷G—R"ÀÐ¢$&6†—FV7GW&RæB&ö6W72F–w&×2"ÀÐ¢%6÷W&6R6öFR÷"W‡÷'FVBv÷&¶fÆ÷r76WG2"ÀÐ¢%FW7BÆâæBWfÇVF–öâ&W÷'B"ÀÐ¢$Ööæ—F÷&–æræB÷W&F–öæÂF6†&ö&B"ÀÐ¢%6V7W&—G’æBv÷fW&ææ6RFö7VÖVçFF–öâ"ÀÐ¢$'W6–æW72–×7B&W÷'B"ÀÐ¢%$TDÔRÂ66R7GVG’ÂæBf—fRÖÖ–çWFRFVÖò"ÀÐ¢ÒÀÐ¢WfÇVF–öã¢°Ð¢$'W6–æW72&ö&ÆVÒ6Æ&—G’æBWFöÖF–öâ7V—F&–Æ—G’"ÀÐ¢%v÷&¶fÆ÷ræB–çFVw&F–öâ&6†—FV7GW&R"ÀÐ¢$&÷&–FRæB6öçG&öÆÆVBW6Röb’"ÀÐ¢%&VÆ–&–Æ—G’Â6V7W&—G’Âv÷fW&ææ6RÂæBÖ–çF–æ&–Æ—G’"ÀÐ¢%FW7F–æræBWf–FVæ6RVÆ—G’"ÀÐ¢$ÖV7W&VB÷W&F–öæÂ–×7B"ÀÐ¢%FV6†æ–6ÂæB7F¶V†öÆFW"6öÖ×Væ–6F–öâ"ÀÐ¢ÒÀÐ¢ÒÀÐ¢&VÆFVD6&VW'3¢°Ð¢$’6öÇWF–öç26öç7VÇFçB"ÀÐ¢$–çFVÆÆ–vVçBWFöÖF–öâFWfVÆ÷W""ÀÐ¢%÷vW"ÆFf÷&ÒFWfVÆ÷W""ÀÐ¢$Ö–7&÷6ögB6÷–Æ÷B7V6–Æ—7B"ÀÐ¢$WFöÖF–öâVæv–æVW""ÀÐ¢%%FWfVÆ÷W""ÀÐ¢$'W6–æW72&ö6W72WFöÖF–öâ7V6–Æ—7B"ÀÐ¢$F–v—FÂG&ç6f÷&ÖF–öâ6öç7VÇFçB"ÀÐ¢$’'W6–æW72æÇ—7B"ÀÐ¢$–çFVw&F–öâFWfVÆ÷W""ÀÐ¢ÒÀÐ¢&öw&W75'VÆW3¢°Ð¢&VF–æW75F‡&W6†öÆC¢ƒÀÐ¢Ö–æ–×VÕ&ö¦V7G3¢2ÀÐ¢Ö–æ–×VÕV—¥66÷&S¢cÀÐ¢ÒÀÐ¢¦ö$&ö&C¢°Ð¢F—FÆS¢$’WFöÖF–öâ6&VW"÷÷'GVæ—F–W2"ÀÐ¢FW67&—F–öã Ð¢%F&vWB&öÆW27V6‚2’WFöÖF–öâ7V6–Æ—7BÂ–çFVÆÆ–vVçBWFöÖF–öâFWfVÆ÷W"Â÷vW"ÆFf÷&ÒFWfVÆ÷W"Â6÷–Æ÷B7GVF–ò7V6–Æ—7BÂ’6öÇWF–öç26öç7VÇFçBÂ%FWfVÆ÷W"Âv÷&¶fÆ÷rWFöÖF–öâVæv–æVW"Â'W6–æW72&ö6W72WFöÖF–öâ7V6–Æ—7BÂ–çFVw&F–öâFWfVÆ÷W"ÂæBF–v—FÂG&ç6f÷&ÖF–öâ6öç7VÇFçBâ"ÀÐ¢–çFVw&F–öå7FGW3¢&6öÖ–ær×6ööâ"ÀÐ¢f–ÇFW'3¢²$Æö6F–öâ"Â%&VÖ÷FR"Â$ÆWfVÂ"Â%6Æ'’"Â$6ö×ç’%ÒÀÐ¢6×ÆTF—66Æ–ÖW# Ð¢$Æ—fRf6æ7’FF—2æ÷B6öææV7FVB–âF†—2v÷&·76R–WBâW6RF†R&öÆRF—FÆW2æBWf–FVæ6Rg&ÖWv÷&²Fò&W&RF&vWFVB6V&6†W2v—F†÷WB–çfVçF–ærÖ&¶WB6Æ–×2â"ÀÐ¢ÒÀÐ¢÷'FföÆ–õF6·3¢°Ð¢°Ð¢–C¢&WFöÖF–öâ×÷'FföÆ–òÖ66R×7GVG’Ó"ÀÐ¢F—FÆS¢%V&Æ—6‚â–çFVÆÆ–vVçBv÷&¶fÆ÷r66R7GVG’"ÀÐ¢FW67&—F–öã Ð¢%6†÷r&ö6W72F—66÷fW'’Â&6†—FV7GW&RÂ’&÷VæF&–W2ÂfÆ–FF–öâÂW†6WF–öâ†æFÆ–ærÂÖöæ—F÷&–ærÂæBÖV7W&&ÆRfÇVRâ"ÀÐ¢G—S¢'÷'FföÆ–ò"ÀÐ¢ÒÀÐ¢°Ð¢–C¢&WFöÖF–öâ×÷'FföÆ–òÖ66R×7GVG’Ó""ÀÐ¢F—FÆS¢%V&Æ—6‚âVçFW'&—6R–çFVw&F–öâ66R7GVG’"ÀÐ¢FW67&—F–öã Ð¢$W‡Æ–âWF†VçF–6F–öâÂFF6öçG&7G2Â&FRÆ–Ö—G2Â&WG&–W2Â–FV×÷FVæ7’Â&V6öæ6–Æ–F–öâÂæB÷W&F–öæÂ÷væW'6†—â"ÀÐ¢G—S¢'÷'FföÆ–ò"ÀÐ¢ÒÀÐ¢°Ð¢–C¢&WFöÖF–öâ×÷'FföÆ–òÖ66R×7GVG’Ó2"ÀÐ¢F—FÆS¢%V&Æ—6‚&öGV7F–öâv÷fW&ææ6R66R7GVG’"ÀÐ¢FW67&—F–öã Ð¢$FVÖöç7G&FRFW7G2ÂÖöæ—F÷&–ærÂ6V7W&—G’6öçG&öÇ2ÂÆW'G2Â'Væ&öö·2Â–æ6–FVçB&V6÷fW'’ÂæB6öçF–çV÷W2–×&÷fVÖVçBâ"ÀÐ¢G—S¢'÷'FföÆ–ò"ÀÐ¢ÒÀÐ¢°Ð¢–C¢&WFöÖF–öâ×÷'FföÆ–òÖFVÖò"ÀÐ¢F—FÆS¢%&V6÷&B6öæ6—6R67FöæRFVÖò"ÀÐ¢FW67&—F–öã Ð¢%6†÷rF†R'W6–æW72&ö&ÆVÒÂv÷&¶fÆ÷rÂ’&V†f–÷"Â6öçG&öÇ2ÂÖöæ—F÷&–ærÂæB÷WF6öÖR–âf—fRÖ–çWFW2÷"ÆW72â"ÀÐ¢G—S¢'÷'FföÆ–ò"ÀÐ¢ÒÀÐ¢°Ð¢–C¢&WFöÖF–öâ×÷'FföÆ–òÖ&6†—FV7GW&R"ÀÐ¢F—FÆS¢$7&VFR&WW6&ÆR&6†—FV7GW&R÷'FföÆ–ò"ÀÐ¢FW67&—F–öã Ð¢$–æ6ÇVFR&ö6W72Ö2Â7—7FVÒ6öçFW‡BÂFFfÆ÷rÂ6WVVæ6RÂ6V7W&—G’&÷VæF&–W2ÂæB÷W&F–öæÂ÷væW'6†—F–w&×2â"ÀÐ¢G—S¢'÷'FföÆ–ò"ÀÐ¢ÒÀÐ¢ÒÀÐ¢¦ö%6V&6…F6·3¢°Ð¢°Ð¢–C¢&WFöÖF–öâÖ¦ö"×F6²×&öÆRÖÖG&—‚"ÀÐ¢F—FÆS¢$7&VFRF&vWB&öÆRÖG&—‚"ÀÐ¢FW67&—F–öã Ð¢$6ö×&R&öÆRF—FÆW2Â&WV—&VB7F6·2Â–æGW7G&–W2Â6Væ–÷&—G’ÂÆö6F–öâÂ6Æ'’W‡V7FF–öç2ÂæB÷'FföÆ–òv2â"ÀÐ¢G—S¢&¦ö"×6V&6‚"ÀÐ¢ÒÀÐ¢°Ð¢–C¢&WFöÖF–öâÖ¦ö"×F6²Ö6ö×ç’ÖÆ—7B"ÀÐ¢F—FÆS¢$'V–ÆBF&vWB6ö×ç’Æ—7B"ÀÐ¢FW67&—F–öã Ð¢%&–÷&—F—¦RV×Æ÷–W'2v—F‚f—6–&ÆRWFöÖF–öâÂ÷vW"ÆFf÷&ÒÂ’G&ç6f÷&ÖF–öâÂ÷W&F–öç2FV6†æöÆöw’Â÷"6öç7VÇF–ær&7F–6W2â"ÀÐ¢G—S¢&¦ö"×6V&6‚"ÀÐ¢ÒÀÐ¢°Ð¢–C¢&WFöÖF–öâÖ¦ö"×F6²ÖÆ–6F–öâ×7—7FVÒ"ÀÐ¢F—FÆS¢%'VâvVV¶Ç’Æ–6F–öâ7—7FVÒ"ÀÐ¢FW67&—F–öã Ð¢%G&6²Æ–6F–öç2ÂWf–FVæ6RW6VBÂ&VfW'&Ç2ÂföÆÆ÷r×W2Â–çFW'f–Ww2ÂfVVF&6²ÂæB&V7W'&–ær6¶–ÆÂ&WV—&VÖVçG2â"ÀÐ¢G—S¢&¦ö"×6V&6‚"ÀÐ¢ÒÀÐ¢°Ð¢–C¢&WFöÖF–öâÖ¦ö"×F6²×F–Æ÷&–ær"ÀÐ¢F—FÆS¢%F–Æ÷"Wf–FVæ6RFòV6‚&öÆR"ÀÐ¢FW67&—F–öã Ð¢%6VÆV7BF†RÖ÷7B&VÆWfçB66R7GVF–W2æB¶W—v÷&G2v—F†÷WBW†vvW&F–ær66÷RÂ&öGV7F–öâW6vRÂ÷"÷væW'6†—â"ÀÐ¢G—S¢&¦ö"×6V&6‚"ÀÐ¢ÒÀÐ¢ÒÀÐ¢–çFW'f–Wu&W¢°Ð¢F—FÆS¢$’WFöÖF–öâ7V6–Æ—7B–çFW'f–Wr&W&F–öâ"ÀÐ¢&7F–6T&V3¢°Ð¢%&ö6W72F—66÷fW'’"ÀÐ¢%v÷&¶fÆ÷r&6†—FV7GW&R"ÀÐ¢%÷vW"WFöÖFR"ÀÐ¢$6÷–Æ÷B7GVF–ò"ÀÐ¢&ã†â"ÀÐ¢%V•F‚"ÀÐ¢$—2æBWF†VçF–6F–öâ"ÀÐ¢%7G'V7GW&VB’÷WGWG2"ÀÐ¢$vVçG2æBFööÂW6R"ÀÐ¢$‡VÖâ–âF†RÆö÷"ÀÐ¢$W'&÷"†æFÆ–ær"ÀÐ¢$Ööæ—F÷&–æræBv÷fW&ææ6R"ÀÐ¢%6V7W&—G’æB&—f7’"ÀÐ¢%$ô’æB'W6–æW72fÇVR"ÀÐ¢%7F¶V†öÆFW"6öÖ×Væ–6F–öâ"ÀÐ¢ÒÀÐ¢VW7F–öç3¢°Ð¢$†÷rv÷VÆB–÷RFV6–FRv†WF†W"&ö6W726†÷VÆBW6R'VÆW2Â’Â%Ââ’–çFVw&F–öâÂ÷"6öÖ&–æF–öãò"ÀÐ¢$FW6–vââ–çfö–6R×&ö6W76–ærv÷&¶fÆ÷rv—F‚W‡G&7F–öâÂfÆ–FF–öâÂ&÷fÇ2Â7—7FVÒWFFW2ÂæBW†6WF–öâ†æFÆ–ærâ"ÀÐ¢$†÷rv÷VÆB–÷R&WfVçBGWÆ–6FR7F–öç2v†Vâv÷&¶fÆ÷r&WG&–W2gFW"'F–Âf–ÇW&Sò"ÀÐ¢%v†Vâ6†÷VÆBâ’ÖvVæW&FVB&W7VÇB&R6VçBFò‡VÖâ&Wf–WvW#ò"ÀÐ¢$†÷rv÷VÆB–÷R6V7W&RâvVçBF†B6â66W72'W6–æW72FFæBW&f÷&Ò7F–öç3ò"ÀÐ¢$W‡Æ–â†÷r–÷Rv÷VÆBÖöæ—F÷"v÷&¶fÆ÷r&VÆ–&–Æ—G’æB–FVçF–g’&V7W'&–ærf–ÇW&RGFW&ç2â"ÀÐ¢$†÷rv÷VÆB–÷R6Æ7VÆFRF†RfÇVRöbâWFöÖF–öâgFW"FWÆ÷–ÖVçCò"ÀÐ¢$FW67&–&R6—GVF–öâv†W&R–÷R6†÷VÆBæ÷BWFöÖFRF†R&ö6W7227W'&VçFÇ’FW6–væVBâ"ÀÐ¢$†÷rv÷VÆB–÷RÖ–w&FRâWFöÖF–öâ&WGvVVâFWfVÆ÷ÖVçBÂFW7BÂæB&öGV7F–öâVçf—&öæÖVçG3ò"ÀÐ¢%vÆ²F‡&÷Vv‚öæRöb–÷W"&ö¦V7G2g&öÒ'W6–æW72&ö&ÆVÒFò&6†—FV7GW&RÂ6öçG&öÇ2Â&W7VÇG2ÂæBÆW76öç2ÆV&æVBâ"ÀÐ¢$†÷rv÷VÆB–÷R&W7öæBv†Vâ7F¶V†öÆFW"&WVW7G2âWFöæöÖ÷W2vVçBv—F‚W†6W76—fRW&Ö—76–öç3ò"ÀÐ¢%v†BFö7VÖVçFF–öâ—2&WV—&VB6òæ÷F†W"FVÒ6â÷W&FRæBÖ–çF–â–÷W"6öÇWF–öãò"ÀÐ¢ÒÀÐ¢ÒÀÐ§Ó°Ð Ð¦W‡÷'B6öç7B”WFöÖF–öå7V6–Æ—7D6&VW"ÒÇ”6&VW$76W76ÖVçEöÆ–7’€Ð¢”WFöÖF–öå7V6–Æ—7D6&VW$&6PÐ¢“°Ð 
+      explanation:
+        "Automation quality begins before implementation. You must understand actors, triggers, business rules, exceptions, data ownership, service-level expectations, and the cost of failure.",
+      lessons: [
+        "Current-state and future-state process mapping",
+        "Triggers, actions, decisions, loops, and exceptions",
+        "REST APIs, JSON, webhooks, and authentication",
+        "Git, Python fundamentals, and data transformation",
+        "Requirements, acceptance criteria, and success metrics",
+      ],
+      resources: [
+        resources.pythonDocs,
+        resources.postmanDocs,
+        resources.githubDocs,
+        resources.microsoftPowerPlatformTraining,
+      ],
+      tasks: [
+        {
+          id: "process-foundations-task-1",
+          title: "Map a real business process",
+          description:
+            "Document actors, systems, triggers, decisions, exception paths, manual effort, and measurable pain points.",
+          type: "lesson",
+        },
+        {
+          id: "process-foundations-task-2",
+          title: "Build an API data collector",
+          description:
+            "Use Python or a low-code HTTP action to authenticate, request JSON data, validate it, and save a structured result.",
+          type: "project",
+        },
+      ],
+      test: stationTest(
+        "process-foundations",
+        "Process foundations station test",
+        "process discovery, APIs, data, and automation requirements",
+        "A mapped process with clear requirements, exception paths, API understanding, and measurable success criteria"
+      ),
+      phaseExam: phaseExam(
+        "process-foundations",
+        "Automation foundations phase assessment",
+        "process discovery, APIs, data, and automation requirements"
+      ),
+    },
+    {
+      id: "workflow-engineering",
+      order: 3,
+      title: "Workflow Engineering",
+      type: "core-skills",
+      label: "Flow Construction Yard",
+      landmark: "Flow Construction Yard",
+      landmarkType: "village",
+      terrain: ["village", "bridge"],
+      connections: ["ai-integration"],
+      theme: "violet",
+      x: 730,
+      y: 230,
+      duration: "6-8 weeks",
+      estimatedEffort: {
+        minMinutes: 3600,
+        maxMinutes: 5400,
+        breakdown: {
+          resources: { minMinutes: 1200, maxMinutes: 1800 },
+          activities: { minMinutes: 1980, maxMinutes: 3000 },
+          assessment: { minMinutes: 420, maxMinutes: 600 },
+        },
+      },
+      summary:
+        "Build deterministic workflows with triggers, conditions, loops, connectors, approvals, reusable components, and controlled state.",
+      explanation:
+        "This station develops the engineering discipline behind reliable automation. You will learn to separate orchestration, business rules, data transformation, and external integrations instead of building one fragile flow.",
+      lessons: [
+        "Event-driven, scheduled, and manual workflows",
+        "Conditions, loops, parallel branches, and sub-workflows",
+        "Approvals and human-in-the-loop controls",
+        "Variables, state, idempotency, and duplicate prevention",
+        "Reusable components and environment configuration",
+      ],
+      resources: [
+        resources.powerAutomateDocs,
+        resources.n8nDocs,
+        resources.uiPathDocs,
+        resources.githubDocs,
+      ],
+      tasks: [
+        {
+          id: "workflow-engineering-task-1",
+          title: "Build a multi-step approval workflow",
+          description:
+            "Route a request using business rules, capture decisions, escalate delays, and preserve an audit trail.",
+          type: "project",
+        },
+        {
+          id: "workflow-engineering-task-2",
+          title: "Add safe retry and duplicate protection",
+          description:
+            "Prevent repeated side effects and prove that failed steps can be retried without corrupting data.",
+          type: "lesson",
+        },
+      ],
+      test: stationTest(
+        "workflow-engineering",
+        "Workflow engineering station test",
+        "deterministic workflow design and orchestration",
+        "A modular workflow with clear triggers, branches, approvals, state management, and duplicate protection"
+      ),
+      phaseExam: phaseExam(
+        "workflow-engineering",
+        "Workflow engineering phase assessment",
+        "deterministic workflow design and orchestration"
+      ),
+    },
+    {
+      id: "ai-integration",
+      order: 4,
+      title: "AI Integration and Agent Workflows",
+      type: "tools",
+      label: "Intelligence Forge",
+      landmark: "Intelligence Forge",
+      landmarkType: "mountain",
+      terrain: ["mountain", "cliff"],
+      connections: ["data-integrations"],
+      theme: "blue",
+      x: 1030,
+      y: 470,
+      duration: "8-10 weeks",
+      estimatedEffort: {
+        minMinutes: 4200,
+        maxMinutes: 6000,
+        breakdown: {
+          resources: { minMinutes: 1500, maxMinutes: 2100 },
+          activities: { minMinutes: 2100, maxMinutes: 3000 },
+          assessment: { minMinutes: 600, maxMinutes: 900 },
+        },
+      },
+      summary:
+        "Integrate language models, structured outputs, prompt systems, tools, retrieval, agents, and human review into business workflows.",
+      explanation:
+        "AI should be used only where ambiguity, language, unstructured content, or contextual judgment makes deterministic rules insufficient. Every AI step needs validation, confidence handling, fallback behavior, and cost controls.",
+      lessons: [
+        "Prompt and instruction design",
+        "Structured outputs and schema validation",
+        "Classification, extraction, summarization, and generation",
+        "Tool calling, agent workflows, and orchestration",
+        "Retrieval, grounding, citations, and knowledge sources",
+        "Confidence thresholds and human validation",
+      ],
+      resources: [
+        resources.openAiDocs,
+        resources.copilotStudioDocs,
+        resources.n8nDocs,
+        resources.uiPathDocs,
+      ],
+      tasks: [
+        {
+          id: "ai-integration-task-1",
+          title: "Build an AI document triage workflow",
+          description:
+            "Extract structured fields, classify the document, validate required values, and route low-confidence cases to a reviewer.",
+          type: "project",
+        },
+        {
+          id: "ai-integration-task-2",
+          title: "Create an agent with controlled tools",
+          description:
+            "Allow an agent to read approved data and perform limited actions with authentication, validation, and confirmation boundaries.",
+          type: "project",
+        },
+      ],
+      test: stationTest(
+        "ai-integration",
+        "AI integration station test",
+        "LLM integration, structured outputs, agents, retrieval, and human review",
+        "A tested AI workflow with schema validation, grounding, confidence handling, tool boundaries, and fallback behavior"
+      ),
+      phaseExam: phaseExam(
+        "ai-integration",
+        "AI integration phase assessment",
+        "LLM integration, structured outputs, agents, retrieval, and human review"
+      ),
+    },
+    {
+      id: "data-integrations",
+      order: 5,
+      title: "Data, APIs, and Enterprise Integrations",
+      type: "tools",
+      label: "Integration Harbor",
+      landmark: "Integration Harbor",
+      landmarkType: "port",
+      terrain: ["port", "ship"],
+      connections: ["production-governance"],
+      theme: "emerald",
+      x: 1360,
+      y: 250,
+      duration: "6-8 weeks",
+      estimatedEffort: {
+        minMinutes: 3000,
+        maxMinutes: 4500,
+        breakdown: {
+          resources: { minMinutes: 1080, maxMinutes: 1500 },
+          activities: { minMinutes: 1500, maxMinutes: 2400 },
+          assessment: { minMinutes: 420, maxMinutes: 600 },
+        },
+      },
+      summary:
+        "Connect business systems securely using APIs, webhooks, databases, files, queues, connectors, and reusable integration services.",
+      explanation:
+        "Professional automation lives between systems. This station focuses on secure authentication, data contracts, pagination, rate limits, asynchronous processing, reconciliation, and integration failure handling.",
+      lessons: [
+        "OAuth, API keys, service accounts, and secrets",
+        "Webhooks, polling, pagination, and rate limits",
+        "Databases, SharePoint, Dataverse, files, and queues",
+        "Data mapping, validation, reconciliation, and lineage",
+        "Custom connectors and reusable integration services",
+      ],
+      resources: [
+        resources.postmanDocs,
+        resources.powerAutomateDocs,
+        resources.n8nDocs,
+        resources.pythonDocs,
+      ],
+      tasks: [
+        {
+          id: "data-integrations-task-1",
+          title: "Build a two-system synchronization",
+          description:
+            "Synchronize records incrementally, handle updates and deletions, respect API limits, and produce a reconciliation report.",
+          type: "project",
+        },
+        {
+          id: "data-integrations-task-2",
+          title: "Create an integration contract",
+          description:
+            "Document fields, authentication, ownership, validation, errors, retries, limits, and support responsibilities.",
+          type: "lesson",
+        },
+      ],
+      test: stationTest(
+        "data-integrations",
+        "Data and integrations station test",
+        "secure APIs, system integration, data contracts, and reconciliation",
+        "A secure, documented integration with validation, rate-limit handling, reconciliation, and operational ownership"
+      ),
+      phaseExam: phaseExam(
+        "data-integrations",
+        "Enterprise integration phase assessment",
+        "secure APIs, system integration, data contracts, and reconciliation"
+      ),
+    },
+    {
+      id: "production-governance",
+      order: 6,
+      title: "Production Reliability and Governance",
+      type: "core-skills",
+      label: "Control Tower",
+      landmark: "Control Tower",
+      landmarkType: "symbol",
+      terrain: ["symbol", "cliff"],
+      connections: ["automation-projects"],
+      theme: "amber",
+      x: 1680,
+      y: 440,
+      duration: "6-8 weeks",
+      estimatedEffort: {
+        minMinutes: 3000,
+        maxMinutes: 4500,
+        breakdown: {
+          resources: { minMinutes: 1080, maxMinutes: 1500 },
+          activities: { minMinutes: 1500, maxMinutes: 2400 },
+          assessment: { minMinutes: 420, maxMinutes: 600 },
+        },
+      },
+      summary:
+        "Make automations observable, secure, supportable, testable, compliant, and resilient to changing systems and data.",
+      explanation:
+        "A successful demo is not a production system. You must design monitoring, alerts, logs, ownership, access controls, test coverage, change management, incident response, and rollback procedures.",
+      lessons: [
+        "Error taxonomies, retries, dead-letter handling, and alerting",
+        "Logging, tracing, dashboards, and operational metrics",
+        "Access control, secrets, privacy, and data loss prevention",
+        "Prompt injection, excessive agency, and unsafe outputs",
+        "Testing, deployment environments, versioning, and rollback",
+        "Runbooks, ownership, maintenance, and support models",
+      ],
+      resources: [
+        resources.powerAutomateDocs,
+        resources.copilotStudioDocs,
+        resources.owaspGenAi,
+        resources.githubDocs,
+      ],
+      tasks: [
+        {
+          id: "production-governance-task-1",
+          title: "Create an automation operations dashboard",
+          description:
+            "Track runs, success rate, failure categories, processing time, cost, manual interventions, and business outcomes.",
+          type: "project",
+        },
+        {
+          id: "production-governance-task-2",
+          title: "Write a production runbook",
+          description:
+            "Document ownership, dependencies, alerts, common failures, recovery, rollback, security controls, and escalation paths.",
+          type: "portfolio",
+        },
+      ],
+      test: stationTest(
+        "production-governance",
+        "Production governance station test",
+        "automation reliability, monitoring, security, testing, and governance",
+        "A monitored and governed automation with controls, tests, alerts, runbooks, ownership, and recovery procedures"
+      ),
+      phaseExam: phaseExam(
+        "production-governance",
+        "Production automation phase assessment",
+        "automation reliability, monitoring, security, testing, and governance"
+      ),
+    },
+    {
+      id: "automation-projects",
+      order: 7,
+      title: "Real Automation Projects",
+      type: "projects",
+      label: "Automation Delivery Lab",
+      landmark: "Automation Delivery Lab",
+      landmarkType: "village",
+      terrain: ["village", "river"],
+      connections: ["automation-portfolio"],
+      theme: "pink",
+      x: 1990,
+      y: 250,
+      duration: "8-12 weeks",
+      estimatedEffort: {
+        minMinutes: 4800,
+        maxMinutes: 7200,
+        breakdown: {
+          resources: { minMinutes: 1200, maxMinutes: 1800 },
+          activities: { minMinutes: 3000, maxMinutes: 4500 },
+          assessment: { minMinutes: 600, maxMinutes: 900 },
+        },
+      },
+      summary:
+        "Deliver realistic automation systems that combine workflow logic, AI, integrations, controls, documentation, and measurable impact.",
+      explanation:
+        "This station turns individual skills into end-to-end solutions. Each project should start with a business problem and finish with a working system, operational controls, evidence, and a quantified outcome model.",
+      lessons: [
+        "End-to-end solution architecture",
+        "Business impact and ROI measurement",
+        "User acceptance testing",
+        "Deployment and adoption",
+        "Support and continuous improvement",
+      ],
+      resources: [
+        resources.powerAutomateDocs,
+        resources.copilotStudioDocs,
+        resources.openAiDocs,
+        resources.n8nDocs,
+        resources.uiPathDocs,
+        resources.githubDocs,
+      ],
+      tasks: [
+        {
+          id: "automation-projects-task-1",
+          title: "Ship one production-style capstone",
+          description:
+            "Solve a real operational problem with architecture, tests, monitoring, governance, documentation, and measurable benefits.",
+          type: "project",
+        },
+        {
+          id: "automation-projects-task-2",
+          title: "Run user acceptance testing",
+          description:
+            "Collect realistic test cases, document defects, confirm acceptance criteria, and record stakeholder feedback.",
+          type: "project",
+        },
+      ],
+      test: stationTest(
+        "automation-projects",
+        "Real projects station test",
+        "end-to-end AI automation delivery",
+        "A deployed or production-style automation with clear business value, controls, tests, monitoring, documentation, and user feedback"
+      ),
+      phaseExam: phaseExam(
+        "automation-projects",
+        "Automation delivery phase assessment",
+        "end-to-end AI automation delivery"
+      ),
+    },
+    {
+      id: "automation-portfolio",
+      order: 8,
+      title: "Portfolio Building",
+      type: "portfolio",
+      label: "Proof Gallery",
+      landmark: "Proof Gallery",
+      landmarkType: "ruins",
+      terrain: ["ruins", "symbol"],
+      connections: ["automation-career-assets"],
+      theme: "cyan",
+      x: 1930,
+      y: 820,
+      duration: "2-4 weeks",
+      estimatedEffort: {
+        minMinutes: 1200,
+        maxMinutes: 2400,
+        breakdown: {
+          resources: { minMinutes: 240, maxMinutes: 480 },
+          activities: { minMinutes: 840, maxMinutes: 1680 },
+          assessment: { minMinutes: 120, maxMinutes: 240 },
+        },
+      },
+      summary:
+        "Package your strongest systems as business-focused case studies with architecture, demos, metrics, controls, and lessons learned.",
+      explanation:
+        "Hiring teams need to understand both technical competence and business judgment. Your portfolio must show what changed, why the architecture was chosen, what could fail, and how success was measured.",
+      lessons: [
+        "Automation case study structure",
+        "Architecture and process diagrams",
+        "Demo recording and screenshots",
+        "Impact, reliability, and governance metrics",
+        "README and technical documentation quality",
+      ],
+      resources: [resources.githubDocs, resources.postmanDocs, resources.owaspGenAi],
+      tasks: [
+        {
+          id: "automation-portfolio-task-1",
+          title: "Publish three complete case studies",
+          description:
+            "Include problem, baseline, process map, architecture, implementation, controls, results, limitations, and next improvements.",
+          type: "portfolio",
+        },
+        {
+          id: "automation-portfolio-task-2",
+          title: "Record a five-minute system walkthrough",
+          description:
+            "Demonstrate one workflow and explain business rules, AI boundaries, failure handling, monitoring, and impact.",
+          type: "portfolio",
+        },
+      ],
+      test: stationTest(
+        "automation-portfolio",
+        "Portfolio station test",
+        "AI automation portfolio presentation",
+        "Three recruiter-readable case studies with demos, architecture, measurable outcomes, controls, and honest limitations",
+        8
+      ),
+    },
+    {
+      id: "automation-career-assets",
+      order: 9,
+      title: "Resume and Professional Profile",
+      type: "resume",
+      label: "Career Signal Station",
+      landmark: "Career Signal Station",
+      landmarkType: "symbol",
+      terrain: ["symbol", "mist"],
+      connections: ["automation-job-search"],
+      theme: "blue",
+      x: 1580,
+      y: 1080,
+      duration: "1-2 weeks",
+      estimatedEffort: {
+        minMinutes: 480,
+        maxMinutes: 960,
+        breakdown: {
+          resources: { minMinutes: 120, maxMinutes: 240 },
+          activities: { minMinutes: 300, maxMinutes: 600 },
+          assessment: { minMinutes: 60, maxMinutes: 120 },
+        },
+      },
+      summary:
+        "Translate automation work into credible resume bullets, LinkedIn positioning, GitHub proof, and role-specific professional language.",
+      explanation:
+        "Your profile should connect process improvement, technical implementation, governance, and measurable outcomes. Avoid presenting yourself as a tool operator; present yourself as a solution designer and delivery specialist.",
+      lessons: [
+        "Outcome-based resume bullets",
+        "AI Automation Specialist positioning",
+        "LinkedIn headline and About section",
+        "GitHub and portfolio navigation",
+        "Role-specific keywords and honest scope",
+      ],
+      resources: [resources.githubDocs, resources.microsoftPowerPlatformTraining],
+      tasks: [
+        {
+          id: "automation-career-assets-task-1",
+          title: "Write six evidence-based resume bullets",
+          description:
+            "Use action, architecture, scope, controls, and measurable result without overstating production experience.",
+          type: "career",
+        },
+        {
+          id: "automation-career-assets-task-2",
+          title: "Optimize LinkedIn and GitHub",
+          description:
+            "Make your specialization, strongest projects, stack, and business impact understandable within one minute.",
+          type: "portfolio",
+        },
+      ],
+      test: stationTest(
+        "automation-career-assets",
+        "Career assets station test",
+        "AI automation resume and professional profile preparation",
+        "A focused resume and online profile that connect technical architecture to verified business outcomes",
+        8
+      ),
+    },
+    {
+      id: "automation-job-search",
+      order: 10,
+      title: "Job Search Strategy",
+      type: "job-search",
+      label: "Opportunity Exchange",
+      landmark: "Opportunity Exchange",
+      landmarkType: "village",
+      terrain: ["village", "bridge"],
+      connections: ["automation-interview"],
+      theme: "violet",
+      x: 1210,
+      y: 840,
+      duration: "1-2 weeks",
+      estimatedEffort: {
+        minMinutes: 480,
+        maxMinutes: 960,
+        breakdown: {
+          resources: { minMinutes: 120, maxMinutes: 240 },
+          activities: { minMinutes: 300, maxMinutes: 600 },
+          assessment: { minMinutes: 60, maxMinutes: 120 },
+        },
+      },
+      summary:
+        "Target the right titles, companies, industries, stacks, and seniority levels while running a measurable application and networking system.",
+      explanation:
+        "AI automation work appears under several titles. Search across automation, Power Platform, intelligent automation, AI solutions, business systems, integration, and digital transformation roles.",
+      lessons: [
+        "Target role and company criteria",
+        "Job description skill mapping",
+        "Referral and outreach strategy",
+        "Application tracking and follow-up",
+        "Portfolio tailoring and gap analysis",
+      ],
+      resources: [
+        resources.microsoftPowerPlatformTraining,
+        resources.githubDocs,
+        resources.copilotStudioDocs,
+      ],
+      tasks: [
+        {
+          id: "automation-job-search-task-1",
+          title: "Build a target role matrix",
+          description:
+            "Track titles, required stacks, industries, seniority, portfolio evidence, gaps, location, and compensation expectations.",
+          type: "job-search",
+        },
+        {
+          id: "automation-job-search-task-2",
+          title: "Create a weekly application operating rhythm",
+          description:
+            "Define targets for applications, referrals, outreach, practice, follow-up, and feedback review.",
+          type: "job-search",
+        },
+      ],
+      test: stationTest(
+        "automation-job-search",
+        "Job search station test",
+        "AI automation job search strategy",
+        "A targeted role matrix and weekly application system connected to portfolio evidence and market requirements",
+        8
+      ),
+    },
+    {
+      id: "automation-interview",
+      order: 11,
+      title: "Interview Preparation",
+      type: "interview",
+      label: "Solution Review Arena",
+      landmark: "Solution Review Arena",
+      landmarkType: "ruins",
+      terrain: ["ruins", "cliff"],
+      connections: ["automation-final-assessment"],
+      theme: "red",
+      x: 850,
+      y: 1110,
+      duration: "2-4 weeks",
+      estimatedEffort: {
+        minMinutes: 1200,
+        maxMinutes: 2400,
+        breakdown: {
+          resources: { minMinutes: 300, maxMinutes: 600 },
+          activities: { minMinutes: 720, maxMinutes: 1440 },
+          assessment: { minMinutes: 180, maxMinutes: 360 },
+        },
+      },
+      summary:
+        "Practice process discovery, workflow architecture, AI boundaries, integration design, reliability, governance, ROI, and stakeholder communication.",
+      explanation:
+        "Interviews often use ambiguous business scenarios. Strong candidates clarify the process, quantify value, separate deterministic and AI steps, identify risks, design controls, and explain trade-offs clearly.",
+      lessons: [
+        "Automation discovery interview",
+        "Workflow and integration system design",
+        "AI use-case and model decision trade-offs",
+        "Security, governance, and failure analysis",
+        "Business case and ROI explanation",
+        "Behavioral and stakeholder stories",
+      ],
+      resources: [
+        resources.powerAutomateDocs,
+        resources.copilotStudioDocs,
+        resources.openAiDocs,
+        resources.owaspGenAi,
+      ],
+      tasks: [
+        {
+          id: "automation-interview-task-1",
+          title: "Complete three architecture interviews",
+          description:
+            "Design an invoice workflow, an employee support agent, and an operations exception-management system out loud.",
+          type: "interview",
+        },
+        {
+          id: "automation-interview-task-2",
+          title: "Prepare six STAR stories",
+          description:
+            "Cover discovery, stakeholder resistance, failure recovery, measurable impact, security judgment, and continuous improvement.",
+          type: "interview",
+        },
+      ],
+      test: stationTest(
+        "automation-interview",
+        "Interview preparation station test",
+        "AI automation interviews and solution architecture communication",
+        "Clear process discovery, architecture trade-offs, risk controls, business impact, and evidence-based project storytelling"
+      ),
+    },
+    {
+      id: "automation-final-assessment",
+      order: 12,
+      title: "Final Role Assessment",
+      type: "assessment",
+      label: "Production Readiness Gate",
+      landmark: "Production Readiness Gate",
+      landmarkType: "bridge",
+      terrain: ["bridge", "mountain"],
+      connections: ["automation-ready"],
+      theme: "emerald",
+      x: 500,
+      y: 860,
+      duration: "1 week",
+      estimatedEffort: {
+        minMinutes: 480,
+        maxMinutes: 900,
+        breakdown: {
+          resources: { minMinutes: 120, maxMinutes: 180 },
+          activities: { minMinutes: 240, maxMinutes: 480 },
+          assessment: { minMinutes: 120, maxMinutes: 240 },
+        },
+      },
+      summary:
+        "Review technical skill, business analysis, portfolio evidence, governance, communication, and job readiness as one professional system.",
+      explanation:
+        "The final assessment checks whether you can move from an ambiguous business problem to a secure, supportable, measurable automation solution and explain it to both technical and non-technical stakeholders.",
+      lessons: [
+        "Architecture review",
+        "Portfolio quality review",
+        "Production controls review",
+        "Business impact review",
+        "Resume and interview review",
+      ],
+      resources: [
+        resources.powerAutomateDocs,
+        resources.copilotStudioDocs,
+        resources.openAiDocs,
+        resources.owaspGenAi,
+      ],
+      tasks: [
+        {
+          id: "automation-final-assessment-task-1",
+          title: "Complete a capstone defense",
+          description:
+            "Present your business problem, architecture, AI decisions, controls, metrics, failures, and next improvements.",
+          type: "interview",
+        },
+        {
+          id: "automation-final-assessment-task-2",
+          title: "Run the readiness audit",
+          description:
+            "Verify that portfolio, resume, profiles, application strategy, and interview evidence meet your target roles.",
+          type: "career",
+        },
+      ],
+      test: stationTest(
+        "automation-final-assessment",
+        "Final AI Automation Specialist assessment",
+        "complete AI automation professional readiness",
+        "A defended capstone and verified readiness across discovery, architecture, delivery, governance, impact, portfolio, and communication",
+        15
+      ),
+      phaseExam: phaseExam(
+        "automation-final-assessment",
+        "AI Automation Specialist final role assessment",
+        "complete AI automation professional readiness"
+      ),
+    },
+    {
+      id: "automation-ready",
+      order: 13,
+      title: "Ready to Apply",
+      type: "ready",
+      label: "Automation Launchpad",
+      landmark: "Automation Launchpad",
+      landmarkType: "port",
+      terrain: ["port", "ship"],
+      connections: [],
+      theme: "gold",
+      x: 240,
+      y: 1240,
+      duration: "Ongoing",
+      estimatedEffort: {
+        minMinutes: 300,
+        maxMinutes: 600,
+        breakdown: {
+          resources: { minMinutes: 60, maxMinutes: 120 },
+          activities: { minMinutes: 180, maxMinutes: 360 },
+          assessment: { minMinutes: 60, maxMinutes: 120 },
+        },
+        ongoing: {
+          note: "Repeat this weekly while applying, interviewing, and improving portfolio evidence.",
+        },
+      },
+      summary:
+        "Run a disciplined application, networking, interview, and continuous-learning system while improving your portfolio from market feedback.",
+      explanation:
+        "Job readiness is not a finish line. Continue shipping small improvements, tracking market signals, tailoring evidence, practicing interviews, and learning from recruiter and stakeholder feedback.",
+      lessons: [
+        "Targeted application rhythm",
+        "Interview feedback loop",
+        "Portfolio iteration",
+        "Market and tool updates",
+        "Offer and role evaluation",
+      ],
+      resources: [
+        resources.githubDocs,
+        resources.microsoftPowerPlatformTraining,
+        resources.copilotStudioDocs,
+      ],
+      tasks: [
+        {
+          id: "automation-ready-task-1",
+          title: "Launch targeted applications",
+          description:
+            "Apply only where your skills and evidence match the role, then tailor the most relevant case studies and language.",
+          type: "job-search",
+        },
+        {
+          id: "automation-ready-task-2",
+          title: "Review market feedback weekly",
+          description:
+            "Update your role matrix, portfolio, interview practice, and roadmap based on real responses and recurring requirements.",
+          type: "career",
+        },
+      ],
+      test: stationTest(
+        "automation-ready",
+        "Ready-to-apply confirmation",
+        "sustainable AI automation application readiness",
+        "A repeatable weekly system for targeted applications, networking, interview practice, feedback review, and portfolio improvement",
+        8
+      ),
+    },
+  ],
+  roadmap: [
+    {
+      id: "automation-phase-1",
+      phaseNumber: 1,
+      title: "Process and Technical Foundations",
+      duration: "4-6 weeks",
+      goal:
+        "Understand business processes, requirements, APIs, data, Git, and the technical primitives behind reliable automation.",
+      status: "unlocked",
+      mentorTip:
+        "Do not automate a process you cannot explain. Spend enough time on exceptions, ownership, data quality, and measurable value.",
+      sections: [
+        "Process discovery",
+        "Requirements",
+        "APIs and JSON",
+        "Data transformation",
+        "Python and Git",
+      ],
+      practicalMissions: [
+        "Map a real process and redesign its future state.",
+        "Call an authenticated API and produce a validated structured result.",
+      ],
+      expectedOutcome:
+        "You can analyze a process, identify a credible opportunity, define requirements, and work with common integration data formats.",
+      lessons: [
+        {
+          id: "automation-p1-process-discovery",
+          title: "Process discovery and solution framing",
+          summary:
+            "Learn to identify actors, triggers, rules, exceptions, data sources, risks, ownership, and measurable outcomes.",
+          estimatedTime: "18 hours",
+          difficulty: "Intermediate",
+          outcomes: [
+            "Map current and future process states",
+            "Write acceptance criteria",
+            "Prioritize automation opportunities",
+          ],
+          mission:
+            "Create a process discovery document and ROI hypothesis for a repetitive operational workflow.",
+          resources: [resources.powerAutomateDocs, resources.n8nDocs],
+        },
+        {
+          id: "automation-p1-api-foundations",
+          title: "APIs, data, Python, and Git",
+          summary:
+            "Build the technical foundation for integrating systems and extending low-code tools.",
+          estimatedTime: "24 hours",
+          difficulty: "Intermediate",
+          outcomes: [
+            "Read and transform JSON",
+            "Call authenticated APIs",
+            "Use Git and write reusable scripts",
+          ],
+          mission:
+            "Build a small integration that retrieves, validates, transforms, and stores API data.",
+          resources: [resources.pythonDocs, resources.postmanDocs, resources.githubDocs],
+        },
+      ],
+      quiz: {
+        id: "automation-phase-1-quiz",
+        title: "Foundations checkpoint",
+        phaseId: "automation-phase-1",
+        description:
+          "Original Career OS questions covering process discovery, requirements, APIs, and data fundamentals.",
+        questions: stageQuestions(
+          "automation-phase-1",
+          "automation process and technical foundations",
+          "A mapped and measurable process supported by clear requirements and a working API integration"
+        ),
+      },
+    },
+    {
+      id: "automation-phase-2",
+      phaseNumber: 2,
+      title: "Workflow and Integration Engineering",
+      duration: "8-12 weeks",
+      goal:
+        "Build modular workflows and secure integrations with approvals, state, reusable components, validation, and failure handling.",
+      status: "unlocked",
+      mentorTip:
+        "A long flow is not automatically a good flow. Separate concerns and design for retries, support, and future change.",
+      sections: [
+        "Workflow patterns",
+        "Approvals",
+        "State and idempotency",
+        "Enterprise integrations",
+        "Error handling",
+      ],
+      practicalMissions: [
+        "Build an approval workflow with audit history and escalation.",
+        "Synchronize records between two systems with reconciliation.",
+      ],
+      expectedOutcome:
+        "You can create modular, testable workflows and integrate business systems without creating uncontrolled side effects.",
+      lessons: [
+        {
+          id: "automation-p2-workflow-design",
+          title: "Workflow architecture",
+          summary:
+            "Design triggers, decisions, loops, approvals, sub-workflows, state, and duplicate protection.",
+          estimatedTime: "30 hours",
+          difficulty: "Intermediate",
+          outcomes: [
+            "Build modular workflows",
+            "Implement approvals and escalation",
+            "Prevent duplicate side effects",
+          ],
+          mission:
+            "Create a request-to-approval workflow with validation, audit logging, escalation, and safe retry behavior.",
+          resources: [resources.powerAutomateDocs, resources.n8nDocs],
+        },
+        {
+          id: "automation-p2-integrations",
+          title: "Enterprise integration patterns",
+          summary:
+            "Handle authentication, pagination, webhooks, rate limits, data contracts, and reconciliation.",
+          estimatedTime: "28 hours",
+          difficulty: "Intermediate",
+          outcomes: [
+            "Integrate secure APIs",
+            "Handle limits and asynchronous work",
+            "Reconcile data across systems",
+          ],
+          mission:
+            "Build a reliable two-system synchronization and document its integration contract.",
+          resources: [resources.postmanDocs, resources.pythonDocs, resources.powerAutomateDocs],
+        },
+      ],
+      quiz: {
+        id: "automation-phase-2-quiz",
+        title: "Workflow and integration checkpoint",
+        phaseId: "automation-phase-2",
+        description:
+          "Original Career OS questions covering workflow architecture, APIs, state, and reliability.",
+        questions: stageQuestions(
+          "automation-phase-2",
+          "workflow and integration engineering",
+          "A modular workflow and secure integration with approvals, state, retries, and reconciliation"
+        ),
+      },
+    },
+    {
+      id: "automation-phase-3",
+      phaseNumber: 3,
+      title: "AI-Powered Automation",
+      duration: "8-10 weeks",
+      goal:
+        "Use models and agents where they add value while preserving structure, validation, human control, grounding, and safety.",
+      status: "unlocked",
+      mentorTip:
+        "Use deterministic rules for deterministic problems. Introduce AI only where language, ambiguity, or contextual reasoning creates real value.",
+      sections: [
+        "Prompt systems",
+        "Structured outputs",
+        "Extraction and classification",
+        "Agents and tools",
+        "Retrieval and grounding",
+        "Human review",
+      ],
+      practicalMissions: [
+        "Build an AI document-triage workflow with confidence-based review.",
+        "Build a controlled agent that can use approved business tools.",
+      ],
+      expectedOutcome:
+        "You can integrate AI into workflows without surrendering validation, observability, security, or human accountability.",
+      lessons: [
+        {
+          id: "automation-p3-ai-patterns",
+          title: "AI workflow patterns",
+          summary:
+            "Use classification, extraction, summarization, generation, and retrieval with schemas and evaluation.",
+          estimatedTime: "32 hours",
+          difficulty: "Intermediate",
+          outcomes: [
+            "Select appropriate AI tasks",
+            "Validate structured outputs",
+            "Create grounded and evaluated workflows",
+          ],
+          mission:
+            "Create an AI intake workflow that extracts, validates, classifies, and routes unstructured requests.",
+          resources: [resources.openAiDocs, resources.copilotStudioDocs, resources.n8nDocs],
+        },
+        {
+          id: "automation-p3-agents",
+          title: "Agents, tools, and human control",
+          summary:
+            "Design tool boundaries, approvals, memory, fallback behavior, and human escalation for agentic workflows.",
+          estimatedTime: "28 hours",
+          difficulty: "Advanced",
+          outcomes: [
+            "Design controlled tool use",
+            "Add approval and escalation boundaries",
+            "Test agent failure modes",
+          ],
+          mission:
+            "Build an agent that reads approved sources and performs one controlled action after explicit validation.",
+          resources: [resources.copilotStudioDocs, resources.openAiDocs, resources.uiPathDocs],
+        },
+      ],
+      quiz: {
+        id: "automation-phase-3-quiz",
+        title: "AI automation checkpoint",
+        phaseId: "automation-phase-3",
+        description:
+          "Original Career OS questions covering AI task selection, structured outputs, agents, grounding, and human review.",
+        questions: stageQuestions(
+          "automation-phase-3",
+          "AI-powered automation",
+          "A validated AI workflow with grounded outputs, controlled tools, evaluation, fallback behavior, and human review"
+        ),
+      },
+    },
+    {
+      id: "automation-phase-4",
+      phaseNumber: 4,
+      title: "Production, Governance, and Value",
+      duration: "6-8 weeks",
+      goal:
+        "Operate automation safely with monitoring, testing, security, governance, support, cost control, and measurable business impact.",
+      status: "unlocked",
+      mentorTip:
+        "Production readiness is visible in how the system behaves when inputs, dependencies, credentials, users, and assumptions fail.",
+      sections: [
+        "Monitoring",
+        "Testing",
+        "Security",
+        "Governance",
+        "Runbooks",
+        "ROI and adoption",
+      ],
+      practicalMissions: [
+        "Create a monitoring dashboard and failure taxonomy.",
+        "Write a runbook and calculate an impact model for a real automation.",
+      ],
+      expectedOutcome:
+        "You can deploy and support a controlled automation with operational ownership, measurable value, and a clear recovery model.",
+      lessons: [
+        {
+          id: "automation-p4-reliability",
+          title: "Reliability, security, and governance",
+          summary:
+            "Design logs, alerts, access controls, testing, environments, change management, and recovery procedures.",
+          estimatedTime: "28 hours",
+          difficulty: "Advanced",
+          outcomes: [
+            "Monitor automation health",
+            "Control access and sensitive data",
+            "Recover and roll back safely",
+          ],
+          mission:
+            "Add production controls, alerts, tests, and a runbook to one portfolio automation.",
+          resources: [resources.powerAutomateDocs, resources.owaspGenAi, resources.githubDocs],
+        },
+        {
+          id: "automation-p4-value",
+          title: "Business impact, adoption, and continuous improvement",
+          summary:
+            "Measure time, quality, cost, risk, adoption, and realized benefits after deployment.",
+          estimatedTime: "18 hours",
+          difficulty: "Intermediate",
+          outcomes: [
+            "Build an ROI model",
+            "Measure realized benefits",
+            "Create an improvement backlog",
+          ],
+          mission:
+            "Build a before-and-after impact model and define a monthly automation review process.",
+          resources: [resources.powerAutomateDocs, resources.copilotStudioDocs],
+        },
+      ],
+      quiz: {
+        id: "automation-phase-4-quiz",
+        title: "Production and governance checkpoint",
+        phaseId: "automation-phase-4",
+        description:
+          "Original Career OS questions covering monitoring, testing, security, ownership, and measurable value.",
+        questions: stageQuestions(
+          "automation-phase-4",
+          "production automation and governance",
+          "A monitored, secure, testable, supportable automation with clear ownership and measurable business impact"
+        ),
+      },
+    },
+    {
+      id: "automation-phase-5",
+      phaseNumber: 5,
+      title: "Portfolio and Employment Readiness",
+      duration: "4-8 weeks",
+      goal:
+        "Turn technical work into credible evidence, professional positioning, targeted applications, and confident interviews.",
+      status: "unlocked",
+      mentorTip:
+        "Your strongest evidence combines business understanding, architecture, controls, outcomes, and honest reflection—not tool screenshots.",
+      sections: [
+        "Case studies",
+        "Demos",
+        "Resume",
+        "LinkedIn and GitHub",
+        "Applications",
+        "Interviews",
+      ],
+      practicalMissions: [
+        "Publish three complete automation case studies.",
+        "Complete a capstone defense and three mock architecture interviews.",
+      ],
+      expectedOutcome:
+        "You can demonstrate job-relevant automation judgment and run a targeted search for aligned roles.",
+      lessons: [
+        {
+          id: "automation-p5-portfolio",
+          title: "Portfolio proof and professional positioning",
+          summary:
+            "Package systems with process maps, architecture, demos, controls, results, and recruiter-readable documentation.",
+          estimatedTime: "24 hours",
+          difficulty: "Intermediate",
+          outcomes: [
+            "Publish complete case studies",
+            "Present measurable impact",
+            "Position your specialization clearly",
+          ],
+          mission:
+            "Publish three case studies and update your resume, LinkedIn, and GitHub around verified evidence.",
+          resources: [resources.githubDocs, resources.microsoftPowerPlatformTraining],
+        },
+        {
+          id: "automation-p5-interviews",
+          title: "Applications and solution interviews",
+          summary:
+            "Practice ambiguous scenarios, role targeting, stakeholder communication, architecture trade-offs, and behavioral stories.",
+          estimatedTime: "24 hours",
+          difficulty: "Intermediate",
+          outcomes: [
+            "Target appropriate roles",
+            "Explain architecture clearly",
+            "Defend business and governance decisions",
+          ],
+          mission:
+            "Complete three architecture interviews and launch a tracked weekly application system.",
+          resources: [resources.powerAutomateDocs, resources.copilotStudioDocs, resources.owaspGenAi],
+        },
+      ],
+      quiz: {
+        id: "automation-phase-5-quiz",
+        title: "Employment readiness checkpoint",
+        phaseId: "automation-phase-5",
+        description:
+          "Original Career OS questions covering portfolio evidence, professional positioning, applications, and interviews.",
+        questions: stageQuestions(
+          "automation-phase-5",
+          "AI automation employment readiness",
+          "A complete portfolio, focused professional profile, targeted application system, and confident solution interview performance"
+        ),
+      },
+    },
+  ],
+  projects: [
+    {
+      id: "automation-project-intelligent-inbox",
+      title: "Intelligent Request and Email Triage",
+      difficulty: "Intermediate",
+      estimatedTime: "2-3 weeks",
+      phaseId: "automation-phase-3",
+      description:
+        "Classify incoming requests, extract structured details, validate required fields, prioritize urgency, route ownership, and escalate low-confidence cases.",
+      deliverables: [
+        "Process map and acceptance criteria",
+        "Working workflow",
+        "Structured AI output schema",
+        "Confidence and human-review logic",
+        "Monitoring dashboard",
+        "Architecture diagram and README",
+      ],
+      skills: [
+        "Power Automate or n8n",
+        "LLM APIs",
+        "Structured outputs",
+        "Human in the loop",
+        "Monitoring",
+      ],
+    },
+    {
+      id: "automation-project-document-processing",
+      title: "AI Document Processing Pipeline",
+      difficulty: "Intermediate",
+      estimatedTime: "3-4 weeks",
+      phaseId: "automation-phase-3",
+      description:
+        "Process invoices, forms, or operational documents using extraction, classification, validation, approvals, and downstream system updates.",
+      deliverables: [
+        "Document schema",
+        "Extraction and validation workflow",
+        "Exception queue",
+        "Human verification screen or approval",
+        "Accuracy and failure report",
+        "Security and data-handling notes",
+      ],
+      skills: [
+        "Document AI",
+        "RPA",
+        "Validation",
+        "Approvals",
+        "Data integration",
+      ],
+    },
+    {
+      id: "automation-project-employee-agent",
+      title: "Employee Knowledge and Action Agent",
+      difficulty: "Advanced",
+      estimatedTime: "3-5 weeks",
+      phaseId: "automation-phase-3",
+      description:
+        "Build a grounded internal agent that answers questions from approved knowledge and performs limited actions through authenticated tools.",
+      deliverables: [
+        "Knowledge architecture",
+        "Agent instructions and tool definitions",
+        "Authentication and authorization model",
+        "Evaluation test set",
+        "Human escalation and fallback",
+        "Analytics and safety report",
+      ],
+      skills: [
+        "Copilot Studio or agent SDK",
+        "Retrieval",
+        "Tool calling",
+        "Access control",
+        "Evaluation",
+      ],
+    },
+    {
+      id: "automation-project-operations-exceptions",
+      title: "Operations Exception Management System",
+      difficulty: "Advanced",
+      estimatedTime: "4-6 weeks",
+      phaseId: "automation-phase-4",
+      description:
+        "Detect exceptions from operational data, enrich them with AI-generated context, assign actions, track resolution, and measure recurring root causes.",
+      deliverables: [
+        "Exception rules and taxonomy",
+        "Data ingestion and enrichment pipeline",
+        "Task or approval workflow",
+        "Dashboard and alerts",
+        "Root-cause summary",
+        "Runbook and ownership model",
+      ],
+      skills: [
+        "Operational analytics",
+        "Workflow orchestration",
+        "AI summarization",
+        "Task management",
+        "Power BI",
+      ],
+    },
+    {
+      id: "automation-project-system-sync",
+      title: "Reliable Cross-System Synchronization",
+      difficulty: "Intermediate",
+      estimatedTime: "2-4 weeks",
+      phaseId: "automation-phase-2",
+      description:
+        "Synchronize records between two systems while handling authentication, pagination, updates, duplicates, rate limits, retries, and reconciliation.",
+      deliverables: [
+        "Integration contract",
+        "Incremental synchronization workflow",
+        "Idempotency strategy",
+        "Error and retry handling",
+        "Reconciliation report",
+        "Deployment documentation",
+      ],
+      skills: ["REST APIs", "OAuth", "Data mapping", "Idempotency", "Reconciliation"],
+    },
+    {
+      id: "automation-project-governance-center",
+      title: "Automation Governance and Monitoring Center",
+      difficulty: "Advanced",
+      estimatedTime: "3-5 weeks",
+      phaseId: "automation-phase-4",
+      description:
+        "Create a central inventory and monitoring layer for automations, owners, dependencies, risks, run health, incidents, benefits, and review dates.",
+      deliverables: [
+        "Automation inventory schema",
+        "Health and value dashboard",
+        "Failure taxonomy",
+        "Ownership and review workflow",
+        "Risk and compliance checklist",
+        "Incident and improvement backlog",
+      ],
+      skills: ["Governance", "Monitoring", "Power BI", "Risk management", "Operations"],
+    },
+  ],
+  globalResources: Object.values(resources),
+  readiness: [
+    {
+      id: "automation-readiness-process",
+      label: "Process discovery evidence",
+      description:
+        "You can map a process, identify exceptions, define requirements, and quantify the expected value before selecting tools.",
+      weight: 12,
+    },
+    {
+      id: "automation-readiness-workflows",
+      label: "Workflow engineering evidence",
+      description:
+        "You have built modular workflows with state, validation, approvals, retries, duplicate protection, and documentation.",
+      weight: 14,
+    },
+    {
+      id: "automation-readiness-integrations",
+      label: "API and integration evidence",
+      description:
+        "You can authenticate, integrate systems, validate data, handle limits, and reconcile outcomes.",
+      weight: 14,
+    },
+    {
+      id: "automation-readiness-ai",
+      label: "Responsible AI integration",
+      description:
+        "You can use structured outputs, grounding, evaluation, human review, and controlled tools rather than relying on uncontrolled prompts.",
+      weight: 16,
+    },
+    {
+      id: "automation-readiness-production",
+      label: "Production reliability and governance",
+      description:
+        "Your projects include monitoring, alerts, tests, security, runbooks, ownership, recovery, and change management.",
+      weight: 16,
+    },
+    {
+      id: "automation-readiness-impact",
+      label: "Business impact measurement",
+      description:
+        "You can explain time saved, error reduction, adoption, operating cost, risk reduction, and realized value.",
+      weight: 10,
+    },
+    {
+      id: "automation-readiness-portfolio",
+      label: "Portfolio and communication",
+      description:
+        "You have three strong case studies and can defend process, architecture, controls, trade-offs, and outcomes.",
+      weight: 10,
+    },
+    {
+      id: "automation-readiness-career",
+      label: "Application and interview readiness",
+      description:
+        "Your resume, LinkedIn, GitHub, target roles, application system, and interview stories are aligned to your evidence.",
+      weight: 8,
+    },
+  ],
+  finalChallenge: {
+    title: "Enterprise AI Automation Capstone",
+    description:
+      "Design and deliver an end-to-end intelligent automation for a real operational process. The solution must combine process discovery, deterministic workflow logic, AI, secure integrations, human controls, monitoring, governance, and measurable value.",
+    requirements: [
+      "A real or realistically simulated business problem with documented baseline effort and pain points",
+      "Current-state and future-state process maps",
+      "Clear functional and non-functional requirements",
+      "At least two system integrations",
+      "At least one justified AI capability",
+      "Structured validation and human-review logic",
+      "Authentication, access control, and sensitive-data handling",
+      "Error handling, retries, duplicate protection, and recovery",
+      "Monitoring, logs, alerts, ownership, and a runbook",
+      "A measurable impact and ROI model",
+    ],
+    deliverables: [
+      "Working solution or production-quality prototype",
+      "Architecture and process diagrams",
+      "Source code or exported workflow assets",
+      "Test plan and evaluation report",
+      "Monitoring and operational dashboard",
+      "Security and governance documentation",
+      "Business impact report",
+      "README, case study, and five-minute demo",
+    ],
+    evaluation: [
+      "Business problem clarity and automation suitability",
+      "Workflow and integration architecture",
+      "Appropriate and controlled use of AI",
+      "Reliability, security, governance, and maintainability",
+      "Testing and evidence quality",
+      "Measured operational impact",
+      "Technical and stakeholder communication",
+    ],
+  },
+  relatedCareers: [
+    "AI Solutions Consultant",
+    "Intelligent Automation Developer",
+    "Power Platform Developer",
+    "Microsoft Copilot Specialist",
+    "Automation Engineer",
+    "RPA Developer",
+    "Business Process Automation Specialist",
+    "Digital Transformation Consultant",
+    "AI Business Analyst",
+    "Integration Developer",
+  ],
+  progressRules: {
+    readinessThreshold: 80,
+    minimumProjects: 3,
+    minimumQuizScore: 60,
+  },
+  jobBoard: {
+    title: "AI Automation Career Opportunities",
+    description:
+      "Target roles such as AI Automation Specialist, Intelligent Automation Developer, Power Platform Developer, Copilot Studio Specialist, AI Solutions Consultant, RPA Developer, Workflow Automation Engineer, Business Process Automation Specialist, Integration Developer, and Digital Transformation Consultant.",
+    integrationStatus: "coming-soon",
+    filters: ["Location", "Remote", "Level", "Salary", "Company"],
+    sampleDisclaimer:
+      "Live vacancy data is not connected in this workspace yet. Use the role titles and evidence framework to prepare targeted searches without inventing market claims.",
+  },
+  portfolioTasks: [
+    {
+      id: "automation-portfolio-case-study-1",
+      title: "Publish an intelligent workflow case study",
+      description:
+        "Show process discovery, architecture, AI boundaries, validation, exception handling, monitoring, and measurable value.",
+      type: "portfolio",
+    },
+    {
+      id: "automation-portfolio-case-study-2",
+      title: "Publish an enterprise integration case study",
+      description:
+        "Explain authentication, data contracts, rate limits, retries, idempotency, reconciliation, and operational ownership.",
+      type: "portfolio",
+    },
+    {
+      id: "automation-portfolio-case-study-3",
+      title: "Publish a production governance case study",
+      description:
+        "Demonstrate tests, monitoring, security controls, alerts, runbooks, incident recovery, and continuous improvement.",
+      type: "portfolio",
+    },
+    {
+      id: "automation-portfolio-demo",
+      title: "Record a concise capstone demo",
+      description:
+        "Show the business problem, workflow, AI behavior, controls, monitoring, and outcome in five minutes or less.",
+      type: "portfolio",
+    },
+    {
+      id: "automation-portfolio-architecture",
+      title: "Create a reusable architecture portfolio",
+      description:
+        "Include process maps, system context, data flow, sequence, security boundaries, and operational ownership diagrams.",
+      type: "portfolio",
+    },
+  ],
+  jobSearchTasks: [
+    {
+      id: "automation-job-task-role-matrix",
+      title: "Create a target role matrix",
+      description:
+        "Compare role titles, required stacks, industries, seniority, location, salary expectations, and portfolio gaps.",
+      type: "job-search",
+    },
+    {
+      id: "automation-job-task-company-list",
+      title: "Build a target company list",
+      description:
+        "Prioritize employers with visible automation, Power Platform, AI transformation, operations technology, or consulting practices.",
+      type: "job-search",
+    },
+    {
+      id: "automation-job-task-application-system",
+      title: "Run a weekly application system",
+      description:
+        "Track applications, evidence used, referrals, follow-ups, interviews, feedback, and recurring skill requirements.",
+      type: "job-search",
+    },
+    {
+      id: "automation-job-task-tailoring",
+      title: "Tailor evidence to each role",
+      description:
+        "Select the most relevant case studies and keywords without exaggerating scope, production usage, or ownership.",
+      type: "job-search",
+    },
+  ],
+  interviewPrep: {
+    title: "AI Automation Specialist Interview Preparation",
+    practiceAreas: [
+      "Process discovery",
+      "Workflow architecture",
+      "Power Automate",
+      "Copilot Studio",
+      "n8n",
+      "UiPath",
+      "APIs and authentication",
+      "Structured AI outputs",
+      "Agents and tool use",
+      "Human in the loop",
+      "Error handling",
+      "Monitoring and governance",
+      "Security and privacy",
+      "ROI and business value",
+      "Stakeholder communication",
+    ],
+    questions: [
+      "How would you decide whether a process should use rules, AI, RPA, an API integration, or a combination?",
+      "Design an invoice-processing workflow with extraction, validation, approvals, system updates, and exception handling.",
+      "How would you prevent duplicate actions when a workflow retries after a partial failure?",
+      "When should an AI-generated result be sent to a human reviewer?",
+      "How would you secure an agent that can access business data and perform actions?",
+      "Explain how you would monitor workflow reliability and identify recurring failure patterns.",
+      "How would you calculate the value of an automation after deployment?",
+      "Describe a situation where you should not automate the process as currently designed.",
+      "How would you migrate an automation between development, test, and production environments?",
+      "Walk through one of your projects from business problem to architecture, controls, results, and lessons learned.",
+      "How would you respond when a stakeholder requests an autonomous agent with excessive permissions?",
+      "What documentation is required so another team can operate and maintain your solution?",
+    ],
+  },
+};
+
+export const aiAutomationSpecialistCareer = applyCareerAssessmentPolicy(
+  aiAutomationSpecialistCareerBase
+);
