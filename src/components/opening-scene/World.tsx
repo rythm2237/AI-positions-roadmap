@@ -356,7 +356,7 @@ function CareerPreviewCard() {
   const [interestError, setInterestError] = useState("");
   const [isMobile, setIsMobile] = useState(false);
   const entry = destination ? UNIVERSE_REGISTRY.find((e) => e.id === destination.id) : null;
-  const show = (phase === "arrived" || phase === "exploring") && destination !== null && !entry?.careerPath;
+  const show = (phase === "arrived" || phase === "exploring") && destination !== null;
 
   useEffect(() => {
     const update = () => setIsMobile(window.innerWidth < 640);
