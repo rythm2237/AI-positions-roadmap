@@ -62,9 +62,9 @@ function validateJourneyData(career: CareerWorkspaceData): string[] {
     const warnings: string[] = [];
     const topicAssessments = stage.topicAssessments ?? [];
 
-    if (topicAssessments.length !== stage.lessons.length) {
+    if (topicAssessments.length !== stage.resources.length) {
       warnings.push(
-        stage.title + " must provide one topic assessment for every learning topic."
+        stage.title + " must provide one topic assessment for every learning resource."
       );
     }
 
@@ -136,8 +136,8 @@ const canonicalValidation = `    const topicAssessments = stage?.topicAssessment
     if (!list(topicAssessments) || !topicAssessments?.length) {
       errors.push(\`Journey stage \${index + 1} needs topic assessments.\`);
     } else {
-      if (topicAssessments.length !== (stage?.lessons?.length ?? 0)) {
-        errors.push(\`Journey stage \${index + 1} needs one topic assessment per lesson.\`);
+      if (topicAssessments.length !== (stage?.resources?.length ?? 0)) {
+        errors.push(\`Journey stage \${index + 1} needs one topic assessment per learning resource.\`);
       }
       topicAssessments.forEach((assessment, assessmentIndex) => {
         if (!list(assessment?.questions) || assessment.questions.length < 5) {
