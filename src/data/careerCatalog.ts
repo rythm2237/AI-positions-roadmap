@@ -31,7 +31,7 @@ const catalog = [
   ["ai-integration-specialist", "AI Integration Specialist", "AI Automation", "Connect AI services safely to existing products, tools, and enterprise systems.", "available", "/careers/ai-integration-specialist?entry=galaxy"],
   ["ai-workflow-architect", "AI Workflow Architect", "AI Automation", "Design scalable, governed human-and-AI workflows across agents, models, tools, APIs, enterprise systems, decisions, state, handoffs, and operations.", "available", "/careers/ai-workflow-architect?entry=galaxy"],
   ["ai-solutions-consultant", "AI Solutions Consultant", "Enterprise AI & Consulting", "Translate business needs into practical, trustworthy AI solution strategies through discovery, opportunity assessment, solution framing, value analysis, governance, delivery planning, and adoption.", "available", "/careers/ai-solutions-consultant?entry=galaxy"],
-  ["ai-transformation-consultant", "AI Transformation Consultant", "Enterprise AI & Consulting", "Shape organization-wide AI transformation plans, operating models, and adoption programs."],
+  ["ai-transformation-consultant", "AI Transformation Consultant", "Enterprise AI & Consulting", "Define and deliver enterprise AI transformation through opportunity portfolios, operating models, responsible-AI governance, adoption, roadmaps, and value realization.", "available", "/careers/ai-transformation-consultant?entry=galaxy"],
   ["business-ai-consultant", "Business AI Consultant", "Enterprise AI & Consulting", "Identify valuable AI opportunities and turn them into measurable business change."],
   ["enterprise-ai-consultant", "Enterprise AI Consultant", "Enterprise AI & Consulting", "Guide large organizations through secure AI strategy, delivery, governance, and scale."],
   ["ai-adoption-consultant", "AI Adoption Consultant", "Enterprise AI & Consulting", "Help teams adopt AI responsibly through workflow redesign, enablement, and change management."],
@@ -43,9 +43,9 @@ const catalog = [
   ["cloud-engineer", "Cloud Engineer", "AI Infrastructure & Security", "Build the secure cloud foundation required to operate modern AI and digital services."],
   ["devops-engineer", "DevOps Engineer", "AI Infrastructure & Security", "Create reliable delivery, observability, and operations systems for AI-enabled software."],
   ["cybersecurity-analyst", "Cybersecurity Analyst", "AI Infrastructure & Security", "Protect the data, infrastructure, and workflows behind AI and digital transformation."],
-  ["generative-engine-optimization-specialist", "Generative Engine Optimization (GEO) Specialist", "AI Marketing", "Make authoritative content understandable and discoverable across generative answer systems."],
+  ["generative-engine-optimization-specialist", "Generative Engine Optimization (GEO) Specialist", "AI Marketing", "Improve trusted visibility, retrieval, citation, and authority across generative answer engines through research, entities, evidence, technical discoverability, and measurement.", "available", "/careers/generative-engine-optimization-specialist?entry=galaxy"],
   ["ai-marketing-specialist", "AI Marketing Specialist", "AI Marketing", "Apply AI responsibly to research, campaigns, operations, and measurable customer growth."],
-  ["ai-content-strategist", "AI Content Strategist", "AI Marketing", "Design useful, governed content systems for human audiences and AI-assisted discovery."],
+  ["ai-content-strategist", "AI Content Strategist", "AI Marketing", "Design governed AI-assisted content systems across audience research, knowledge architecture, editorial workflows, distribution, quality, and measurement.", "available", "/careers/ai-content-strategist?entry=galaxy"],
 ] as const;
 
 export const CAREER_CATALOG: readonly CareerCatalogEntry[] = catalog.map(
