@@ -4,11 +4,11 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
-    "prebuild": "node scripts/patch-career-workspace-assessments.mjs",
+    "prebuild": "node scripts/patch-career-workspace-assessments.mjs && tsc --noEmit --pretty false",
     "build": "next build",
     "start": "next start",
     "lint": "next lint",
-    "typecheck": "tsc --noEmit",
+    "typecheck": "tsc --noEmit --pretty false",
     "validate:references": "node scripts/validate-references.mjs",
     "validate:intelligence": "node scripts/validate-intelligence.mjs",
     "import:intelligence": "node scripts/import-intelligence-snapshot.mjs",
