@@ -29,8 +29,6 @@ jobs:
           common_ancestor="725bb24d5c95f1e327fd5699595beae41ec82cb6"
           redesign_ref="origin/codex/assessment-redesign"
 
-          # Preserve current Production behavior in CareerWorkspace while accepting
-          # every non-conflicting Learning redesign change.
           path="src/components/career/CareerWorkspace.tsx"
           ours=$(mktemp)
           base=$(mktemp)
@@ -47,8 +45,6 @@ jobs:
           Path(sys.argv[2]).write_text(text, encoding="utf-8", newline="\n")
           PY
 
-          # Restore the remaining Learning/assessment implementation directly
-          # from the clean redesign branch.
           files=(
             "content/references/reference-catalog.json"
             "scripts/test-career-assessment-gating.mjs"
@@ -76,9 +72,8 @@ jobs:
             echo "$path restored"
           done
 
-          # Keep the current Production public-beta expectations rather than
-          # replacing them with the older redesign branch version.
-          git show "$stable_commit:scripts/test-public-beta.mjs" > scripts/test-public-beta.mjs
+          # Preserve the latest Production test, which includes AI Integration Specialist.
+          git show "origin/main:scripts/test-public-beta.mjs" > scripts/test-public-beta.mjs
 
       - name: Verify restored text files
         shell: bash
