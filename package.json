@@ -4,7 +4,7 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
-    "prebuild": "node scripts/patch-career-workspace-assessments.mjs && node scripts/patch-career-title-aliases.mjs && node scripts/test-career-title-aliases.mjs && tsc --noEmit --pretty false",
+    "prebuild": "node scripts/patch-career-workspace-assessments.mjs && node scripts/patch-career-title-aliases.mjs && node scripts/test-career-title-aliases.mjs && node scripts/test-intelligent-automation-engineer.mjs && tsc --noEmit --pretty false",
     "build": "next build",
     "start": "next start",
     "lint": "next lint",
@@ -12,7 +12,7 @@
     "validate:references": "node scripts/validate-references.mjs",
     "validate:intelligence": "node scripts/validate-intelligence.mjs",
     "import:intelligence": "node scripts/import-intelligence-snapshot.mjs",
-    "test": "node scripts/test-career-title-aliases.mjs && node scripts/test-learning-architecture.mjs && node scripts/test-career-assessment-gating.mjs && node scripts/test-career-intelligence.mjs && node --experimental-strip-types scripts/test-salary-comparison.ts && node --experimental-strip-types scripts/test-admin-studio.ts && node --experimental-strip-types scripts/test-admin-intelligence.ts && node --experimental-strip-types scripts/test-occupation-intelligence.ts && node --experimental-strip-types scripts/test-source-approval.ts && node --experimental-strip-types scripts/test-normalized-intelligence.ts && node --experimental-strip-types scripts/test-manual-salary-foundation.ts && node --experimental-strip-types scripts/test-manual-salary-ui.ts && node --experimental-strip-types scripts/test-official-salary-import.ts && node --experimental-strip-types scripts/test-generic-refresh.ts && node --experimental-strip-types scripts/test-bls-adapter.ts && node --experimental-strip-types scripts/test-bls-oews-adapter.ts && node --experimental-strip-types scripts/test-bls-approval.ts && node --experimental-strip-types scripts/test-soc-mapping-approval.ts",
+    "test": "node scripts/test-career-title-aliases.mjs && node scripts/test-intelligent-automation-engineer.mjs && node scripts/test-learning-architecture.mjs && node scripts/test-career-assessment-gating.mjs && node scripts/test-career-intelligence.mjs && node --experimental-strip-types scripts/test-salary-comparison.ts && node --experimental-strip-types scripts/test-admin-studio.ts && node --experimental-strip-types scripts/test-admin-intelligence.ts && node --experimental-strip-types scripts/test-occupation-intelligence.ts && node --experimental-strip-types scripts/test-source-approval.ts && node --experimental-strip-types scripts/test-normalized-intelligence.ts && node --experimental-strip-types scripts/test-manual-salary-foundation.ts && node --experimental-strip-types scripts/test-manual-salary-ui.ts && node --experimental-strip-types scripts/test-official-salary-import.ts && node --experimental-strip-types scripts/test-generic-refresh.ts && node --experimental-strip-types scripts/test-bls-adapter.ts && node --experimental-strip-types scripts/test-bls-oews-adapter.ts && node --experimental-strip-types scripts/test-bls-approval.ts && node --experimental-strip-types scripts/test-soc-mapping-approval.ts",
     "intelligence:refresh": "node --env-file=.env.local scripts/refresh-intelligence.mjs"
   },
   "dependencies": {
