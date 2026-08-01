@@ -49,7 +49,9 @@ const catalog = [
     "intelligent-automation-engineer",
     "Intelligent Automation Engineer",
     "AI Automation",
-    "Combine process engineering, automation platforms, and AI to improve complex operations.",
+    "Engineer enterprise automation systems that combine process redesign, RPA, workflows, APIs, document intelligence, agents, governance, and production operations.",
+    "available",
+    "/careers/intelligent-automation-engineer?entry=galaxy",
   ],
   [
     "microsoft-copilot-consultant",
