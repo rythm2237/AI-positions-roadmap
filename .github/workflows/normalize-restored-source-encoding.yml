@@ -1,4 +1,4 @@
-name: Normalize restored source encoding
+name: Restore clean Learning sources
 
 on:
   workflow_dispatch:
@@ -7,75 +7,99 @@ on:
     paths:
       - .github/encoding-normalization-trigger
       - .github/workflows/normalize-restored-source-encoding.yml
-  push:
-    branches: [main]
-    paths:
-      - .github/workflows/normalize-restored-source-encoding.yml
 
 permissions:
   contents: write
 
 jobs:
-  normalize:
+  restore:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
-          ref: ${{ github.event_name == 'pull_request' && github.head_ref || github.ref_name }}
+          ref: ${{ github.head_ref }}
           token: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Convert restored source files to UTF-8
+      - name: Reconstruct affected files from clean Git history
+        shell: bash
+        run: |
+          set -euo pipefail
+          stable_commit="e8ac258a0daad59482c34e9c5b21ccfedebb5c00"
+          common_ancestor="725bb24d5c95f1e327fd5699595beae41ec82cb6"
+          redesign_ref="origin/codex/assessment-redesign"
+
+          files=(
+            "src/components/career/CareerWorkspace.tsx"
+            "src/data/careers/ai-automation-specialist.ts"
+            "src/data/careers/ai-engineer.ts"
+          )
+
+          for path in "${files[@]}"; do
+            mkdir -p "$(dirname "$path")"
+            ours=$(mktemp)
+            base=$(mktemp)
+            theirs=$(mktemp)
+            merged=$(mktemp)
+
+            git show "$stable_commit:$path" > "$ours"
+            git show "$common_ancestor:$path" > "$base"
+            git show "$redesign_ref:$path" > "$theirs"
+
+            set +e
+            git merge-file -p "$ours" "$base" "$theirs" > "$merged"
+            merge_status=$?
+            set -e
+
+            if grep -q '^<<<<<<< ' "$merged"; then
+              echo "Unresolved merge conflict in $path"
+              grep -n -E '^(<<<<<<<|=======|>>>>>>>)' "$merged" || true
+              exit 1
+            fi
+
+            if [ "$merge_status" -gt 1 ]; then
+              echo "git merge-file failed for $path with status $merge_status"
+              exit "$merge_status"
+            fi
+
+            python - "$merged" "$path" <<'PY'
+          from pathlib import Path
+          import sys
+          source = Path(sys.argv[1]).read_text(encoding="utf-8")
+          Path(sys.argv[2]).write_text(source, encoding="utf-8", newline="\n")
+          PY
+
+            echo "$path reconstructed successfully"
+          done
+
+      - name: Verify UTF-8 and conflict-free source
         shell: bash
         run: |
           python - <<'PY'
           from pathlib import Path
-
           paths = [
               Path("src/components/career/CareerWorkspace.tsx"),
               Path("src/data/careers/ai-automation-specialist.ts"),
               Path("src/data/careers/ai-engineer.ts"),
           ]
-
           for path in paths:
-              raw = path.read_bytes()
-              try:
-                  raw.decode("utf-8")
-                  print(f"{path}: already UTF-8")
-                  continue
-              except UnicodeDecodeError as error:
-                  print(f"{path}: invalid UTF-8 at byte {error.start}")
-
-              text = raw.decode("cp1252", errors="replace")
-              path.write_text(text, encoding="utf-8", newline="\n")
-              print(f"{path}: normalized to UTF-8")
+              text = path.read_bytes().decode("utf-8")
+              if "<<<<<<<" in text or ">>>>>>>" in text:
+                  raise SystemExit(f"Conflict marker remains in {path}")
+              print(f"{path}: valid UTF-8 and conflict-free")
           PY
 
-      - name: Verify UTF-8 source encoding
-        shell: bash
-        run: |
-          python - <<'PY'
-          from pathlib import Path
-          for path in [
-              Path("src/components/career/CareerWorkspace.tsx"),
-              Path("src/data/careers/ai-automation-specialist.ts"),
-              Path("src/data/careers/ai-engineer.ts"),
-          ]:
-              path.read_bytes().decode("utf-8")
-              print(f"{path}: valid UTF-8")
-          PY
-
-      - name: Commit normalized files
+      - name: Commit reconstructed files
         shell: bash
         run: |
           if git diff --quiet; then
-            echo "No encoding changes required."
+            echo "No source changes required."
           else
             git config user.name "github-actions[bot]"
             git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
             git add src/components/career/CareerWorkspace.tsx src/data/careers/ai-automation-specialist.ts src/data/careers/ai-engineer.ts
-            git commit -m "fix: normalize restored learning sources to UTF-8"
-            git push origin HEAD:${{ github.event_name == 'pull_request' && github.head_ref || github.ref_name }}
+            git commit -m "fix: reconstruct restored learning sources from clean history"
+            git push origin HEAD:${{ github.head_ref }}
           fi
 
       - uses: actions/setup-node@v4
@@ -85,6 +109,9 @@ jobs:
 
       - name: Install dependencies
         run: npm ci
+
+      - name: Run test suite
+        run: npm test
 
       - name: Run production build
         run: npm run build
