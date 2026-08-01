@@ -29,47 +29,36 @@ jobs:
           common_ancestor="725bb24d5c95f1e327fd5699595beae41ec82cb6"
           redesign_ref="origin/codex/assessment-redesign"
 
-          files=(
-            "src/components/career/CareerWorkspace.tsx"
-            "src/data/careers/ai-automation-specialist.ts"
-            "src/data/careers/ai-engineer.ts"
-          )
-
-          for path in "${files[@]}"; do
-            mkdir -p "$(dirname "$path")"
-            ours=$(mktemp)
-            base=$(mktemp)
-            theirs=$(mktemp)
-            merged=$(mktemp)
-
-            git show "$stable_commit:$path" > "$ours"
-            git show "$common_ancestor:$path" > "$base"
-            git show "$redesign_ref:$path" > "$theirs"
-
-            set +e
-            git merge-file -p "$ours" "$base" "$theirs" > "$merged"
-            merge_status=$?
-            set -e
-
-            if grep -q '^<<<<<<< ' "$merged"; then
-              echo "Unresolved merge conflict in $path"
-              grep -n -E '^(<<<<<<<|=======|>>>>>>>)' "$merged" || true
-              exit 1
-            fi
-
-            if [ "$merge_status" -gt 1 ]; then
-              echo "git merge-file failed for $path with status $merge_status"
-              exit "$merge_status"
-            fi
-
-            python - "$merged" "$path" <<'PY'
+          path="src/components/career/CareerWorkspace.tsx"
+          ours=$(mktemp)
+          base=$(mktemp)
+          theirs=$(mktemp)
+          merged=$(mktemp)
+          git show "$stable_commit:$path" > "$ours"
+          git show "$common_ancestor:$path" > "$base"
+          git show "$redesign_ref:$path" > "$theirs"
+          git merge-file --ours -p "$ours" "$base" "$theirs" > "$merged"
+          python - "$merged" "$path" <<'PY'
           from pathlib import Path
           import sys
-          source = Path(sys.argv[1]).read_text(encoding="utf-8")
-          Path(sys.argv[2]).write_text(source, encoding="utf-8", newline="\n")
+          text = Path(sys.argv[1]).read_text(encoding="utf-8")
+          Path(sys.argv[2]).write_text(text, encoding="utf-8", newline="\n")
           PY
+          echo "$path reconstructed with stable Production conflict resolution"
 
-            echo "$path reconstructed successfully"
+          for path in \
+            "src/data/careers/ai-automation-specialist.ts" \
+            "src/data/careers/ai-engineer.ts"
+          do
+            git show "$redesign_ref:$path" > "$path"
+            python - "$path" <<'PY'
+          from pathlib import Path
+          import sys
+          path = Path(sys.argv[1])
+          text = path.read_text(encoding="utf-8")
+          path.write_text(text, encoding="utf-8", newline="\n")
+          PY
+            echo "$path restored from clean assessment redesign"
           done
 
       - name: Verify UTF-8 and conflict-free source
@@ -98,7 +87,7 @@ jobs:
             git config user.name "github-actions[bot]"
             git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
             git add src/components/career/CareerWorkspace.tsx src/data/careers/ai-automation-specialist.ts src/data/careers/ai-engineer.ts
-            git commit -m "fix: reconstruct restored learning sources from clean history"
+            git commit -m "fix: restore clean Learning and assessment sources"
             git push origin HEAD:${{ github.head_ref }}
           fi
 
