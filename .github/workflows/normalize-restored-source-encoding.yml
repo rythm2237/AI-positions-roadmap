@@ -72,8 +72,61 @@ jobs:
             echo "$path restored"
           done
 
-          # Preserve the latest Production test, which includes AI Integration Specialist.
           git show "origin/main:scripts/test-public-beta.mjs" > scripts/test-public-beta.mjs
+
+          python - <<'PY'
+          from pathlib import Path
+
+          path = Path("src/components/career/CareerWorkspace.tsx")
+          text = path.read_text(encoding="utf-8")
+          old = '''  return career.journeyStages.flatMap((stage) => [
+    {
+      assessment: stage.test,
+      stage,
+      type: "station" as const,
+    },
+    ...(stage.phaseExam
+      ? [
+          {
+            assessment: stage.phaseExam,
+            stage,
+            type: "phase" as const,
+          },
+        ]
+      : []),
+  ]);
+'''
+          new = '''  return career.journeyStages.flatMap((stage) => {
+    const assessments: Array<{
+      assessment: CareerAssessment;
+      stage: CareerJourneyStage;
+      type: "station" | "phase";
+    }> = [];
+
+    if (stage.test) {
+      assessments.push({
+        assessment: stage.test,
+        stage,
+        type: "station",
+      });
+    }
+
+    if (stage.phaseExam) {
+      assessments.push({
+        assessment: stage.phaseExam,
+        stage,
+        type: "phase",
+      });
+    }
+
+    return assessments;
+  });
+'''
+          if old not in text:
+              raise SystemExit("Could not locate allAssessments implementation")
+          path.write_text(text.replace(old, new, 1), encoding="utf-8", newline="\n")
+          print("Applied type-safe optional assessment narrowing")
+          PY
 
       - name: Verify restored text files
         shell: bash
