@@ -7,6 +7,13 @@ import {
   dataScientistCareer,
   microsoftCopilotConsultantCareer,
 } from "@/data/careers/activation-batch-five";
+import {
+  aiKnowledgeEngineerCareer,
+  biDeveloperCareer,
+  businessAiConsultantCareer,
+  dataEngineerCareer,
+  devOpsEngineerCareer,
+} from "@/data/careers/activation-batch-six";
 import { getPublishedCareer } from "@/lib/publishedCareerRepository";
 import type { CareerWorkspaceData } from "@/types/careerWorkspace";
 
@@ -16,6 +23,11 @@ const builtIn: Record<string, CareerWorkspaceData> = {
   "microsoft-copilot-consultant": microsoftCopilotConsultantCareer,
   "data-analyst": dataAnalystCareer,
   "data-scientist": dataScientistCareer,
+  "bi-developer": biDeveloperCareer,
+  "ai-knowledge-engineer": aiKnowledgeEngineerCareer,
+  "data-engineer": dataEngineerCareer,
+  "devops-engineer": devOpsEngineerCareer,
+  "business-ai-consultant": businessAiConsultantCareer,
 };
 
 export default async function ManagedCareerLearningPage({
