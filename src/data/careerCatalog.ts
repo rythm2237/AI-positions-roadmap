@@ -35,7 +35,9 @@ const catalog = [
     "ai-product-manager",
     "AI Product Manager",
     "AI Product",
-    "Guide useful, responsible AI products from customer problem through delivery and evaluation.",
+    "Identify valuable customer problems and lead useful, responsible AI products through discovery, strategy, evaluation, delivery, launch, adoption, and iteration.",
+    "available",
+    "/careers/ai-product-manager?entry=galaxy",
   ],
   [
     "ai-automation-specialist",
@@ -96,7 +98,6 @@ const catalog = [
   [
     "enterprise-ai-consultant",
     "Enterprise AI Consultant",
-    "Enterprise AI & Consulting",
     "Guide large organizations through secure AI strategy, delivery, governance, and scale.",
   ],
   [
