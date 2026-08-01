@@ -3,7 +3,7 @@ import fs from "node:fs";
 const aliasesSource = fs.readFileSync("src/data/careerTitleAliases.ts", "utf8");
 const landingSource = fs.readFileSync("src/components/landing/CareerAliasSearch.tsx", "utf8");
 const heroSource = fs.readFileSync("src/components/career/CareerTitleAliasPanel.tsx", "utf8");
-const validationSource = fs.readFileSync("src/lib/careerContentValidation.ts", "utf8");
+const migrationSource = fs.readFileSync("scripts/patch-career-title-aliases.mjs", "utf8");
 
 for (const slug of [
   "ai-engineer",
@@ -33,8 +33,12 @@ if (!heroSource.includes("This career may also be advertised as")) {
   throw new Error("Career Hero alias panel is missing.");
 }
 
-if (!validationSource.includes("titleAliases must include at least one alternative job title.")) {
+if (!migrationSource.includes("titleAliases must include at least one alternative job title.")) {
   throw new Error("Admin career content validation does not require title aliases.");
+}
+
+if (!migrationSource.includes("CareerTitleAliasPanel career={career}")) {
+  throw new Error("Career Hero migration does not insert the alias panel.");
 }
 
 console.log(
