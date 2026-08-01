@@ -1257,7 +1257,7 @@ function ModuleScene({
         <div className="min-h-0 flex-1 overflow-y-auto">
           {section === "project" ? <ProjectsModule progress={progress} updateProgress={updateProgress} openNote={openNote} /> : null}
           {section === "portfolio" ? <TaskModule title="Portfolio proof" tasks={career.portfolioTasks} progress={progress} updateProgress={updateProgress} /> : null}
-          {section === "jobs" ? <JobsModule progress={progress} /> : null}
+          {section === "jobs" ? <JobsModule progress={progress} updateProgress={updateProgress} /> : null}
           {section === "interview-brief" ? <InterviewModule /> : null}
         </div>
       </div>
@@ -1467,7 +1467,13 @@ function ReadinessModule({
   );
 }
 
-function JobsModule({ progress }: { progress: CareerWorkspaceProgress }) {
+function JobsModule({
+  progress,
+  updateProgress,
+}: {
+  progress: CareerWorkspaceProgress;
+  updateProgress: (updater: (previous: CareerWorkspaceProgress) => CareerWorkspaceProgress) => void;
+}) {
   const career = useCareerData();
   const hasProjectProof = progress.completedProjects.length > 0;
   const hasPortfolioProof = career.portfolioTasks.some((task) => progress.completedStageTasks.includes(task.id));
@@ -1501,32 +1507,43 @@ function JobsModule({ progress }: { progress: CareerWorkspaceProgress }) {
     },
   ];
   return (
-    <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_minmax(280px,.75fr)]">
-      <div>
-        <p className="label-sm text-cyber-300">Job preparation</p>
-        <h3 className="mt-3 max-w-xl font-display text-3xl font-semibold text-white">Prepare a credible {career.title} application.</h3>
-        <p className="mt-4 max-w-xl text-sm leading-7 text-slate-300">Build from evidence already captured in your journey. This workspace does not invent vacancies, salary claims, or market demand.</p>
-        <div className="mt-8 rounded-2xl border border-indigo-300/15 bg-indigo-500/[0.06] p-5">
-          <p className="text-sm font-semibold text-indigo-100">Recommended next step</p>
-          <p className="mt-2 text-sm leading-6 text-slate-300">{hasProjectProof ? "Shape your strongest completed project into a concise case study." : "Complete one practical project before drafting application claims."}</p>
-          <Link href={careerSectionHref(career.slug, "project")} className="mt-4 inline-flex min-h-11 items-center rounded-xl border border-indigo-300/25 px-4 py-2 text-sm font-semibold text-indigo-100 hover:bg-indigo-400/10">
-            {hasProjectProof ? "Review project proof" : "Go to projects"}
-          </Link>
+    <div className="space-y-8">
+      <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_minmax(280px,.75fr)]">
+        <div>
+          <p className="label-sm text-cyber-300">Job preparation</p>
+          <h3 className="mt-3 max-w-xl font-display text-3xl font-semibold text-white">Prepare a credible {career.title} application.</h3>
+          <p className="mt-4 max-w-xl text-sm leading-7 text-slate-300">Build from evidence already captured in your journey. This workspace does not invent vacancies, salary claims, or market demand.</p>
+          <div className="mt-8 rounded-2xl border border-indigo-300/15 bg-indigo-500/[0.06] p-5">
+            <p className="text-sm font-semibold text-indigo-100">Recommended next step</p>
+            <p className="mt-2 text-sm leading-6 text-slate-300">{hasProjectProof ? "Shape your strongest completed project into a concise case study." : "Complete one practical project before drafting application claims."}</p>
+            <Link href={careerSectionHref(career.slug, "project")} className="mt-4 inline-flex min-h-11 items-center rounded-xl border border-indigo-300/25 px-4 py-2 text-sm font-semibold text-indigo-100 hover:bg-indigo-400/10">
+              {hasProjectProof ? "Review project proof" : "Go to projects"}
+            </Link>
+          </div>
         </div>
+        <ol className="relative space-y-0 border-l border-white/10 pl-6">
+          {steps.map((step, index) => (
+            <li key={step.title} className="relative pb-6 last:pb-0">
+              <span aria-hidden="true" className="absolute -left-[31px] top-0 grid h-4 w-4 place-items-center rounded-full border border-indigo-300/30 bg-[#080b1c] text-[9px] text-indigo-200">{index + 1}</span>
+              <div className="flex items-start justify-between gap-3">
+                <h4 className="font-semibold text-white">{step.title}</h4>
+                <span className="rounded-full bg-white/[0.05] px-2 py-1 text-[10px] font-medium text-slate-400">{step.status}</span>
+              </div>
+              <p className="mt-2 text-sm leading-6 text-slate-400">{step.purpose}</p>
+              {step.href && step.action ? <Link href={step.href} className="mt-2 inline-flex min-h-11 items-center text-sm font-semibold text-cyan-200 hover:text-white">{step.action} <span className="ml-1" aria-hidden="true">→</span></Link> : null}
+            </li>
+          ))}
+        </ol>
       </div>
-      <ol className="relative space-y-0 border-l border-white/10 pl-6">
-        {steps.map((step, index) => (
-          <li key={step.title} className="relative pb-6 last:pb-0">
-            <span aria-hidden="true" className="absolute -left-[31px] top-0 grid h-4 w-4 place-items-center rounded-full border border-indigo-300/30 bg-[#080b1c] text-[9px] text-indigo-200">{index + 1}</span>
-            <div className="flex items-start justify-between gap-3">
-              <h4 className="font-semibold text-white">{step.title}</h4>
-              <span className="rounded-full bg-white/[0.05] px-2 py-1 text-[10px] font-medium text-slate-400">{step.status}</span>
-            </div>
-            <p className="mt-2 text-sm leading-6 text-slate-400">{step.purpose}</p>
-            {step.href && step.action ? <Link href={step.href} className="mt-2 inline-flex min-h-11 items-center text-sm font-semibold text-cyan-200 hover:text-white">{step.action} <span className="ml-1" aria-hidden="true">→</span></Link> : null}
-          </li>
-        ))}
-      </ol>
+
+      <div className="rounded-2xl border border-white/10 bg-white/[0.025] p-4 sm:p-5">
+        <TaskModule
+          title="Job-search execution plan"
+          tasks={career.jobSearchTasks}
+          progress={progress}
+          updateProgress={updateProgress}
+        />
+      </div>
     </div>
   );
 }
