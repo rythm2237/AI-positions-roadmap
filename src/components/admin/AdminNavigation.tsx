@@ -1,6 +1,6 @@
 import Link from "next/link";
 
-const modules = ["AI Content Studio", "Learning Resources", "Publishing", "Settings"];
+const modules = ["Settings"];
 export default function AdminNavigation() {
   return <aside className="border-b border-white/10 bg-slate-950/90 lg:min-h-screen lg:w-64 lg:border-b-0 lg:border-r">
     <div className="p-5"><p className="eyebrow">Career OS</p><h1 className="mt-2 font-display text-xl font-semibold text-white">Admin Studio</h1></div>

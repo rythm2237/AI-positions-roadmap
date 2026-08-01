@@ -1,6 +1,6 @@
 # Career OS Admin Studio — Phase 1 operations
 
-Phase 1 adds a protected operational workspace and database-managed Career drafts. It does not publish public pages, call AI services, refresh market data, or replace the existing code-driven AI Engineer workspace.
+Admin Studio now supports database-managed Career profiles, versioned workspace content, validation, protected preview, and explicit public publishing. Built-in Career data remains a safe fallback until a validated database version is published.
 
 ## Apply the migration
 
@@ -46,10 +46,15 @@ Create, update, archive, and restore actions call authenticated database functio
 
 Duplicate slugs, invalid ISO countries, malformed taxonomy, unauthorized requests, missing records, and repeated archive/restore operations return safe UI errors without database details. Slugs are immutable after creation during Phase 1.
 
+## Content and publishing
+
+Open a Career and choose **Content Studio**. The JSON document follows the shared `CareerWorkspaceData` contract used by Roadmap, Learning, Projects, Portfolio, Jobs, and Interview sections. Saving always creates a new content version and automatically returns an already-published Career to draft. Publishing is blocked until server validation passes. Preview remains Admin-only. Public rendering reads only `published` rows through RLS and falls back to built-in content for the two original Careers.
+
+Apply `supabase/migrations/202608010001_career_content_publishing.sql` after the foundation migration and configure `SUPABASE_ANON_KEY` in Vercel.
+
 ## Current limitations
 
 - Admin sessions use a one-hour access-token cookie and require sign-in again after expiry; refresh-token rotation is a future authentication enhancement.
 - Roles are granted and revoked only through intentional Supabase administrative SQL.
-- Career drafts do not create or modify public Career pages.
-- `review` and `published` are reserved database statuses but have no Phase 1 UI transitions.
+- The content editor uses the canonical JSON contract; a future visual block editor can sit above the same schema without changing public rendering.
 - Future Admin modules are visible as disabled “Coming next” navigation items only.

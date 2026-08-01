@@ -18,6 +18,8 @@ out/
 # Misc
 .DS_Store
 *.pem
+.edge-*-test/
+roadmap-*.png
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*

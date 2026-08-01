@@ -27,7 +27,7 @@ assert.match(effortComponent, /estimate\.ongoing/);
 const aiEngineer = fs.readFileSync("src/data/careers/ai-engineer.ts", "utf8");
 const journeyStageSource = aiEngineer.slice(
   aiEngineer.indexOf("journeyStages: ["),
-  aiEngineer.indexOf("phases: [")
+  aiEngineer.indexOf("roadmap: [")
 );
 const effortPattern =
   /estimatedEffort:\s*\{\s*minMinutes:\s*(\d+),\s*maxMinutes:\s*(\d+),\s*breakdown:\s*\{\s*resources:\s*\{\s*minMinutes:\s*(\d+),\s*maxMinutes:\s*(\d+)\s*\},\s*activities:\s*\{\s*minMinutes:\s*(\d+),\s*maxMinutes:\s*(\d+)\s*\},\s*assessment:\s*\{\s*minMinutes:\s*(\d+),\s*maxMinutes:\s*(\d+)\s*\}/g;
