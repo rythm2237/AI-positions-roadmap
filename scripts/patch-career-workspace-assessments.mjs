@@ -2,7 +2,10 @@ import fs from "node:fs";
 import path from "node:path";
 
 const workspacePath = "src/components/career/CareerWorkspace.tsx";
-const source = fs.readFileSync(workspacePath, "utf8");
+const validationPath = "src/lib/careerContentValidation.ts";
+
+let workspaceSource = fs.readFileSync(workspacePath, "utf8");
+let validationSource = fs.readFileSync(validationPath, "utf8");
 
 const legacyBlock = /function allAssessments\([\s\S]*?\n}\n\nfunction shellButton/;
 
@@ -80,14 +83,78 @@ function validateJourneyData(career: CareerWorkspaceData): string[] {
 
 function shellButton`;
 
-if (!legacyBlock.test(source)) {
+if (!legacyBlock.test(workspaceSource)) {
   throw new Error(
     "Could not locate the CareerWorkspace assessment helper block. The source shape changed and requires review."
   );
 }
 
-const patched = source.replace(legacyBlock, canonicalBlock);
-fs.writeFileSync(workspacePath, patched, "utf8");
+workspaceSource = workspaceSource.replace(legacyBlock, canonicalBlock);
+
+const legacyPassingScore = "Passing score: {stage.test.passingScore}%";
+const canonicalPassingScore =
+  "Comprehensive passing score: {stage.phaseExam?.passingScore ?? 70}%";
+
+if (!workspaceSource.includes(legacyPassingScore)) {
+  throw new Error(
+    "Could not locate the legacy StationDetailsModal passing-score consumer."
+  );
+}
+
+workspaceSource = workspaceSource.replace(
+  legacyPassingScore,
+  canonicalPassingScore
+);
+
+const legacyValidation =
+  "    if (!stage?.test || !list(stage.test.questions) || !stage.test.questions.length) errors.push(`Journey stage ${index + 1} needs an assessment.`);";
+
+const canonicalValidation = `    const topicAssessments = stage?.topicAssessments;
+    if (!list(topicAssessments) || !topicAssessments?.length) {
+      errors.push(\`Journey stage \${index + 1} needs topic assessments.\`);
+    } else {
+      if (topicAssessments.length !== (stage?.lessons?.length ?? 0)) {
+        errors.push(\`Journey stage \${index + 1} needs one topic assessment per lesson.\`);
+      }
+      topicAssessments.forEach((assessment, assessmentIndex) => {
+        if (!list(assessment?.questions) || assessment.questions.length < 5) {
+          errors.push(\`Journey stage \${index + 1}, topic assessment \${assessmentIndex + 1} needs at least 5 questions.\`);
+        }
+        if ((assessment?.questionsPerAttempt ?? 0) !== 5) {
+          errors.push(\`Journey stage \${index + 1}, topic assessment \${assessmentIndex + 1} must use 5 questions per attempt.\`);
+        }
+        if (assessment?.passingScore !== 60) {
+          errors.push(\`Journey stage \${index + 1}, topic assessment \${assessmentIndex + 1} must use a 60% passing score.\`);
+        }
+      });
+    }
+    if (!stage?.phaseExam || !list(stage.phaseExam.questions)) {
+      errors.push(\`Journey stage \${index + 1} needs a comprehensive assessment.\`);
+    } else {
+      if (stage.phaseExam.questions.length < 20) {
+        errors.push(\`Journey stage \${index + 1} comprehensive assessment needs at least 20 questions.\`);
+      }
+      if ((stage.phaseExam.questionsPerAttempt ?? 0) !== 20) {
+        errors.push(\`Journey stage \${index + 1} comprehensive assessment must use 20 questions per attempt.\`);
+      }
+      if (stage.phaseExam.passingScore !== 70) {
+        errors.push(\`Journey stage \${index + 1} comprehensive assessment must use a 70% passing score.\`);
+      }
+    }`;
+
+if (!validationSource.includes(legacyValidation)) {
+  throw new Error(
+    "Could not locate the legacy career-content assessment validation."
+  );
+}
+
+validationSource = validationSource.replace(
+  legacyValidation,
+  canonicalValidation
+);
+
+fs.writeFileSync(workspacePath, workspaceSource, "utf8");
+fs.writeFileSync(validationPath, validationSource, "utf8");
 
 function collectSourceFiles(directory) {
   return fs.readdirSync(directory, { withFileTypes: true }).flatMap((entry) => {
