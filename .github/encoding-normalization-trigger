@@ -1,4 +1,4 @@
 Restore the complete clean vertical Learning and gated assessment implementation.
 Preserve the current three-career Public Beta test.
-Apply type-safe optional assessment narrowing.
+Apply and persist type-safe optional assessment narrowing after restoration.
 Validate all restored files, tests, and production build.
