@@ -62,6 +62,8 @@ const catalog = [
     "AI Integration Specialist",
     "AI Automation",
     "Connect AI services safely to existing products, tools, and enterprise systems.",
+    "available",
+    "/careers/ai-integration-specialist?entry=galaxy",
   ],
   [
     "ai-workflow-architect",

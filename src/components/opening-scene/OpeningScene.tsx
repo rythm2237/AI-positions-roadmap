@@ -49,7 +49,7 @@ export default function OpeningScene() {
         id="universe-utilities"
         className="pointer-events-auto absolute inset-x-0 bottom-0 z-20 hidden items-center justify-end gap-4 px-6 py-4 text-[11px] text-slate-500 sm:flex"
       >
-        <span>Public Beta · AI Engineer available</span>
+        <span>Public Beta · Multiple career journeys available</span>
         <span>Career progress is stored in this browser</span>
       </div>
     </section>
