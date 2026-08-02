@@ -2,6 +2,7 @@
 // AI Career OS — Root layout. Dark mode only. Premium fonts. Rich metadata.
 
 import type { Metadata, Viewport } from "next";
+import AuthDock from "@/components/identity/AuthDock";
 import "./globals.css";
 
 export const viewport: Viewport = {
@@ -83,10 +84,8 @@ export default function RootLayout({
   return (
     <html lang="en" className="dark neural-bg" suppressHydrationWarning>
       <head>
-        {/* Preconnect to font origins for performance */}
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
-        {/* Structured data — Organization */}
         <script
           type="application/ld+json"
           dangerouslySetInnerHTML={{
@@ -101,7 +100,6 @@ export default function RootLayout({
             }),
           }}
         />
-        {/* Structured data — WebSite */}
         <script
           type="application/ld+json"
           dangerouslySetInnerHTML={{
@@ -116,6 +114,7 @@ export default function RootLayout({
       </head>
       <body className="antialiased">
         {children}
+        <AuthDock />
       </body>
     </html>
   );
