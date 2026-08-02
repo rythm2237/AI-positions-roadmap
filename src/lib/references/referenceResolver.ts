@@ -1,4 +1,5 @@
 import catalogData from "../../../content/references/reference-catalog.json";
+import cybersecurityCatalogData from "../../../content/references/cybersecurity-reference-catalog.json";
 import type {
   ReferenceLearningOption,
   ReferenceResource,
@@ -6,7 +7,10 @@ import type {
   ResolvedReference,
 } from "@/types/reference";
 
-const catalog = catalogData as ReferenceResource[];
+const catalog = [
+  ...(catalogData as ReferenceResource[]),
+  ...(cybersecurityCatalogData as ReferenceResource[]),
+];
 const byId = new Map(catalog.map((item) => [item.id, item]));
 
 function segmentUrl(resource: ReferenceResource, segment?: ReferenceSegment): string {
