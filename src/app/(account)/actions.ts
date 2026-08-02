@@ -14,10 +14,51 @@ export async function logout() {
   await supabase.from("user_activity").insert({ user_id: user.id, action: "logout" });
   await supabase.auth.signOut(); redirect("/");
 }
+
 export async function completeOnboarding() {
-  const user = await requireUser("/onboarding"); const supabase = await createClient();
-  const { error } = await supabase.from("profiles").update({ onboarding_completed_at: new Date().toISOString() }).eq("id", user.id);
-  if (error) redirect("/onboarding?error=save");
+  const user = await requireUser("/onboarding");
+  const supabase = await createClient();
+  const metadata = user.user_metadata ?? {};
+  const completedAt = new Date().toISOString();
+
+  // Upsert instead of update so OAuth users created before the identity trigger
+  // was deployed can still complete onboarding safely.
+  const { error } = await supabase.from("profiles").upsert({
+    id: user.id,
+    email: user.email ?? `${user.id}@users.invalid`,
+    name: metadata.full_name ?? metadata.name ?? metadata.user_name ?? null,
+    avatar_url: metadata.avatar_url ?? metadata.picture ?? null,
+    provider: user.app_metadata?.provider ?? null,
+    onboarding_completed_at: completedAt,
+  }, { onConflict: "id" });
+
+  if (error) {
+    console.error("completeOnboarding profile upsert failed", {
+      code: error.code,
+      message: error.message,
+      details: error.details,
+      hint: error.hint,
+      userId: user.id,
+    });
+    redirect(`/onboarding?error=save&code=${encodeURIComponent(error.code ?? "unknown")}`);
+  }
+
+  // Repair the dependent preference row for accounts created before provisioning.
+  const { error: preferenceError } = await supabase.from("user_preferences").upsert(
+    { user_id: user.id },
+    { onConflict: "user_id", ignoreDuplicates: true },
+  );
+  if (preferenceError) {
+    console.error("completeOnboarding preference repair failed", {
+      code: preferenceError.code,
+      message: preferenceError.message,
+      userId: user.id,
+    });
+  }
+
+  await supabase.from("user_activity").insert({ user_id: user.id, action: "onboarding_completed" });
+  revalidatePath("/dashboard");
+  revalidatePath("/profile");
   redirect("/dashboard");
 }
 
