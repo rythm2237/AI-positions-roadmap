@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import type { User } from "@supabase/supabase-js";
+import type { AuthChangeEvent, Session, User, UserResponse } from "@supabase/supabase-js";
 import { createClient } from "@/lib/supabase/client";
 
 function displayName(user: User) {
@@ -26,17 +26,19 @@ export default function AuthDock() {
     const supabase = createClient();
     let active = true;
 
-    supabase.auth.getUser().then(({ data }) => {
+    supabase.auth.getUser().then(({ data }: UserResponse) => {
       if (!active) return;
       setUser(data.user ?? null);
       setLoading(false);
     });
 
-    const { data: listener } = supabase.auth.onAuthStateChange((_event, session) => {
-      setUser(session?.user ?? null);
-      setLoading(false);
-      router.refresh();
-    });
+    const { data: listener } = supabase.auth.onAuthStateChange(
+      (_event: AuthChangeEvent, session: Session | null) => {
+        setUser(session?.user ?? null);
+        setLoading(false);
+        router.refresh();
+      },
+    );
 
     return () => {
       active = false;
