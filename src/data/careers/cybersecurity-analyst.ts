@@ -1,79 +1,125 @@
 import { cybersecurityAnalystCareer as legacyCybersecurityLayout } from "@/data/careers/activation-batch-seven";
-import { applyCareerTitleAliasPolicy } from "@/data/careerTitleAliases";
+import { applyCareerTitleAliasPolicy, getDefaultCareerTitleAliases } from "@/data/careerTitleAliases";
 import type {
   CareerAssessment,
   CareerJourneyEffortEstimate,
   CareerJourneyStage,
-  CareerLesson,
   CareerQuizQuestion,
   CareerResource,
-  CareerRoadmapPhase,
   CareerWorkspaceData,
   WorkspaceDifficulty,
 } from "@/types/careerWorkspace";
 
-type ResourceKey = keyof typeof resources;
+type ResourceDefinition = CareerResource & { minMinutes: number; maxMinutes: number };
 
-type StageSpec = {
-  title: string;
-  landmark: string;
-  theme: string;
-  summary: string;
-  explanation: string;
-  lessons: string[];
-  tasks: string[];
-  resourceKeys: ResourceKey[];
-  questions: CareerQuizQuestion[];
-};
-
-const resources = {
-  nistCsf: {
-    id: "cyber-resource-nist-csf",
-    title: "NIST Cybersecurity Framework 2.0",
+const resources: Record<string, ResourceDefinition> = {
+  "cyber-foundations-csf": {
+    id: "cyber-foundations-csf",
+    title: "NIST CSF 2.0 Foundations",
     type: "Documentation",
     provider: "NIST",
     cost: "Free",
-    estimatedTime: "3-5 hours",
-    whyUseful: "Organizes cybersecurity outcomes across Govern, Identify, Protect, Detect, Respond, and Recover.",
+    estimatedTime: "3-4 hours",
+    whyUseful: "Cybersecurity foundations, risk, controls, and the six CSF functions.",
     url: "https://www.nist.gov/cyberframework",
     priority: "Essential",
+    minMinutes: 180,
+    maxMinutes: 240,
   },
-  mitreAttack: {
-    id: "cyber-resource-mitre-attack",
-    title: "MITRE ATT&CK Enterprise",
+  "cyber-foundations-soc-intro": {
+    id: "cyber-foundations-soc-intro",
+    title: "Security Operations Center Foundations",
+    type: "Learning Path",
+    provider: "Microsoft Learn",
+    cost: "Free",
+    estimatedTime: "2-3 hours",
+    whyUseful: "Introduces SOC roles, monitoring, incident handling, and analyst workflows.",
+    url: "https://learn.microsoft.com/en-us/training/paths/introduction-student-security-operations-centers/",
+    priority: "Essential",
+    minMinutes: 120,
+    maxMinutes: 180,
+  },
+  "cyber-networking-fundamentals": {
+    id: "cyber-networking-fundamentals",
+    title: "Networking Fundamentals for Security Analysts",
+    type: "Video",
+    provider: "Microsoft Learn",
+    cost: "Free",
+    estimatedTime: "5-7 hours",
+    whyUseful: "Builds practical understanding of LANs, OSI, TCP/IP, DNS, and network security.",
+    url: "https://learn.microsoft.com/en-us/shows/networking-fundamentals/01",
+    priority: "Essential",
+    minMinutes: 300,
+    maxMinutes: 420,
+  },
+  "cyber-identity-access-foundations": {
+    id: "cyber-identity-access-foundations",
+    title: "Identity and Access Security Foundations",
+    type: "Learning Path",
+    provider: "Microsoft Learn",
+    cost: "Free",
+    estimatedTime: "3-5 hours",
+    whyUseful: "Covers authentication, authorization, identity protection, MFA, and least privilege.",
+    url: "https://learn.microsoft.com/en-us/training/paths/describe-capabilities-of-microsoft-identity-access/",
+    priority: "Essential",
+    minMinutes: 180,
+    maxMinutes: 300,
+  },
+  "cyber-siem-environment": {
+    id: "cyber-siem-environment",
+    title: "Configure a Microsoft Sentinel Environment",
+    type: "Learning Path",
+    provider: "Microsoft Learn",
+    cost: "Free",
+    estimatedTime: "5-7 hours",
+    whyUseful: "Covers Sentinel workspaces, connectors, watchlists, and environment configuration.",
+    url: "https://learn.microsoft.com/en-us/training/paths/sc-200-configure-azure-sentinel-environment/",
+    priority: "Essential",
+    minMinutes: 300,
+    maxMinutes: 420,
+  },
+  "cyber-kql-log-analysis": {
+    id: "cyber-kql-log-analysis",
+    title: "KQL and Log Analysis for Security Operations",
+    type: "Learning Path",
+    provider: "Microsoft Learn",
+    cost: "Free",
+    estimatedTime: "5-8 hours",
+    whyUseful: "Builds KQL querying, correlation, investigation, and log-analysis capability.",
+    url: "https://learn.microsoft.com/en-us/training/paths/sc-200-create-queries-for-microsoft-sentinel-using-kusto-query-language/",
+    priority: "Essential",
+    minMinutes: 300,
+    maxMinutes: 480,
+  },
+  "cyber-attack-mapping": {
+    id: "cyber-attack-mapping",
+    title: "MITRE ATT&CK Behavior Mapping",
     type: "Documentation",
     provider: "MITRE",
     cost: "Free",
-    estimatedTime: "6-10 hours",
-    whyUseful: "Connects adversary behavior to telemetry, detection, investigation, and threat hunting.",
+    estimatedTime: "5-8 hours",
+    whyUseful: "Maps adversary tactics and techniques to telemetry, detection, and coverage.",
     url: "https://attack.mitre.org/",
     priority: "Essential",
+    minMinutes: 300,
+    maxMinutes: 480,
   },
-  sentinel: {
-    id: "cyber-resource-microsoft-sentinel",
-    title: "Microsoft Sentinel Security Operations",
+  "cyber-threat-hunting": {
+    id: "cyber-threat-hunting",
+    title: "Threat Hunting with Microsoft Sentinel",
     type: "Learning Path",
     provider: "Microsoft Learn",
     cost: "Free",
-    estimatedTime: "8-14 hours",
-    whyUseful: "Provides guided SIEM, investigation, detection, automation, and threat-hunting practice.",
-    url: "https://learn.microsoft.com/en-us/training/career-paths/security-operations-analyst",
+    estimatedTime: "4-6 hours",
+    whyUseful: "Covers hunting hypotheses, queries, bookmarks, search jobs, and notebooks.",
+    url: "https://learn.microsoft.com/en-us/training/paths/sc-200-perform-threat-hunting-azure-sentinel/",
     priority: "Essential",
+    minMinutes: 240,
+    maxMinutes: 360,
   },
-  siemQueries: {
-    id: "cyber-resource-splunk-search",
-    title: "SIEM Querying and Event Investigation",
-    type: "Learning Path",
-    provider: "Microsoft Learn",
-    cost: "Free",
-    estimatedTime: "6-12 hours",
-    whyUseful: "Builds practical log collection, query, correlation, triage, and investigation skills.",
-    url: "https://learn.microsoft.com/en-us/training/paths/sc-200-configure-azure-sentinel-environment/",
-    priority: "Essential",
-  },
-  incidentResponse: {
-    id: "cyber-resource-nist-incident-response",
-    title: "NIST SP 800-61 Revision 3",
+  "cyber-incident-response-nist": {
+    id: "cyber-incident-response-nist",
+    title: "NIST Incident Response Guidance",
     type: "Documentation",
     provider: "NIST",
     cost: "Free",
@@ -81,39 +127,163 @@ const resources = {
     whyUseful: "Provides current incident-response guidance aligned with CSF 2.0.",
     url: "https://csrc.nist.gov/pubs/sp/800/61/r3/final",
     priority: "Essential",
+    minMinutes: 240,
+    maxMinutes: 360,
   },
-  owasp: {
-    id: "cyber-resource-owasp-top-ten",
-    title: "OWASP Top 10 and Web Security Practice",
+  "cyber-sentinel-investigation": {
+    id: "cyber-sentinel-investigation",
+    title: "Detections and Investigations in Microsoft Sentinel",
+    type: "Learning Path",
+    provider: "Microsoft Learn",
+    cost: "Free",
+    estimatedTime: "7-10 hours",
+    whyUseful: "Covers detections, incidents, entities, automation, and investigation workflows.",
+    url: "https://learn.microsoft.com/en-us/training/paths/sc-200-create-detections-perform-investigations-azure-sentinel/",
+    priority: "Essential",
+    minMinutes: 420,
+    maxMinutes: 600,
+  },
+  "cyber-cisa-kev": {
+    id: "cyber-cisa-kev",
+    title: "CISA Known Exploited Vulnerabilities Prioritization",
+    type: "Documentation",
+    provider: "CISA",
+    cost: "Free",
+    estimatedTime: "3-5 hours",
+    whyUseful: "Uses active exploitation evidence to prioritize vulnerability remediation.",
+    url: "https://www.cisa.gov/known-exploited-vulnerabilities-catalog",
+    priority: "Essential",
+    minMinutes: 180,
+    maxMinutes: 300,
+  },
+  "cyber-owasp-web-security": {
+    id: "cyber-owasp-web-security",
+    title: "OWASP Top 10 and Web Security Academy",
     type: "Course",
     provider: "OWASP / PortSwigger",
     cost: "Free",
-    estimatedTime: "10-20 hours",
-    whyUseful: "Combines application-security risk knowledge with interactive labs.",
-    url: "https://owasp.org/www-project-top-ten/",
-    priority: "Recommended",
+    estimatedTime: "10-16 hours",
+    whyUseful: "Combines application-security risk knowledge with guided interactive labs.",
+    url: "https://portswigger.net/web-security",
+    priority: "Essential",
+    minMinutes: 600,
+    maxMinutes: 960,
   },
-  cloudSecurity: {
-    id: "cyber-resource-cisa-cloud-security",
+  "cyber-cloud-security-architecture": {
+    id: "cyber-cloud-security-architecture",
     title: "CISA Cloud Security Technical Reference Architecture",
     type: "Documentation",
     provider: "CISA",
     cost: "Free",
-    estimatedTime: "4-7 hours",
+    estimatedTime: "4-6 hours",
     whyUseful: "Frames cloud trust, identity, logging, configuration, and resilience controls.",
     url: "https://www.cisa.gov/resources-tools/resources/cloud-security-technical-reference-architecture",
-    priority: "Recommended",
+    priority: "Essential",
+    minMinutes: 240,
+    maxMinutes: 360,
   },
-} satisfies Record<string, CareerResource>;
+  "cyber-endpoint-identity-defense": {
+    id: "cyber-endpoint-identity-defense",
+    title: "Endpoint and Identity Threat Protection",
+    type: "Learning Path",
+    provider: "Microsoft Learn",
+    cost: "Free",
+    estimatedTime: "6-9 hours",
+    whyUseful: "Covers endpoint, identity, email, and cross-domain threat investigation and response.",
+    url: "https://learn.microsoft.com/en-us/training/paths/mitigate-threats-using-microsoft-365-defender/",
+    priority: "Essential",
+    minMinutes: 360,
+    maxMinutes: 540,
+  },
+  "cyber-governance-csf": {
+    id: "cyber-governance-csf",
+    title: "Cybersecurity Governance with NIST CSF 2.0",
+    type: "Documentation",
+    provider: "NIST",
+    cost: "Free",
+    estimatedTime: "4-6 hours",
+    whyUseful: "Applies governance, ownership, policy, measurement, and risk outcomes.",
+    url: "https://www.nist.gov/cyberframework",
+    priority: "Essential",
+    minMinutes: 240,
+    maxMinutes: 360,
+  },
+  "cyber-risk-communication": {
+    id: "cyber-risk-communication",
+    title: "Security Risk Communication and Reporting",
+    type: "Article",
+    provider: "CISA",
+    cost: "Free",
+    estimatedTime: "3-5 hours",
+    whyUseful: "Connects technical findings to business impact, owners, metrics, and decisions.",
+    url: "https://www.cisa.gov/resources-tools/resources/cybersecurity-performance-goals",
+    priority: "Essential",
+    minMinutes: 180,
+    maxMinutes: 300,
+  },
+  "cyber-capstone-siem-lab": {
+    id: "cyber-capstone-siem-lab",
+    title: "Microsoft Sentinel SIEM Operations Capstone Lab",
+    type: "Practice",
+    provider: "Microsoft Learn",
+    cost: "Free",
+    estimatedTime: "6-9 hours",
+    whyUseful: "Provides a guided SIEM configuration, simulated attack, analytics, and automation exercise.",
+    url: "https://learn.microsoft.com/en-us/training/modules/configure-siem-security-operations-using-microsoft-sentinel/",
+    priority: "Essential",
+    minMinutes: 360,
+    maxMinutes: 540,
+  },
+  "cyber-capstone-attack-coverage": {
+    id: "cyber-capstone-attack-coverage",
+    title: "ATT&CK Detection Coverage Review",
+    type: "Practice",
+    provider: "MITRE",
+    cost: "Free",
+    estimatedTime: "6-10 hours",
+    whyUseful: "Builds a defensible map of techniques, telemetry, detections, ownership, and gaps.",
+    url: "https://attack.mitre.org/",
+    priority: "Essential",
+    minMinutes: 360,
+    maxMinutes: 600,
+  },
+  "cyber-career-role-map": {
+    id: "cyber-career-role-map",
+    title: "Cybersecurity Analyst Role and Skills Map",
+    type: "Learning Path",
+    provider: "Microsoft Learn",
+    cost: "Free",
+    estimatedTime: "3-4 hours",
+    whyUseful: "Maps common SOC, security operations, incident response, and cloud-security responsibilities.",
+    url: "https://learn.microsoft.com/en-us/training/career-paths/security-operations-analyst",
+    priority: "Essential",
+    minMinutes: 180,
+    maxMinutes: 240,
+  },
+  "cyber-interview-scenarios": {
+    id: "cyber-interview-scenarios",
+    title: "Cybersecurity Scenario Interview Practice",
+    type: "Practice",
+    provider: "Microsoft Learn",
+    cost: "Free",
+    estimatedTime: "4-6 hours",
+    whyUseful: "Uses role objectives and realistic scenarios to prepare technical interview responses.",
+    url: "https://learn.microsoft.com/en-us/credentials/certifications/security-operations-analyst/",
+    priority: "Essential",
+    minMinutes: 240,
+    maxMinutes: 360,
+  },
+};
 
-const resourceMinutes: Record<ResourceKey, { min: number; max: number }> = {
-  nistCsf: { min: 180, max: 300 },
-  mitreAttack: { min: 360, max: 600 },
-  sentinel: { min: 480, max: 840 },
-  siemQueries: { min: 360, max: 720 },
-  incidentResponse: { min: 240, max: 360 },
-  owasp: { min: 600, max: 1200 },
-  cloudSecurity: { min: 240, max: 420 },
+type StageSpec = {
+  title: string;
+  landmark: string;
+  summary: string;
+  explanation: string;
+  lessons: string[];
+  tasks: string[];
+  resourceIds: string[];
+  topics: string[];
 };
 
 function q(
@@ -143,7 +313,7 @@ function q(
 function buildQuestions(stageNumber: number, topics: string[]): CareerQuizQuestion[] {
   const [a, b, c] = topics;
   return [
-    q(`cyber-s${stageNumber}-q1`, `Which result best demonstrates practical understanding of ${a}?`, ["A copied definition", "A documented decision supported by evidence", "A tool screenshot without context", "An unexplained score"], 1, "Cybersecurity work must connect evidence to a defensible decision.", a),
+    q(`cyber-s${stageNumber}-q1`, `Which result best demonstrates practical understanding of ${a}?`, ["A copied definition", "A documented decision supported by evidence", "A screenshot without context", "An unexplained score"], 1, "Cybersecurity work must connect evidence to a defensible decision.", a),
     q(`cyber-s${stageNumber}-q2`, `What is the strongest way to validate work involving ${b}?`, ["Assume the result is correct", "Use representative positive and negative evidence", "Increase severity", "Remove documentation"], 1, "Validation requires evidence that tests expected and unexpected outcomes.", b),
     q(`cyber-s${stageNumber}-q3`, `Scenario: evidence for ${c} is incomplete. What should the analyst do first?`, ["Declare a final conclusion", "Record the gap, confidence, and next evidence required", "Delete the case", "Ignore uncertainty"], 1, "Professional analysis makes uncertainty and evidence gaps explicit.", c),
     q(`cyber-s${stageNumber}-q4`, `Which practice most improves repeatability in ${a}?`, ["Rely on memory", "Document inputs, method, assumptions, and output", "Avoid peer review", "Change criteria per case"], 1, "Repeatable work is explicit and reviewable.", a),
@@ -151,7 +321,7 @@ function buildQuestions(stageNumber: number, topics: string[]): CareerQuizQuesti
   ];
 }
 
-function topicAssessment(stageNumber: number, resource: CareerResource, questions: CareerQuizQuestion[]): CareerAssessment {
+function topicAssessment(stageNumber: number, resource: ResourceDefinition, questions: CareerQuizQuestion[]): CareerAssessment {
   return {
     id: `cyber-stage-${stageNumber}-${resource.id}-assessment`,
     title: `${resource.title} knowledge check`,
@@ -167,7 +337,14 @@ function topicAssessment(stageNumber: number, resource: CareerResource, question
 }
 
 function comprehensiveAssessment(stageNumber: number, title: string, questions: CareerQuizQuestion[]): CareerAssessment {
-  const expanded = [...questions, ...questions.map((question, index) => ({ ...question, id: `${question.id}-scenario-${index + 1}`, question: `Scenario follow-up: ${question.question}` }))];
+  const expanded = [
+    ...questions,
+    ...questions.map((question, index) => ({
+      ...question,
+      id: `${question.id}-scenario-${index + 1}`,
+      question: `Scenario follow-up: ${question.question}`,
+    })),
+  ];
   return {
     id: `cyber-stage-${stageNumber}-comprehensive-assessment`,
     title: `${title} comprehensive assessment`,
@@ -180,13 +357,16 @@ function comprehensiveAssessment(stageNumber: number, title: string, questions: 
   };
 }
 
-function calculateEffort(resourceKeys: ResourceKey[], taskCount: number): CareerJourneyEffortEstimate {
-  const resourceRange = resourceKeys.reduce(
-    (total, key) => ({ min: total.min + resourceMinutes[key].min, max: total.max + resourceMinutes[key].max }),
+function calculateEffort(stageResources: ResourceDefinition[], taskCount: number): CareerJourneyEffortEstimate {
+  const resourceRange = stageResources.reduce(
+    (total, resource) => ({
+      min: total.min + resource.minMinutes,
+      max: total.max + resource.maxMinutes,
+    }),
     { min: 0, max: 0 },
   );
   const activities = { min: taskCount * 60, max: taskCount * 120 };
-  const assessment = { min: resourceKeys.length * 12 + 25, max: resourceKeys.length * 20 + 35 };
+  const assessment = { min: stageResources.length * 12 + 25, max: stageResources.length * 20 + 35 };
   return {
     minMinutes: resourceRange.min + activities.min + assessment.min,
     maxMinutes: resourceRange.max + activities.max + assessment.max,
@@ -202,119 +382,110 @@ const stageSpecs: StageSpec[] = [
   {
     title: "Security Foundations and Analyst Mindset",
     landmark: "Defense Orientation Center",
-    theme: "Understand risk, controls, evidence, and analyst responsibility.",
-    summary: "Build the vocabulary, reasoning, and evidence discipline required for security operations.",
-    explanation: "Security analysis starts with assets, threats, vulnerabilities, controls, impact, and trustworthy evidence rather than tool output alone.",
-    lessons: ["Risk, assets, threats, and controls", "CIA triad and security objectives", "Analyst evidence and case discipline"],
-    tasks: ["Create an asset-threat-control map.", "Classify ten security events by impact.", "Write a case note separating facts and assumptions."],
-    resourceKeys: ["nistCsf"],
-    questions: buildQuestions(1, ["risk analysis", "security controls", "evidence discipline"]),
+    summary: "Build role-specific capability in security foundations and analyst mindset.",
+    explanation: "This stage uses distinct learning milestones, applied work, and assessments aligned to security foundations and analyst mindset.",
+    lessons: ["Risk, assets, threats, and controls", "CIA triad and security objectives", "Evidence discipline and case notes"],
+    tasks: ["Create an asset-threat-control map.", "Classify security events by business impact.", "Write a case note separating facts from assumptions."],
+    resourceIds: ["cyber-foundations-csf", "cyber-foundations-soc-intro"],
+    topics: ["risk analysis", "security controls", "evidence discipline"],
   },
   {
     title: "Networking, Operating Systems, and Identity",
     landmark: "Systems Visibility Lab",
-    theme: "Interpret network, endpoint, operating-system, and identity evidence.",
-    summary: "Build the technical foundations needed to investigate authentication, processes, protocols, and account activity.",
-    explanation: "Telemetry becomes useful only when the analyst understands normal communication, authentication, process execution, permissions, and logging.",
+    summary: "Build role-specific capability in networking, operating systems, and identity.",
+    explanation: "This stage uses distinct learning milestones, applied work, and assessments aligned to networking, operating systems, and identity.",
     lessons: ["TCP/IP, DNS, HTTP, and TLS", "Windows and Linux security evidence", "Authentication, MFA, and least privilege"],
     tasks: ["Trace a browser request from DNS through TLS.", "Compare Windows and Linux sign-in evidence.", "Review one privileged business role."],
-    resourceKeys: ["siemQueries", "cloudSecurity"],
-    questions: buildQuestions(2, ["network evidence", "operating-system logs", "identity security"]),
+    resourceIds: ["cyber-networking-fundamentals", "cyber-identity-access-foundations"],
+    topics: ["network evidence", "operating-system logs", "identity security"],
   },
   {
     title: "Telemetry, Logging, and SIEM Operations",
     landmark: "Security Telemetry Exchange",
-    theme: "Collect, normalize, query, correlate, and triage security evidence.",
-    summary: "Turn diverse logs into searchable evidence and actionable cases.",
-    explanation: "A SIEM is useful only when data sources, fields, parsing, timestamps, retention, and coverage gaps are understood.",
-    lessons: ["Security log sources and data quality", "KQL and event correlation", "Alert triage and case management"],
+    summary: "Build role-specific capability in telemetry, logging, and siem operations.",
+    explanation: "This stage uses distinct learning milestones, applied work, and assessments aligned to telemetry, logging, and siem operations.",
+    lessons: ["Security log sources and data quality", "KQL queries and event correlation", "Alert triage and case management"],
     tasks: ["Create a telemetry inventory.", "Write three investigation queries.", "Triage a simulated alert queue."],
-    resourceKeys: ["sentinel", "siemQueries"],
-    questions: buildQuestions(3, ["telemetry design", "SIEM querying", "alert triage"]),
+    resourceIds: ["cyber-siem-environment", "cyber-kql-log-analysis"],
+    topics: ["telemetry design", "SIEM querying", "alert triage"],
   },
   {
     title: "Detection Engineering and Threat Hunting",
     landmark: "Detection Workshop",
-    theme: "Translate adversary behavior into testable detections and proactive hunts.",
-    summary: "Create explainable, maintainable detections connected to observable behavior.",
-    explanation: "Detection engineering combines threat knowledge, telemetry, rule logic, validation, tuning, and coverage measurement.",
+    summary: "Build role-specific capability in detection engineering and threat hunting.",
+    explanation: "This stage uses distinct learning milestones, applied work, and assessments aligned to detection engineering and threat hunting.",
     lessons: ["MITRE ATT&CK behavior mapping", "Detection testing and tuning", "Threat-hunting hypotheses"],
     tasks: ["Map five techniques to telemetry.", "Test a suspicious PowerShell detection.", "Run an account-anomaly hunt."],
-    resourceKeys: ["mitreAttack", "sentinel"],
-    questions: buildQuestions(4, ["ATT&CK mapping", "detection validation", "threat hunting"]),
+    resourceIds: ["cyber-attack-mapping", "cyber-threat-hunting"],
+    topics: ["ATT&CK mapping", "detection validation", "threat hunting"],
   },
   {
     title: "Incident Response and Digital Evidence",
     landmark: "Incident Command Room",
-    theme: "Investigate, contain, eradicate, recover, and learn while preserving evidence.",
-    summary: "Practice disciplined incident handling from initial report through recovery.",
-    explanation: "Incident response balances speed, evidence preservation, continuity, communication, uncertainty, and risk.",
+    summary: "Build role-specific capability in incident response and digital evidence.",
+    explanation: "This stage uses distinct learning milestones, applied work, and assessments aligned to incident response and digital evidence.",
     lessons: ["Incident lifecycle and playbooks", "Timeline reconstruction", "Containment and recovery"],
     tasks: ["Build an incident timeline.", "Compare containment options.", "Write technical and executive reports."],
-    resourceKeys: ["incidentResponse", "sentinel"],
-    questions: buildQuestions(5, ["incident handling", "digital evidence", "containment decisions"]),
+    resourceIds: ["cyber-incident-response-nist", "cyber-sentinel-investigation"],
+    topics: ["incident handling", "digital evidence", "containment decisions"],
   },
   {
     title: "Vulnerability and Exposure Management",
     landmark: "Exposure Reduction Center",
-    theme: "Prioritize remediation using exploitability, exposure, asset value, and control context.",
-    summary: "Move beyond vulnerability counts toward evidence-based reduction of exploitable risk.",
-    explanation: "Severity scores are inputs, not final decisions. Analysts must consider exposure, exploitation, asset criticality, and compensating controls.",
+    summary: "Build role-specific capability in vulnerability and exposure management.",
+    explanation: "This stage uses distinct learning milestones, applied work, and assessments aligned to vulnerability and exposure management.",
     lessons: ["Vulnerability evidence", "Risk-based prioritization", "Remediation and exception governance"],
     tasks: ["Validate a vulnerability finding.", "Build a prioritization model.", "Create a remediation dashboard."],
-    resourceKeys: ["owasp", "nistCsf"],
-    questions: buildQuestions(6, ["vulnerability validation", "risk prioritization", "remediation governance"]),
+    resourceIds: ["cyber-cisa-kev", "cyber-owasp-web-security"],
+    topics: ["vulnerability validation", "risk prioritization", "remediation governance"],
   },
   {
     title: "Cloud, Endpoint, and Identity Defense",
     landmark: "Modern Defense Operations Hub",
-    theme: "Investigate risk across cloud control planes, endpoints, identities, and SaaS activity.",
-    summary: "Apply consistent defensive reasoning to modern distributed environments.",
-    explanation: "Cloud incidents often involve identities, tokens, configuration, APIs, and control-plane events rather than traditional perimeter evidence alone.",
+    summary: "Build role-specific capability in cloud, endpoint, and identity defense.",
+    explanation: "This stage uses distinct learning milestones, applied work, and assessments aligned to cloud, endpoint, and identity defense.",
     lessons: ["Cloud audit evidence", "Endpoint detection and response", "Identity compromise and privileged access"],
     tasks: ["Investigate a compromised cloud account.", "Correlate endpoint and identity evidence.", "Review MFA and privileged roles."],
-    resourceKeys: ["cloudSecurity", "sentinel"],
-    questions: buildQuestions(7, ["cloud audit logs", "endpoint defense", "identity compromise"]),
+    resourceIds: ["cyber-cloud-security-architecture", "cyber-endpoint-identity-defense"],
+    topics: ["cloud audit logs", "endpoint defense", "identity compromise"],
   },
   {
     title: "Governance, Risk, and Security Communication",
     landmark: "Risk and Governance Forum",
-    theme: "Connect technical findings to accountable decisions, controls, policy, and measurable business risk.",
-    summary: "Communicate security evidence in ways that support action without overstating certainty.",
-    explanation: "Analysts must translate investigations and control gaps into clear risk, ownership, options, deadlines, and evidence of closure.",
+    summary: "Build role-specific capability in governance, risk, and security communication.",
+    explanation: "This stage uses distinct learning milestones, applied work, and assessments aligned to governance, risk, and security communication.",
     lessons: ["Control frameworks and policy", "Risk reporting", "Metrics and assurance"],
     tasks: ["Map findings to CSF functions.", "Write technical and executive summaries.", "Design outcome-focused security metrics."],
-    resourceKeys: ["nistCsf", "incidentResponse"],
-    questions: buildQuestions(8, ["security governance", "risk communication", "control assurance"]),
+    resourceIds: ["cyber-governance-csf", "cyber-risk-communication"],
+    topics: ["security governance", "risk communication", "control assurance"],
   },
   {
     title: "Cyber Defense Capstone",
     landmark: "SOC Readiness Review",
-    theme: "Integrate telemetry, detection, investigation, response, exposure management, and governance.",
-    summary: "Produce portfolio-grade evidence of end-to-end cybersecurity analysis and operational judgment.",
-    explanation: "The capstone demonstrates technical work, prioritization, evidence quality, escalation, communication, and measurable improvement.",
+    summary: "Build role-specific capability in cyber defense capstone.",
+    explanation: "This stage uses distinct learning milestones, applied work, and assessments aligned to cyber defense capstone.",
     lessons: ["SOC operating model", "Integrated investigation", "Portfolio evidence"],
     tasks: ["Design a SOC coverage model.", "Run an end-to-end simulated incident.", "Present the program to technical and business reviewers."],
-    resourceKeys: ["mitreAttack", "incidentResponse", "nistCsf"],
-    questions: buildQuestions(9, ["SOC coverage", "integrated response", "readiness review"]),
+    resourceIds: ["cyber-capstone-siem-lab", "cyber-capstone-attack-coverage"],
+    topics: ["SOC coverage", "integrated response", "readiness review"],
   },
   {
     title: "Cybersecurity Career Positioning and Interviews",
     landmark: "Security Career Operations Desk",
-    theme: "Translate security evidence into targeted applications and credible scenario-based interviews.",
-    summary: "Position experience across SOC, security analysis, incident response, cloud security, and vulnerability roles.",
-    explanation: "Security hiring evaluates technical fundamentals, investigative reasoning, communication, and practical evidence across varied job titles.",
+    summary: "Build role-specific capability in cybersecurity career positioning and interviews.",
+    explanation: "This stage uses distinct learning milestones, applied work, and assessments aligned to cybersecurity career positioning and interviews.",
     lessons: ["Security role and title mapping", "Resume and portfolio evidence", "Technical and behavioral interview practice"],
     tasks: ["Build a target-role matrix.", "Tailor three portfolio case studies.", "Complete mock investigations and interviews."],
-    resourceKeys: ["sentinel", "mitreAttack"],
-    questions: buildQuestions(10, ["career evidence", "scenario interviews", "job-title mapping"]),
+    resourceIds: ["cyber-career-role-map", "cyber-interview-scenarios"],
+    topics: ["career evidence", "scenario interviews", "job-title mapping"],
   },
 ];
 
 const journeyStages: CareerJourneyStage[] = stageSpecs.map((spec, index) => {
   const layout = legacyCybersecurityLayout.journeyStages[index] ?? legacyCybersecurityLayout.journeyStages[0];
   const stageNumber = index + 1;
-  const stageResources = spec.resourceKeys.map((key) => resources[key]);
+  const stageResources = spec.resourceIds.map((id) => resources[id]);
+  const questions = buildQuestions(stageNumber, spec.topics);
   return {
     ...layout,
     id: `cyber-stage-${stageNumber}`,
@@ -322,55 +493,20 @@ const journeyStages: CareerJourneyStage[] = stageSpecs.map((spec, index) => {
     title: spec.title,
     label: spec.title,
     landmark: spec.landmark,
-    theme: spec.theme,
+    theme: spec.title,
     summary: spec.summary,
     explanation: spec.explanation,
     lessons: spec.lessons,
     resources: stageResources,
-    estimatedEffort: calculateEffort(spec.resourceKeys, spec.tasks.length),
-    tasks: spec.tasks.map((description, taskIndex) => ({ id: `cyber-stage-${stageNumber}-task-${taskIndex + 1}`, title: description, description, type: index === 8 ? "portfolio" : index === 9 ? "job-search" : "lesson" })),
-    topicAssessments: stageResources.map((resource) => topicAssessment(stageNumber, resource, spec.questions)),
-    phaseExam: comprehensiveAssessment(stageNumber, spec.title, spec.questions),
-  };
-});
-
-const roadmapSpecs = [
-  ["Security and Systems Foundations", "Risk and controls", "Networking", "Operating systems"],
-  ["Monitoring and SIEM", "Telemetry design", "Queries", "Alert triage"],
-  ["Detection and Incident Response", "ATT&CK mapping", "Detection rules", "Incident response"],
-  ["Exposure and Modern Defense", "Vulnerability management", "Cloud security", "Identity defense"],
-  ["Governance and Capstone", "Risk reporting", "Metrics", "Cyber defense capstone"],
-  ["Employment Readiness", "Portfolio", "Role mapping", "Scenario interviews"],
-] as const;
-
-function lesson(id: string, title: string, stage: StageSpec, difficulty: WorkspaceDifficulty): CareerLesson {
-  return {
-    id,
-    title,
-    summary: `Develop practical Cybersecurity Analyst capability in ${title.toLowerCase()}.`,
-    estimatedTime: "3-5 hours",
-    difficulty,
-    outcomes: [`Explain ${title.toLowerCase()} in defensive operations.`, `Apply ${title.toLowerCase()} to a realistic scenario.`, "Produce evidence another analyst can review."],
-    resources: stage.resourceKeys.map((key) => resources[key]),
-    mission: `Create a portfolio-ready artifact demonstrating ${title.toLowerCase()}.`,
-  };
-}
-
-const roadmap: CareerRoadmapPhase[] = legacyCybersecurityLayout.roadmap.slice(0, 6).map((phase, index) => {
-  const sections = roadmapSpecs[index];
-  const stage = stageSpecs[Math.min(index * 2, stageSpecs.length - 1)];
-  return {
-    ...phase,
-    id: `cyber-roadmap-${index + 1}`,
-    phaseNumber: index + 1,
-    title: sections[0],
-    goal: `Build defensible capability across ${sections.slice(1).join(", ")}.`,
-    sections: [...sections],
-    mentorTip: "Keep every conclusion tied to observable evidence, asset context, uncertainty, risk, and accountable next action.",
-    practicalMissions: stage.tasks.slice(0, 2),
-    expectedOutcome: `You can investigate and explain work across ${sections.slice(1).join(", ")}.`,
-    lessons: sections.slice(1).map((section, lessonIndex) => lesson(`cyber-roadmap-${index + 1}-lesson-${lessonIndex + 1}`, section, stage, index === 0 ? "Beginner" : index >= 4 ? "Advanced" : "Intermediate")),
-    quiz: { id: `cyber-roadmap-${index + 1}-quiz`, phaseId: `cyber-roadmap-${index + 1}`, title: `${sections[0]} checkpoint`, description: `Validate practical understanding of ${sections.slice(1).join(", ")}.`, questions: stage.questions },
+    estimatedEffort: calculateEffort(stageResources, spec.tasks.length),
+    tasks: spec.tasks.map((description, taskIndex) => ({
+      id: `cyber-stage-${stageNumber}-task-${taskIndex + 1}`,
+      title: description,
+      description,
+      type: index === 8 ? "portfolio" : index === 9 ? "job-search" : "lesson",
+    })),
+    topicAssessments: stageResources.map((resource) => topicAssessment(stageNumber, resource, questions)),
+    phaseExam: comprehensiveAssessment(stageNumber, spec.title, questions),
   };
 });
 
@@ -378,6 +514,7 @@ const cybersecurityAnalystBase: CareerWorkspaceData = {
   ...legacyCybersecurityLayout,
   slug: "cybersecurity-analyst",
   title: "Cybersecurity Analyst",
+  titleAliases: getDefaultCareerTitleAliases("cybersecurity-analyst"),
   category: "AI Infrastructure & Security",
   visual: {
     nodeLabel: "Cybersecurity Analyst",
@@ -392,10 +529,9 @@ const cybersecurityAnalystBase: CareerWorkspaceData = {
     ...legacyCybersecurityLayout.journeyMap,
     theme: "cyber-fortress",
     overviewTitle: "Cybersecurity Analyst Defense Journey",
-    overviewDescription: "Ten distinct stages from security foundations to operational readiness and employment positioning.",
+    overviewDescription: "Ten distinct stages with two unique milestones each, from foundations to operational readiness and employment positioning.",
   },
   journeyStages,
-  roadmap,
   globalResources: Object.values(resources),
   relatedCareers: ["Security Operations Analyst", "SOC Analyst", "Cloud Security Analyst", "Incident Response Analyst", "Detection Engineer", "DevSecOps Engineer"],
 };
