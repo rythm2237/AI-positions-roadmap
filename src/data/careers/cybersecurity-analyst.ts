@@ -19,62 +19,62 @@ const resources: Record<string, CareerResource> = {
     provider: "NIST",
     cost: "Free",
     estimatedTime: "3-5 hours",
-    whyUseful: "Provides a practical structure for governing, identifying, protecting, detecting, responding, and recovering.",
+    whyUseful: "Organizes cybersecurity outcomes across Govern, Identify, Protect, Detect, Respond, and Recover.",
     url: "https://www.nist.gov/cyberframework",
     priority: "Essential",
   },
   mitreAttack: {
     id: "cyber-resource-mitre-attack",
-    title: "MITRE ATT&CK Enterprise Matrix",
+    title: "MITRE ATT&CK Enterprise",
     type: "Documentation",
     provider: "MITRE",
     cost: "Free",
     estimatedTime: "6-10 hours",
-    whyUseful: "Connects adversary behaviors to detection, investigation, and defensive coverage.",
+    whyUseful: "Connects adversary behavior to telemetry, detection, investigation, and threat hunting.",
     url: "https://attack.mitre.org/",
     priority: "Essential",
   },
-  splunkFundamentals: {
-    id: "cyber-resource-splunk-search",
-    title: "Splunk Search Tutorial",
-    type: "Documentation",
-    provider: "Splunk",
-    cost: "Free",
-    estimatedTime: "4-6 hours",
-    whyUseful: "Builds practical event-search, filtering, aggregation, and investigation skills.",
-    url: "https://docs.splunk.com/Documentation/Splunk/latest/SearchTutorial/WelcometotheSearchTutorial",
-    priority: "Recommended",
-  },
-  microsoftSentinel: {
+  sentinel: {
     id: "cyber-resource-microsoft-sentinel",
-    title: "Microsoft Sentinel Documentation",
-    type: "Documentation",
-    provider: "Microsoft",
+    title: "Microsoft Sentinel Security Operations",
+    type: "Learning Path",
+    provider: "Microsoft Learn",
     cost: "Free",
-    estimatedTime: "6-10 hours",
-    whyUseful: "Covers cloud-native SIEM, analytics rules, incidents, automation, hunting, and workbooks.",
-    url: "https://learn.microsoft.com/azure/sentinel/",
-    priority: "Recommended",
+    estimatedTime: "Multi-path curriculum",
+    whyUseful: "Provides guided SIEM, investigation, detection, automation, and threat-hunting practice.",
+    url: "https://learn.microsoft.com/en-us/training/career-paths/security-operations-analyst",
+    priority: "Essential",
   },
-  incidentGuide: {
+  siemQueries: {
+    id: "cyber-resource-splunk-search",
+    title: "SIEM Querying and Event Investigation",
+    type: "Learning Path",
+    provider: "Microsoft Learn",
+    cost: "Free",
+    estimatedTime: "6-12 hours",
+    whyUseful: "Builds practical log collection, query, correlation, triage, and investigation skills.",
+    url: "https://learn.microsoft.com/en-us/training/paths/sc-200-configure-azure-sentinel-environment/",
+    priority: "Essential",
+  },
+  incidentResponse: {
     id: "cyber-resource-nist-incident-response",
-    title: "NIST Incident Response Guidance",
+    title: "NIST SP 800-61 Revision 3",
     type: "Documentation",
     provider: "NIST",
     cost: "Free",
     estimatedTime: "4-6 hours",
-    whyUseful: "Establishes disciplined preparation, detection, analysis, containment, recovery, and lessons learned.",
-    url: "https://csrc.nist.gov/pubs/sp/800/61/r2/final",
+    whyUseful: "Provides current incident-response guidance aligned with CSF 2.0.",
+    url: "https://csrc.nist.gov/pubs/sp/800/61/r3/final",
     priority: "Essential",
   },
-  owaspTop10: {
+  owasp: {
     id: "cyber-resource-owasp-top-ten",
-    title: "OWASP Top 10",
-    type: "Documentation",
-    provider: "OWASP",
+    title: "OWASP Top 10 and Web Security Practice",
+    type: "Course",
+    provider: "OWASP / PortSwigger",
     cost: "Free",
-    estimatedTime: "3-5 hours",
-    whyUseful: "Provides a baseline for understanding common application-security risks and evidence.",
+    estimatedTime: "10-20 hours",
+    whyUseful: "Combines application-security risk knowledge with interactive labs.",
     url: "https://owasp.org/www-project-top-ten/",
     priority: "Recommended",
   },
@@ -85,7 +85,7 @@ const resources: Record<string, CareerResource> = {
     provider: "CISA",
     cost: "Free",
     estimatedTime: "4-7 hours",
-    whyUseful: "Frames cloud trust, identity, visibility, configuration, and resilience controls.",
+    whyUseful: "Frames cloud trust, identity, logging, configuration, and resilience controls.",
     url: "https://www.cisa.gov/resources-tools/resources/cloud-security-technical-reference-architecture",
     priority: "Recommended",
   },
@@ -108,7 +108,9 @@ function q(
     explanation,
     difficulty,
     relatedTopic,
-    questionType: question.toLowerCase().includes("scenario") ? "scenario" : "multiple-choice",
+    questionType: question.toLowerCase().includes("scenario")
+      ? "scenario"
+      : "multiple-choice",
     status: "active",
     lastReviewedAt: "2026-08-02",
     version: 1,
@@ -116,22 +118,47 @@ function q(
 }
 
 function topicAssessment(
-  id: string,
-  title: string,
-  topicLabel: string,
+  stageNumber: number,
+  resource: CareerResource,
   questions: CareerQuizQuestion[],
 ): CareerAssessment {
   return {
-    id,
-    title,
-    description: `A role-specific knowledge check for ${topicLabel}.`,
+    id: `cyber-stage-${stageNumber}-${resource.id}-assessment`,
+    title: `${resource.title} knowledge check`,
+    description: `Five role-specific questions connecting ${resource.title} to Cybersecurity Analyst work.`,
     passingScore: 70,
     assessmentType: "topic",
-    topicId: id,
-    topicLabel,
+    topicId: resource.id,
+    topicLabel: resource.title,
     durationMinutes: 12,
-    questionsPerAttempt: questions.length,
+    questionsPerAttempt: 5,
     questions,
+  };
+}
+
+function comprehensiveAssessment(
+  stageNumber: number,
+  title: string,
+  questions: CareerQuizQuestion[],
+): CareerAssessment {
+  const expanded = [
+    ...questions,
+    ...questions.map((question, index) => ({
+      ...question,
+      id: `${question.id}-scenario-${index + 1}`,
+      question: `Scenario follow-up: ${question.question}`,
+    })),
+  ];
+
+  return {
+    id: `cyber-stage-${stageNumber}-comprehensive-assessment`,
+    title: `${title} comprehensive assessment`,
+    description: "A ten-question checkpoint covering concepts, evidence, decisions, and practical analyst judgment.",
+    passingScore: 70,
+    assessmentType: "comprehensive",
+    durationMinutes: 25,
+    questionsPerAttempt: 10,
+    questions: expanded,
   };
 }
 
@@ -160,200 +187,214 @@ const stageSpecs = [
   {
     title: "Security Foundations and Analyst Mindset",
     landmark: "Defense Orientation Center",
-    theme: "Understand cyber risk, defensive objectives, evidence, and the operating responsibilities of a security analyst.",
-    summary: "Establish the vocabulary, mental models, and evidence discipline required for defensive security work.",
-    explanation: "Cybersecurity analysis begins with assets, threats, vulnerabilities, controls, business impact, and trustworthy evidence. This stage separates risk-based defense from tool-driven alert handling.",
+    theme: "Understand risk, controls, evidence, and the responsibilities of a defensive security analyst.",
+    summary: "Build the vocabulary, reasoning, and evidence discipline required for security operations.",
+    explanation: "Security analysis starts with assets, threats, vulnerabilities, controls, impact, and trustworthy evidence rather than tool output alone.",
     lessons: ["Risk, assets, threats, and controls", "CIA triad and security objectives", "Analyst evidence and case discipline"],
-    tasks: ["Create an asset-threat-control map for a small company.", "Classify ten security events by confidentiality, integrity, availability, and business impact.", "Write an analyst case note that distinguishes facts, assumptions, hypotheses, and next actions."],
-    resourceKeys: ["nistCsf"],
+    tasks: ["Create an asset-threat-control map for a small company.", "Classify ten security events by confidentiality, integrity, availability, and business impact.", "Write a case note separating facts, assumptions, hypotheses, and next actions."],
+    resourceKeys: ["nistCsf", "sentinel"],
     questions: [
-      q("cyber-s1-q1", "Which statement best describes risk?", ["Any technical weakness", "The combination of likelihood and impact affecting objectives", "Every alert produced by a tool", "Only financial loss"], 1, "Risk connects uncertain events to impact on organizational objectives.", "Security risk"),
-      q("cyber-s1-q2", "An attacker changes payroll records. Which security objective is primarily affected?", ["Confidentiality", "Integrity", "Availability", "Non-repudiation only"], 1, "Unauthorized modification is primarily an integrity failure.", "CIA triad"),
-      q("cyber-s1-q3", "What should an analyst record first when opening an investigation?", ["A final attribution", "Verified evidence, timestamps, source, and initial scope", "A remediation deadline", "A public incident statement"], 1, "Early documentation must preserve verifiable facts and provenance.", "Case discipline"),
+      q("cyber-s1-q1", "Which statement best describes cyber risk?", ["Any technical weakness", "Likelihood and impact affecting objectives", "Every alert", "Only financial loss"], 1, "Risk connects uncertain events to organizational impact.", "Risk"),
+      q("cyber-s1-q2", "Unauthorized payroll changes primarily affect which objective?", ["Confidentiality", "Integrity", "Availability", "Privacy only"], 1, "Unauthorized modification is an integrity failure.", "CIA triad"),
+      q("cyber-s1-q3", "What should be recorded first in an investigation?", ["Final attribution", "Verified evidence, timestamps, source, and scope", "Public statement", "Remediation deadline"], 1, "Initial records must preserve facts and provenance.", "Evidence"),
+      q("cyber-s1-q4", "A control is effective when:", ["It exists in policy", "Evidence shows it operates and reduces relevant risk", "It is expensive", "It has no owner"], 1, "Control effectiveness requires operating evidence.", "Controls"),
+      q("cyber-s1-q5", "Why label assumptions separately from facts?", ["To make notes longer", "To preserve analytical integrity and uncertainty", "To avoid collecting logs", "To prove attribution"], 1, "Clear evidence boundaries make conclusions defensible.", "Analyst reasoning"),
     ],
   },
   {
     title: "Networking, Operating Systems, and Identity",
     landmark: "Systems Visibility Lab",
-    theme: "Read network, host, and identity evidence well enough to distinguish normal activity from suspicious behavior.",
-    summary: "Build the technical foundations needed to investigate endpoints, authentication, network traffic, and account activity.",
-    explanation: "Security telemetry is meaningful only when the analyst understands how systems normally communicate, authenticate, execute processes, and record activity.",
-    lessons: ["TCP/IP, DNS, HTTP, and common protocols", "Windows and Linux security evidence", "Authentication, authorization, and least privilege"],
-    tasks: ["Trace a browser request from DNS lookup through TLS and HTTP response.", "Compare Windows Event Logs and Linux authentication logs for failed sign-ins.", "Create an identity-access review for one privileged role."],
-    resourceKeys: ["nistCsf"],
+    theme: "Interpret network, endpoint, operating-system, and identity evidence.",
+    summary: "Build the technical foundations needed to investigate authentication, processes, protocols, and account activity.",
+    explanation: "Telemetry becomes useful only when the analyst understands normal communication, authentication, process execution, permissions, and logging.",
+    lessons: ["TCP/IP, DNS, HTTP, TLS, and common protocols", "Windows and Linux security evidence", "Authentication, authorization, MFA, and least privilege"],
+    tasks: ["Trace a browser request from DNS through TLS and HTTP.", "Compare Windows and Linux failed-sign-in evidence.", "Create a privileged-access review for one business role."],
+    resourceKeys: ["sentinel", "siemQueries", "nistCsf"],
     questions: [
-      q("cyber-s2-q1", "Which log source is most directly useful for investigating repeated failed Windows sign-ins?", ["DNS resolver cache", "Windows Security event log", "Web server access log", "Printer spooler log"], 1, "Windows Security logs contain authentication event evidence.", "Operating-system logs"),
-      q("cyber-s2-q2", "Why is DNS telemetry valuable in threat investigations?", ["It proves user intent", "It can reveal connections to suspicious or newly observed domains", "It contains every file hash", "It replaces endpoint logs"], 1, "DNS often exposes destination infrastructure and anomalous lookup patterns.", "Network evidence"),
-      q("cyber-s2-q3", "Least privilege means:", ["Every user is a local administrator", "Access is limited to what is required for the task", "Passwords never expire", "All systems share one service account"], 1, "Least privilege limits permissions and reduces blast radius.", "Identity security"),
+      q("cyber-s2-q1", "Which source is most useful for repeated failed Windows sign-ins?", ["DNS cache", "Windows Security log", "Printer log", "Marketing analytics"], 1, "Windows Security logs contain authentication events.", "Windows logs"),
+      q("cyber-s2-q2", "Why is DNS telemetry valuable?", ["It proves intent", "It reveals suspicious domain lookups and infrastructure", "It replaces EDR", "It contains every file hash"], 1, "DNS shows destination patterns and infrastructure.", "DNS"),
+      q("cyber-s2-q3", "Least privilege means:", ["Everyone is admin", "Access is limited to task requirements", "Passwords never expire", "One shared account"], 1, "Least privilege limits permissions and blast radius.", "Identity"),
+      q("cyber-s2-q4", "Which field helps connect a process event to a user session?", ["Screen brightness", "Account or security identifier", "Printer queue", "Browser theme"], 1, "Identity fields connect activity to an authenticated principal.", "Endpoint evidence"),
+      q("cyber-s2-q5", "What does TLS primarily protect in transit?", ["Physical devices", "Confidentiality and integrity of communications", "User job titles", "File ownership only"], 1, "TLS protects network communications from reading and tampering.", "TLS"),
     ],
   },
   {
     title: "Telemetry, Logging, and SIEM Operations",
     landmark: "Security Telemetry Exchange",
-    theme: "Collect, normalize, query, and correlate security evidence across systems.",
-    summary: "Learn how useful telemetry becomes searchable evidence and actionable security cases.",
-    explanation: "A SIEM does not create truth automatically. Analysts must understand data sources, fields, timestamps, parsing, coverage gaps, correlation, and retention.",
-    lessons: ["Security log sources and data quality", "SIEM queries and event correlation", "Alert triage and case management"],
-    tasks: ["Create a telemetry inventory with owners, retention, and coverage gaps.", "Write queries for failed sign-ins, suspicious process execution, and unusual outbound traffic.", "Triage a simulated queue and document priority, evidence, and disposition."],
-    resourceKeys: ["splunkFundamentals", "microsoftSentinel"],
+    theme: "Collect, normalize, query, correlate, and triage security evidence.",
+    summary: "Turn diverse logs into searchable evidence and actionable cases.",
+    explanation: "A SIEM is useful only when data sources, fields, parsing, timestamps, retention, and coverage gaps are understood.",
+    lessons: ["Security log sources and data quality", "KQL/SIEM queries and correlation", "Alert triage and case management"],
+    tasks: ["Create a telemetry inventory with owners and retention.", "Write queries for failed sign-ins, suspicious processes, and unusual outbound traffic.", "Triage a simulated queue and document evidence and disposition."],
+    resourceKeys: ["siemQueries", "sentinel"],
     questions: [
-      q("cyber-s3-q1", "What is the best first response to a SIEM rule with a very high false-positive rate?", ["Disable all logging", "Review logic, data quality, thresholds, and suppression conditions", "Mark every alert benign", "Increase severity"], 1, "Tuning requires understanding rule logic and evidence quality.", "SIEM tuning"),
-      q("cyber-s3-q2", "Why must timestamps be normalized during correlation?", ["To reduce storage only", "To place events from different systems into a reliable sequence", "To hide source systems", "To make every event unique"], 1, "Investigation timelines depend on consistent time interpretation.", "Event correlation"),
-      q("cyber-s3-q3", "A triage decision should be based primarily on:", ["Alert color", "Evidence, asset criticality, behavior, scope, and potential impact", "Analyst seniority", "Number of dashboard widgets"], 1, "Priority should reflect evidence and business risk, not presentation.", "Alert triage"),
+      q("cyber-s3-q1", "What is the best response to a noisy SIEM rule?", ["Disable all logs", "Review logic, data quality, thresholds, and suppression", "Mark every alert benign", "Raise severity"], 1, "Tuning starts with rule logic and evidence quality.", "SIEM tuning"),
+      q("cyber-s3-q2", "Why normalize timestamps?", ["Reduce storage only", "Build a reliable cross-system sequence", "Hide sources", "Make events unique"], 1, "Timelines require consistent time interpretation.", "Correlation"),
+      q("cyber-s3-q3", "Triage priority should use:", ["Alert color", "Evidence, asset criticality, scope, behavior, and impact", "Analyst seniority", "Dashboard count"], 1, "Priority must reflect evidence and business risk.", "Triage"),
+      q("cyber-s3-q4", "A missing data source creates:", ["Guaranteed safety", "A visibility and detection gap", "Automatic containment", "Better attribution"], 1, "No telemetry means reduced ability to observe behavior.", "Coverage"),
+      q("cyber-s3-q5", "What should a closed benign alert contain?", ["No notes", "Evidence, reasoning, disposition, and tuning feedback", "Only a screenshot", "A password"], 1, "Documented disposition supports review and improvement.", "Case management"),
     ],
   },
   {
     title: "Detection Engineering and Threat Hunting",
     landmark: "Detection Workshop",
-    theme: "Translate adversary behavior into testable, measurable detections and proactive hunts.",
-    summary: "Create detections that are explainable, testable, maintainable, and connected to threat behavior.",
-    explanation: "Good detection engineering combines threat knowledge, telemetry, hypotheses, rule logic, validation, tuning, and documented coverage.",
-    lessons: ["MITRE ATT&CK and behavior mapping", "Detection logic, testing, and tuning", "Threat-hunting hypotheses and evidence"],
-    tasks: ["Map five attack techniques to available telemetry.", "Write and test a detection for suspicious PowerShell behavior.", "Run a hunt for anomalous account behavior and document negative and positive findings."],
-    resourceKeys: ["mitreAttack", "microsoftSentinel"],
+    theme: "Translate adversary behavior into testable detections and proactive hunts.",
+    summary: "Create explainable, maintainable detections connected to observable behavior.",
+    explanation: "Detection engineering combines threat knowledge, telemetry, rule logic, validation, tuning, and coverage measurement.",
+    lessons: ["MITRE ATT&CK behavior mapping", "Detection design, testing, and tuning", "Threat-hunting hypotheses and evidence"],
+    tasks: ["Map five ATT&CK techniques to available telemetry.", "Write and test a suspicious PowerShell detection.", "Run a hunt for anomalous account behavior."],
+    resourceKeys: ["mitreAttack", "sentinel", "siemQueries"],
     questions: [
-      q("cyber-s4-q1", "What makes a detection rule maintainable?", ["It has no documentation", "It has defined intent, data dependencies, tests, thresholds, and tuning history", "It alerts on every event", "It depends on one analyst's memory"], 1, "Maintainable detections are explicit, testable, and versioned.", "Detection engineering"),
-      q("cyber-s4-q2", "A threat-hunting hypothesis should be:", ["Impossible to disprove", "Specific enough to test using available evidence", "Based only on vendor marketing", "Unrelated to known behaviors"], 1, "A useful hypothesis connects plausible behavior to observable data.", "Threat hunting"),
-      q("cyber-s4-q3", "MITRE ATT&CK is primarily used to:", ["Assign legal penalties", "Describe adversary tactics and techniques", "Store passwords", "Replace incident response"], 1, "ATT&CK provides a common language for observed adversary behavior.", "MITRE ATT&CK"),
+      q("cyber-s4-q1", "What makes a detection maintainable?", ["No documentation", "Defined intent, data dependencies, tests, thresholds, and tuning history", "Alert on everything", "One analyst's memory"], 1, "Maintainable detections are explicit and testable.", "Detection engineering"),
+      q("cyber-s4-q2", "A useful hunt hypothesis is:", ["Impossible to disprove", "Specific and testable with available evidence", "Based only on marketing", "Unrelated to behavior"], 1, "Hunts must connect plausible behavior to observable data.", "Threat hunting"),
+      q("cyber-s4-q3", "MITRE ATT&CK describes:", ["Legal penalties", "Adversary tactics and techniques", "Passwords", "Asset values"], 1, "ATT&CK is a behavior knowledge base.", "ATT&CK"),
+      q("cyber-s4-q4", "How should a detection be validated?", ["Only by reading it", "Against known positive and negative test data", "By increasing severity", "By removing filters"], 1, "Validation requires representative test evidence.", "Validation"),
+      q("cyber-s4-q5", "A coverage map should connect techniques to:", ["Office locations", "Telemetry, detections, owners, and response capability", "Employee birthdays", "Vendor logos"], 1, "Coverage is operational, not cosmetic.", "Coverage"),
     ],
   },
   {
     title: "Incident Response and Digital Evidence",
     landmark: "Incident Command Room",
-    theme: "Investigate, contain, eradicate, recover, and learn without destroying evidence or business context.",
-    summary: "Practice disciplined incident handling from initial report through recovery and lessons learned.",
-    explanation: "Incident response balances speed, evidence preservation, business continuity, communication, and risk. Analysts must make defensible decisions under uncertainty.",
-    lessons: ["Incident lifecycle and roles", "Timeline reconstruction and evidence handling", "Containment, recovery, and lessons learned"],
-    tasks: ["Build an incident timeline from endpoint, identity, and network evidence.", "Design containment options with business impact and rollback considerations.", "Write an executive incident summary and technical lessons-learned report."],
-    resourceKeys: ["incidentGuide"],
+    theme: "Investigate, contain, eradicate, recover, and learn while preserving evidence.",
+    summary: "Practice disciplined incident handling from report through recovery.",
+    explanation: "Incident response balances speed, evidence preservation, continuity, communication, uncertainty, and risk.",
+    lessons: ["Incident lifecycle, roles, and playbooks", "Timeline reconstruction and evidence handling", "Containment, recovery, and lessons learned"],
+    tasks: ["Build a timeline from endpoint, identity, and network evidence.", "Compare containment options and rollback risks.", "Write executive and technical incident reports."],
+    resourceKeys: ["incidentResponse", "sentinel", "mitreAttack"],
     questions: [
-      q("cyber-s5-q1", "Why can immediate device shutdown be harmful during an investigation?", ["It always increases cost", "It may destroy volatile evidence and interrupt needed observation", "It changes the IP address only", "It automatically notifies the attacker"], 1, "Containment must consider evidence preservation and operational impact.", "Evidence handling"),
-      q("cyber-s5-q2", "Which action belongs in incident preparation?", ["Creating contacts, tools, roles, and playbooks", "Publishing attribution before analysis", "Deleting historical logs", "Disabling all alerts"], 0, "Preparation establishes the capabilities needed before an incident occurs.", "Incident response"),
-      q("cyber-s5-q3", "A good incident timeline should:", ["Mix facts and guesses without labels", "Record sourced events, confidence, gaps, and time normalization", "Contain only the final root cause", "Exclude failed investigative paths"], 1, "A defensible timeline preserves evidence provenance and uncertainty.", "Timeline reconstruction"),
+      q("cyber-s5-q1", "Why can immediate shutdown be harmful?", ["It always costs more", "It may destroy volatile evidence and interrupt observation", "It changes the IP only", "It guarantees notification"], 1, "Containment must consider evidence and operations.", "Evidence"),
+      q("cyber-s5-q2", "Which belongs in preparation?", ["Contacts, tools, roles, and playbooks", "Deleting logs", "Publishing attribution", "Disabling alerts"], 0, "Preparation establishes response capability.", "Preparation"),
+      q("cyber-s5-q3", "A defensible timeline records:", ["Unlabeled guesses", "Sourced events, confidence, gaps, and normalized time", "Only root cause", "Only successful steps"], 1, "Timelines preserve provenance and uncertainty.", "Timeline"),
+      q("cyber-s5-q4", "Containment decisions should include:", ["Only technical speed", "Business impact, evidence preservation, reversibility, and scope", "Vendor preference", "No owner"], 1, "Containment is a risk decision.", "Containment"),
+      q("cyber-s5-q5", "Lessons learned should produce:", ["Blame only", "Specific control, process, detection, and ownership improvements", "Fewer records", "Automatic attribution"], 1, "Post-incident review must improve the system.", "Lessons learned"),
     ],
   },
   {
     title: "Vulnerability and Exposure Management",
     landmark: "Exposure Reduction Center",
-    theme: "Prioritize remediation using exploitability, exposure, asset value, control context, and business impact.",
-    summary: "Move beyond vulnerability counts toward evidence-based reduction of exploitable risk.",
-    explanation: "Severity scores are inputs, not final decisions. Analysts must consider internet exposure, active exploitation, asset criticality, compensating controls, and remediation ownership.",
-    lessons: ["Vulnerability evidence and validation", "Risk-based prioritization", "Remediation tracking and exception governance"],
-    tasks: ["Validate a vulnerability finding and identify false-positive conditions.", "Build a prioritization model using severity, exploitability, exposure, and asset criticality.", "Create a remediation dashboard with owners, evidence, SLA, and accepted exceptions."],
-    resourceKeys: ["nistCsf", "owaspTop10"],
+    theme: "Prioritize remediation using exploitability, exposure, asset value, controls, and impact.",
+    summary: "Move beyond vulnerability counts toward measurable exposure reduction.",
+    explanation: "Severity scores are inputs; active exploitation, exposure, asset criticality, controls, and ownership determine priority.",
+    lessons: ["Vulnerability validation and evidence", "Risk-based prioritization", "Remediation tracking and exception governance"],
+    tasks: ["Validate a finding and identify false-positive conditions.", "Build a risk-prioritization model.", "Create a remediation dashboard with owners and SLAs."],
+    resourceKeys: ["owasp", "nistCsf", "incidentResponse"],
     questions: [
-      q("cyber-s6-q1", "Which vulnerability should usually receive the highest priority?", ["A low-severity issue on an isolated test system", "An actively exploited vulnerability on an internet-facing critical asset", "A theoretical issue with no affected asset", "The oldest scanner finding regardless of context"], 1, "Active exploitation, exposure, and asset criticality materially increase risk.", "Risk-based vulnerability management"),
-      q("cyber-s6-q2", "What is a compensating control?", ["A control that reduces risk when the preferred fix is not immediately possible", "A duplicate vulnerability", "A user complaint", "A scanner license"], 0, "Compensating controls reduce exposure while the root issue remains.", "Security controls"),
-      q("cyber-s6-q3", "A remediation exception should include:", ["No owner or expiry", "Business justification, risk acceptance, controls, owner, and review date", "Only the CVE number", "A promise to fix someday"], 1, "Exceptions require explicit accountable and time-bound risk decisions.", "Exception governance"),
+      q("cyber-s6-q1", "Which vulnerability is usually highest priority?", ["Low severity on isolated test", "Actively exploited on an internet-facing critical asset", "No affected asset", "Oldest finding only"], 1, "Exploitation, exposure, and criticality drive risk.", "Prioritization"),
+      q("cyber-s6-q2", "A compensating control is:", ["A duplicate finding", "A control reducing risk while the preferred fix is pending", "A complaint", "A license"], 1, "Compensating controls reduce exposure temporarily.", "Controls"),
+      q("cyber-s6-q3", "A remediation exception should include:", ["No expiry", "Justification, owner, controls, review date, and accepted risk", "Only CVE", "No evidence"], 1, "Exceptions require accountable, time-bound decisions.", "Exceptions"),
+      q("cyber-s6-q4", "Why validate scanner findings?", ["Scanners are always wrong", "To confirm affected assets, conditions, and exploitability", "To remove ownership", "To avoid patching"], 1, "Validation improves accuracy and priority.", "Validation"),
+      q("cyber-s6-q5", "What best measures exposure reduction?", ["Number of scans", "Critical exploitable paths closed with evidence", "Dashboard colors", "Emails sent"], 1, "Outcomes matter more than activity counts.", "Metrics"),
     ],
   },
   {
     title: "Cloud, Endpoint, and Identity Defense",
     landmark: "Modern Defense Operations Hub",
-    theme: "Investigate and reduce risk across cloud control planes, endpoints, identities, and SaaS activity.",
-    summary: "Apply consistent defensive reasoning to modern distributed environments.",
-    explanation: "Cloud and SaaS incidents often involve identity, tokens, configuration, APIs, and control-plane events rather than traditional perimeter evidence.",
+    theme: "Investigate cloud control planes, endpoints, identities, tokens, and SaaS activity.",
+    summary: "Apply consistent defensive reasoning across modern distributed environments.",
+    explanation: "Modern incidents frequently involve identity, sessions, APIs, cloud configuration, endpoint behavior, and control-plane events.",
     lessons: ["Cloud audit and control-plane evidence", "Endpoint detection and response", "Identity compromise and privileged access"],
-    tasks: ["Investigate a simulated compromised cloud account.", "Correlate EDR process telemetry with identity and network evidence.", "Review privileged roles, dormant accounts, MFA coverage, and risky sign-ins."],
-    resourceKeys: ["cloudSecurity", "microsoftSentinel"],
+    tasks: ["Investigate a compromised cloud account.", "Correlate EDR, identity, and network evidence.", "Review privileged roles, dormant accounts, MFA, and risky sign-ins."],
+    resourceKeys: ["cloudSecurity", "sentinel", "siemQueries"],
     questions: [
-      q("cyber-s7-q1", "Which evidence is most useful for investigating suspicious cloud administration?", ["Only endpoint screenshots", "Cloud audit and control-plane logs", "Printer logs", "Marketing analytics"], 1, "Cloud audit logs record administrative and API activity.", "Cloud security"),
-      q("cyber-s7-q2", "Token theft can allow an attacker to:", ["Bypass every network protocol", "Reuse an authenticated session without knowing the password", "Change hardware serial numbers", "Disable encryption globally"], 1, "Stolen session or access tokens may provide authenticated access.", "Identity compromise"),
-      q("cyber-s7-q3", "EDR telemetry is especially valuable for:", ["Process, command-line, file, and endpoint behavior", "Payroll forecasting", "Physical door access only", "DNS registration ownership"], 0, "EDR provides detailed endpoint activity and response capability.", "Endpoint defense"),
+      q("cyber-s7-q1", "Best evidence for suspicious cloud administration?", ["Screenshots only", "Cloud audit and control-plane logs", "Printer logs", "Marketing data"], 1, "Cloud audit logs record administrative and API activity.", "Cloud logs"),
+      q("cyber-s7-q2", "Token theft may allow:", ["Changing hardware serials", "Reusing an authenticated session", "Disabling all encryption", "Bypassing every protocol"], 1, "Stolen tokens can provide authenticated access.", "Identity"),
+      q("cyber-s7-q3", "EDR is especially valuable for:", ["Process, command line, file, and endpoint behavior", "Payroll", "Door access only", "Domain ownership"], 0, "EDR exposes endpoint activity and response options.", "EDR"),
+      q("cyber-s7-q4", "Which control most reduces privileged-account risk?", ["Shared admin accounts", "MFA, least privilege, separate admin identities, and review", "No logging", "Permanent tokens"], 1, "Layered identity controls reduce compromise impact.", "Privileged access"),
+      q("cyber-s7-q5", "Why correlate identity and endpoint evidence?", ["To duplicate alerts", "To connect authenticated users with observed device behavior", "To avoid timelines", "To remove context"], 1, "Cross-domain evidence improves scope and confidence.", "Correlation"),
     ],
   },
   {
     title: "Governance, Risk, and Security Communication",
     landmark: "Risk and Governance Forum",
-    theme: "Connect technical findings to accountable decisions, controls, policy, and measurable business risk.",
-    summary: "Communicate security evidence in ways that support action without overstating certainty.",
-    explanation: "Analysts must translate investigations and control gaps into clear risk, ownership, options, deadlines, and evidence of closure.",
+    theme: "Connect technical findings to controls, ownership, business risk, and decisions.",
+    summary: "Communicate evidence and uncertainty in a way that supports accountable action.",
+    explanation: "Analysts translate findings into risk, options, owners, deadlines, controls, metrics, and proof of closure.",
     lessons: ["Control frameworks and policy", "Risk reporting and stakeholder communication", "Metrics, assurance, and continuous improvement"],
-    tasks: ["Map security findings to NIST CSF functions and accountable owners.", "Write separate technical and executive summaries for the same incident.", "Design security metrics that measure coverage, response, exposure, and outcomes."],
-    resourceKeys: ["nistCsf"],
+    tasks: ["Map findings to NIST CSF outcomes and owners.", "Write technical and executive summaries for one incident.", "Design metrics for coverage, response, exposure, and outcomes."],
+    resourceKeys: ["nistCsf", "incidentResponse", "sentinel"],
     questions: [
-      q("cyber-s8-q1", "Which metric best reflects incident-response effectiveness?", ["Number of dashboard colors", "Time to detect, contain, recover, and close actions with quality evidence", "Total emails sent", "Number of tools purchased"], 1, "Outcome and process metrics should reflect speed, quality, and closure.", "Security metrics"),
-      q("cyber-s8-q2", "An executive risk summary should emphasize:", ["Raw logs only", "Business impact, evidence, uncertainty, options, ownership, and decisions", "Every command used", "Vendor slogans"], 1, "Decision-makers need clear implications and accountable choices.", "Risk communication"),
-      q("cyber-s8-q3", "A control is effective when:", ["It exists in a document", "Evidence shows it operates as intended and reduces relevant risk", "It has a complex name", "No one owns it"], 1, "Control effectiveness requires operational evidence, not policy existence alone.", "Control assurance"),
+      q("cyber-s8-q1", "Which metric reflects response effectiveness?", ["Dashboard colors", "Time to detect, contain, recover, and close actions with quality evidence", "Emails", "Tools purchased"], 1, "Outcome metrics should reflect speed and quality.", "Metrics"),
+      q("cyber-s8-q2", "An executive summary should emphasize:", ["Raw logs only", "Impact, evidence, uncertainty, options, ownership, and decisions", "Every command", "Vendor slogans"], 1, "Decision-makers need implications and accountable choices.", "Communication"),
+      q("cyber-s8-q3", "Control assurance requires:", ["Policy existence only", "Evidence the control operates as intended", "Complex naming", "No owner"], 1, "Assurance depends on operating evidence.", "Assurance"),
+      q("cyber-s8-q4", "Why document uncertainty?", ["To weaken findings", "To communicate confidence and prevent overclaiming", "To avoid decisions", "To hide evidence"], 1, "Professional analysis distinguishes confidence levels.", "Uncertainty"),
+      q("cyber-s8-q5", "A good risk owner is responsible for:", ["Only receiving reports", "Accepting, reducing, transferring, or avoiding risk with evidence", "Writing every detection", "Running every scan"], 1, "Risk decisions require accountable ownership.", "Risk ownership"),
     ],
   },
   {
     title: "Cyber Defense Capstone",
     landmark: "SOC Readiness Review",
-    theme: "Integrate telemetry, detection, investigation, response, exposure management, and governance into one defensible security operation.",
-    summary: "Produce portfolio-grade evidence of end-to-end cybersecurity analysis and operational judgment.",
-    explanation: "The capstone demonstrates not just technical tasks, but prioritization, evidence quality, escalation, communication, and measurable improvement.",
+    theme: "Integrate monitoring, detection, investigation, response, exposure management, and governance.",
+    summary: "Produce portfolio-grade evidence of end-to-end defensive operations.",
+    explanation: "The capstone demonstrates technical execution, prioritization, evidence quality, escalation, communication, and measurable improvement.",
     lessons: ["SOC operating model and coverage", "Integrated investigation and response", "Portfolio evidence and readiness review"],
-    tasks: ["Design a small SOC telemetry and detection coverage model.", "Run an end-to-end simulated incident from alert through lessons learned.", "Present the security program to technical and business reviewers."],
-    resourceKeys: ["nistCsf", "mitreAttack", "incidentGuide"],
+    tasks: ["Design a small SOC telemetry and detection model.", "Run an end-to-end simulated incident.", "Present the defensive program to technical and business reviewers."],
+    resourceKeys: ["nistCsf", "mitreAttack", "sentinel", "incidentResponse"],
     questions: [
-      q("cyber-s9-q1", "What should a capstone investigation demonstrate beyond identifying the alert?", ["Only screenshots", "Evidence chain, reasoning, scope, response decisions, communication, and improvement", "A list of vendor products", "A perfect outcome with no uncertainty"], 1, "Professional evidence must show the full analytical and operational process.", "Capstone evidence"),
-      q("cyber-s9-q2", "Coverage mapping is useful because it:", ["Proves every attack is blocked", "Shows which behaviors and assets have evidence, detections, and response capability", "Eliminates risk", "Replaces testing"], 1, "Coverage mapping exposes defensive strengths and gaps.", "Detection coverage"),
-      q("cyber-s9-q3", "A readiness review should challenge:", ["Only visual design", "Assumptions, evidence, failure modes, ownership, and measurable outcomes", "The analyst's job title", "The number of pages"], 1, "Review quality comes from testing decisions and operational evidence.", "Readiness review"),
+      q("cyber-s9-q1", "A capstone investigation should demonstrate:", ["Screenshots only", "Evidence chain, reasoning, scope, response, communication, and improvement", "Vendor list", "No uncertainty"], 1, "Professional evidence shows the full process.", "Capstone"),
+      q("cyber-s9-q2", "Coverage mapping shows:", ["Every attack is blocked", "Which behaviors and assets have evidence, detections, and response", "Risk is eliminated", "Testing is unnecessary"], 1, "Coverage mapping exposes strengths and gaps.", "Coverage"),
+      q("cyber-s9-q3", "A readiness review should challenge:", ["Visual design only", "Assumptions, evidence, failure modes, ownership, and outcomes", "Job title", "Page count"], 1, "Review tests operational quality.", "Readiness"),
+      q("cyber-s9-q4", "Why include negative test results?", ["They are irrelevant", "They show limits, false positives, and validation quality", "They replace evidence", "They prove zero risk"], 1, "Negative tests reveal boundaries and tuning needs.", "Testing"),
+      q("cyber-s9-q5", "A portfolio artifact is strongest when:", ["It hides decisions", "Another analyst can reproduce and review the reasoning", "It contains only screenshots", "It has no context"], 1, "Reproducibility demonstrates professional evidence quality.", "Portfolio"),
     ],
   },
   {
     title: "Cybersecurity Career Positioning and Interviews",
     landmark: "Security Career Operations Desk",
-    theme: "Translate security evidence into targeted applications and credible scenario-based interviews.",
-    summary: "Position experience across SOC, security analyst, incident response, cloud security, and vulnerability roles.",
-    explanation: "Security hiring evaluates technical fundamentals, investigative reasoning, communication, and practical evidence. Titles vary, so candidates must map responsibilities and required proof.",
+    theme: "Translate security evidence into targeted applications and credible interviews.",
+    summary: "Position experience for SOC, security analyst, incident response, cloud, and vulnerability roles.",
+    explanation: "Security hiring evaluates technical fundamentals, investigative reasoning, communication, and practical evidence under varied job titles.",
     lessons: ["Security role and title mapping", "Resume and portfolio evidence", "Technical and behavioral interview practice"],
-    tasks: ["Build a matrix of twenty target roles and recurring requirements.", "Tailor three case studies to SOC, cloud-security, and incident-response vacancies.", "Complete mock investigations and explain decisions under challenge."],
-    resourceKeys: ["mitreAttack"],
+    tasks: ["Build a matrix of twenty target roles.", "Tailor three case studies to SOC, cloud, and incident-response vacancies.", "Complete mock investigations and explain decisions under challenge."],
+    resourceKeys: ["mitreAttack", "sentinel", "nistCsf"],
     questions: [
-      q("cyber-s10-q1", "What is the strongest way to describe a security project on a resume?", ["List only the tool name", "Explain context, evidence, actions, judgment, controls, and measurable result", "Claim zero false positives", "Use unexplained acronyms"], 1, "Hiring evidence should connect work to defensible outcomes.", "Career evidence"),
-      q("cyber-s10-q2", "In a scenario interview, the best first step is usually to:", ["Guess the attacker", "Clarify scope, assets, evidence, impact, and constraints", "Recommend buying a new SIEM", "Declare the incident closed"], 1, "Structured investigation begins by defining what is known and what matters.", "Scenario interviews"),
-      q("cyber-s10-q3", "Why should candidates maintain multiple role-title searches?", ["Security responsibilities appear under varied titles", "Every title has identical duties", "Recruiters reject keywords", "Only certifications matter"], 0, "SOC and defensive-security responsibilities are distributed across several common titles.", "Job search"),
+      q("cyber-s10-q1", "Strongest way to describe a security project?", ["Tool name only", "Context, evidence, actions, judgment, controls, and result", "Claim zero false positives", "Unexplained acronyms"], 1, "Hiring evidence should connect work to outcomes.", "Resume"),
+      q("cyber-s10-q2", "First step in a scenario interview?", ["Guess attacker", "Clarify scope, assets, evidence, impact, and constraints", "Buy a SIEM", "Close incident"], 1, "Structured investigation starts with scope and evidence.", "Interview"),
+      q("cyber-s10-q3", "Why search multiple role titles?", ["Responsibilities appear under varied titles", "Every title is identical", "Keywords are rejected", "Only certificates matter"], 0, "Defensive work is advertised under several titles.", "Job search"),
+      q("cyber-s10-q4", "What makes a portfolio credible?", ["Claims without evidence", "Reproducible artifacts, reasoning, limitations, and results", "Only certificates", "Only tool logos"], 1, "Evidence demonstrates capability.", "Portfolio"),
+      q("cyber-s10-q5", "How should you answer an unknown technical question?", ["Invent an answer", "State assumptions, explain investigation steps, and identify evidence needed", "Change subject", "Blame the tool"], 1, "Structured reasoning is more credible than guessing.", "Interview judgment"),
     ],
   },
 ] as const;
 
-const journeyStages: CareerJourneyStage[] = legacyCybersecurityLayout.journeyStages.map((stage, index) => {
-  const spec = stageSpecs[index] ?? stageSpecs[stageSpecs.length - 1];
-  const stageResources = spec.resourceKeys.map((key) => resources[key]);
-  return {
-    ...stage,
-    id: `cyber-stage-${index + 1}`,
-    title: spec.title,
-    label: spec.title,
-    landmark: spec.landmark,
-    theme: spec.theme,
-    summary: spec.summary,
-    explanation: spec.explanation,
-    lessons: [...spec.lessons],
-    resources: stageResources,
-    tasks: spec.tasks.map((description, taskIndex) => ({
-      id: `cyber-stage-${index + 1}-task-${taskIndex + 1}`,
-      title: description,
-      description,
-      type: index === 8 ? "portfolio" : index === 9 ? "job-search" : "lesson",
-    })),
-    topicAssessments: [
-      topicAssessment(
-        `cyber-stage-${index + 1}-topic-assessment`,
-        `${spec.title} knowledge check`,
+const journeyStages: CareerJourneyStage[] =
+  legacyCybersecurityLayout.journeyStages.map((stage, index) => {
+    const spec = stageSpecs[index] ?? stageSpecs[stageSpecs.length - 1];
+    const stageNumber = index + 1;
+    const stageResources = spec.resourceKeys.map((key) => resources[key]);
+
+    return {
+      ...stage,
+      id: `cyber-stage-${stageNumber}`,
+      order: stageNumber,
+      title: spec.title,
+      label: spec.title,
+      landmark: spec.landmark,
+      theme: spec.theme,
+      summary: spec.summary,
+      explanation: spec.explanation,
+      lessons: [...spec.lessons],
+      resources: stageResources,
+      tasks: spec.tasks.map((description, taskIndex) => ({
+        id: `cyber-stage-${stageNumber}-task-${taskIndex + 1}`,
+        title: description,
+        description,
+        type:
+          index === 8
+            ? "portfolio"
+            : index === 9
+              ? "job-search"
+              : "lesson",
+      })),
+      topicAssessments: stageResources.map((resource) =>
+        topicAssessment(stageNumber, resource, [...spec.questions]),
+      ),
+      phaseExam: comprehensiveAssessment(
+        stageNumber,
         spec.title,
         [...spec.questions],
       ),
-    ],
-    phaseExam: index === 8
-      ? {
-          id: "cyber-capstone-comprehensive-assessment",
-          title: "Cyber Defense Comprehensive Assessment",
-          description: "A scenario-based readiness assessment covering monitoring, detection, investigation, response, exposure, cloud, identity, and governance.",
-          passingScore: 75,
-          assessmentType: "comprehensive",
-          durationMinutes: 35,
-          questionsPerAttempt: 10,
-          questions: stageSpecs.map((item, itemIndex) => ({
-            ...item.questions[itemIndex % item.questions.length],
-            id: `cyber-comprehensive-q${itemIndex + 1}`,
-          })),
-        }
-      : undefined,
-  };
-});
+    };
+  });
 
 const roadmapSpecs = [
   ["Security and Systems Foundations", "Risk and controls", "Networking", "Operating systems", "Identity", "Evidence"],
@@ -364,92 +405,152 @@ const roadmapSpecs = [
   ["Employment Readiness", "Portfolio", "Resume evidence", "Role mapping", "Scenario interviews", "Targeted applications"],
 ] as const;
 
-const roadmap: CareerRoadmapPhase[] = legacyCybersecurityLayout.roadmap.map((phase, index) => {
-  const sections = roadmapSpecs[index] ?? roadmapSpecs[roadmapSpecs.length - 1];
-  const stage = stageSpecs[Math.min(index * 2, stageSpecs.length - 1)];
-  return {
-    ...phase,
-    id: `cyber-roadmap-${index + 1}`,
-    phaseNumber: index + 1,
-    title: sections[0],
-    goal: `Build defensible capability across ${sections.slice(1).join(", ")}.`,
-    sections: [...sections],
-    mentorTip: "Keep every conclusion tied to observable evidence, asset context, uncertainty, risk, and accountable next action.",
-    practicalMissions: [stage.tasks[0], stage.tasks[1]],
-    expectedOutcome: `You can investigate and explain work across ${sections.slice(1).join(", ")}.`,
-    lessons: sections.slice(1, 4).map((section, lessonIndex) => lesson(
-      `cyber-roadmap-${index + 1}-lesson-${lessonIndex + 1}`,
-      section,
-      `Develop practical Cybersecurity Analyst capability in ${section.toLowerCase()}.`,
-      [
-        `Explain the role of ${section.toLowerCase()} in defensive operations.`,
-        `Apply ${section.toLowerCase()} to a realistic investigation or control scenario.`,
-        `Produce evidence that can be reviewed by another analyst.`,
-      ],
-      `Create a portfolio-ready artifact demonstrating ${section.toLowerCase()}.`,
-      stage.resourceKeys.map((key) => resources[key]),
-      index === 0 ? "Beginner" : index >= 4 ? "Advanced" : "Intermediate",
-    )),
-    quiz: {
-      id: `cyber-roadmap-${index + 1}-quiz`,
-      phaseId: `cyber-roadmap-${index + 1}`,
-      title: `${sections[0]} checkpoint`,
-      description: `Validate practical understanding of ${sections.slice(1).join(", ")}.`,
-      questions: [...stage.questions],
-    },
-  };
-});
+const roadmap: CareerRoadmapPhase[] = legacyCybersecurityLayout.roadmap.map(
+  (phase, index) => {
+    const sections = roadmapSpecs[index] ?? roadmapSpecs[roadmapSpecs.length - 1];
+    const stage = stageSpecs[Math.min(index * 2, stageSpecs.length - 1)];
+    const stageResources = stage.resourceKeys.map((key) => resources[key]);
+
+    return {
+      ...phase,
+      id: `cyber-roadmap-${index + 1}`,
+      phaseNumber: index + 1,
+      title: sections[0],
+      goal: `Build defensible capability across ${sections.slice(1).join(", ")}.`,
+      sections: [...sections],
+      mentorTip:
+        "Tie conclusions to observable evidence, asset context, uncertainty, risk, and an accountable next action.",
+      practicalMissions: [stage.tasks[0], stage.tasks[1]],
+      expectedOutcome: `You can investigate and explain work across ${sections
+        .slice(1)
+        .join(", ")}.`,
+      lessons: sections.slice(1, 4).map((section, lessonIndex) =>
+        lesson(
+          `cyber-roadmap-${index + 1}-lesson-${lessonIndex + 1}`,
+          section,
+          `Develop practical Cybersecurity Analyst capability in ${section.toLowerCase()}.`,
+          [
+            `Explain ${section.toLowerCase()} in defensive operations.`,
+            `Apply ${section.toLowerCase()} to a realistic scenario.`,
+            "Produce evidence another analyst can review.",
+          ],
+          `Create a portfolio-ready artifact demonstrating ${section.toLowerCase()}.`,
+          stageResources,
+          index === 0
+            ? "Beginner"
+            : index >= 4
+              ? "Advanced"
+              : "Intermediate",
+        ),
+      ),
+      quiz: {
+        id: `cyber-roadmap-${index + 1}-quiz`,
+        phaseId: `cyber-roadmap-${index + 1}`,
+        title: `${sections[0]} checkpoint`,
+        description: `Validate practical understanding of ${sections
+          .slice(1)
+          .join(", ")}.`,
+        questions: [...stage.questions],
+      },
+    };
+  },
+);
 
 const cybersecurityAnalystBase: CareerWorkspaceData = {
   ...legacyCybersecurityLayout,
   slug: "cybersecurity-analyst",
   title: "Cybersecurity Analyst",
+  titleAliases: undefined,
   category: "AI Infrastructure & Security",
   visual: {
     nodeLabel: "Cybersecurity Analyst",
     sceneTitle: "Security Operations and Threat Defense Center",
-    sceneDescription: "A defensive operations environment connecting telemetry, identities, endpoints, networks, cloud controls, detections, investigations, incidents, recovery, and risk governance.",
-    imageAlt: "Cybersecurity analyst investigating security telemetry, identity events, endpoint activity, cloud logs, and incident evidence.",
+    sceneDescription:
+      "A defensive operations environment connecting telemetry, identities, endpoints, networks, cloud controls, detections, investigations, incidents, recovery, and governance.",
+    imageAlt:
+      "Cybersecurity analyst investigating security telemetry, identity events, endpoint activity, cloud logs, and incident evidence.",
   },
-  shortDescription: "Monitor, investigate, contain, and reduce cyber risk through security operations, detection engineering, incident response, vulnerability management, identity defense, cloud security, and evidence-based governance.",
+  shortDescription:
+    "Monitor, investigate, contain, and reduce cyber risk through security operations, detection engineering, incident response, vulnerability management, identity defense, cloud security, and evidence-based governance.",
   difficulty: "Intermediate",
   estimatedLearningTime: "8-12 months part-time",
-  salary: "Varies by country, seniority, industry, certification, and operational scope",
-  hiringDemand: "Strong across regulated organizations, technology companies, cloud environments, critical infrastructure, consulting, and managed security services",
-  remoteAvailability: "Medium to High depending on incident-response, access, and on-call requirements",
+  salary:
+    "Varies by country, seniority, industry, certification, and operational scope",
+  hiringDemand:
+    "Strong across regulated organizations, technology companies, cloud environments, critical infrastructure, consulting, and managed security services",
+  remoteAvailability:
+    "Medium to High depending on incident-response, access, and on-call requirements",
   aiCompatibilityScore: "88%",
-  bestFor: ["Investigative problem solvers", "Risk-aware systems thinkers", "People who remain methodical under pressure", "Professionals who value evidence and operational responsibility"],
-  programmingRequirement: "Low to Moderate: PowerShell, shell, Python, query languages, regular expressions, and log parsing",
-  mathRequirement: "Low to Moderate: baselines, rates, probability, risk scoring, and analytical reasoning",
+  bestFor: [
+    "Investigative problem solvers",
+    "Risk-aware systems thinkers",
+    "People who remain methodical under pressure",
+    "Professionals who value evidence and operational responsibility",
+  ],
+  programmingRequirement:
+    "Low to Moderate: PowerShell, shell, Python, query languages, regular expressions, and log parsing",
+  mathRequirement:
+    "Low to Moderate: baselines, rates, probability, risk scoring, and analytical reasoning",
   creativityLevel: "High",
   communicationLevel: "High",
   lastUpdated: "2026-08-02",
   metrics: [
-    { label: "Primary outcome", value: "Reduced cyber risk", detail: "Detection, response, controls, and remediation must protect real business operations." },
-    { label: "Evidence standard", value: "Reproducible investigations", detail: "Findings remain traceable to logs, timelines, sources, confidence, and documented decisions." },
-    { label: "Operating focus", value: "Detect to recover", detail: "Monitoring, investigation, containment, remediation, recovery, and learning form one lifecycle." },
-    { label: "Professional standard", value: "Defensible judgment", detail: "Analysts distinguish facts from assumptions and communicate uncertainty clearly." },
+    {
+      label: "Primary outcome",
+      value: "Reduced cyber risk",
+      detail:
+        "Detection, response, controls, and remediation must protect real operations.",
+    },
+    {
+      label: "Evidence standard",
+      value: "Reproducible investigations",
+      detail:
+        "Findings remain traceable to logs, timelines, sources, confidence, and decisions.",
+    },
+    {
+      label: "Operating focus",
+      value: "Detect to recover",
+      detail:
+        "Monitoring, investigation, containment, recovery, and learning form one lifecycle.",
+    },
+    {
+      label: "Professional standard",
+      value: "Defensible judgment",
+      detail:
+        "Analysts distinguish facts from assumptions and communicate uncertainty.",
+    },
   ],
   overview: {
     title: "What does a Cybersecurity Analyst do?",
-    body: "A Cybersecurity Analyst protects systems, identities, data, and operations by turning telemetry into evidence, evidence into decisions, and decisions into measurable risk reduction. The role combines monitoring, log analysis, detection engineering, incident response, vulnerability management, identity and cloud defense, control assurance, and security communication.",
+    body:
+      "A Cybersecurity Analyst protects systems, identities, data, and operations by turning telemetry into evidence, evidence into decisions, and decisions into measurable risk reduction.",
     responsibilities: [
       "Monitor and triage security events and alerts",
-      "Investigate suspicious identity, endpoint, network, application, and cloud behavior",
+      "Investigate identity, endpoint, network, application, and cloud behavior",
       "Create, test, tune, and document detection rules",
-      "Contain incidents and coordinate recovery with technical and business owners",
-      "Prioritize vulnerabilities and exposure using exploitability and asset context",
+      "Contain incidents and coordinate recovery",
+      "Prioritize vulnerabilities using exploitability and asset context",
       "Review identity, endpoint, network, and cloud control effectiveness",
       "Preserve evidence, timelines, reasoning, and lessons learned",
-      "Communicate risk, ownership, and measurable defensive improvement",
+      "Communicate risk, ownership, and defensive improvement",
     ],
-    industries: ["Financial services", "Healthcare", "Retail", "Technology", "Manufacturing", "Public sector", "Critical infrastructure", "Cybersecurity consulting and managed services"],
+    industries: [
+      "Financial services",
+      "Healthcare",
+      "Retail",
+      "Technology",
+      "Manufacturing",
+      "Public sector",
+      "Critical infrastructure",
+      "Cybersecurity consulting and managed services",
+    ],
   },
   journeyMap: {
     ...legacyCybersecurityLayout.journeyMap,
     theme: "cyber-fortress",
     overviewTitle: "Cybersecurity Analyst Defense Journey",
-    overviewDescription: "Progress from technical foundations to production-grade monitoring, detection, investigation, response, governance, and employment readiness.",
+    overviewDescription:
+      "Progress from technical foundations to production-grade monitoring, detection, investigation, response, governance, and employment readiness.",
   },
   journeyStages,
   roadmap,
@@ -460,9 +561,22 @@ const cybersecurityAnalystBase: CareerWorkspaceData = {
       difficulty: "Intermediate",
       estimatedTime: "30-45 hours",
       phaseId: "cyber-roadmap-2",
-      description: "Ingest representative identity, endpoint, and network logs; write detections; tune false positives; investigate alerts; and document evidence and disposition.",
-      deliverables: ["Telemetry inventory", "Three detection rules", "Validation dataset", "Investigation case notes", "Tuning and coverage report"],
-      skills: ["SIEM", "Log analysis", "Detection engineering", "Alert triage", "Documentation"],
+      description:
+        "Ingest identity, endpoint, and network logs; write detections; tune false positives; investigate alerts; and document evidence.",
+      deliverables: [
+        "Telemetry inventory",
+        "Three detection rules",
+        "Validation dataset",
+        "Investigation case notes",
+        "Tuning and coverage report",
+      ],
+      skills: [
+        "SIEM",
+        "Log analysis",
+        "Detection engineering",
+        "Alert triage",
+        "Documentation",
+      ],
     },
     {
       id: "cyber-project-incident-response",
@@ -470,9 +584,22 @@ const cybersecurityAnalystBase: CareerWorkspaceData = {
       difficulty: "Intermediate",
       estimatedTime: "35-50 hours",
       phaseId: "cyber-roadmap-3",
-      description: "Reconstruct a simulated compromise, scope affected assets and identities, select containment actions, coordinate recovery, and produce technical and executive reports.",
-      deliverables: ["Evidence register", "Incident timeline", "Containment decision record", "Recovery plan", "Lessons-learned report"],
-      skills: ["Incident response", "Timeline analysis", "Evidence handling", "Containment", "Risk communication"],
+      description:
+        "Reconstruct a simulated compromise, scope affected assets, select containment actions, coordinate recovery, and report.",
+      deliverables: [
+        "Evidence register",
+        "Incident timeline",
+        "Containment decision record",
+        "Recovery plan",
+        "Lessons-learned report",
+      ],
+      skills: [
+        "Incident response",
+        "Timeline analysis",
+        "Evidence handling",
+        "Containment",
+        "Risk communication",
+      ],
     },
     {
       id: "cyber-project-exposure-management",
@@ -480,9 +607,22 @@ const cybersecurityAnalystBase: CareerWorkspaceData = {
       difficulty: "Advanced",
       estimatedTime: "45-65 hours",
       phaseId: "cyber-roadmap-4",
-      description: "Prioritize vulnerability and identity risks using exploitability, exposure, asset criticality, control context, ownership, and remediation evidence.",
-      deliverables: ["Exposure inventory", "Risk-prioritization model", "Remediation backlog", "Exception register", "Executive risk dashboard"],
-      skills: ["Vulnerability management", "IAM", "Risk prioritization", "Remediation governance", "Metrics"],
+      description:
+        "Prioritize vulnerability and identity risk using exploitability, exposure, asset criticality, controls, and remediation evidence.",
+      deliverables: [
+        "Exposure inventory",
+        "Risk-prioritization model",
+        "Remediation backlog",
+        "Exception register",
+        "Executive risk dashboard",
+      ],
+      skills: [
+        "Vulnerability management",
+        "IAM",
+        "Risk prioritization",
+        "Remediation governance",
+        "Metrics",
+      ],
     },
     {
       id: "cyber-project-capstone",
@@ -490,46 +630,137 @@ const cybersecurityAnalystBase: CareerWorkspaceData = {
       difficulty: "Advanced",
       estimatedTime: "70-100 hours",
       phaseId: "cyber-roadmap-5",
-      description: "Design and defend a small defensive-security operating model covering telemetry, ATT&CK coverage, detections, investigations, incident response, exposure management, metrics, and improvement.",
-      deliverables: ["SOC operating model", "Telemetry and coverage map", "Detection pack", "Incident playbook", "Risk and metrics report", "Portfolio case study"],
-      skills: ["SOC operations", "Detection", "Incident response", "Governance", "Security architecture", "Communication"],
+      description:
+        "Design and defend a small security operating model covering telemetry, ATT&CK coverage, detections, incidents, exposure, metrics, and improvement.",
+      deliverables: [
+        "SOC operating model",
+        "Telemetry and coverage map",
+        "Detection pack",
+        "Incident playbook",
+        "Risk and metrics report",
+        "Portfolio case study",
+      ],
+      skills: [
+        "SOC operations",
+        "Detection",
+        "Incident response",
+        "Governance",
+        "Security architecture",
+        "Communication",
+      ],
     },
   ],
   globalResources: Object.values(resources),
   finalChallenge: {
     title: "Cybersecurity Analyst Operational Readiness Review",
-    description: "Present and defend an end-to-end cyber defense engagement before a simulated SOC lead, cloud engineer, risk owner, and business stakeholder.",
-    requirements: ["Evidence-based scope and risk model", "Telemetry and detection coverage", "Reproducible investigation", "Containment and recovery decisions", "Exposure and control improvement", "Clear technical and executive communication"],
-    deliverables: ["Executive summary", "Evidence and timeline package", "Detection and coverage report", "Incident-response plan", "Risk and remediation register", "Portfolio case study"],
-    evaluation: ["Technical accuracy", "Investigative reasoning", "Evidence quality", "Risk prioritization", "Operational practicality", "Communication"],
+    description:
+      "Present and defend an end-to-end cyber defense engagement before simulated technical and business reviewers.",
+    requirements: [
+      "Evidence-based scope and risk model",
+      "Telemetry and detection coverage",
+      "Reproducible investigation",
+      "Containment and recovery decisions",
+      "Exposure and control improvement",
+      "Clear technical and executive communication",
+    ],
+    deliverables: [
+      "Executive summary",
+      "Evidence and timeline package",
+      "Detection and coverage report",
+      "Incident-response plan",
+      "Risk and remediation register",
+      "Portfolio case study",
+    ],
+    evaluation: [
+      "Technical accuracy",
+      "Investigative reasoning",
+      "Evidence quality",
+      "Risk prioritization",
+      "Operational practicality",
+      "Communication",
+    ],
   },
-  relatedCareers: ["Security Operations Analyst", "SOC Analyst", "Cloud Security Analyst", "Incident Response Analyst", "Detection Engineer", "DevSecOps Engineer"],
+  relatedCareers: [
+    "Security Operations Analyst",
+    "SOC Analyst",
+    "Cloud Security Analyst",
+    "Incident Response Analyst",
+    "Detection Engineer",
+    "DevSecOps Engineer",
+  ],
   portfolioTasks: [
-    { id: "cyber-portfolio-1", title: "Publish a SIEM detection and investigation case study", description: "Show data sources, query logic, validation, triage, evidence, tuning, and coverage limitations.", type: "portfolio" },
-    { id: "cyber-portfolio-2", title: "Publish an incident-response report and timeline", description: "Show evidence provenance, scope, decisions, containment, recovery, and lessons learned.", type: "portfolio" },
-    { id: "cyber-portfolio-3", title: "Publish an exposure-reduction plan", description: "Show vulnerability, identity, cloud, and business context with accountable remediation priorities.", type: "portfolio" },
+    {
+      id: "cyber-portfolio-1",
+      title: "Publish a SIEM detection and investigation case study",
+      description:
+        "Show data sources, query logic, validation, triage, evidence, tuning, and limitations.",
+      type: "portfolio",
+    },
+    {
+      id: "cyber-portfolio-2",
+      title: "Publish an incident-response report and timeline",
+      description:
+        "Show provenance, scope, decisions, containment, recovery, and lessons learned.",
+      type: "portfolio",
+    },
+    {
+      id: "cyber-portfolio-3",
+      title: "Publish an exposure-reduction plan",
+      description:
+        "Show vulnerability, identity, cloud, and business context with remediation priorities.",
+      type: "portfolio",
+    },
   ],
   jobSearchTasks: [
-    { id: "cyber-job-1", title: "Build a defensive-security title matrix", description: "Track Cybersecurity Analyst, SOC Analyst, Security Operations Analyst, Incident Response Analyst, Cloud Security Analyst, and adjacent titles.", type: "job-search" },
-    { id: "cyber-job-2", title: "Map vacancy requirements to portfolio evidence", description: "Link SIEM, detection, incident, identity, cloud, and vulnerability requirements to specific artifacts.", type: "job-search" },
-    { id: "cyber-job-3", title: "Run a targeted security application cycle", description: "Prioritize roles by evidence fit, operating scope, technology stack, and development potential.", type: "job-search" },
+    {
+      id: "cyber-job-1",
+      title: "Build a defensive-security title matrix",
+      description:
+        "Track Cybersecurity Analyst, SOC Analyst, Security Operations Analyst, Incident Response Analyst, and adjacent titles.",
+      type: "job-search",
+    },
+    {
+      id: "cyber-job-2",
+      title: "Map vacancy requirements to portfolio evidence",
+      description:
+        "Link SIEM, detection, incident, identity, cloud, and vulnerability requirements to artifacts.",
+      type: "job-search",
+    },
+    {
+      id: "cyber-job-3",
+      title: "Run a targeted security application cycle",
+      description:
+        "Prioritize roles by evidence fit, scope, technology stack, and development potential.",
+      type: "job-search",
+    },
   ],
   interviewPrep: {
     title: "Cybersecurity Analyst Interview Preparation",
-    practiceAreas: ["Networking and operating systems", "SIEM and log analysis", "Detection engineering", "Incident response", "Threat intelligence", "Identity security", "Vulnerability management", "Cloud security", "Risk communication"],
+    practiceAreas: [
+      "Networking and operating systems",
+      "SIEM and log analysis",
+      "Detection engineering",
+      "Incident response",
+      "Threat intelligence",
+      "Identity security",
+      "Vulnerability management",
+      "Cloud security",
+      "Risk communication",
+    ],
     questions: [
       "How would you investigate an impossible-travel alert?",
-      "What logs would you use to investigate suspicious PowerShell activity?",
+      "What logs would you use for suspicious PowerShell activity?",
       "How do you tune a noisy detection without hiding real attacks?",
-      "Walk through the incident-response lifecycle using a concrete example.",
+      "Walk through the incident-response lifecycle using an example.",
       "How would you prioritize vulnerabilities across hundreds of assets?",
       "Explain authentication, authorization, MFA, and least privilege.",
       "How would you investigate a compromised cloud administrator account?",
       "How do you communicate technical security risk to a business owner?",
       "What evidence would convince you that containment succeeded?",
-      "How do you measure defensive coverage and identify blind spots?",
+      "How do you measure defensive coverage and blind spots?",
     ],
   },
 };
 
-export const cybersecurityAnalystCareer = applyCareerTitleAliasPolicy(cybersecurityAnalystBase);
+export const cybersecurityAnalystCareer =
+  applyCareerTitleAliasPolicy(cybersecurityAnalystBase);
