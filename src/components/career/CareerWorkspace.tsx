@@ -9,6 +9,7 @@ import ReferenceLearningChooser from "@/components/career/resources/ReferenceLea
 import { EffortEstimate } from "@/components/career/EffortEstimate";
 import { aiEngineerCareer } from "@/data/careers/ai-engineer";
 import { CAREER_NAV_ITEMS, careerSectionHref } from "@/lib/careerNavigation";
+import { createClient as createSupabaseClient } from "@/lib/supabase/client";
 import {
   didPassAssessment,
   isAssessmentQualified,
@@ -329,6 +330,30 @@ export default function CareerWorkspace({
   const [noteDraft, setNoteDraft] = useState("");
   const [noteFilter, setNoteFilter] = useState<CareerNote["contextType"] | "all">("all");
   const [examSession, setExamSession] = useState<ExamSession | null>(null);
+
+  useEffect(() => {
+    const supabase = createSupabaseClient();
+    let active = true;
+    void (async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
+      const { data } = await supabase.from("saved_careers").select("id").eq("career_slug", career.slug).maybeSingle();
+      if (active) setBookmarked(Boolean(data));
+    })();
+    return () => { active = false; };
+  }, [career.slug]);
+
+  async function updateBookmark(value: boolean) {
+    const previous = bookmarked; setBookmarked(value); const supabase = createSupabaseClient();
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) { setBookmarked(previous); window.location.assign(`/login?next=${encodeURIComponent(window.location.pathname + window.location.search)}`); return; }
+    const result = value
+      ? await supabase.from("saved_careers").upsert({ user_id: user.id, career_slug: career.slug }, { onConflict: "user_id,career_slug" })
+      : await supabase.from("saved_careers").delete().eq("user_id", user.id).eq("career_slug", career.slug);
+    if (result.error) { setBookmarked(previous); setActionMessage("Bookmark update failed. Please try again."); return; }
+    if (value) await supabase.from("user_activity").insert({ user_id: user.id, action: "career_saved", metadata: { career_slug: career.slug } });
+    setActionMessage(value ? "Career saved to your dashboard." : "Career removed from saved careers.");
+  }
 
   const stats = useMemo(
     () => getCareerWorkspaceStats(career, progress),
@@ -657,7 +682,7 @@ export default function CareerWorkspace({
                 key="hero"
                 stats={stats}
                 bookmarked={bookmarked}
-                setBookmarked={setBookmarked}
+                setBookmarked={(value) => { void updateBookmark(value); }}
                 copyShareLink={copyShareLink}
                 startLearning={startLearning}
                 startGuidedJourney={startGuidedJourney}

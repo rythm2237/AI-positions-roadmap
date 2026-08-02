@@ -5,6 +5,7 @@
 
 import { useState, useEffect, useRef, useCallback } from "react";
 import Link from "next/link";
+import CareerSearch from "@/components/search/CareerSearch";
 
 // ══════════════════════════════════════════════════════════════════════════
 // CONFIG
@@ -201,7 +202,7 @@ export default function Header() {
               aria-label="AI Career OS — Home"
             >
               <LogoMark size={34} />
-              <div className="flex flex-col leading-none">
+              <div className="hidden flex-col leading-none min-[420px]:flex">
                 <span className="font-display text-[14.5px] font-bold tracking-tight text-white">
                   AI Career{" "}
                   <span className="gradient-text">OS</span>
@@ -212,9 +213,11 @@ export default function Header() {
               </div>
             </Link>
 
+            <CareerSearch />
+
             {/* ── Desktop nav ── */}
             <nav
-              className="hidden items-center gap-0.5 md:flex"
+              className="hidden items-center gap-0.5 lg:flex"
               aria-label="Primary navigation"
             >
               {PUBLIC_NAV_ITEMS.map((item) => item.kind === "link" ? (

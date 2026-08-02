@@ -1053,6 +1053,9 @@ function ThreeScene() {
     const raycaster = new THREE.Raycaster();
     raycaster.params.Points = { threshold: 0.5 };
     const pointer = new THREE.Vector2();
+    const pointerState = { clientX: 0, clientY: 0, inside: false };
+    const instanceMatrix = new THREE.Matrix4();
+    const instanceCenter = new THREE.Vector3();
 
     function doRaycast(clientX: number, clientY: number) {
       const rect = renderer.domElement.getBoundingClientRect();
@@ -1064,7 +1067,11 @@ function ThreeScene() {
         const idx = hits[0].instanceId ?? -1;
         if (idx >= 0 && idx < allNodesRef.current.length) {
           const node = allNodesRef.current[idx];
-          const sp = hits[0].point.clone().project(camera);
+          // Project the current rendered instance center. A surface-hit point drifts
+          // visually as the selected instance scales and the camera approaches it.
+          instancedNodes.getMatrixAt(idx, instanceMatrix);
+          instanceCenter.setFromMatrixPosition(instanceMatrix).applyMatrix4(instancedNodes.matrixWorld);
+          const sp = instanceCenter.project(camera);
           const rect2 = renderer.domElement.getBoundingClientRect();
           const sx = ( sp.x * 0.5 + 0.5) * rect2.width;
           const sy = (-sp.y * 0.5 + 0.5) * rect2.height;
@@ -1087,6 +1094,9 @@ function ThreeScene() {
     }
 
     function onPointerMove(e: PointerEvent) {
+      pointerState.clientX = e.clientX;
+      pointerState.clientY = e.clientY;
+      pointerState.inside = true;
       const o = orbitRef.current;
       if (o.isDragging) {
         const dx = e.clientX - o.lastX;
@@ -1134,6 +1144,7 @@ function ThreeScene() {
     }
 
     function onPointerLeave() {
+      pointerState.inside = false;
       orbitRef.current.isDragging = false;
       setHoveredNodeState(null, 0, 0);
     }
@@ -1255,9 +1266,13 @@ function ThreeScene() {
       camTargetSmoothed.lerp(camTarget, delta * lerpSpeed);
       camera.position.copy(camPosSmoothed);
       camera.lookAt(camTargetSmoothed);
+      camera.updateMatrixWorld();
       camPosSmoothedRef.current.copy(camPosSmoothed);
       camTargetSmoothedRef.current.copy(camTargetSmoothed);
 
+      // Camera motion and pulsing instance transforms continue under a stationary
+      // pointer, so hit testing must use the same frame state that is rendered.
+      if (pointerState.inside) doRaycast(pointerState.clientX, pointerState.clientY);
       renderer.render(scene, camera);
     }
     animate();

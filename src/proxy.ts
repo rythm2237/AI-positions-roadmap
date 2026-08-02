@@ -6,9 +6,11 @@ import {
   sessionCookieOptions,
 } from "@/lib/admin/adminSession";
 import { PUBLIC_BETA } from "@/config/publicBeta";
+import { createServerClient } from "@supabase/ssr";
 
 export async function proxy(request: NextRequest) {
   const pathname = request.nextUrl.pathname;
+  const protectedAccountRoute = pathname === "/dashboard" || pathname.startsWith("/profile") || pathname.startsWith("/onboarding");
   const isPublicIntelligenceRoute =
     pathname.startsWith("/career-intelligence") ||
     pathname.startsWith("/api/career-intelligence") ||
@@ -21,6 +23,28 @@ export async function proxy(request: NextRequest) {
 
   if ((!PUBLIC_BETA.publicCareerIntelligence && isPublicIntelligenceRoute) || isLegacyBetaRoute) {
     return new NextResponse(null, { status: 404 });
+  }
+
+  if (protectedAccountRoute) {
+    const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
+    const publishableKey = process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY;
+    if (!url || !publishableKey) return NextResponse.redirect(new URL("/login?error=configuration", request.url));
+    let accountResponse = NextResponse.next({ request });
+    const supabase = createServerClient(url, publishableKey, { cookies: {
+      getAll: () => request.cookies.getAll(),
+      setAll: (items) => {
+        items.forEach(({ name, value }) => request.cookies.set(name, value));
+        accountResponse = NextResponse.next({ request });
+        items.forEach(({ name, value, options }) => accountResponse.cookies.set(name, value, options));
+      },
+    } });
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) {
+      const login = new URL("/login", request.url);
+      login.searchParams.set("next", `${pathname}${request.nextUrl.search}`);
+      return NextResponse.redirect(login);
+    }
+    return accountResponse;
   }
 
   if (request.nextUrl.pathname === "/admin/login") return NextResponse.next();
@@ -77,5 +101,8 @@ export const config = {
     "/roadmap/:path*",
     "/roadmaps/:path*",
     "/careers/ai-data-engineer/:path*",
+    "/dashboard/:path*",
+    "/profile/:path*",
+    "/onboarding/:path*",
   ],
 };
