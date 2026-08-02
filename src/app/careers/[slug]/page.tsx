@@ -17,10 +17,8 @@ import {
   dataEngineerCareer,
   devOpsEngineerCareer,
 } from "@/data/careers/activation-batch-six";
-import {
-  cloudEngineerCareer,
-  cybersecurityAnalystCareer,
-} from "@/data/careers/activation-batch-seven";
+import { cloudEngineerCareer } from "@/data/careers/activation-batch-seven";
+import { cybersecurityAnalystCareer } from "@/data/careers/cybersecurity-analyst";
 import { getPublishedCareer } from "@/lib/publishedCareerRepository";
 import type { CareerWorkspaceData } from "@/types/careerWorkspace";
 
