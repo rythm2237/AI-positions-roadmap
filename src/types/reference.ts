@@ -23,7 +23,22 @@ export type ReferenceContentType =
   | "guided-module"
   | "hands-on-lab"
   | "exercise-track"
-  | "ctf";
+  | "ctf"
+  | "official-framework"
+  | "guided-learning"
+  | "applied-exercise"
+  | "knowledge-base"
+  | "hands-on-analysis"
+  | "career-path"
+  | "hands-on-learning-path"
+  | "official-publication"
+  | "case-exercise"
+  | "official-project"
+  | "video-tutorials"
+  | "interactive-labs"
+  | "official-course"
+  | "guided-career-path"
+  | "hands-on-lab-path";
 
 export type ReferenceLearningOption = {
   mode: ReferenceLearningMode;

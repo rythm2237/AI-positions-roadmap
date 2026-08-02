@@ -12,6 +12,7 @@ export type CareerResourceType =
   | "Video"
   | "Article"
   | "Course"
+  | "Learning Path"
   | "Documentation"
   | "Practice"
   | "Exam";

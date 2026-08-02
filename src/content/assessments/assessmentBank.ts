@@ -202,4 +202,523 @@ const profiles: Record<string, StageAssessmentProfile> = {
     evidence: "A role matrix spanning automation, Power Platform, integration, AI solutions, and transformation titles",
     firstDecision: "Group vacancies by actual responsibilities and stack rather than relying on job titles alone",
     control: "Verify vacancy source, scope, seniority, and location before tailoring an application",
-    metric: "Relevant recruiter or hiring-manager responses peÛÞº¶‰žËkºwµçM¡¥À…É”Á…ÉÐ½˜ÁÉ½™•ÍÍ¥½¹…°Í½±ÕÑ¥½¸ÅÕ…±¥Ñä¸ˆ°4(€€€€€Ñ½Á¥Œ°4(€€€€€ÁÉ½™¥±”¹É•™•É•¹•%4(€€€€¤°4(€€€ÅÕ•ÍÑ¥½¸ 4(€€€€€€‘íÍÑ…•%‘ôµÄÄÉ€°4(€€€€€]¡¥ •Ù¥‘•¹”‰•ÍÐÍÕÁÁ½ÉÑÌ„‘•¥Í¥½¸µ…‘”‘ÕÉ¥¹œ€‘íÑ½Á¥ôý€°4(€€€€€€‰‘½Õµ•¹Ñ•½µÁ…É¥Í½¸ÕÍ¥¹œÉ•ÅÕ¥É•µ•¹ÑÌ°Ñ•ÍÐÉ•ÍÕ±ÑÌ°É¥Í­Ì°…¹½¹ÍÑÉ…¥¹ÑÌˆ°4(€€€€€l4(€€€€€€€€‰A•ÉÍ½¹…°ÁÉ•™•É•¹”…±½¹”ˆ°4(€€€€€€€€‰Ù•¹‘½È±½¼ˆ°4(€€€€€€€€‰Q¡”¹Õµ‰•È½˜…Ù…¥±…‰±”™•…ÑÕÉ•Ìˆ°4(€€€€€t°4(€€€€€€‰‘•™•¹Í¥‰±”‘•¥Í¥½¸½¹¹•ÑÌÑ¡”Í•±•Ñ•…ÁÁÉ½… Ñ¼•Ù¥‘•¹”…¹½¹ÍÑÉ…¥¹ÑÌ¸ˆ°4(€€€€€Ñ½Á¥Œ°4(€€€€€ÁÉ½™¥±”¹É•™•É•¹•%4(€€€€¤°4(€€€ÅÕ•ÍÑ¥½¸ 4(€€€€€€‘íÍÑ…•%‘ôµÄÄÍ€°4(€€€€€±•…É¹•ÈÉ•Á•…Ñ•‘±äµ¥ÍÍ•Ì½¹”½‰©•Ñ¥Ù”¥¸€‘íÑ½Á¥ô¸]¡…Ð¥ÌÑ¡”µ½ÍÐ•™™•Ñ¥Ù”É•µ•‘¥…Ñ¥½¸ý€°4(€€€€€€‰I•ÑÕÉ¸Ñ¼Ñ¡”•á…ÐÍ½ÕÉ”Í•Ñ¥½¸°‰Õ¥±„™½ÕÍ••á…µÁ±”°…¹Ñ•ÍÐÑ¡”½‰©•Ñ¥Ù”……¥¸ˆ°4(€€€€€l4(€€€€€€€€‰I•Ñ…­”¥µµ•‘¥…Ñ•±äÝ¥Ñ¡½ÕÐÉ•Ù¥•Üˆ°4(€€€€€€€€‰5•µ½É¥é”Ñ¡”½ÁÑ¥½¸Á½Í¥Ñ¥½¸ˆ°4(€€€€€€€€‰M­¥ÀÑ¡”½‰©•Ñ¥Ù”Á•Éµ…¹•¹Ñ±äˆ°4(€€€€€t°4(€€€€€€‰Q…É•Ñ•É•µ•‘¥…Ñ¥½¸…‘‘É•ÍÍ•ÌÑ¡”µ¥ÍÍ•½‰©•Ñ¥Ù”‰•™½É”„™É•Í …ÍÍ•ÍÍµ•¹Ð…ÑÑ•µÁÐ¸ˆ°4(€€€€€Ñ½Á¥Œ°4(€€€€€ÁÉ½™¥±”¹É•™•É•¹•%4(€€€€¤°4(€€€ÅÕ•ÍÑ¥½¸ 4(€€€€€€‘íÍÑ…•%‘ôµÄÄÑ€°4(€€€€€]¡…ÐÍ¡½Õ±‰”É•½É‘•Ý¡•¸½µÁ±•Ñ¥¹œÁÉ…Ñ¥…°Ý½É¬¥¸€‘íÑ½Á¥ôý€°4(€€€€€€‰%¹ÁÕÑÌ°…ÍÍÕµÁÑ¥½¹Ì°‘•¥Í¥½¹Ì°É•ÍÕ±ÑÌ°™…¥±ÕÉ•Ì°…¹Ñ¡”¹•áÐ¥µÁÉ½Ù•µ•¹Ðˆ°4(€€€€€l4(€€€€€€€€‰=¹±äÑ¡”ÍÕ•ÍÍ™Õ°ÍÉ••¹Í¡½Ðˆ°4(€€€€€€€€‰=¹±äÑ¥µ”ÍÁ•¹Ðˆ°4(€€€€€€€€‰=¹±äÑ¡”Ñ½½°±¥ÍÐˆ°4(€€€€€t°4(€€€€€€‰ÕÍ•™Õ°±•…É¹¥¹œÉ•½ÉÁÉ•Í•ÉÙ•Ì‰½Ñ •Ù¥‘•¹”…¹É•…Í½¹¥¹œ¸ˆ°4(€€€€€Ñ½Á¥Œ°4(€€€€€ÁÉ½™¥±”¹É•™•É•¹•%4(€€€€¤°4(€€€ÅÕ•ÍÑ¥½¸ 4(€€€€€€‘íÍÑ…•%‘ôµÄÄÕ€°4(€€€€€]¡¥ ½ÕÑ½µ”µ½ÍÐÍÑÉ½¹±ä¥¹‘¥…Ñ•ÌÉ•…‘¥¹•ÍÌÑ¼½¹Ñ¥¹Õ”‰•å½¹€‘íÑ½Á¥ôý€°4(€€€€€€‰Q¡”±•…É¹•È…¸…ÁÁ±äÑ¡”½‰©•Ñ¥Ù”¥¸„¹•ÜÍ•¹…É¥¼…¹•áÁ±…¥¸Ñ¡”ÑÉ…‘”µ½™™Ìˆ°4(€€€€€l4(€€€€€€€€‰Q¡”±•…É¹•ÈÉ•½¹¥é•ÌÑ¡”Ñ•Éµ¥¹½±½äˆ°4(€€€€€€€€‰Q¡”±•…É¹•È¡…Ì½Á•¹••Ù•Éä±¥¹¬ˆ°4(€€€€€€€€‰Q¡”±•…É¹•È…¸É•Á•…Ð½¹”•á…µÁ±”•á…Ñ±äˆ°4(€€€€€t°4(€€€€€€‰QÉ…¹Í™•ÈÑ¼„¹•ÜÍ•¹…É¥¼¥ÌÍÑÉ½¹•È•Ù¥‘•¹”½˜Õ¹‘•ÉÍÑ…¹‘¥¹œÑ¡…¸É•½¹¥Ñ¥½¸½ÈÉ•Á•Ñ¥Ñ¥½¸¸ˆ°4(€€€€€Ñ½Á¥Œ°4(€€€€€ÁÉ½™¥±”¹É•™•É•¹•%4(€€€€¤°4(€tì4(4(€¥˜€¡ÅÕ•ÍÑ¥½¹Ì¹±•¹Ñ €„ôôII}MQ%=9}EUMQ%=9}A==1}M%i¤ì4(€€€Ñ¡É½Ü¹•ÜÉÉ½È¡áÁ•Ñ•€‘íII}MQ%=9}EUMQ%=9}A==1}M%iôÅÕ•ÍÑ¥½¹Ì™½È€‘íÍÑ…•%‘ô¹€¤ì4(€ô4(4(€É•ÑÕÉ¸ÅÕ•ÍÑ¥½¹Ìì4)ô4(4)•áÁ½ÉÐ™Õ¹Ñ¥½¸É•…Ñ•Q½Á¥ÍÍ•ÍÍµ•¹Ð 4(€ÍÑ…•%èÍÑÉ¥¹œ°4(€Ñ½Á¥ŒèÍÑÉ¥¹œ°4(€Ñ½Á¥%¹‘•àè¹Õµ‰•È°4(€½µÁ±•Ñ¥½¹M¥¹…°èÍÑÉ¥¹œ°4(€½ÕÉÍ•%üèÍÑÉ¥¹œ4(¤è…É••ÉÍÍ•ÍÍµ•¹Ðì4(€½¹ÍÐ…ÍÍ•ÍÍµ•¹ÑM½Á•%€ô€‘íÍÑ…•%‘ôµ½ÕÉÍ”´‘íÑ½Á¥%¹‘•à€¬€Åõ€ì4(€½¹ÍÐÑ½Á¥%€ô½ÕÉÍ•%€üü…ÍÍ•ÍÍµ•¹ÑM½Á•%ì4(€É•ÑÕÉ¸ì4(€€€¥è€‘í…ÍÍ•ÍÍµ•¹ÑM½Á•%‘ôµ…ÍÍ•ÍÍµ•¹Ñ€°4(€€€Ñ¥Ñ±”è€‘íÑ½Á¥ô­¹½Ý±•‘”¡•­€°4(€€€‘•ÍÉ¥ÁÑ¥½¸èÍ¡½ÉÐ­¹½Ý±•‘”¡•¬™½ÕÍ•½¸Ñ¡”Í­¥±±Ì½Ù•É•¥¸€‘íÑ½Á¥ô¹€°4(€€€…ÍÍ•ÍÍµ•¹ÑQåÁ”è€‰Ñ½Á¥Œˆ°4(€€€Ñ½Á¥%°4(€€€Ñ½Á¥1…‰•°èÑ½Á¥Œ°4(€€€Á…ÍÍ¥¹M½É”èII}MMMM59Q}AMM%9}M=I°4(€€€‘ÕÉ…Ñ¥½¹5¥¹ÕÑ•Ìè€ÄÀ°4(€€€ÅÕ•ÍÑ¥½¹ÍA•ÉÑÑ•µÁÐèII}MMMM59Q}EUMQ%=9}=U9P°4(€€€ÅÕ•ÍÑ¥½¹ÌèÉ•…Ñ•M•Ñ¥½¹EÕ•ÍÑ¥½¹Ì 4(€€€€€…ÍÍ•ÍÍµ•¹ÑM½Á•%°4(€€€€€Ñ½Á¥Œ°4(€€€€€½µÁ±•Ñ¥½¹M¥¹…°4(€€€€¤°4(€ôì4)ô4(4)•áÁ½ÉÐ™Õ¹Ñ¥½¸É•…Ñ•A¡…Í•ÍÍ•ÍÍµ•¹Ð 4(€ÍÑ…•%èÍÑÉ¥¹œ°4(€Ñ¥Ñ±”èÍÑÉ¥¹œ°4(€Ñ½Á¥ŒèÍÑÉ¥¹œ4(¤è…É••ÉÍÍ•ÍÍµ•¹Ðì4(€½¹ÍÐÁÉ½™¥±”€ôÁÉ½™¥±•ÍmÍÑ…•%‘tì4(€½¹ÍÐÉ•™•É•¹•%€ôÁÉ½™¥±”ü¹É•™•É•¹•%€üü€‰©½ÕÉ¹•äµ¥‰´µÍ­¥±±Í‰Õ¥±ˆì4(4(€É•ÑÕÉ¸ì4(€€€¥è€‘íÍÑ…•%‘ôµÁ¡…Í”µ•á…µ€°4(€€€Ñ¥Ñ±”°4(€€€‘•ÍÉ¥ÁÑ¥½¸è=É¥¥¹…°…É••È=LÍ•¹…É¥¼…ÍÍ•ÍÍµ•¹Ð…±¥¹•Ý¥Ñ É•ÁÕÑ…‰±”±•…É¹¥¹œ½‰©•Ñ¥Ù•Ì™½È€‘íÑ½Á¥ôì¥Ð¥Ì¹½Ð…¸½™™¥¥…°Ù•¹‘½È•á…´¹€°4(€€€…ÍÍ•ÍÍµ•¹ÑQåÁ”è€‰½µÁÉ•¡•¹Í¥Ù”ˆ°4(€€€Á…ÍÍ¥¹M½É”èII}A!M}MMMM59Q}AMM%9}M=I°4(€€€‘ÕÉ…Ñ¥½¹5¥¹ÕÑ•Ìè€ÈÔ°4(€€€ÅÕ•ÍÑ¥½¹ÍA•ÉÑÑ•µÁÐèII}A!M}MMMM59Q}EUMQ%=9}=U9P°4(€€€ÅÕ•ÍÑ¥½¹Ìèl4(€€€€€ÅÕ•ÍÑ¥½¸ 4(€€€€€€€€‘íÍÑ…•%‘ôµ•á…´µÄÅ€°4(€€€€€€€ÁÉ½Á½Í•€‘íÑ½Á¥ôÍ½±ÕÑ¥½¸Ý½É­Ì¥¸„‘•µ¼‰ÕÐÉ•ÅÕ¥É•µ•¹ÑÌ…É”¥¹½µÁ±•Ñ”¸]¡…Ð¥ÌÑ¡”‰•ÍÐ¹•áÐ…Ñ¥½¸ý€°4(€€€€€€€€‰I•ÑÕÉ¸Ñ¼Ñ¡”Õ¹É•Í½±Ù•É•ÅÕ¥É•µ•¹ÑÌ°‘•™¥¹”…•ÁÑ…¹”É¥Ñ•É¥„°…¹Ñ•ÍÐ„‰½Õ¹‘•Ù•ÉÍ¥½¸ˆ°4(€€€€€€€l4(€€€€€€€€€€‰I•±•…Í”¥µµ•‘¥…Ñ•±ä‰•…ÕÍ”Ñ¡”‘•µ¼ÍÕ••‘•ˆ°4(€€€€€€€€€€‰‘µ½É”Á±…Ñ™½ÉµÌ‰•™½É”½±±•Ñ¥¹œ•Ù¥‘•¹”ˆ°4(€€€€€€€€€€‰I•µ½Ù”Ñ¡”‘½Õµ•¹Ñ•±¥µ¥Ñ…Ñ¥½¹Ìˆ°4(€€€€€€€t°4(€€€€€€€€‰É•‘¥‰±”Í½±ÕÑ¥½¸¥Ì©Õ‘•……¥¹ÍÐ•áÁ±¥¥ÐÉ•ÅÕ¥É•µ•¹ÑÌ…¹É•ÁÉ•Í•¹Ñ…Ñ¥Ù”Ñ•ÍÑÌ¸ˆ°4(€€€€€€€Ñ½Á¥Œ°4(€€€€€€€É•™•É•¹•%4(€€€€€€¤°4(€€€€€ÅÕ•ÍÑ¥½¸ 4(€€€€€€€€‘íÍÑ…•%‘ôµ•á…´µÄÉ€°4(€€€€€€€QÝ¼…ÁÁÉ½…¡•ÌÑ¼€‘íÑ½Á¥ôµ••ÐÑ¡”¡…ÁÁäÁ…Ñ ¸!½ÜÍ¡½Õ±Ñ¡”Ñ•…´¡½½Í”‰•ÑÝ••¸Ñ¡•´ý€°4(€€€€€€€€‰½µÁ…É”Ñ¡•´ÕÍ¥¹œÕÍ•ÈÙ…±Õ”°™…¥±ÕÉ”‰•¡…Ù¥½È°Í•ÕÉ¥Ñä°½ÍÐ°…¹ÍÕÁÁ½ÉÑ…‰¥±¥Ñäˆ°4(€€€€€€€l4(€€€€€€€€€€‰¡½½Í”Ñ¡”…ÁÁÉ½… Ý¥Ñ Ñ¡”±½¹•ÍÐ™•…ÑÕÉ”±¥ÍÐˆ°4(€€€€€€€€€€‰¡½½Í”Ý¡¥¡•Ù•ÈÝ…Ìµ•¹Ñ¥½¹•µ½ÍÐÉ••¹Ñ±ä½¹±¥¹”ˆ°4(€€€€€€€€€€‰%¹½É”½Á•É…Ñ¥½¹…°É•ÅÕ¥É•µ•¹ÑÌÕ¹Ñ¥°…™Ñ•È±…Õ¹ ˆ°4(€€€€€€€t°4(€€€€€€€€‰M•¹…É¥¼…ÍÍ•ÍÍµ•¹ÑÌÉ•Ý…É‘•™•¹Í¥‰±”ÑÉ…‘”µ½™™ÌÉ…Ñ¡•ÈÑ¡…¸Ñ½½°ÁÉ•™•É•¹”¸ˆ°4(€€€€€€€Ñ½Á¥Œ°4(€€€€€€€É•™•É•¹•%4(€€€€€€¤°4(€€€€€ÅÕ•ÍÑ¥½¸ 4(€€€€€€€€‘íÍÑ…•%‘ôµ•á…´µÄÍ€°4(€€€€€€€Ñ•ÍÐ½˜€‘íÑ½Á¥ô™…¥±Ì½¹±ä½¸…¸¥µÁ½ÉÑ…¹Ð•‘”…Í”¸]¡…Ð¥ÌÑ¡”µ½ÍÐÁÉ½™•ÍÍ¥½¹…°É•ÍÁ½¹Í”ý€°4(€€€€€€€€‰I•½ÉÑ¡”™…¥±ÕÉ”°™¥à½ÈÍ…™•±ä¡…¹‘±”¥Ð°…¹…‘Ñ¡”…Í”Ñ¼É•É•ÍÍ¥½¸•Ù…±Õ…Ñ¥½¸ˆ°4(€€€€€€€l4(€€€€€€€€€€‰•±•Ñ”Ñ¡”•‘”…Í”™É½´Ñ¡”•Ù…±Õ…Ñ¥½¸ˆ°4(€€€€€€€€€€‰I•Á½ÉÐ½¹±äÑ¡”…Ù•É…”Í½É”ˆ°4(€€€€€€€€€€‰I•ÑÉäµ…¹Õ…±±äÕ¹Ñ¥°¥ÐÁ…ÍÍ•Ì½¹”ˆ°4(€€€€€€€t°4(€€€€€€€€‰%µÁ½ÉÑ…¹Ð™…¥±ÕÉ•ÌµÕÍÐ‰•½µ”Ù¥Í¥‰±”°¡…¹‘±•°…¹É•Á•…Ñ…‰±äÑ•ÍÑ•¸ˆ°4(€€€€€€€Ñ½Á¥Œ°4(€€€€€€€É•™•É•¹•%4(€€€€€€¤°4(€€€€€ÅÕ•ÍÑ¥½¸ 4(€€€€€€€€‘íÍÑ…•%‘ôµ•á…´µÄÑ€°4(€€€€€€€]¡¥ ‘½Õµ•¹Ñ…Ñ¥½¸¥Ìµ½ÍÐÙ…±Õ…‰±”Ý¡•¸…¹½Ñ¡•ÈÁÉ½™•ÍÍ¥½¹…°¥¹¡•É¥ÑÌÝ½É¬½¸€‘íÑ½Á¥ôý€°4(€€€€€€€€‰AÕÉÁ½Í”°…ÍÍÕµÁÑ¥½¹Ì°…É¡¥Ñ•ÑÕÉ”°‘•¥Í¥½¹Ì°½¹ÑÉ½±Ì°­¹½Ý¸™…¥±ÕÉ•Ì°½Ý¹•ÉÍ¡¥À°…¹É•½Ù•ÉäÍÑ•ÁÌˆ°4(€€€€€€€l4(€€€€€€€€€€‰=¹±ä„ÍÉ••¹Í¡½Ð½˜Ñ¡”™¥¹…°¥¹Ñ•É™…”ˆ°4(€€€€€€€€€€‰=¹±äÑ¡”Á…­…”½È½¹¹•Ñ½È±¥ÍÐˆ°4(€€€€€€€€€€‰ÍÑ…Ñ•µ•¹ÐÑ¡…ÐÑ¡”‘•Í¥¸¥ÌÍ•±˜µ•áÁ±…¹…Ñ½Éäˆ°4(€€€€€€€t°4(€€€€€€€€‰=Á•É…Ñ¥½¹…°‘½Õµ•¹Ñ…Ñ¥½¸ÁÉ•Í•ÉÙ•ÌÑ¡”É•…Í½¹¥¹œ…¹Í…™”µÕÍ”‰½Õ¹‘…É¥•Ì¹••‘•™½Èµ…¥¹Ñ•¹…¹”¸ˆ°4(€€€€€€€Ñ½Á¥Œ°4(€€€€€€€É•™•É•¹•%4(€€€€€€¤°4(€€€€€ÅÕ•ÍÑ¥½¸ 4(€€€€€€€€‘íÍÑ…•%‘ôµ•á…´µÄÕ€°4(€€€€€€€™Ñ•ÈÍ½É¥¹œ‰•±½ÜÑ¡”ÅÕ…±¥™¥…Ñ¥½¸Ñ¡É•Í¡½±¥¸€‘íÑ½Á¥ô°Ý¡…ÐÍ¡½Õ±Ñ¡”±•…É¹•È‘¼ý€°4(€€€€€€€€‰I•Ù¥•ÜÑ¡”µ¥ÍÍ•½‰©•Ñ¥Ù•Ì°É•‰Õ¥±„™½ÕÍ••á…µÁ±”°…¹É•ÑÉäÝ¥Ñ „¹•Ü…ÑÑ•µÁÐˆ°4(€€€€€€€l4(€€€€€€€€€€‰U¹±½¬•Ù•Éä±…Ñ•ÈÍÑ•À…¹åÝ…äˆ°4(€€€€€€€€€€‰5•µ½É¥é”Ñ¡”…¹ÍÝ•ÈÁ½Í¥Ñ¥½¹Ìˆ°4(€€€€€€€€€€‰¡…¹”Ñ¡”ÍÑ½É•É•ÍÕ±Ðµ…¹Õ…±±äˆ°4(€€€€€€€t°4(€€€€€€€€‰ÍÍ•ÍÍµ•¹Ð™…¥±ÕÉ”Í¡½Õ±ÑÉ¥•ÈÑ…É•Ñ•±•…É¹¥¹œ…¹¹•Ü•Ù¥‘•¹”°¹½Ð‰åÁ…ÍÌÑ¡”ÁÉ½É•ÍÍ¥½¸ÉÕ±”¸ˆ°4(€€€€€€€Ñ½Á¥Œ°4(€€€€€€€É•™•É•¹•%4(€€€€€€¤°4(€€€€€€¸¸¹ÉÉ…ä¹™É½´¡ì±•¹Ñ è€ÄÔô°€¡|°½™™Í•Ð¤€ôøì4(€€€€€€€½¹ÍÐ¹Õµ‰•È€ô½™™Í•Ð€¬€Øì4(€€€€€€€½¹ÍÐÍ•¹…É¥½Ì€ôl4(€€€€€€€€€ì4(€€€€€€€€€€€ÁÉ½µÁÐèÍÑ…­•¡½±‘•È…Í­ÌÑ¼•áÁ…¹Ñ¡”€‘íÑ½Á¥ôÍ½±ÕÑ¥½¸‰•™½É”¥ÑÌ‰…Í•±¥¹”¥Ìµ•…ÍÕÉ•¸]¡…ÐÍ¡½Õ±¡…ÁÁ•¸™¥ÉÍÐý€°4(€€€€€€€€€€€½ÉÉ•Ðè€‰5•…ÍÕÉ”Ñ¡”‰…Í•±¥¹”…¹…É•”½¸…•ÁÑ…¹”É¥Ñ•É¥„‰•™½É”•áÁ…¹‘¥¹œÍ½Á”ˆ°4(€€€€€€€€€€€‘¥ÍÑÉ…Ñ½ÉÌèl‰áÁ…¹¥µµ•‘¥…Ñ•±äˆ°€‰I•µ½Ù”Ñ¡”‰…Í•±¥¹”ˆ°€‰5•…ÍÕÉ”½¹±ä™•…ÑÕÉ”½Õ¹Ð‰t°4(€€€€€€€€€€€•áÁ±…¹…Ñ¥½¸è€‰‰…Í•±¥¹”µ…­•Ì¥µÁÉ½Ù•µ•¹Ð…¹ÑÉ…‘”µ½™™Ìµ•…ÍÕÉ…‰±”¸ˆ°4(€€€€€€€€€ô°4(€€€€€€€€€ì4(€€€€€€€€€€€ÁÉ½µÁÐè¸¥µÁ½ÉÑ…¹Ð…ÍÍÕµÁÑ¥½¸¥¸€‘íÑ½Á¥ô¡…Ì¹½Ð‰••¸Ù…±¥‘…Ñ•¸]¡…Ð¥ÌÑ¡”Í…™•ÍÐ‘•¥Í¥½¸ý€°4(€€€€€€€€€€€½ÉÉ•Ðè€‰5…­”Ñ¡”…ÍÍÕµÁÑ¥½¸•áÁ±¥¥Ð…¹Ù…±¥‘…Ñ”¥ÐÝ¥Ñ „‰½Õ¹‘•Ñ•ÍÐ‰•™½É”É•±å¥¹œ½¸¥Ðˆ°4(€€€€€€€€€€€‘¥ÍÑÉ…Ñ½ÉÌèl‰QÉ•…Ð¥Ð…Ì™…Ðˆ°€‰!¥‘”¥Ð™É½´Ñ¡”É•Ù¥•Üˆ°€‰‘µ½É”‘•Á•¹‘•¹¥•Ì‰t°4(€€€€€€€€€€€•áÁ±…¹…Ñ¥½¸è€‰U¹Ù•É¥™¥•…ÍÍÕµÁÑ¥½¹ÌÍ¡½Õ±É•µ…¥¸Ù¥Í¥‰±”…¹‰”Ñ•ÍÑ•‰•™½É”½¹Í•ÅÕ•¹Ñ¥…°ÕÍ”¸ˆ°4(€€€€€€€€€ô°4(€€€€€€€€€ì4(€€€€€€€€€€€ÁÉ½µÁÐè€‘íÑ½Á¥ô¥µÁ±•µ•¹Ñ…Ñ¥½¸Á…ÍÍ•Ì…Ù•É…”µÅÕ…±¥Ñä¡•­Ì‰ÕÐ™…¥±Ì™½È½¹”¡¥ µ¥µÁ…ÐÉ½ÕÀ¸!½ÜÍ¡½Õ±¥Ð‰”•Ù…±Õ…Ñ•ý€°4(€€€€€€€€€€€½ÉÉ•Ðè€‰M•µ•¹ÐÑ¡”É•ÍÕ±ÑÌ°…‘‘É•ÍÌÑ¡”¡¥ µ¥µÁ…Ð™…¥±ÕÉ”°…¹‘•™¥¹”…¸…ÁÁÉ½ÁÉ¥…Ñ”É•±•…Í”…Ñ”ˆ°4(€€€€€€€€€€€‘¥ÍÑÉ…Ñ½ÉÌèl‰I•Á½ÉÐ½¹±äÑ¡”…Ù•É…”ˆ°€‰•±•Ñ”Ñ¡”Í•µ•¹Ðˆ°€‰1½Ý•È•Ù•ÉäÅÕ…±¥Ñä¡•¬‰t°4(€€€€€€€€€€€•áÁ±…¹…Ñ¥½¸è€‰%µÁ½ÉÑ…¹ÐÍ•µ•¹Ñ•™…¥±ÕÉ•Ì…¹¹½Ð‰”¡¥‘‘•¸‰ä…¸…•ÁÑ…‰±”…Ù•É…”¸ˆ°4(€€€€€€€€€ô°4(€€€€€€€€€ì4(€€€€€€€€€€€ÁÉ½µÁÐèQ¡”½Ý¹•È½˜„€‘íÑ½Á¥ô½¹ÑÉ½°¥Ì±•…Ù¥¹œÑ¡”Ñ•…´¸]¡…ÐÁÉ½Ñ•ÑÌ½¹Ñ¥¹Õ¥Ñäý€°4(€€€€€€€€€€€½ÉÉ•Ðè€‰ÍÍ¥¸„¹•Ü½Ý¹•È…¹Ù•É¥™äÑ¡”ÉÕ¹‰½½¬°…•ÍÌ°…±•ÉÑÌ°…¹É•½Ù•ÉäÁÉ½•‘ÕÉ”ˆ°4(€€€€€€€€€€€‘¥ÍÑÉ…Ñ½ÉÌèl‰I•±ä½¸µ•µ½Éäˆ°€‰¥Í…‰±”µ½¹¥Ñ½É¥¹œˆ°€‰I•µ½Ù”Ñ¡”½¹ÑÉ½°‰t°4(€€€€€€€€€€€•áÁ±…¹…Ñ¥½¸è€‰=Á•É…Ñ¥½¹…°½¹ÑÉ½±ÌÉ•ÅÕ¥É”•áÁ±¥¥Ð½Ý¹•ÉÍ¡¥À…¹ÕÍ…‰±”É•½Ù•Éä‘½Õµ•¹Ñ…Ñ¥½¸¸ˆ°4(€€€€€€€€€ô°4(€€€€€€€€€ì4(€€€€€€€€€€€ÁÉ½µÁÐè±½Ý•Èµ½ÍÐ…ÁÁÉ½… Ñ¼€‘íÑ½Á¥ôÁ•É™½ÉµÌ¹•…É±ä…ÌÝ•±°…ÌÑ¡”ÁÉ•™•ÉÉ•½ÁÑ¥½¸¸]¡…Ð¥ÌÑ¡”‰•ÍÐ¡½¥”ÁÉ½•ÍÌý€°4(€€€€€€€€€€€½ÉÉ•Ðè€‰½µÁ…É”ÅÕ…±¥Ñä°É¥Í¬°±…Ñ•¹ä°µ…¥¹Ñ•¹…¹”°…¹Ñ½Ñ…°½ÍÐ……¥¹ÍÐÑ¡”…ÑÕ…°É•ÅÕ¥É•µ•¹Ðˆ°4(€€€€€€€€€€€‘¥ÍÑÉ…Ñ½ÉÌèl‰±Ý…åÌ¡½½Í”Ñ¡”•áÁ•¹Í¥Ù”½ÁÑ¥½¸ˆ°€‰%¹½É”ÅÕ…±¥Ñäˆ°€‰M•±•Ð‰ä‰É…¹É•½¹¥Ñ¥½¸‰t°4(€€€€€€€€€€€•áÁ±…¹…Ñ¥½¸è€‰Q¡”½ÉÉ•ÐÑÉ…‘”µ½™˜‘•Á•¹‘Ì½¸É•ÅÕ¥É•µ•¹ÑÌ…¹Ñ½Ñ…°½Á•É…Ñ¥¹œ¥µÁ…Ð¸ˆ°4(€€€€€€€€€ô°4(€€€€€€€€€ì4(€€€€€€€€€€€ÁÉ½µÁÐèÑ•ÍÐÍ•Ð™½È€‘íÑ½Á¥ô½¹Ñ…¥¹Ì•á…µÁ±•Ì½Á¥•™É½´Ñ¡”‘•Ù•±½Áµ•¹ÐÝ½É¬¸]¡…Ð¥ÌÑ¡”µ…¥¸½¹•É¸ý€°4(€€€€€€€€€€€½ÉÉ•Ðè€‰Q¡”•Ù…±Õ…Ñ¥½¸µ…ä½Ù•ÉÍÑ…Ñ”•¹•É…±¥é…Ñ¥½¸‰•…ÕÍ”Ñ¡”•Ù¥‘•¹”¥Ì¹½ÐÍÕ™™¥¥•¹Ñ±ä¥¹‘•Á•¹‘•¹Ðˆ°4(€€€€€€€€€€€‘¥ÍÑÉ…Ñ½ÉÌèl‰Q¡”Ñ•ÍÐÍ•Ð¥ÌÑ½¼‘½Õµ•¹Ñ•ˆ°€‰Q¡”ÁÉ½©•Ð¡…ÌÑ½¼µ…¹ä½Ý¹•ÉÌˆ°€‰Q¡”¥¹Ñ•É™…”µ…ä‰”Ñ½¼Í¥µÁ±”‰t°4(€€€€€€€€€€€•áÁ±…¹…Ñ¥½¸è€‰Ù…±Õ…Ñ¥½¸•Ù¥‘•¹”Í¡½Õ±É•ÁÉ•Í•¹ÐÕ¹Í••¸½È¥¹‘•Á•¹‘•¹Ñ±äÍ•±•Ñ•…Í•Ì¸ˆ°4(€€€€€€€€€ô°4(€€€€€€€€€ì4(€€€€€€€€€€€ÁÉ½µÁÐè¡…¹”Ñ¼€‘íÑ½Á¥ô¥µÁÉ½Ù•Ì½¹”µ•ÑÉ¥Œ‰ÕÐÝ½ÉÍ•¹Ì„É¥Ñ¥…°Í…™•Ñäµ•…ÍÕÉ”¸]¡…ÐÍ¡½Õ±Ñ¡”Ñ•…´‘¼ý€°4(€€€€€€€€€€€½ÉÉ•Ðè€‰ÁÁ±äÑ¡”…É••Í…™•Ñä…Ñ”…¹¥¹Ù•ÍÑ¥…Ñ”Ñ¡”ÑÉ…‘”µ½™˜‰•™½É”É•±•…Í”ˆ°4(€€€€€€€€€€€‘¥ÍÑÉ…Ñ½ÉÌèl‰I•±•…Í”‰…Í•½¸Ñ¡”¥µÁÉ½Ù•µ•ÑÉ¥Œˆ°€‰MÑ½Àµ•…ÍÕÉ¥¹œÍ…™•Ñäˆ°€‰Ù•É…”Ñ¡”µ•ÑÉ¥ÌÝ¥Ñ¡½ÕÐ½¹Ñ•áÐ‰t°4(€€€€€€€€€€€•áÁ±…¹…Ñ¥½¸è€‰É¥Ñ¥…°É•±•…Í”…Ñ•ÌÍ¡½Õ±¹½Ð‰”½Ù•ÉÉ¥‘‘•¸‰äÕ¹É•±…Ñ•…É•…Ñ”¥µÁÉ½Ù•µ•¹Ð¸ˆ°4(€€€€€€€€€ô°4(€€€€€€€€€ì4(€€€€€€€€€€€ÁÉ½µÁÐè]¡¥ ¡…¹‘½™˜‰•ÍÐÍÕÁÁ½ÉÑÌ…¹½Ñ¡•ÈÁ•ÉÍ½¸µ…¥¹Ñ…¥¹¥¹œ€‘íÑ½Á¥ôý€°4(€€€€€€€€€€€½ÉÉ•Ðè€‰É•ÁÉ½‘Õ¥‰±”Í•ÑÕÀ°‘•¥Í¥½¸É•½É°Ñ•ÍÑÌ°µ½¹¥Ñ½É¥¹œ°­¹½Ý¸±¥µ¥Ñ…Ñ¥½¹Ì°…¹É•½Ù•ÉäÍÑ•ÁÌˆ°4(€€€€€€€€€€€‘¥ÍÑÉ…Ñ½ÉÌèl‰‘•µ¼Ù¥‘•¼½¹±äˆ°€‰Ñ½½°±¥ÍÐ½¹±äˆ°€‰¸Õ¹‘½Õµ•¹Ñ•Ý½É­¥¹œ•¹Ù¥É½¹µ•¹Ð‰t°4(€€€€€€€€€€€•áÁ±…¹…Ñ¥½¸è€‰ÁÉ½™•ÍÍ¥½¹…°¡…¹‘½™˜½Ù•ÉÌÉ•ÁÉ½‘ÕÑ¥½¸°É•…Í½¹¥¹œ°Ù…±¥‘…Ñ¥½¸°…¹½Á•É…Ñ¥½¹Ì¸ˆ°4(€€€€€€€€€ô°4(€€€€€€€€€ì4(€€€€€€€€€€€ÁÉ½µÁÐèÉ•ÅÕ¥É•µ•¹Ð™½È€‘íÑ½Á¥ô½¹™±¥ÑÌÝ¥Ñ ‘…Ñ„µ…•ÍÌÁ½±¥ä¸]¡…Ð¥ÌÑ¡”½ÉÉ•ÐÉ•ÍÁ½¹Í”ý€°4(€€€€€€€€€€€½ÉÉ•Ðè€‰I•‘•Í¥¸Ñ¡”Í½±ÕÑ¥½¸Ý¥Ñ¡¥¸Á½±¥ä½È½‰Ñ…¥¸™½Éµ…°…ÁÁÉ½Ù…°‰•™½É”…•ÍÍ¥¹œÑ¡”‘…Ñ„ˆ°4(€€€€€€€€€€€‘¥ÍÑÉ…Ñ½ÉÌèl‰	åÁ…ÍÌÑ¡”Á½±¥ä™½ÈÑ•ÍÑ¥¹œˆ°€‰UÍ”Á•ÉÍ½¹…°É•‘•¹Ñ¥…±Ìˆ°€‰=µ¥ÐÑ¡”…•ÍÌ™É½´‘½Õµ•¹Ñ…Ñ¥½¸‰t°4(€€€€€€€€€€€•áÁ±…¹…Ñ¥½¸è€‰A½±¥ä…¹…•ÍÌ‰½Õ¹‘…É¥•Ì…É”‘•Í¥¸½¹ÍÑÉ…¥¹ÑÌ°¹½Ð½ÁÑ¥½¹…°¥µÁ±•µ•¹Ñ…Ñ¥½¸‘•Ñ…¥±Ì¸ˆ°4(€€€€€€€€€ô°4(€€€€€€€€€ì4(€€€€€€€€€€€ÁÉ½µÁÐèUÍ•ÉÌÝ½É¬…É½Õ¹„Ñ•¡¹¥…±±äÍÕ•ÍÍ™Õ°€‘íÑ½Á¥ôÍ½±ÕÑ¥½¸¸]¡…ÐÍ¡½Õ±‰”¥¹Ù•ÍÑ¥…Ñ•™¥ÉÍÐý€°4(€€€€€€€€€€€½ÉÉ•Ðè€‰=‰Í•ÉÙ”Ñ¡”É•…°Ý½É­™±½Ü…¹¥‘•¹Ñ¥™äÕÍ…‰¥±¥Ñä°•á•ÁÑ¥½¸°ÑÉÕÍÐ°½È¥¹•¹Ñ¥Ù”…ÁÌˆ°4(€€€€€€€€€€€‘¥ÍÑÉ…Ñ½ÉÌèl‰½É”…‘½ÁÑ¥½¸Ý¥Ñ¡½ÕÐÉ•Ù¥•Üˆ°€‰‘µ½É”‘…Í¡‰½…É‘Ìˆ°€‰½Õ¹Ð‘•Á±½åµ•¹Ð…ÌÍÕ•ÍÌ‰t°4(€€€€€€€€€€€•áÁ±…¹…Ñ¥½¸è€‰‘½ÁÑ¥½¸ÁÉ½‰±•µÌÉ•ÅÕ¥É”•Ù¥‘•¹”™É½´Ñ¡”É•…°½Á•É…Ñ¥¹œÝ½É­™±½Ü¸ˆ°4(€€€€€€€€€ô°4(€€€€€€€€€ì4(€€€€€€€€€€€ÁÉ½µÁÐèÉ•ÑÉä¥¸€‘íÑ½Á¥ô…¸É•Á•…Ð„½¹Í•ÅÕ•¹Ñ¥…°Í¥‘”•™™•Ð¸]¡¥ ½¹ÑÉ½°¥Ìµ½ÍÐ¥µÁ½ÉÑ…¹Ðý€°4(€€€€€€€€€€€½ÉÉ•Ðè€‰UÍ”¥‘•µÁ½Ñ•¹ä½È„‘ÕÉ…‰±”ÍÑ…Ñ”¡•¬‰•™½É”É•Á•…Ñ¥¹œÑ¡”Í¥‘”•™™•Ðˆ°4(€€€€€€€€€€€‘¥ÍÑÉ…Ñ½ÉÌèl‰I•ÑÉä¥¹‘•™¥¹¥Ñ•±äˆ°€‰!¥‘”‘ÕÁ±¥…Ñ”É•½É‘Ìˆ°€‰%¹É•…Í”Á•Éµ¥ÍÍ¥½¹Ì‰t°4(€€€€€€€€€€€•áÁ±…¹…Ñ¥½¸è€‰I•ÑÉ¥•ÌµÕÍÐ¹½Ð‘ÕÁ±¥…Ñ”½¹Í•ÅÕ•¹Ñ¥…°…Ñ¥½¹Ì¸ˆ°4(€€€€€€€€€ô°4(€€€€€€€€€ì4(€€€€€€€€€€€ÁÉ½µÁÐèÉ•Ù¥•Ý•È…¹¹½ÐÉ•ÁÉ½‘Õ”Ñ¡”±…¥µ•É•ÍÕ±Ð™½È€‘íÑ½Á¥ô¸]¡…Ð¥ÌÑ¡”ÍÑÉ½¹•ÍÐ½ÉÉ•Ñ¥½¸ý€°4(€€€€€€€€€€€½ÉÉ•Ðè€‰AÉ½Ù¥‘”Ù•ÉÍ¥½¹•¥¹ÁÕÑÌ°‘•Á•¹‘•¹¥•Ì°¥¹ÍÑÉÕÑ¥½¹Ì°…¹•Ù…±Õ…Ñ¥½¸ÍÑ•ÁÌ°Ñ¡•¸É•ÉÕ¸Ñ¡”É•ÍÕ±Ðˆ°4(€€€€€€€€€€€‘¥ÍÑÉ…Ñ½ÉÌèl‰Í¬Ñ¡”É•Ù¥•Ý•ÈÑ¼ÑÉÕÍÐÑ¡”ÍÉ••¹Í¡½Ðˆ°€‰I•µ½Ù”Ñ¡”±…¥´ˆ°€‰¡…¹”Ñ¡”µ•ÑÉ¥Œ‰t°4(€€€€€€€€€€€•áÁ±…¹…Ñ¥½¸è€‰I•ÁÉ½‘Õ¥‰¥±¥ÑäÑÕÉ¹Ì„É•ÍÕ±Ð¥¹Ñ¼É•‘¥‰±”•Ù¥‘•¹”¸ˆ°4(€€€€€€€€€ô°4(€€€€€€€€€ì4(€€€€€€€€€€€ÁÉ½µÁÐè€‘íÑ½Á¥ôÉ•±•…Í”¡…Ì¹¼‘•™¥¹•É½±±‰…¬¸!½ÜÍ¡½Õ±É•…‘¥¹•ÍÌ‰”©Õ‘•ý€°4(€€€€€€€€€€€½ÉÉ•Ðè€‰QÉ•…ÐÉ•½Ù•Éä…Ì¥¹½µÁ±•Ñ”…¹‘•™¥¹”„Í…™”É½±±‰…¬½È½¹Ñ…¥¹µ•¹ÐÁ±…¸‰•™½É”É•±•…Í”ˆ°4(€€€€€€€€€€€‘¥ÍÑÉ…Ñ½ÉÌèl‰I•±•…Í”‰•…ÕÍ”É½±±‰…¬¥ÌÉ…É•±ä¹••‘•ˆ°€‰¥Í…‰±”…±•ÉÑÌˆ°€‰ÍÍ¥¸É•½Ù•Éä…™Ñ•È…¸¥¹¥‘•¹Ð‰t°4(€€€€€€€€€€€•áÁ±…¹…Ñ¥½¸è€‰M…™”É•½Ù•Éä¥ÌÁ…ÉÐ½˜ÁÉ½‘ÕÑ¥½¸É•…‘¥¹•ÍÌ¸ˆ°4(€€€€€€€€€ô°4(€€€€€€€€€ì4(€€€€€€€€€€€ÁÉ½µÁÐè]¡…Ðµ…­•Ì„±¥µ¥Ñ…Ñ¥½¸ÍÑ…Ñ•µ•¹Ð™½È€‘íÑ½Á¥ôÁÉ½™•ÍÍ¥½¹…±±äÕÍ•™Õ°ý€°4(€€€€€€€€€€€½ÉÉ•Ðè€‰%Ð¹…µ•ÌÑ¡”…™™•Ñ•Í•¹…É¥¼°¥µÁ…Ð°•Ù¥‘•¹”°…¹ÕÉÉ•¹Ðµ¥Ñ¥…Ñ¥½¸ˆ°4(€€€€€€€€€€€‘¥ÍÑÉ…Ñ½ÉÌèl‰%ÐÍ…åÌÉ•ÍÕ±ÑÌµ…äÙ…Éäˆ°€‰%Ð…Ù½¥‘Ì…±°‘•Ñ…¥°ˆ°€‰%Ð‰±…µ•ÌÑ¡”ÕÍ•È‰t°4(€€€€€€€€€€€•áÁ±…¹…Ñ¥½¸è€‰MÁ•¥™¥Œ±¥µ¥Ñ…Ñ¥½¹Ì¡•±ÀÕÍ•ÉÌ…¹µ…¥¹Ñ…¥¹•ÉÌµ…­”Í…™”‘•¥Í¥½¹Ì¸ˆ°4(€€€€€€€€€ô°4(€€€€€€€€€ì4(€€€€€€€€€€€ÁÉ½µÁÐè™Ñ•È½µÁ±•Ñ¥¹œ€‘íÑ½Á¥ô°Ý¡…Ð‰•ÍÐ‘•µ½¹ÍÑÉ…Ñ•ÌÑÉ…¹Í™•É…‰±”Õ¹‘•ÉÍÑ…¹‘¥¹œý€°4(€€€€€€€€€€€½ÉÉ•Ðè€‰M½±Ù¥¹œ„¹•ÜÍ•¹…É¥¼Ý¡¥±”•áÁ±…¥¹¥¹œÉ•ÅÕ¥É•µ•¹ÑÌ°•Ù¥‘•¹”°½¹ÑÉ½±Ì°…¹ÑÉ…‘”µ½™™Ìˆ°4(€€€€€€€€€€€‘¥ÍÑÉ…Ñ½ÉÌèl‰I•Á•…Ñ¥¹œÑ¡”½É¥¥¹…°ÑÕÑ½É¥…°ˆ°€‰I•¥Ñ¥¹œ‘•™¥¹¥Ñ¥½¹Ìˆ°€‰M•±•Ñ¥¹œÑ¡”Í…µ”…¹ÍÝ•È½É‘•È‰t°4(€€€€€€€€€€€•áÁ±…¹…Ñ¥½¸è€‰QÉ…¹Í™•ÈÉ•ÅÕ¥É•Ì…ÁÁ±å¥¹œÑ¡”Õ¹‘•É±å¥¹œ½‰©•Ñ¥Ù•ÌÑ¼„¹•ÜÍ•¹…É¥¼¸ˆ°4(€€€€€€€€€ô°4(€€€€€€€t…Ì½¹ÍÐì4(€€€€€€€½¹ÍÐÍ•¹…É¥¼€ôÍ•¹…É¥½Ím½™™Í•Ñtì4(€€€€€€€É•ÑÕÉ¸ÅÕ•ÍÑ¥½¸ 4(€€€€€€€€€€‘íÍÑ…•%‘ôµ•á…´µÄ‘í¹Õµ‰•Éõ€°4(€€€€€€€€€Í•¹…É¥¼¹ÁÉ½µÁÐ°4(€€€€€€€€€Í•¹…É¥¼¹½ÉÉ•Ð°4(€€€€€€€€€l¸¸¹Í•¹…É¥¼¹‘¥ÍÑÉ…Ñ½ÉÍt…ÌmÍÑÉ¥¹œ°ÍÑÉ¥¹œ°ÍÑÉ¥¹t°4(€€€€€€€€€Í•¹…É¥¼¹•áÁ±…¹…Ñ¥½¸°4(€€€€€€€€€Ñ½Á¥Œ°4(€€€€€€€€€É•™•É•¹•%4(€€€€€€€€¤ì4(€€€€€ô¤°4(€€€t°4(€ôì4)ô4(4)•áÁ½ÉÐ™Õ¹Ñ¥½¸…ÁÁ±å…É••ÉÍÍ•ÍÍµ•¹ÑA½±¥ä 4(€…É••Èè…É••É]½É­ÍÁ…•…Ñ„4(¤è…É••É]½É­ÍÁ…•…Ñ„ì4(€É•ÑÕÉ¸ì4(€€€€¸¸¹…É••È°4(€€€©½ÕÉ¹•åMÑ…•Ìè…É••È¹©½ÕÉ¹•åMÑ…•Ì¹µ…À ¡ÍÑ…”¤€ôøì4(€€€€€½¹ÍÐìÑ•ÍÐè}±•…åMÑ•ÁQ•ÍÐ°€¸¸¹…Ñ¥Ù•MÑ…”ô€ôÍÑ…”ì4(€€€€€É•ÑÕÉ¸ì4(€€€€€€€€¸¸¹…Ñ¥Ù•MÑ…”°4(€€€€€€€Ñ½Á¥ÍÍ•ÍÍµ•¹ÑÌèÍÑ…”¹É•Í½ÕÉ•Ì¹µ…À ¡½ÕÉÍ”°½ÕÉÍ•%¹‘•à¤€ôø4(€€€€€€€€€É•…Ñ•Q½Á¥ÍÍ•ÍÍµ•¹Ð 4(€€€€€€€€€€€ÍÑ…”¹¥°4(€€€€€€€€€€€½ÕÉÍ”¹Ñ¥Ñ±”°4(€€€€€€€€€€€½ÕÉÍ•%¹‘•à°4(€€€€€€€€€€€ÍÑ…”¹ÍÕµµ…Éä°4(€€€€€€€€€€€½ÕÉÍ”¹¥4(€€€€€€€€€€¤4(€€€€€€€€¤°4(€€€€€€€Á¡…Í•á…´èÉ•…Ñ•A¡…Í•ÍÍ•ÍÍµ•¹Ð 4(€€€€€€€€€ÍÑ…”¹¥°4(€€€€€€€€€€‘íÍÑ…”¹Ñ¥Ñ±•ô½µÁÉ•¡•¹Í¥Ù”…ÍÍ•ÍÍµ•¹Ñ€°4(€€€€€€€€€ÍÑ…”¹É•Í½ÕÉ•Ì¹µ…À ¡½ÕÉÍ”¤€ôø½ÕÉÍ”¹Ñ¥Ñ±”¤¹©½¥¸ ˆ°€ˆ¤4(€€€€€€€€¤°4(€€€€€ôì4(€€€ô¤°4(€ôì4)ô4(
+    metric: "Relevant recruiter or hiring-manager responses per evidence-matched application",
+    judgment: "Tailor the most relevant case study instead of sending every project to every role",
+  },
+  "automation-interview": {
+    referenceId: "automation-copilot-studio-docs",
+    evidence: "Mock solution reviews that cover discovery, deterministic versus AI choices, integrations, controls, ROI, and adoption",
+    firstDecision: "Ask about process volume, exceptions, systems, data sensitivity, users, and cost of failure",
+    control: "Define human approval, access boundaries, monitoring, and recovery for consequential automation actions",
+    metric: "Scenario rubric coverage across business value, architecture, reliability, security, and communication",
+    judgment: "Challenge the premise when automation would add more risk or cost than value",
+  },
+  "automation-final-assessment": {
+    referenceId: "automation-owasp-genai",
+    evidence: "A capstone defense proving discovery, architecture, AI boundaries, reliability, governance, value, and supportability",
+    firstDecision: "Audit the proposed solution against business acceptance, security, operations, and ownership criteria",
+    control: "Require evidence for permissions, data handling, evaluation, monitoring, rollback, and incident ownership",
+    metric: "Readiness rubric coverage plus unresolved high-impact risks",
+    judgment: "Do not approve production readiness while a high-impact failure lacks detection and recovery",
+  },
+  "automation-ready": {
+    referenceId: "automation-ms-power-platform-training",
+    evidence: "A sustainable system for targeted applications, feedback review, portfolio improvement, and platform updates",
+    firstDecision: "Use current market feedback to choose the next highest-value evidence or skill improvement",
+    control: "Review platform changes against official documentation before changing a working production pattern",
+    metric: "Application-pipeline progression and portfolio improvements completed per review cycle",
+    judgment: "Keep learning tied to target-role evidence instead of chasing every new automation feature",
+  },
+};
+
+function question(
+  id: string,
+  prompt: string,
+  correct: string,
+  distractors: [string, string, string],
+  explanation: string,
+  topic: string,
+  referenceId: string
+): CareerQuizQuestion {
+  return {
+    id,
+    question: prompt,
+    answers: [correct, ...distractors],
+    correctAnswerIndex: 0,
+    explanation,
+    difficulty: "Intermediate",
+    relatedTopic: topic,
+    learningObjectiveId: `${id}-objective`,
+    skillLevel: "Intermediate",
+    questionType: "multiple-choice",
+    referenceId,
+    status: "active",
+    lastReviewedAt: "2026-07-30",
+    version: 2,
+  };
+}
+
+export function createSectionQuestions(
+  stageId: string,
+  topic: string,
+  completionSignal: string
+): CareerQuizQuestion[] {
+  const profile = profiles[stageId] ?? {
+    referenceId: "journey-ibm-skillsbuild",
+    evidence: completionSignal,
+    firstDecision: "Clarify the goal, constraints, and success criteria before selecting an implementation",
+    control: "Test the important failure cases and document ownership before release",
+    metric: "A measure tied directly to user value and solution quality",
+    judgment: "Choose the simplest supportable approach that satisfies verified requirements",
+  };
+
+  const questions = [
+    question(
+      `${stageId}-q1`,
+      `A reviewer asks for the strongest evidence of competence in ${topic}. Which response is best?`,
+      profile.evidence,
+      [
+        "A list of tools with no linked work",
+        "A course completion screenshot with no applied result",
+        "A claim that the topic was covered informally",
+      ],
+      "Professional qualification requires inspectable evidence, not familiarity claims.",
+      topic,
+      profile.referenceId
+    ),
+    question(
+      `${stageId}-q2`,
+      `You receive an ambiguous scenario involving ${topic}. What should you do first?`,
+      profile.firstDecision,
+      [
+        "Choose the newest platform before clarifying the problem",
+        "Build the full solution and ask for requirements afterward",
+        "Copy an architecture from an unrelated example",
+      ],
+      "Strong exam and workplace judgment begins by resolving the decision that controls the rest of the solution.",
+      topic,
+      profile.referenceId
+    ),
+    question(
+      `${stageId}-q3`,
+      `Which control most directly improves safety and reliability for ${topic}?`,
+      profile.control,
+      [
+        "Hide failures from users and retry forever",
+        "Give every component administrator access",
+        "Depend on manual memory instead of a documented control",
+      ],
+      "The correct control addresses likely failure modes while keeping behavior observable and recoverable.",
+      topic,
+      profile.referenceId
+    ),
+    question(
+      `${stageId}-q4`,
+      `Which measure provides the most useful decision signal for ${topic}?`,
+      profile.metric,
+      [
+        "The number of tools named in the solution",
+        "The total number of dashboard colors",
+        "The number of hours spent without reference to outcome",
+      ],
+      "Useful measures connect evidence or system behavior to the intended outcome.",
+      topic,
+      profile.referenceId
+    ),
+    question(
+      `${stageId}-q5`,
+      `Which statement demonstrates the strongest professional judgment about ${topic}?`,
+      profile.judgment,
+      [
+        "More components always produce a more professional solution",
+        "A successful demo removes the need for evaluation",
+        "Official documentation can be ignored once a tutorial works",
+      ],
+      "Professional judgment balances value, evidence, risk, maintainability, and explicit trade-offs.",
+      topic,
+      profile.referenceId
+    ),
+    question(
+      `${stageId}-q6`,
+      `Before claiming proficiency in ${topic}, what should the learner verify?`,
+      `That the claimed capability is demonstrated by ${completionSignal}`,
+      [
+        "That the tool name appears on the resume",
+        "That one tutorial was watched without practice",
+        "That no limitations are mentioned",
+      ],
+      "A qualification claim should be supported by observable work and a clear completion signal.",
+      topic,
+      profile.referenceId
+    ),
+    question(
+      `${stageId}-q7`,
+      `A first attempt in ${topic} succeeds only on the happy path. What is the best next step?`,
+      "Test boundary, invalid, permission, and recovery scenarios before treating it as reliable",
+      [
+        "Publish it immediately",
+        "Remove error reporting",
+        "Add unrelated features",
+      ],
+      "Reliable work demonstrates how important failure paths are detected and handled.",
+      topic,
+      profile.referenceId
+    ),
+    question(
+      `${stageId}-q8`,
+      `Which review comment is most useful for improving work in ${topic}?`,
+      "A specific observation linked to a requirement, risk, or measurable outcome",
+      [
+        "Make it more impressive",
+        "Use more tools",
+        "It looks fine",
+      ],
+      "Actionable feedback is specific, evidence-based, and connected to the intended outcome.",
+      topic,
+      profile.referenceId
+    ),
+    question(
+      `${stageId}-q9`,
+      `When an official source and an old tutorial disagree about ${topic}, what should guide the implementation?`,
+      "Verify current behavior in the official documentation and record the applicable version",
+      [
+        "Use the oldest source",
+        "Choose the shortest explanation",
+        "Combine both without testing",
+      ],
+      "Current first-party documentation is the stronger source for platform-specific behavior.",
+      topic,
+      profile.referenceId
+    ),
+    question(
+      `${stageId}-q10`,
+      `Which practice best makes progress in ${topic} durable?`,
+      "Apply the concept in a bounded task, review the result, and record what failed and why",
+      [
+        "Repeat the same answer wording",
+        "Collect bookmarks without using them",
+        "Avoid feedback until the end",
+      ],
+      "Application, feedback, and reflection create stronger evidence than passive familiarity.",
+      topic,
+      profile.referenceId
+    ),
+    question(
+      `${stageId}-q11`,
+      `A solution for ${topic} meets the goal but is difficult to maintain. What is the strongest response?`,
+      "Simplify the design or document a justified trade-off with clear ownership",
+      [
+        "Hide the complexity",
+        "Assume future maintainers will understand it",
+        "Add another platform",
+      ],
+      "Maintainability and ownership are part of professional solution quality.",
+      topic,
+      profile.referenceId
+    ),
+    question(
+      `${stageId}-q12`,
+      `Which evidence best supports a decision made during ${topic}?`,
+      "A documented comparison using requirements, test results, risks, and constraints",
+      [
+        "Personal preference alone",
+        "A vendor logo",
+        "The number of available features",
+      ],
+      "A defensible decision connects the selected approach to evidence and constraints.",
+      topic,
+      profile.referenceId
+    ),
+    question(
+      `${stageId}-q13`,
+      `A learner repeatedly misses one objective in ${topic}. What is the most effective remediation?`,
+      "Return to the exact source section, build a focused example, and test the objective again",
+      [
+        "Retake immediately without review",
+        "Memorize the option position",
+        "Skip the objective permanently",
+      ],
+      "Targeted remediation addresses the missed objective before a fresh assessment attempt.",
+      topic,
+      profile.referenceId
+    ),
+    question(
+      `${stageId}-q14`,
+      `What should be recorded when completing practical work in ${topic}?`,
+      "Inputs, assumptions, decisions, results, failures, and the next improvement",
+      [
+        "Only the successful screenshot",
+        "Only time spent",
+        "Only the tool list",
+      ],
+      "A useful learning record preserves both evidence and reasoning.",
+      topic,
+      profile.referenceId
+    ),
+    question(
+      `${stageId}-q15`,
+      `Which outcome most strongly indicates readiness to continue beyond ${topic}?`,
+      "The learner can apply the objective in a new scenario and explain the trade-offs",
+      [
+        "The learner recognizes the terminology",
+        "The learner has opened every link",
+        "The learner can repeat one example exactly",
+      ],
+      "Transfer to a new scenario is stronger evidence of understanding than recognition or repetition.",
+      topic,
+      profile.referenceId
+    ),
+  ];
+
+  if (questions.length !== CAREER_SECTION_QUESTION_POOL_SIZE) {
+    throw new Error(`Expected ${CAREER_SECTION_QUESTION_POOL_SIZE} questions for ${stageId}.`);
+  }
+
+  return questions;
+}
+
+export function createTopicAssessment(
+  stageId: string,
+  topic: string,
+  topicIndex: number,
+  completionSignal: string,
+  courseId?: string
+): CareerAssessment {
+  const assessmentScopeId = `${stageId}-course-${topicIndex + 1}`;
+  const topicId = courseId ?? assessmentScopeId;
+  return {
+    id: `${assessmentScopeId}-assessment`,
+    title: `${topic} knowledge check`,
+    description: `A short knowledge check focused on the skills covered in ${topic}.`,
+    assessmentType: "topic",
+    topicId,
+    topicLabel: topic,
+    passingScore: CAREER_ASSESSMENT_PASSING_SCORE,
+    durationMinutes: 10,
+    questionsPerAttempt: CAREER_ASSESSMENT_QUESTION_COUNT,
+    questions: createSectionQuestions(
+      assessmentScopeId,
+      topic,
+      completionSignal
+    ),
+  };
+}
+
+export function createPhaseAssessment(
+  stageId: string,
+  title: string,
+  topic: string
+): CareerAssessment {
+  const profile = profiles[stageId];
+  const referenceId = profile?.referenceId ?? "journey-ibm-skillsbuild";
+
+  return {
+    id: `${stageId}-phase-exam`,
+    title,
+    description: `Original Career OS scenario assessment aligned with reputable learning objectives for ${topic}; it is not an official vendor exam.`,
+    assessmentType: "comprehensive",
+    passingScore: CAREER_PHASE_ASSESSMENT_PASSING_SCORE,
+    durationMinutes: 25,
+    questionsPerAttempt: CAREER_PHASE_ASSESSMENT_QUESTION_COUNT,
+    questions: [
+      question(
+        `${stageId}-exam-q1`,
+        `A proposed ${topic} solution works in a demo but requirements are incomplete. What is the best next action?`,
+        "Return to the unresolved requirements, define acceptance criteria, and test a bounded version",
+        [
+          "Release immediately because the demo succeeded",
+          "Add more platforms before collecting evidence",
+          "Remove the documented limitations",
+        ],
+        "A credible solution is judged against explicit requirements and representative tests.",
+        topic,
+        referenceId
+      ),
+      question(
+        `${stageId}-exam-q2`,
+        `Two approaches to ${topic} meet the happy path. How should the team choose between them?`,
+        "Compare them using user value, failure behavior, security, cost, and supportability",
+        [
+          "Choose the approach with the longest feature list",
+          "Choose whichever was mentioned most recently online",
+          "Ignore operational requirements until after launch",
+        ],
+        "Scenario assessments reward defensible trade-offs rather than tool preference.",
+        topic,
+        referenceId
+      ),
+      question(
+        `${stageId}-exam-q3`,
+        `A test of ${topic} fails only on an important edge case. What is the most professional response?`,
+        "Record the failure, fix or safely handle it, and add the case to regression evaluation",
+        [
+          "Delete the edge case from the evaluation",
+          "Report only the average score",
+          "Retry manually until it passes once",
+        ],
+        "Important failures must become visible, handled, and repeatably tested.",
+        topic,
+        referenceId
+      ),
+      question(
+        `${stageId}-exam-q4`,
+        `Which documentation is most valuable when another professional inherits work on ${topic}?`,
+        "Purpose, assumptions, architecture, decisions, controls, known failures, ownership, and recovery steps",
+        [
+          "Only a screenshot of the final interface",
+          "Only the package or connector list",
+          "A statement that the design is self-explanatory",
+        ],
+        "Operational documentation preserves the reasoning and safe-use boundaries needed for maintenance.",
+        topic,
+        referenceId
+      ),
+      question(
+        `${stageId}-exam-q5`,
+        `After scoring below the qualification threshold in ${topic}, what should the learner do?`,
+        "Review the missed objectives, rebuild a focused example, and retry with a new attempt",
+        [
+          "Unlock every later step anyway",
+          "Memorize the answer positions",
+          "Change the stored result manually",
+        ],
+        "Assessment failure should trigger targeted learning and new evidence, not bypass the progression rule.",
+        topic,
+        referenceId
+      ),
+      ...Array.from({ length: 15 }, (_, offset) => {
+        const number = offset + 6;
+        const scenarios = [
+          {
+            prompt: `A stakeholder asks to expand the ${topic} solution before its baseline is measured. What should happen first?`,
+            correct: "Measure the baseline and agree on acceptance criteria before expanding scope",
+            distractors: ["Expand immediately", "Remove the baseline", "Measure only feature count"],
+            explanation: "A baseline makes improvement and trade-offs measurable.",
+          },
+          {
+            prompt: `An important assumption in ${topic} has not been validated. What is the safest decision?`,
+            correct: "Make the assumption explicit and validate it with a bounded test before relying on it",
+            distractors: ["Treat it as fact", "Hide it from the review", "Add more dependencies"],
+            explanation: "Unverified assumptions should remain visible and be tested before consequential use.",
+          },
+          {
+            prompt: `A ${topic} implementation passes average-quality checks but fails for one high-impact group. How should it be evaluated?`,
+            correct: "Segment the results, address the high-impact failure, and define an appropriate release gate",
+            distractors: ["Report only the average", "Delete the segment", "Lower every quality check"],
+            explanation: "Important segmented failures cannot be hidden by an acceptable average.",
+          },
+          {
+            prompt: `The owner of a ${topic} control is leaving the team. What protects continuity?`,
+            correct: "Assign a new owner and verify the runbook, access, alerts, and recovery procedure",
+            distractors: ["Rely on memory", "Disable monitoring", "Remove the control"],
+            explanation: "Operational controls require explicit ownership and usable recovery documentation.",
+          },
+          {
+            prompt: `A lower-cost approach to ${topic} performs nearly as well as the preferred option. What is the best choice process?`,
+            correct: "Compare quality, risk, latency, maintenance, and total cost against the actual requirement",
+            distractors: ["Always choose the expensive option", "Ignore quality", "Select by brand recognition"],
+            explanation: "The correct trade-off depends on requirements and total operating impact.",
+          },
+          {
+            prompt: `A test set for ${topic} contains examples copied from the development work. What is the main concern?`,
+            correct: "The evaluation may overstate generalization because the evidence is not sufficiently independent",
+            distractors: ["The test set is too documented", "The project has too many owners", "The interface may be too simple"],
+            explanation: "Evaluation evidence should represent unseen or independently selected cases.",
+          },
+          {
+            prompt: `A change to ${topic} improves one metric but worsens a critical safety measure. What should the team do?`,
+            correct: "Apply the agreed safety gate and investigate the trade-off before release",
+            distractors: ["Release based on the improved metric", "Stop measuring safety", "Average the metrics without context"],
+            explanation: "Critical release gates should not be overridden by unrelated aggregate improvement.",
+          },
+          {
+            prompt: `Which handoff best supports another person maintaining ${topic}?`,
+            correct: "A reproducible setup, decision record, tests, monitoring, known limitations, and recovery steps",
+            distractors: ["A demo video only", "A tool list only", "An undocumented working environment"],
+            explanation: "A professional handoff covers reproduction, reasoning, validation, and operations.",
+          },
+          {
+            prompt: `A requirement for ${topic} conflicts with data-access policy. What is the correct response?`,
+            correct: "Redesign the solution within policy or obtain formal approval before accessing the data",
+            distractors: ["Bypass the policy for testing", "Use personal credentials", "Omit the access from documentation"],
+            explanation: "Policy and access boundaries are design constraints, not optional implementation details.",
+          },
+          {
+            prompt: `Users work around a technically successful ${topic} solution. What should be investigated first?`,
+            correct: "Observe the real workflow and identify usability, exception, trust, or incentive gaps",
+            distractors: ["Force adoption without review", "Add more dashboards", "Count deployment as success"],
+            explanation: "Adoption problems require evidence from the real operating workflow.",
+          },
+          {
+            prompt: `A retry in ${topic} can repeat a consequential side effect. Which control is most important?`,
+            correct: "Use idempotency or a durable state check before repeating the side effect",
+            distractors: ["Retry indefinitely", "Hide duplicate records", "Increase permissions"],
+            explanation: "Retries must not duplicate consequential actions.",
+          },
+          {
+            prompt: `A reviewer cannot reproduce the claimed result for ${topic}. What is the strongest correction?`,
+            correct: "Provide versioned inputs, dependencies, instructions, and evaluation steps, then rerun the result",
+            distractors: ["Ask the reviewer to trust the screenshot", "Remove the claim", "Change the metric"],
+            explanation: "Reproducibility turns a result into credible evidence.",
+          },
+          {
+            prompt: `A ${topic} release has no defined rollback. How should readiness be judged?`,
+            correct: "Treat recovery as incomplete and define a safe rollback or containment plan before release",
+            distractors: ["Release because rollback is rarely needed", "Disable alerts", "Assign recovery after an incident"],
+            explanation: "Safe recovery is part of production readiness.",
+          },
+          {
+            prompt: `What makes a limitation statement for ${topic} professionally useful?`,
+            correct: "It names the affected scenario, impact, evidence, and current mitigation",
+            distractors: ["It says results may vary", "It avoids all detail", "It blames the user"],
+            explanation: "Specific limitations help users and maintainers make safe decisions.",
+          },
+          {
+            prompt: `After completing ${topic}, what best demonstrates transferable understanding?`,
+            correct: "Solving a new scenario while explaining requirements, evidence, controls, and trade-offs",
+            distractors: ["Repeating the original tutorial", "Reciting definitions", "Selecting the same answer order"],
+            explanation: "Transfer requires applying the underlying objectives to a new scenario.",
+          },
+        ] as const;
+        const scenario = scenarios[offset];
+        return question(
+          `${stageId}-exam-q${number}`,
+          scenario.prompt,
+          scenario.correct,
+          [...scenario.distractors] as [string, string, string],
+          scenario.explanation,
+          topic,
+          referenceId
+        );
+      }),
+    ],
+  };
+}
+
+export function applyCareerAssessmentPolicy(
+  career: CareerWorkspaceData
+): CareerWorkspaceData {
+  return {
+    ...career,
+    journeyStages: career.journeyStages.map((stage) => {
+      const { test: _legacyStepTest, ...activeStage } = stage;
+      return {
+        ...activeStage,
+        topicAssessments: stage.resources.map((course, courseIndex) =>
+          createTopicAssessment(
+            stage.id,
+            course.title,
+            courseIndex,
+            stage.summary,
+            course.id
+          )
+        ),
+        phaseExam: createPhaseAssessment(
+          stage.id,
+          `${stage.title} comprehensive assessment`,
+          stage.resources.map((course) => course.title).join(", ")
+        ),
+      };
+    }),
+  };
+}

@@ -1053,21 +1053,54 @@ function ThreeScene() {
     const raycaster = new THREE.Raycaster();
     raycaster.params.Points = { threshold: 0.5 };
     const pointer = new THREE.Vector2();
+    const pointerState = { clientX: 0, clientY: 0, inside: false };
+    const instanceMatrix = new THREE.Matrix4();
+    const instanceCenter = new THREE.Vector3();
+
+    function syncViewport() {
+      const layoutRect = container.getBoundingClientRect();
+      if (layoutRect.width <= 0 || layoutRect.height <= 0) {
+        return renderer.domElement.getBoundingClientRect();
+      }
+
+      const pixelRatio = Math.min(window.devicePixelRatio || 1, 2);
+      const size = renderer.getSize(new THREE.Vector2());
+      const aspect = layoutRect.width / layoutRect.height;
+      if (
+        Math.abs(size.x - layoutRect.width) > 0.5 ||
+        Math.abs(size.y - layoutRect.height) > 0.5 ||
+        renderer.getPixelRatio() !== pixelRatio
+      ) {
+        renderer.setPixelRatio(pixelRatio);
+        renderer.setSize(layoutRect.width, layoutRect.height, true);
+      }
+      if (Math.abs(camera.aspect - aspect) > 0.0001) {
+        camera.aspect = aspect;
+        camera.updateProjectionMatrix();
+      }
+      return renderer.domElement.getBoundingClientRect();
+    }
 
     function doRaycast(clientX: number, clientY: number) {
-      const rect = renderer.domElement.getBoundingClientRect();
+      const rect = syncViewport();
+      if (rect.width <= 0 || rect.height <= 0) return -1;
       pointer.x =  ((clientX - rect.left) / rect.width)  * 2 - 1;
       pointer.y = -((clientY - rect.top)  / rect.height) * 2 + 1;
+      camera.updateMatrixWorld(true);
+      instancedNodes.updateMatrixWorld(true);
       raycaster.setFromCamera(pointer, camera);
       const hits = raycaster.intersectObject(instancedNodes);
       if (hits.length > 0) {
         const idx = hits[0].instanceId ?? -1;
         if (idx >= 0 && idx < allNodesRef.current.length) {
           const node = allNodesRef.current[idx];
-          const sp = hits[0].point.clone().project(camera);
-          const rect2 = renderer.domElement.getBoundingClientRect();
-          const sx = ( sp.x * 0.5 + 0.5) * rect2.width;
-          const sy = (-sp.y * 0.5 + 0.5) * rect2.height;
+          // Project the current rendered instance center. A surface-hit point drifts
+          // visually as the selected instance scales and the camera approaches it.
+          instancedNodes.getMatrixAt(idx, instanceMatrix);
+          instanceCenter.setFromMatrixPosition(instanceMatrix).applyMatrix4(instancedNodes.matrixWorld);
+          const sp = instanceCenter.project(camera);
+          const sx = ( sp.x * 0.5 + 0.5) * rect.width;
+          const sy = (-sp.y * 0.5 + 0.5) * rect.height;
           setHoveredNodeState(node, sx, sy);
           return idx;
         }
@@ -1087,6 +1120,9 @@ function ThreeScene() {
     }
 
     function onPointerMove(e: PointerEvent) {
+      pointerState.clientX = e.clientX;
+      pointerState.clientY = e.clientY;
+      pointerState.inside = true;
       const o = orbitRef.current;
       if (o.isDragging) {
         const dx = e.clientX - o.lastX;
@@ -1134,6 +1170,7 @@ function ThreeScene() {
     }
 
     function onPointerLeave() {
+      pointerState.inside = false;
       orbitRef.current.isDragging = false;
       setHoveredNodeState(null, 0, 0);
     }
@@ -1145,13 +1182,12 @@ function ThreeScene() {
 
     // ── Resize ─────────────────────────────────────────────────────────────
     function onResize() {
-      const nw = container.clientWidth  || window.innerWidth;
-      const nh = container.clientHeight || window.innerHeight;
-      camera.aspect = nw / nh;
-      camera.updateProjectionMatrix();
-      renderer.setSize(nw, nh);
+      syncViewport();
+      if (pointerState.inside) doRaycast(pointerState.clientX, pointerState.clientY);
     }
     window.addEventListener("resize", onResize);
+    const resizeObserver = new ResizeObserver(onResize);
+    resizeObserver.observe(container);
 
     // ── RAF loop ───────────────────────────────────────────────────────────
     let rafId = 0;
@@ -1255,9 +1291,14 @@ function ThreeScene() {
       camTargetSmoothed.lerp(camTarget, delta * lerpSpeed);
       camera.position.copy(camPosSmoothed);
       camera.lookAt(camTargetSmoothed);
+      camera.updateMatrixWorld(true);
+      instancedNodes.updateMatrixWorld(true);
       camPosSmoothedRef.current.copy(camPosSmoothed);
       camTargetSmoothedRef.current.copy(camTargetSmoothed);
 
+      // Camera motion and pulsing instance transforms continue under a stationary
+      // pointer, so hit testing must use the same frame state that is rendered.
+      if (pointerState.inside) doRaycast(pointerState.clientX, pointerState.clientY);
       renderer.render(scene, camera);
     }
     animate();
@@ -1269,6 +1310,7 @@ function ThreeScene() {
       renderer.domElement.removeEventListener("pointerup",    onPointerUp);
       renderer.domElement.removeEventListener("pointerleave", onPointerLeave);
       window.removeEventListener("resize", onResize);
+      resizeObserver.disconnect();
       renderer.dispose();
       if (container.contains(renderer.domElement)) container.removeChild(renderer.domElement);
     };

@@ -4,11 +4,13 @@ import fs from "node:fs";
 const catalog = fs.readFileSync("src/data/careerCatalog.ts", "utf8");
 const landing = fs.readFileSync("src/app/page.tsx", "utf8");
 const header = fs.readFileSync("src/components/landing/Header.tsx", "utf8");
+const compactSearch = fs.readFileSync("src/components/search/CareerSearch.tsx", "utf8");
 const workspace = fs.readFileSync("src/components/career/CareerWorkspace.tsx", "utf8");
 const workspaceNav = fs.readFileSync("src/lib/careerNavigation.ts", "utf8");
 const positions = fs.readFileSync("src/components/landing/CareerPositionsSection.tsx", "utf8");
 const waitlist = fs.readFileSync("src/components/landing/WaitlistSection.tsx", "utf8");
 const world = fs.readFileSync("src/components/opening-scene/World.tsx", "utf8");
+const openingScene = fs.readFileSync("src/components/opening-scene/OpeningScene.tsx", "utf8");
 const proxy = fs.readFileSync("src/proxy.ts", "utf8");
 
 const approvedTitles = ["AI Engineer", "AI Product Manager", "AI Automation Specialist", "Intelligent Automation Engineer", "Microsoft Copilot Consultant", "AI Integration Specialist", "AI Workflow Architect", "AI Solutions Consultant", "AI Transformation Consultant", "Business AI Consultant", "Enterprise AI Consultant", "AI Adoption Consultant", "Data Analyst", "BI Developer", "Data Engineer", "Data Scientist", "AI Knowledge Engineer", "Cloud Engineer", "DevOps Engineer", "Cybersecurity Analyst", "Generative Engine Optimization (GEO) Specialist", "AI Marketing Specialist", "AI Content Strategist"];
@@ -16,12 +18,20 @@ for (const title of approvedTitles) assert.ok(catalog.includes(`"${title}"`), `M
 for (const generic of ["Software Engineer", "Frontend Developer", "Backend Developer", "Full Stack Developer"]) assert.ok(!catalog.includes(`"${generic}"`), `Generic career leaked into catalog: ${generic}`);
 assert.equal(
   (catalog.match(/"available",\s*"\/careers\//g) ?? []).length,
-  3,
-  "AI Engineer, AI Automation Specialist, and AI Integration Specialist should have available public routes",
+  22,
+  "Every active Career should have an available public route",
 );
 assert.match(positions, /CAREER_DOMAINS/);
 assert.match(waitlist, /CAREER_CATALOG/);
 assert.match(world, /CAREER_CATALOG\.map/);
+assert.doesNotMatch(openingScene, /CareerAliasSearch/);
+assert.match(header, /<CareerSearch \/>/);
+assert.match(compactSearch, /event\.ctrlKey \|\| event\.metaKey/);
+assert.match(compactSearch, /event\.key\.toLowerCase\(\) === "k"/);
+assert.match(world, /getBoundingClientRect\(\)/);
+assert.match(world, /new ResizeObserver\(onResize\)/);
+assert.match(world, /instancedNodes\.updateMatrixWorld\(true\)/);
+assert.match(world, /hits\[0\]\.instanceId/);
 assert.doesNotMatch(landing, /CareerIntelligenceSection|PricingPreviewSection/);
 assert.doesNotMatch(header, /Career Market Intelligence|Pricing|CV Analyzer/);
 const publicMenu = header.match(/const PUBLIC_NAV_ITEMS = \[([\s\S]*?)\] as const;/)?.[1] ?? "";
