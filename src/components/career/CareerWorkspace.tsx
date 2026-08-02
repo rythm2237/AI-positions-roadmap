@@ -5,10 +5,17 @@ import Link from "next/link";
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import CareerJourneyEngine from "@/components/career/journey-engine/CareerJourneyEngine";
 import LearningWorkspace from "@/components/career/learning/LearningWorkspace";
+import CareerTitleAliasPanel from "@/components/career/CareerTitleAliasPanel";
 import ReferenceLearningChooser from "@/components/career/resources/ReferenceLearningChooser";
 import { EffortEstimate } from "@/components/career/EffortEstimate";
 import { aiEngineerCareer } from "@/data/careers/ai-engineer";
 import { CAREER_NAV_ITEMS, careerSectionHref } from "@/lib/careerNavigation";
+import { createClient as createSupabaseClient } from "@/lib/supabase/client";
+import {
+  didPassAssessment,
+  isAssessmentQualified,
+  isQualifiedResult,
+} from "@/lib/assessmentPolicy";
 import {
   resolveReference,
   resolveReferenceSegment,
@@ -189,20 +196,20 @@ function allAssessments(
 ): Array<{
   assessment: CareerAssessment;
   stage: CareerJourneyStage;
-  type: "station" | "phase";
+  type: "topic" | "comprehensive";
 }> {
   return career.journeyStages.flatMap((stage) => [
-    {
-      assessment: stage.test,
+    ...(stage.topicAssessments ?? []).map((assessment) => ({
+      assessment,
       stage,
-      type: "station" as const,
-    },
+      type: "topic" as const,
+    })),
     ...(stage.phaseExam
       ? [
           {
             assessment: stage.phaseExam,
             stage,
-            type: "phase" as const,
+            type: "comprehensive" as const,
           },
         ]
       : []),
@@ -212,13 +219,44 @@ function allAssessments(
 function validateJourneyData(career: CareerWorkspaceData): string[] {
   return career.journeyStages.flatMap((stage) => {
     const warnings: string[] = [];
+    const topicAssessments = stage.topicAssessments ?? [];
 
-    if (stage.test.questions.length < 5) {
-      warnings.push(`${stage.title} station test has fewer than 5 questions.`);
+    if (topicAssessments.length !== stage.resources.length) {
+      warnings.push(
+        stage.title + " must provide one topic assessment for every learning resource."
+      );
     }
 
-    if (stage.phaseExam && stage.phaseExam.questions.length < 5) {
-      warnings.push(`${stage.title} phase exam has fewer than 5 questions.`);
+    topicAssessments.forEach((assessment) => {
+      if ((assessment.questionsPerAttempt ?? 0) !== 5) {
+        warnings.push(assessment.title + " must select 5 questions per attempt.");
+      }
+      if (assessment.questions.length < 5) {
+        warnings.push(assessment.title + " has fewer than 5 questions.");
+      }
+      if (assessment.passingScore !== 60) {
+        warnings.push(assessment.title + " must use a 60% passing score.");
+      }
+    });
+
+    if (!stage.phaseExam) {
+      warnings.push(stage.title + " is missing its comprehensive assessment.");
+    } else {
+      if ((stage.phaseExam.questionsPerAttempt ?? 0) !== 20) {
+        warnings.push(
+          stage.title + " comprehensive assessment must select 20 questions."
+        );
+      }
+      if (stage.phaseExam.questions.length < 20) {
+        warnings.push(
+          stage.title + " comprehensive assessment has fewer than 20 questions."
+        );
+      }
+      if (stage.phaseExam.passingScore !== 70) {
+        warnings.push(
+          stage.title + " comprehensive assessment must use a 70% passing score."
+        );
+      }
     }
 
     return warnings;
@@ -321,6 +359,30 @@ export default function CareerWorkspace({
   const [noteDraft, setNoteDraft] = useState("");
   const [noteFilter, setNoteFilter] = useState<CareerNote["contextType"] | "all">("all");
   const [examSession, setExamSession] = useState<ExamSession | null>(null);
+
+  useEffect(() => {
+    const supabase = createSupabaseClient();
+    let active = true;
+    void (async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
+      const { data } = await supabase.from("saved_careers").select("id").eq("career_slug", career.slug).maybeSingle();
+      if (active) setBookmarked(Boolean(data));
+    })();
+    return () => { active = false; };
+  }, [career.slug]);
+
+  async function updateBookmark(value: boolean) {
+    const previous = bookmarked; setBookmarked(value); const supabase = createSupabaseClient();
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) { setBookmarked(previous); window.location.assign(`/login?next=${encodeURIComponent(window.location.pathname + window.location.search)}`); return; }
+    const result = value
+      ? await supabase.from("saved_careers").upsert({ user_id: user.id, career_slug: career.slug }, { onConflict: "user_id,career_slug" })
+      : await supabase.from("saved_careers").delete().eq("user_id", user.id).eq("career_slug", career.slug);
+    if (result.error) { setBookmarked(previous); setActionMessage("Bookmark update failed. Please try again."); return; }
+    if (value) await supabase.from("user_activity").insert({ user_id: user.id, action: "career_saved", metadata: { career_slug: career.slug } });
+    setActionMessage(value ? "Career saved to your dashboard." : "Career removed from saved careers.");
+  }
 
   const stats = useMemo(
     () => getCareerWorkspaceStats(career, progress),
@@ -649,7 +711,7 @@ export default function CareerWorkspace({
                 key="hero"
                 stats={stats}
                 bookmarked={bookmarked}
-                setBookmarked={setBookmarked}
+                setBookmarked={(value) => { void updateBookmark(value); }}
                 copyShareLink={copyShareLink}
                 startLearning={startLearning}
                 startGuidedJourney={startGuidedJourney}
@@ -1014,6 +1076,7 @@ function HeroScene({
           <p className="eyebrow">{career.visual.nodeLabel}</p>
           <h1 className="mt-5 max-w-4xl font-display text-5xl font-semibold leading-none text-white md:text-7xl">{career.title}</h1>
           <p className="mt-5 max-w-2xl text-base leading-7 text-slate-300 md:text-lg">{career.shortDescription}</p>
+          <CareerTitleAliasPanel career={career} />
           <div className="mt-7 flex flex-wrap gap-3">
             <button type="button" onClick={startGuidedJourney} className="btn-primary gap-2">
               <Icon name="map" />
@@ -1723,7 +1786,7 @@ function StationDetailsModal({
             <div className="mt-4 grid gap-3 sm:grid-cols-3">
               <ProgressBar value={getJourneyStageProgress(stage.id, career, progress)} label="Station progress" />
               <EffortEstimate estimate={stage.estimatedEffort} compact />
-              <div className="rounded-xl border border-white/10 bg-white/[0.035] p-3 text-sm text-slate-300">Passing score: {stage.test.passingScore}%</div>
+              <div className="rounded-xl border border-white/10 bg-white/[0.035] p-3 text-sm text-slate-300">Comprehensive passing score: {stage.phaseExam?.passingScore ?? 70}%</div>
             </div>
           </div>
 

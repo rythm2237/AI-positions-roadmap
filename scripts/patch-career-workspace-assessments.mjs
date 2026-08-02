@@ -30,7 +30,7 @@ if (!workspaceSource.includes('from "@/lib/assessmentPolicy"')) {
   );
 }
 
-const legacyBlock = /function allAssessments\([\s\S]*?\n}\n\nfunction shellButton/;
+const legacyBlock = /function allAssessments\([\s\S]*?\r?\n}\r?\n\r?\nfunction shellButton/;
 
 const canonicalBlock = `function allAssessments(
   career: CareerWorkspaceData
@@ -118,16 +118,16 @@ const legacyPassingScore = "Passing score: {stage.test.passingScore}%";
 const canonicalPassingScore =
   "Comprehensive passing score: {stage.phaseExam?.passingScore ?? 70}%";
 
-if (!workspaceSource.includes(legacyPassingScore)) {
+if (workspaceSource.includes(legacyPassingScore)) {
+  workspaceSource = workspaceSource.replace(
+    legacyPassingScore,
+    canonicalPassingScore
+  );
+} else if (!workspaceSource.includes(canonicalPassingScore)) {
   throw new Error(
     "Could not locate the legacy StationDetailsModal passing-score consumer."
   );
 }
-
-workspaceSource = workspaceSource.replace(
-  legacyPassingScore,
-  canonicalPassingScore
-);
 
 const legacyValidation =
   "    if (!stage?.test || !list(stage.test.questions) || !stage.test.questions.length) errors.push(`Journey stage ${index + 1} needs an assessment.`);";
@@ -165,16 +165,16 @@ const canonicalValidation = `    const topicAssessments = stage?.topicAssessment
       }
     }`;
 
-if (!validationSource.includes(legacyValidation)) {
+if (validationSource.includes(legacyValidation)) {
+  validationSource = validationSource.replace(
+    legacyValidation,
+    canonicalValidation
+  );
+} else if (!validationSource.includes("needs topic assessments")) {
   throw new Error(
     "Could not locate the legacy career-content assessment validation."
   );
 }
-
-validationSource = validationSource.replace(
-  legacyValidation,
-  canonicalValidation
-);
 
 fs.writeFileSync(workspacePath, workspaceSource, "utf8");
 fs.writeFileSync(validationPath, validationSource, "utf8");

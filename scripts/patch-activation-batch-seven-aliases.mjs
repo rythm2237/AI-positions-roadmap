@@ -22,8 +22,8 @@ const entries = `
   ],`;
 
 if (!source.includes('"cybersecurity-analyst": [')) {
-  const marker = "\n};\n\nexport function normalizeCareerTitle";
-  if (!source.includes(marker)) throw new Error("Career alias registry marker not found.");
+  const marker = /\r?\n};\r?\n\r?\nexport function normalizeCareerTitle/;
+  if (!marker.test(source)) throw new Error("Career alias registry marker not found.");
   source = source.replace(marker, `${entries}\n};\n\nexport function normalizeCareerTitle`);
   fs.writeFileSync(path, source);
   console.log("Added aliases for Cybersecurity Analyst and Cloud Engineer.");

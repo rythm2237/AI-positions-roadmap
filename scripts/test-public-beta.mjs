@@ -16,8 +16,8 @@ for (const title of approvedTitles) assert.ok(catalog.includes(`"${title}"`), `M
 for (const generic of ["Software Engineer", "Frontend Developer", "Backend Developer", "Full Stack Developer"]) assert.ok(!catalog.includes(`"${generic}"`), `Generic career leaked into catalog: ${generic}`);
 assert.equal(
   (catalog.match(/"available",\s*"\/careers\//g) ?? []).length,
-  3,
-  "AI Engineer, AI Automation Specialist, and AI Integration Specialist should have available public routes",
+  22,
+  "Every active Career should have an available public route",
 );
 assert.match(positions, /CAREER_DOMAINS/);
 assert.match(waitlist, /CAREER_CATALOG/);

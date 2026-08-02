@@ -9,13 +9,14 @@ let validation = fs.readFileSync(validationPath, "utf8");
 const aliasPanelImport =
   'import CareerTitleAliasPanel from "@/components/career/CareerTitleAliasPanel";\n';
 
-if (!workspace.includes(aliasPanelImport)) {
+if (!workspace.includes('from "@/components/career/CareerTitleAliasPanel"')) {
   const importAnchor =
-    'import LearningWorkspace from "@/components/career/learning/LearningWorkspace";\n';
-  if (!workspace.includes(importAnchor)) {
+    /import LearningWorkspace from "@\/components\/career\/learning\/LearningWorkspace";\r?\n/;
+  const importMatch = workspace.match(importAnchor);
+  if (!importMatch) {
     throw new Error("CareerWorkspace alias-panel import anchor was not found.");
   }
-  workspace = workspace.replace(importAnchor, importAnchor + aliasPanelImport);
+  workspace = workspace.replace(importAnchor, importMatch[0] + aliasPanelImport);
 }
 
 const heroAnchor =
@@ -30,14 +31,18 @@ if (!workspace.includes("<CareerTitleAliasPanel career={career} />")) {
 }
 
 const validationImport =
-  'import { getDefaultCareerTitleAliases } from "@/data/careerTitleAliases";\n';
-if (!validation.includes(validationImport)) {
+  'import { getDefaultCareerTitleAliases } from "../data/careerTitleAliases.ts";\n';
+if (!validation.includes("getDefaultCareerTitleAliases } from")) {
   const typeImport =
-    'import type { CareerWorkspaceData } from "@/types/careerWorkspace";\n';
-  if (!validation.includes(typeImport)) {
+    /import type { CareerWorkspaceData } from "@\/types\/careerWorkspace";\r?\n/;
+  const typeImportMatch = validation.match(typeImport);
+  if (!typeImportMatch) {
     throw new Error("Career validation import anchor was not found.");
   }
-  validation = validation.replace(typeImport, typeImport + validationImport);
+  validation = validation.replace(
+    typeImport,
+    typeImportMatch[0] + validationImport
+  );
 }
 
 const aliasValidationAnchor =

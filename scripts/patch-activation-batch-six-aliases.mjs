@@ -46,8 +46,8 @@ const entries = `
   ],`;
 
 if (!source.includes('"bi-developer": [')) {
-  const marker = "\n};\n\nexport function normalizeCareerTitle";
-  if (!source.includes(marker)) throw new Error("Career alias registry marker not found.");
+  const marker = /\r?\n};\r?\n\r?\nexport function normalizeCareerTitle/;
+  if (!marker.test(source)) throw new Error("Career alias registry marker not found.");
   source = source.replace(marker, `${entries}\n};\n\nexport function normalizeCareerTitle`);
   fs.writeFileSync(path, source);
   console.log("Added aliases for BI Developer, AI Knowledge Engineer, Data Engineer, DevOps Engineer, and Business AI Consultant.");
