@@ -21,7 +21,7 @@ jobs:
           ref: ${{ github.head_ref }}
           token: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Reconstruct affected files from clean Git history
+      - name: Restore clean Learning and assessment implementation
         shell: bash
         run: |
           set -euo pipefail
@@ -45,10 +45,22 @@ jobs:
           Path(sys.argv[2]).write_text(text, encoding="utf-8", newline="\n")
           PY
 
-          for path in \
-            "src/data/careers/ai-automation-specialist.ts" \
+          files=(
+            "content/references/reference-catalog.json"
+            "scripts/test-career-assessment-gating.mjs"
+            "scripts/validate-references.mjs"
+            "src/components/career/journey-engine/CareerJourneyEngine.tsx"
+            "src/components/career/learning/LearningWorkspace.tsx"
+            "src/content/assessments/assessmentBank.ts"
+            "src/data/careers/ai-automation-specialist.ts"
+            "src/data/careers/ai-engineer-journey.ts"
             "src/data/careers/ai-engineer.ts"
-          do
+            "src/lib/assessmentPolicy.ts"
+            "src/lib/careerWorkspaceProgress.ts"
+            "src/types/careerWorkspace.ts"
+          )
+
+          for path in "${files[@]}"; do
             git show "$redesign_ref:$path" > "$path"
             python - "$path" <<'PY'
           from pathlib import Path
@@ -57,51 +69,91 @@ jobs:
           text = path.read_text(encoding="utf-8")
           path.write_text(text, encoding="utf-8", newline="\n")
           PY
+            echo "$path restored"
           done
 
-      - name: Restore missing automation interview assessment profile
-        shell: bash
-        run: |
+          git show "origin/main:scripts/test-public-beta.mjs" > scripts/test-public-beta.mjs
+
           python - <<'PY'
           from pathlib import Path
 
-          path = Path("src/content/assessments/assessmentBank.ts")
+          path = Path("src/components/career/CareerWorkspace.tsx")
           text = path.read_text(encoding="utf-8")
-          if '"automation-interview": {' not in text:
-              marker = '  "final-assessment": {'
-              block = '''  "automation-interview": {
-            referenceId: "automation-ms-power-platform-training",
-            evidence: "Recorded automation interviews that explain process discovery, architecture, exception handling, governance, testing, monitoring, and measurable business impact",
-            firstDecision: "Clarify the process, users, systems, constraints, exception paths, data sensitivity, and success measures before proposing an automation design",
-            control: "State assumptions explicitly and include access control, approvals, auditability, monitoring, fallback, and ownership in the solution",
-            metric: "The percentage of mock answers that connect technical decisions to process outcomes, risks, controls, and measurable value",
-            judgment: "Prefer a bounded maintainable automation with clear ownership over a broad demo that cannot be governed or supported",
+          old = '''  return career.journeyStages.flatMap((stage) => [
+    {
+      assessment: stage.test,
+      stage,
+      type: "station" as const,
+    },
+    ...(stage.phaseExam
+      ? [
+          {
+            assessment: stage.phaseExam,
+            stage,
+            type: "phase" as const,
           },
+        ]
+      : []),
+  ]);
 '''
-              if marker not in text:
-                  raise SystemExit("Could not locate final-assessment profile insertion point")
-              text = text.replace(marker, block + marker, 1)
-              path.write_text(text, encoding="utf-8", newline="\n")
-              print("Added automation-interview assessment profile")
-          else:
-              print("automation-interview assessment profile already present")
+          new = '''  return career.journeyStages.flatMap((stage) => {
+    const assessments: Array<{
+      assessment: CareerAssessment;
+      stage: CareerJourneyStage;
+      type: "station" | "phase";
+    }> = [];
+
+    if (stage.test) {
+      assessments.push({
+        assessment: stage.test,
+        stage,
+        type: "station",
+      });
+    }
+
+    if (stage.phaseExam) {
+      assessments.push({
+        assessment: stage.phaseExam,
+        stage,
+        type: "phase",
+      });
+    }
+
+    return assessments;
+  });
+'''
+          if old not in text:
+              raise SystemExit("Could not locate allAssessments implementation")
+          path.write_text(text.replace(old, new, 1), encoding="utf-8", newline="\n")
+          print("Applied type-safe optional assessment narrowing")
           PY
 
-      - name: Verify UTF-8 and conflict-free source
+      - name: Verify restored text files
         shell: bash
         run: |
           python - <<'PY'
           from pathlib import Path
           paths = [
+              Path("content/references/reference-catalog.json"),
+              Path("scripts/test-career-assessment-gating.mjs"),
+              Path("scripts/test-public-beta.mjs"),
+              Path("scripts/validate-references.mjs"),
               Path("src/components/career/CareerWorkspace.tsx"),
-              Path("src/data/careers/ai-automation-specialist.ts"),
-              Path("src/data/careers/ai-engineer.ts"),
+              Path("src/components/career/journey-engine/CareerJourneyEngine.tsx"),
+              Path("src/components/career/learning/LearningWorkspace.tsx"),
               Path("src/content/assessments/assessmentBank.ts"),
+              Path("src/data/careers/ai-automation-specialist.ts"),
+              Path("src/data/careers/ai-engineer-journey.ts"),
+              Path("src/data/careers/ai-engineer.ts"),
+              Path("src/lib/assessmentPolicy.ts"),
+              Path("src/lib/careerWorkspaceProgress.ts"),
+              Path("src/types/careerWorkspace.ts"),
           ]
           for path in paths:
               text = path.read_bytes().decode("utf-8")
               if "<<<<<<<" in text or ">>>>>>>" in text:
                   raise SystemExit(f"Conflict marker remains in {path}")
+          print(f"Verified {len(paths)} restored files")
           PY
 
       - name: Commit restored files
@@ -112,8 +164,8 @@ jobs:
           else
             git config user.name "github-actions[bot]"
             git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-            git add src/components/career/CareerWorkspace.tsx src/data/careers/ai-automation-specialist.ts src/data/careers/ai-engineer.ts src/content/assessments/assessmentBank.ts
-            git commit -m "fix: restore clean Learning assessment implementation"
+            git add content/references/reference-catalog.json scripts/test-career-assessment-gating.mjs scripts/test-public-beta.mjs scripts/validate-references.mjs src/components/career/CareerWorkspace.tsx src/components/career/journey-engine/CareerJourneyEngine.tsx src/components/career/learning/LearningWorkspace.tsx src/content/assessments/assessmentBank.ts src/data/careers/ai-automation-specialist.ts src/data/careers/ai-engineer-journey.ts src/data/careers/ai-engineer.ts src/lib/assessmentPolicy.ts src/lib/careerWorkspaceProgress.ts src/types/careerWorkspace.ts
+            git commit -m "fix: restore complete clean Learning implementation"
             git push origin HEAD:${{ github.head_ref }}
           fi
 
