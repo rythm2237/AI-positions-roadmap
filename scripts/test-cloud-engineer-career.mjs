@@ -2,6 +2,9 @@ import fs from "node:fs";
 
 const career = fs.readFileSync("src/data/careers/cloud-engineer.ts", "utf8");
 const milestones = fs.readFileSync("src/data/milestones/cloud-engineer.ts", "utf8");
+const milestoneRegistry = fs.readFileSync("src/data/milestones/index.ts", "utf8");
+const milestonePreview = fs.readFileSync("src/components/career/learning/MilestonePreviewList.tsx", "utf8");
+const learningWorkspace = fs.readFileSync("src/components/career/learning/LearningWorkspace.tsx", "utf8");
 const requirements = fs.readFileSync("src/data/resource-requirements/cloud-engineer.ts", "utf8");
 const catalog = fs.readFileSync("src/data/careerCatalog.ts", "utf8");
 const mainRoute = fs.readFileSync("src/app/careers/[slug]/page.tsx", "utf8");
@@ -58,6 +61,30 @@ for (const title of [
   if (!milestones.includes(title)) throw new Error(`Missing required granular milestone: ${title}`);
 }
 
+if (!milestoneRegistry.includes('"cloud-engineer": CLOUD_ENGINEER_MILESTONES')) {
+  throw new Error("Cloud Engineer milestones are not registered for UI resolution.");
+}
+if (!learningWorkspace.includes("getCareerMilestones(career.slug)")) {
+  throw new Error("LearningWorkspace does not resolve Career milestones.");
+}
+if (!learningWorkspace.includes("<MilestonePreviewList milestones={milestones} />")) {
+  throw new Error("LearningWorkspace does not render milestone preview cards.");
+}
+for (const requiredUi of [
+  "Learning outcomes",
+  "Required skills",
+  "Practical task",
+  "Assessment scope",
+  "Resource curation pending",
+  "Reading",
+  "Video",
+  "Practice",
+]) {
+  if (!milestonePreview.includes(requiredUi)) {
+    throw new Error(`Milestone preview is missing required UI: ${requiredUi}`);
+  }
+}
+
 if (!requirements.includes("CLOUD_ENGINEER_MILESTONES.map")) {
   throw new Error("Resource requirements must be generated one-to-one from the milestone inventory.");
 }
@@ -96,4 +123,4 @@ if (mainRoute.includes('cloudEngineerCareer } from "@/data/careers/activation-ba
   throw new Error("Cloud Engineer still resolves from the shared activation template.");
 }
 
-console.log("Cloud Engineer validated: ten stages, thirty granular milestones, measurable outcomes, practical evidence, assessment scopes, one-to-one resource requirement contracts, route activation, and no embedded resource URLs.");
+console.log("Cloud Engineer validated: ten stages, thirty rendered granular milestones, measurable outcomes, practical evidence, assessment scopes, pending Reading/Video/Practice states, one-to-one resource requirement contracts, route activation, and no embedded resource URLs.");
