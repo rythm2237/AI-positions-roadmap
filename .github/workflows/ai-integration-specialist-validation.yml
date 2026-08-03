@@ -1,0 +1,28 @@
+name: AI Integration Specialist Validation
+
+on:
+  pull_request:
+    paths:
+      - "src/data/careers/ai-integration-specialist.ts"
+      - "src/data/milestones/ai-integration-specialist.ts"
+      - "src/data/resource-requirements/ai-integration-specialist.ts"
+      - "src/data/milestones/index.ts"
+      - "src/data/careerCatalog.ts"
+      - "src/app/careers/**"
+      - "src/components/career/learning/**"
+      - "scripts/test-ai-integration-specialist-career.mjs"
+      - ".github/workflows/ai-integration-specialist-validation.yml"
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+      - run: npm ci
+      - run: node scripts/test-ai-integration-specialist-career.mjs
+      - run: npm run typecheck
+      - run: npm run build
