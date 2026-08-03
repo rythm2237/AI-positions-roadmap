@@ -1,8 +1,10 @@
 import type { Metadata, Viewport } from "next";
 import type { ReactNode } from "react";
 import AuthDock from "@/components/identity/AuthDock";
+import AuthenticatedWaitlistEnhancer from "@/components/identity/AuthenticatedWaitlistEnhancer";
 import CareerSwitcherDock from "@/components/navigation/CareerSwitcherDock";
 import "./globals.css";
+import "./experience-fixes.css";
 
 export const viewport: Viewport = {
   themeColor: "#03050e",
@@ -53,6 +55,7 @@ export default function RootLayout({ children }: { children: ReactNode }) {
         {children}
         <CareerSwitcherDock />
         <AuthDock />
+        <AuthenticatedWaitlistEnhancer />
       </body>
     </html>
   );
