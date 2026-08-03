@@ -9,6 +9,7 @@ on:
       - "src/data/careers/generative-engine-optimization-specialist.ts"
       - "src/data/learning/**"
       - "src/lib/references/referenceResolver.ts"
+      - "src/types/reference.ts"
       - "src/data/careerCatalog.ts"
       - "src/app/careers/**"
       - "src/app/experience-fixes.css"
