@@ -1,5 +1,6 @@
 import type { Metadata, Viewport } from "next";
 import type { ReactNode } from "react";
+import AnalyticsScripts from "@/components/analytics/AnalyticsScripts";
 import AuthDock from "@/components/identity/AuthDock";
 import AuthenticatedWaitlistEnhancer from "@/components/identity/AuthenticatedWaitlistEnhancer";
 import CareerSwitcherDock from "@/components/navigation/CareerSwitcherDock";
@@ -16,20 +17,9 @@ export const viewport: Viewport = {
 
 export const metadata: Metadata = {
   metadataBase: new URL(seoConfig.siteUrl),
-  title: {
-    default: seoConfig.defaultTitle,
-    template: seoConfig.titleTemplate,
-  },
+  title: { default: seoConfig.defaultTitle, template: seoConfig.titleTemplate },
   description: seoConfig.defaultDescription,
-  keywords: [
-    "AI career",
-    "AI career roadmap",
-    "AI automation career",
-    "data career",
-    "cybersecurity career",
-    "digital transformation career",
-    "AI Career OS",
-  ],
+  keywords: ["AI career", "AI career roadmap", "AI automation career", "data career", "cybersecurity career", "digital transformation career", "AI Career OS"],
   authors: [{ name: seoConfig.productName }],
   creator: seoConfig.productName,
   publisher: seoConfig.productName,
@@ -41,30 +31,13 @@ export const metadata: Metadata = {
     siteName: seoConfig.siteName,
     title: seoConfig.defaultTitle,
     description: seoConfig.defaultDescription,
-    images: [
-      {
-        url: absoluteUrl(seoConfig.defaultOgImage),
-        width: 1200,
-        height: 630,
-        alt: seoConfig.productName,
-      },
-    ],
+    images: [{ url: absoluteUrl(seoConfig.defaultOgImage), width: 1200, height: 630, alt: seoConfig.productName }],
   },
-  twitter: {
-    card: "summary_large_image",
-    title: seoConfig.defaultTitle,
-    description: seoConfig.defaultDescription,
-    images: [absoluteUrl(seoConfig.defaultOgImage)],
-  },
-  robots: {
-    index: isIndexableDeployment,
-    follow: isIndexableDeployment,
-  },
+  twitter: { card: "summary_large_image", title: seoConfig.defaultTitle, description: seoConfig.defaultDescription, images: [absoluteUrl(seoConfig.defaultOgImage)] },
+  robots: { index: isIndexableDeployment, follow: isIndexableDeployment },
   verification: {
     google: process.env.NEXT_PUBLIC_GOOGLE_SITE_VERIFICATION,
-    other: process.env.NEXT_PUBLIC_BING_SITE_VERIFICATION
-      ? { "msvalidate.01": process.env.NEXT_PUBLIC_BING_SITE_VERIFICATION }
-      : undefined,
+    other: process.env.NEXT_PUBLIC_BING_SITE_VERIFICATION ? { "msvalidate.01": process.env.NEXT_PUBLIC_BING_SITE_VERIFICATION } : undefined,
   },
   icons: { icon: "/icon.svg", shortcut: "/icon.svg", apple: "/icon.svg" },
 };
@@ -108,14 +81,11 @@ export default function RootLayout({ children }: { children: ReactNode }) {
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
         {[organizationSchema, websiteSchema, applicationSchema].map((schema) => (
-          <script
-            key={schema["@type"]}
-            type="application/ld+json"
-            dangerouslySetInnerHTML={{ __html: JSON.stringify(schema).replace(/</g, "\\u003c") }}
-          />
+          <script key={schema["@type"]} type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(schema).replace(/</g, "\\u003c") }} />
         ))}
       </head>
       <body className="antialiased">
+        <AnalyticsScripts />
         {children}
         <CareerSwitcherDock />
         <AuthDock />
