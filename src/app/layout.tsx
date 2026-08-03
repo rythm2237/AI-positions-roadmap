@@ -3,6 +3,7 @@ import type { ReactNode } from "react";
 import AuthDock from "@/components/identity/AuthDock";
 import AuthenticatedWaitlistEnhancer from "@/components/identity/AuthenticatedWaitlistEnhancer";
 import CareerSwitcherDock from "@/components/navigation/CareerSwitcherDock";
+import { absoluteUrl, isIndexableDeployment, seoConfig } from "@/lib/seo";
 import "./globals.css";
 import "./experience-fixes.css";
 
@@ -14,42 +15,105 @@ export const viewport: Viewport = {
 };
 
 export const metadata: Metadata = {
-  metadataBase: new URL("https://ai-positions-roadmap.vercel.app"),
+  metadataBase: new URL(seoConfig.siteUrl),
   title: {
-    default: "AI Career OS — Your Personal AI Career Operating System",
-    template: "%s · AI Career OS",
+    default: seoConfig.defaultTitle,
+    template: seoConfig.titleTemplate,
   },
-  description:
-    "Choose a career direction in AI, automation, data, or digital transformation. Follow a practical roadmap, build proof, and prepare for your next role.",
-  keywords: ["AI career", "AI roadmap", "AI engineer path", "AI product manager", "AI automation", "data career", "digital transformation career", "AI Career OS"],
-  authors: [{ name: "AI Career OS" }],
-  creator: "AI Career OS",
+  description: seoConfig.defaultDescription,
+  keywords: [
+    "AI career",
+    "AI career roadmap",
+    "AI automation career",
+    "data career",
+    "cybersecurity career",
+    "digital transformation career",
+    "AI Career OS",
+  ],
+  authors: [{ name: seoConfig.productName }],
+  creator: seoConfig.productName,
+  publisher: seoConfig.productName,
+  alternates: { canonical: absoluteUrl("/") },
   openGraph: {
     type: "website",
-    locale: "en_US",
-    url: "https://ai-positions-roadmap.vercel.app",
-    siteName: "AI Career OS",
-    title: "AI Career OS — Your Personal AI Career Operating System",
-    description: "A personal Career Operating System for AI, Automation & Digital Transformation.",
-    images: [{ url: "/og-image.png", width: 1200, height: 630, alt: "AI Career OS" }],
+    locale: seoConfig.locale,
+    url: absoluteUrl("/"),
+    siteName: seoConfig.siteName,
+    title: seoConfig.defaultTitle,
+    description: seoConfig.defaultDescription,
+    images: [
+      {
+        url: absoluteUrl(seoConfig.defaultOgImage),
+        width: 1200,
+        height: 630,
+        alt: seoConfig.productName,
+      },
+    ],
   },
   twitter: {
     card: "summary_large_image",
-    title: "AI Career OS — Your Personal AI Career Operating System",
-    description: "Choose an AI career direction, follow a practical roadmap, build projects, and prepare credible proof of your skills.",
-    images: ["/og-image.png"],
+    title: seoConfig.defaultTitle,
+    description: seoConfig.defaultDescription,
+    images: [absoluteUrl(seoConfig.defaultOgImage)],
   },
-  robots: { index: true, follow: true },
+  robots: {
+    index: isIndexableDeployment,
+    follow: isIndexableDeployment,
+  },
+  verification: {
+    google: process.env.NEXT_PUBLIC_GOOGLE_SITE_VERIFICATION,
+    other: process.env.NEXT_PUBLIC_BING_SITE_VERIFICATION
+      ? { "msvalidate.01": process.env.NEXT_PUBLIC_BING_SITE_VERIFICATION }
+      : undefined,
+  },
   icons: { icon: "/icon.svg", shortcut: "/icon.svg", apple: "/icon.svg" },
+};
+
+const organizationSchema = {
+  "@context": "https://schema.org",
+  "@type": "Organization",
+  "@id": `${absoluteUrl("/")}#organization`,
+  name: seoConfig.productName,
+  url: absoluteUrl("/"),
+  description: seoConfig.entityDescription,
+  logo: absoluteUrl("/icon.svg"),
+};
+
+const websiteSchema = {
+  "@context": "https://schema.org",
+  "@type": "WebSite",
+  "@id": `${absoluteUrl("/")}#website`,
+  name: seoConfig.siteName,
+  url: absoluteUrl("/"),
+  description: seoConfig.defaultDescription,
+  inLanguage: seoConfig.language,
+  publisher: { "@id": `${absoluteUrl("/")}#organization` },
+};
+
+const applicationSchema = {
+  "@context": "https://schema.org",
+  "@type": "SoftwareApplication",
+  name: seoConfig.productName,
+  url: absoluteUrl("/"),
+  applicationCategory: "EducationalApplication",
+  operatingSystem: "Web",
+  description: seoConfig.entityDescription,
+  publisher: { "@id": `${absoluteUrl("/")}#organization` },
 };
 
 export default function RootLayout({ children }: { children: ReactNode }) {
   return (
-    <html lang="en" className="dark neural-bg" suppressHydrationWarning>
+    <html lang={seoConfig.language} className="dark neural-bg" suppressHydrationWarning>
       <head>
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
-        <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify({ "@context": "https://schema.org", "@type": "Organization", name: "AI Career OS", url: "https://ai-positions-roadmap.vercel.app", description: "A personal Career Operating System for AI, Automation & Digital Transformation." }) }} />
+        {[organizationSchema, websiteSchema, applicationSchema].map((schema) => (
+          <script
+            key={schema["@type"]}
+            type="application/ld+json"
+            dangerouslySetInnerHTML={{ __html: JSON.stringify(schema).replace(/</g, "\\u003c") }}
+          />
+        ))}
       </head>
       <body className="antialiased">
         {children}
