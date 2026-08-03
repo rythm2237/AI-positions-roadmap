@@ -13,7 +13,7 @@ import {
   dataEngineerCareer,
   devOpsEngineerCareer,
 } from "@/data/careers/activation-batch-six";
-import { cloudEngineerCareer } from "@/data/careers/activation-batch-seven";
+import { cloudEngineerCareer } from "@/data/careers/cloud-engineer";
 import { cybersecurityAnalystCareer } from "@/data/careers/cybersecurity-analyst";
 import { generativeEngineOptimizationSpecialistCareer } from "@/data/careers/generative-engine-optimization-specialist";
 import { microsoftCopilotConsultantCareer } from "@/data/careers/microsoft-copilot-consultant-workspace";
