@@ -1,6 +1,7 @@
 import { notFound } from "next/navigation";
 import CareerWorkspace from "@/components/career/CareerWorkspace";
 import { aiIntegrationSpecialistCareer } from "@/data/careers/ai-integration-specialist";
+import { aiTransformationConsultantCareer } from "@/data/careers/ai-transformation-consultant";
 import {
   aiAdoptionConsultantCareer,
   aiMarketingSpecialistCareer,
@@ -23,6 +24,7 @@ import type { CareerWorkspaceData } from "@/types/careerWorkspace";
 
 const builtIn: Record<string, CareerWorkspaceData> = {
   "ai-integration-specialist": aiIntegrationSpecialistCareer,
+  "ai-transformation-consultant": aiTransformationConsultantCareer,
   "ai-adoption-consultant": aiAdoptionConsultantCareer,
   "ai-marketing-specialist": aiMarketingSpecialistCareer,
   "microsoft-copilot-consultant": microsoftCopilotConsultantCareer,
