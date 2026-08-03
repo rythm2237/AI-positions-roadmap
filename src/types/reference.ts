@@ -14,6 +14,8 @@ export type ReferenceContentType =
   | "learning-path"
   | "written-course"
   | "security-guide"
+  | "adoption-guidance"
+  | "credential-guide"
   | "video"
   | "video-course"
   | "video-series"
