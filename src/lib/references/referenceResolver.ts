@@ -1,6 +1,7 @@
 import catalogData from "../../../content/references/reference-catalog.json";
 import cybersecurityCatalogData from "../../../content/references/cybersecurity-reference-catalog.json";
 import cybersecurityStageCatalogData from "../../../content/references/cybersecurity-stage-reference-catalog.json";
+import geoCatalogData from "../../../content/references/geo-reference-catalog.json";
 import type {
   ReferenceLearningOption,
   ReferenceResource,
@@ -12,6 +13,7 @@ const catalog = [
   ...(catalogData as ReferenceResource[]),
   ...(cybersecurityCatalogData as ReferenceResource[]),
   ...(cybersecurityStageCatalogData as ReferenceResource[]),
+  ...(geoCatalogData as ReferenceResource[]),
 ];
 const byId = new Map(catalog.map((item) => [item.id, item]));
 
