@@ -3,6 +3,8 @@
 import { motion, useReducedMotion } from "framer-motion";
 import ReferenceLearningChooser from "@/components/career/resources/ReferenceLearningChooser";
 import { EffortEstimate } from "@/components/career/EffortEstimate";
+import MilestonePreviewList from "@/components/career/learning/MilestonePreviewList";
+import { getCareerMilestones } from "@/data/milestones";
 import { isAssessmentQualified } from "@/lib/assessmentPolicy";
 import {
   getJourneyStageProgress,
@@ -57,6 +59,10 @@ export default function LearningWorkspace({
   const resources = resolveCareerStepReferences(
     current.resources.map((resource) => resource.id),
   );
+  const milestones = getCareerMilestones(career.slug).filter(
+    (milestone) => milestone.stageId === current.id,
+  );
+  const learningItemCount = milestones.length || resources.length;
   const unlocked = isJourneyStageUnlocked(current.id, career, progress);
   const stageProgress = getJourneyStageProgress(current.id, career, progress);
   const previous = career.journeyStages[stageIndex - 1];
@@ -210,77 +216,81 @@ export default function LearningWorkspace({
                 <p className="label-sm text-violet-300">Learn → Watch → Practice → Check</p>
                 <h2 className="mt-2 text-xl font-semibold text-white">Your learning path</h2>
                 <p className="mt-1 text-xs text-slate-500">
-                  Choose Reading, Video, or Practice for each milestone, then complete its knowledge check.
+                  Review each milestone now. Reading, Video, and Practice resources will be mapped in the curation phase.
                 </p>
               </div>
-              <span className="tag">{resources.length} milestones</span>
+              <span className="tag">{learningItemCount} milestones</span>
             </div>
 
             <div className="mt-6 space-y-4">
-              {resources.map((resource, resourceIndex) => {
-                const assessment = (current.topicAssessments ?? []).find(
-                  (item) => item.topicId === resource.id,
-                );
-                const result = assessment
-                  ? progress.assessmentResults[assessment.id]
-                  : undefined;
-                const qualified = Boolean(
-                  assessment && isAssessmentQualified(assessment, result),
-                );
+              {milestones.length > 0 ? (
+                <MilestonePreviewList milestones={milestones} />
+              ) : (
+                resources.map((resource, resourceIndex) => {
+                  const assessment = (current.topicAssessments ?? []).find(
+                    (item) => item.topicId === resource.id,
+                  );
+                  const result = assessment
+                    ? progress.assessmentResults[assessment.id]
+                    : undefined;
+                  const qualified = Boolean(
+                    assessment && isAssessmentQualified(assessment, result),
+                  );
 
-                return (
-                  <motion.div
-                    key={resource.id}
-                    className="overflow-hidden rounded-2xl border border-white/10 bg-[linear-gradient(145deg,rgba(255,255,255,.055),rgba(255,255,255,.018))]"
-                    initial={reduceMotion ? false : { opacity: 0, y: 10 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: resourceIndex * 0.04 }}
-                  >
-                    <div className="p-5">
-                      <div className="flex flex-wrap items-start justify-between gap-3">
-                        <div>
-                          <p className="text-xs uppercase tracking-wider text-violet-300">
-                            {resource.type} · {resource.provider}
-                          </p>
-                          <h3 className="mt-2 text-lg font-semibold text-white">{resource.title}</h3>
-                        </div>
-                        <span className={qualified ? "tag tag-cyan" : "tag"}>
-                          {qualified ? "Completed" : "Choose format"}
-                        </span>
-                      </div>
-                      <p className="mt-2 text-sm leading-6 text-slate-400">{resource.description}</p>
-                      <div className="mt-4">
-                        <ReferenceLearningChooser
-                          resource={resource}
-                          disabled={!unlocked}
-                          onOpen={() => onViewResource(resource.id)}
-                        />
-                      </div>
-                    </div>
-                    <div className="border-t border-white/10 bg-slate-950/45 p-5">
-                      <div className="flex flex-col justify-between gap-3 sm:flex-row sm:items-center">
-                        <div>
-                          <p className="label-sm text-cyan-300">Knowledge check</p>
-                          <p className="mt-1 text-sm text-slate-300">Five questions · 60% required</p>
-                          {result ? (
-                            <p className={`mt-1 text-xs ${qualified ? "text-emerald-300" : "text-rose-300"}`}>
-                              {qualified ? "Passed" : "Review and try again"} · {result.score}%
+                  return (
+                    <motion.div
+                      key={resource.id}
+                      className="overflow-hidden rounded-2xl border border-white/10 bg-[linear-gradient(145deg,rgba(255,255,255,.055),rgba(255,255,255,.018))]"
+                      initial={reduceMotion ? false : { opacity: 0, y: 10 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ delay: resourceIndex * 0.04 }}
+                    >
+                      <div className="p-5">
+                        <div className="flex flex-wrap items-start justify-between gap-3">
+                          <div>
+                            <p className="text-xs uppercase tracking-wider text-violet-300">
+                              {resource.type} · {resource.provider}
                             </p>
-                          ) : null}
+                            <h3 className="mt-2 text-lg font-semibold text-white">{resource.title}</h3>
+                          </div>
+                          <span className={qualified ? "tag tag-cyan" : "tag"}>
+                            {qualified ? "Completed" : "Choose format"}
+                          </span>
                         </div>
-                        <button
-                          type="button"
-                          disabled={!unlocked || !assessment}
-                          onClick={() => assessment && onOpenAssessment(assessment, current.id)}
-                          className="btn-primary min-h-11 disabled:cursor-not-allowed disabled:opacity-40"
-                        >
-                          {qualified ? "Try a new check" : "Start check"}
-                        </button>
+                        <p className="mt-2 text-sm leading-6 text-slate-400">{resource.description}</p>
+                        <div className="mt-4">
+                          <ReferenceLearningChooser
+                            resource={resource}
+                            disabled={!unlocked}
+                            onOpen={() => onViewResource(resource.id)}
+                          />
+                        </div>
                       </div>
-                    </div>
-                  </motion.div>
-                );
-              })}
+                      <div className="border-t border-white/10 bg-slate-950/45 p-5">
+                        <div className="flex flex-col justify-between gap-3 sm:flex-row sm:items-center">
+                          <div>
+                            <p className="label-sm text-cyan-300">Knowledge check</p>
+                            <p className="mt-1 text-sm text-slate-300">Five questions · 60% required</p>
+                            {result ? (
+                              <p className={`mt-1 text-xs ${qualified ? "text-emerald-300" : "text-rose-300"}`}>
+                                {qualified ? "Passed" : "Review and try again"} · {result.score}%
+                              </p>
+                            ) : null}
+                          </div>
+                          <button
+                            type="button"
+                            disabled={!unlocked || !assessment}
+                            onClick={() => assessment && onOpenAssessment(assessment, current.id)}
+                            className="btn-primary min-h-11 disabled:cursor-not-allowed disabled:opacity-40"
+                          >
+                            {qualified ? "Try a new check" : "Start check"}
+                          </button>
+                        </div>
+                      </div>
+                    </motion.div>
+                  );
+                })
+              )}
             </div>
           </article>
 

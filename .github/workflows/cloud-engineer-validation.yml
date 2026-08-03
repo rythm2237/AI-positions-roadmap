@@ -4,7 +4,12 @@ on:
   pull_request:
     paths:
       - "src/data/careers/cloud-engineer.ts"
+      - "src/data/milestones/cloud-engineer.ts"
+      - "src/data/milestones/index.ts"
       - "src/data/resource-requirements/cloud-engineer.ts"
+      - "src/components/career/learning/LearningWorkspace.tsx"
+      - "src/components/career/learning/MilestonePreviewList.tsx"
+      - "src/types/careerMilestone.ts"
       - "src/types/resourceRequirement.ts"
       - "src/data/careerCatalog.ts"
       - "src/app/careers/**"
@@ -12,10 +17,15 @@ on:
       - ".github/workflows/cloud-engineer-validation.yml"
   push:
     branches:
-      - feature/cloud-engineer-career-blueprint
+      - feature/cloud-engineer-learning-milestones
     paths:
       - "src/data/careers/cloud-engineer.ts"
+      - "src/data/milestones/cloud-engineer.ts"
+      - "src/data/milestones/index.ts"
       - "src/data/resource-requirements/cloud-engineer.ts"
+      - "src/components/career/learning/LearningWorkspace.tsx"
+      - "src/components/career/learning/MilestonePreviewList.tsx"
+      - "src/types/careerMilestone.ts"
       - "src/types/resourceRequirement.ts"
       - "src/data/careerCatalog.ts"
       - "src/app/careers/**"
