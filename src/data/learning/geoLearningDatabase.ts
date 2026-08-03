@@ -34,8 +34,8 @@ function resource(input: ResourceInput): ReferenceResource {
   };
 }
 
-const ahrefsAeoCourse = {
-  mode: "video" as const,
+const ahrefsAeoCourse: OptionInput = {
+  mode: "video",
   contentType: "video-course",
   title: "Answer Engine Optimization Course",
   description: "A free, provider-hosted 12-lesson course covering AI-search mechanics, engine differences, prompt research, content optimization, brand mentions, technical AEO, and measurement. No sign-up required.",
@@ -43,12 +43,12 @@ const ahrefsAeoCourse = {
   provider: "Ahrefs Academy",
   durationLabel: "1 hour 26 minutes",
   isOfficial: false,
-  access: "free" as const,
+  access: "free",
   curationReason: "Direct, structured, free training hosted on the provider's own academy; selected ahead of YouTube.",
 };
 
-const hubspotAeoCourse = {
-  mode: "video" as const,
+const hubspotAeoCourse: OptionInput = {
+  mode: "video",
   contentType: "official-course",
   title: "AEO Fundamentals Certification",
   description: "A free seven-lesson certification covering answer-engine visibility, E-E-A-T, keyword and prompt planning, citation-ready page structure, and defensible measurement.",
@@ -56,7 +56,7 @@ const hubspotAeoCourse = {
   provider: "HubSpot Academy",
   durationLabel: "2 hours 20 minutes",
   isOfficial: true,
-  access: "free" as const,
+  access: "free",
 };
 
 export const GEO_LEARNING_DATABASE: ReferenceResource[] = [
@@ -202,7 +202,7 @@ export const GEO_LEARNING_DATABASE: ReferenceResource[] = [
     access: "free",
     durationLabel: "8-12 hours",
     learningOptions: [
-      { mode: "reading", contentType: "pdf", title: "Study the Search Quality Rater Guidelines", description: "Read the sections on page purpose, main-content quality, E-E-A-T, reputation research, YMYL risk, and lowest/highest quality examples.", url: "https://guidelines.raterhub.com/searchqualityevaluatorguidelines.pdf", provider: "Google", durationLabel: "8-12 hours", isOfficial: true, access: "free", verificationSource: "official-pdf" },
+      { mode: "reading", contentType: "official-publication", title: "Study the Search Quality Rater Guidelines", description: "Read the sections on page purpose, main-content quality, E-E-A-T, reputation research, YMYL risk, and lowest/highest quality examples.", url: "https://guidelines.raterhub.com/searchqualityevaluatorguidelines.pdf", provider: "Google", durationLabel: "8-12 hours", isOfficial: true, access: "free", verificationSource: "official-pdf" },
       hubspotAeoCourse,
     ],
   }),
