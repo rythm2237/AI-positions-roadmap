@@ -1,92 +1,173 @@
-import { aiSolutionsConsultantCareer } from "@/data/careers/ai-solutions-consultant";
+import { aiProductManagerCareer as workspaceLayout } from "@/data/careers/ai-product-manager";
 import { applyCareerTitleAliasPolicy } from "@/data/careerTitleAliases";
 import type { CareerJourneyStage, CareerRoadmapPhase, CareerWorkspaceData } from "@/types/careerWorkspace";
 
-const stages = [
-  ["AI Transformation Consulting Orientation", "Transformation Strategy Observatory", "Understand enterprise AI transformation, consulting expectations, executive outcomes, and the evidence required for the role."],
-  ["Enterprise Discovery and Current-State Assessment", "Enterprise Diagnostic Lab", "Assess strategy, processes, data, technology, risk, talent, culture, governance, and adoption readiness."],
-  ["AI Opportunity Portfolio and Value Prioritization", "Opportunity Portfolio Studio", "Identify, size, compare, and sequence AI opportunities using value, feasibility, risk, readiness, and strategic fit."],
-  ["Transformation Strategy and Target Operating Model", "Operating Model Foundry", "Define ambition, principles, capabilities, roles, decision rights, funding, governance, and delivery structure."],
-  ["Technology, Data, and Platform Direction", "Enterprise AI Architecture Forum", "Align platform, data, integration, security, model, vendor, and build-buy-partner decisions with the transformation strategy."],
-  ["Responsible AI, Risk, and Governance", "Responsible AI Council", "Design policy, accountability, risk classification, controls, oversight, audit, and escalation across the portfolio."],
-  ["Adoption, Change, and Workforce Enablement", "Adoption and Capability Hub", "Redesign work, engage leaders, build skills, manage resistance, communicate value, and embed new behaviors."],
-  ["Roadmap, Delivery Governance, and Value Realization", "Transformation Control Tower", "Sequence pilots and scale, manage dependencies, track benefits, resolve blockers, and govern execution."],
-  ["Transformation Capstone and Executive Portfolio", "Executive Transformation Review", "Deliver a complete enterprise AI transformation strategy, operating model, portfolio, roadmap, governance, and value case."],
-  ["Job Search and Consulting Interviews", "Consulting Career Launchpad", "Target transformation, strategy, advisory, adoption, and enterprise AI roles and practice executive case interviews."],
+const slug = "ai-transformation-consultant";
+
+const stageSpecs = [
+  ["AI Transformation Orientation and Role Boundaries","Enterprise Transformation Observatory","Understand the profession, adjacent roles, enterprise transformation system, employer expectations, and evidence standards.",["Role boundaries and consulting scope","Enterprise AI transformation landscape","Professional evidence and career planning"],["Build a responsibility matrix.","Map the enterprise transformation system.","Create a vacancy-to-evidence backlog."]],
+  ["Executive Discovery, Current State, and North Star","Executive Discovery and Diagnostic Studio","Diagnose strategic intent, stakeholder needs, current-state maturity, constraints, and the desired transformation direction.",["Executive and stakeholder discovery","Current-state maturity assessment","North-star and outcome definition"],["Run a discovery cycle.","Produce a current-state assessment.","Write an executive north-star brief."]],
+  ["Opportunity Portfolio and AI Business Cases","AI Opportunity Portfolio Council","Discover, structure, prioritize, and economically justify an enterprise portfolio of AI opportunities.",["Opportunity discovery and use-case framing","Portfolio prioritization","Business cases and benefits ownership"],["Create an opportunity inventory.","Build a prioritization model.","Produce a scenario-based business case."]],
+  ["Target Operating Model, Governance, and Foundations","AI Operating Model Design Authority","Design the organization, decision rights, responsible-AI governance, and enabling data and platform capabilities required for scale.",["Target AI operating model","Responsible AI governance","Data and platform readiness"],["Design a target operating model.","Create a governance framework.","Build a capability dependency map."]],
+  ["Delivery Model, Roadmap, and Program Governance","Transformation Program Control Room","Translate strategy into an executable delivery lifecycle, sequenced roadmap, and decision-effective transformation program.",["AI delivery lifecycle and stage gates","Transformation roadmap design","Program governance and executive reporting"],["Create a governed delivery playbook.","Build an eighteen-month roadmap.","Design program governance."]],
+  ["Change, Adoption, and Workforce Transformation","Workforce and Adoption Enablement Hub","Redesign work, enable adoption, and manage responsible workforce transitions across transformation waves.",["Change-impact assessment","Adoption and enablement strategy","Workforce and capability transformation"],["Complete a change-impact assessment.","Build an adoption strategy.","Create a workforce capability plan."]],
+  ["Value Realization, Scale Decisions, and Assurance","Enterprise Value and Assurance Board","Measure outcomes, govern experimentation and scale, and integrate enterprise risk, assurance, and audit.",["Value-realization framework","Experimentation and scale governance","Risk, assurance, and audit integration"],["Build a value scorecard.","Create a scale-decision framework.","Design an integrated assurance plan."]],
+  ["Leadership Alignment, Narrative, and Trust","Executive Alignment and Trust Forum","Secure leadership decisions, communicate a credible transformation narrative, and address resistance, ethics, and workforce trust.",["Leadership alignment and decision facilitation","Transformation narrative and communications","Resistance, ethics, and workforce trust"],["Facilitate an executive decision workshop.","Create a communication system.","Build a trust and resistance response plan."]],
+  ["Enterprise AI Transformation Capstone","Executive Transformation Review Board","Deliver an integrated enterprise diagnosis, target-state transformation system, roadmap, and executive board defense.",["Enterprise transformation diagnostic","Target-state transformation design","Executive board defense"],["Complete the diagnostic.","Produce the target-state blueprint and roadmap.","Run an executive review."]],
+  ["Portfolio, Job Search, and Transformation Interviews","AI Transformation Career Launchpad","Convert consulting work into credible evidence and target transformation roles by responsibility, industry, seniority, and advisory scope.",["Transformation consulting portfolio","Job-market and employer targeting","Case and executive interviews"],["Publish three redacted case studies.","Build a thirty-role target matrix.","Complete case and executive mock interviews."]],
 ] as const;
 
-const roadmap = [
-  ["Enterprise Discovery Foundations", ["Stakeholders", "Current state", "Process landscape", "Data maturity", "Technology maturity", "Readiness"]],
-  ["Opportunity Portfolio and Strategy", ["Use cases", "Value sizing", "Feasibility", "Risk", "Prioritization", "Strategic ambition"]],
-  ["Operating Model and Governance", ["Capabilities", "Roles", "Decision rights", "Funding", "Responsible AI", "Portfolio governance"]],
-  ["Platform, Adoption, and Workforce", ["Data", "Platforms", "Vendors", "Workflow redesign", "Skills", "Change management"]],
-  ["Roadmap and Transformation Capstone", ["Pilots", "Scaling", "Dependencies", "Benefits", "Capstone", "Executive communication"]],
-  ["Portfolio and Employment", ["Case studies", "Resume", "Title mapping", "Case interviews", "Executive presentation", "Stakeholder defense"]],
+const journeyStages: CareerJourneyStage[] = stageSpecs.map((spec, index) => {
+  const base = workspaceLayout.journeyStages[index] ?? workspaceLayout.journeyStages[0];
+  const order = index + 1;
+  return {
+    ...base,
+    id: `${slug}-stage-${order}`,
+    order,
+    title: spec[0],
+    label: spec[0],
+    landmark: spec[1],
+    theme: spec[0],
+    summary: spec[2],
+    explanation: spec[2],
+    lessons: [...spec[3]],
+    resources: [],
+    tasks: spec[4].map((description, taskIndex) => ({
+      id: `${slug}-stage-${order}-task-${taskIndex + 1}`,
+      title: spec[3][taskIndex],
+      description,
+      type: order === 9 ? "project" : order === 10 ? "job-search" : "lesson",
+    })),
+    topicAssessments: [],
+    phaseExam: base.phaseExam ? {
+      ...base.phaseExam,
+      id: `${slug}-stage-${order}-comprehensive-assessment`,
+      title: `${spec[0]} comprehensive assessment`,
+      description: "A scenario checkpoint covering evidence, enterprise outcomes, trade-offs, governance, adoption, value, risk, and ownership.",
+    } : undefined,
+  };
+});
+
+const roadmapSpecs = [
+  ["Transformation Foundations",["Role boundaries","Enterprise diagnosis","North star","Stakeholder alignment"]],
+  ["Opportunity and Economics",["Opportunity discovery","Portfolio prioritization","Business cases","Benefits ownership"]],
+  ["Enterprise Design",["Operating model","Responsible AI governance","Data and platform foundations","Decision rights"]],
+  ["Execution and Adoption",["Delivery lifecycle","Roadmap","Program governance","Change and workforce"]],
+  ["Value and Capstone",["Value realization","Scale decisions","Assurance","Executive capstone"]],
+  ["Employment Readiness",["Portfolio","Role targeting","Case interviews","Executive communication"]],
 ] as const;
 
-function mapStage(stage: CareerJourneyStage, index: number): CareerJourneyStage {
-  const [title, landmark, summary] = stages[index] ?? stages[stages.length - 1];
-  const topics = ["Diagnostic", "Strategy", "Executive deliverable"];
-  return { ...stage, id: `aitc-${index + 1}-${stage.id}`, title, label: title, landmark, theme: summary, summary, explanation: summary, lessons: topics.map((x) => `${title}: ${x}`), tasks: topics.map((x, i) => ({ id: `aitc-${index + 1}-task-${i + 1}`, title: `${x} artifact`, description: `Create a reviewable ${x.toLowerCase()} artifact for ${title}.`, type: index >= 8 ? "career" : "lesson" })), topicAssessments: stage.topicAssessments?.map((a, i) => ({ ...a, id: `aitc-${index + 1}-topic-${i + 1}`, title: `${title} topic check`, topicLabel: title })), phaseExam: stage.phaseExam ? { ...stage.phaseExam, id: `aitc-${index + 1}-exam`, title: `${title} comprehensive assessment` } : undefined };
-}
+const roadmap: CareerRoadmapPhase[] = roadmapSpecs.map((spec, index) => {
+  const base = workspaceLayout.roadmap[index] ?? workspaceLayout.roadmap[0];
+  return {
+    ...base,
+    id: `${slug}-roadmap-${index + 1}`,
+    phaseNumber: index + 1,
+    title: spec[0],
+    goal: `Build reviewable consulting capability across ${spec[1].join(", ")}.`,
+    sections: [...spec[1]],
+    mentorTip: "Keep recommendations traceable to evidence, enterprise outcomes, stakeholder decisions, dependencies, risk, adoption, ownership, and measurable value.",
+    practicalMissions: [`Produce one executive-ready artifact for ${spec[1][0]}.`,`Facilitate one decision scenario spanning ${spec[1].slice(1).join(", ")}.`],
+    expectedOutcome: `You can diagnose, design, sequence, and defend ${spec[0].toLowerCase()}.`,
+    lessons: base.lessons.map((lesson, lessonIndex) => ({
+      ...lesson,
+      id: `${slug}-roadmap-${index + 1}-lesson-${lessonIndex + 1}`,
+      title: `${spec[1][lessonIndex % spec[1].length]} practice`,
+      summary: `Apply ${spec[1][lessonIndex % spec[1].length]} in an enterprise transformation scenario.`,
+      resources: [],
+      mission: `Create an executive-ready artifact demonstrating ${spec[1][lessonIndex % spec[1].length]}.`,
+    })),
+    quiz: { ...base.quiz, id: `${slug}-roadmap-${index + 1}-quiz`, phaseId: `${slug}-roadmap-${index + 1}`, title: `${spec[0]} checkpoint` },
+  };
+});
 
-function mapRoadmap(phase: CareerRoadmapPhase, index: number): CareerRoadmapPhase {
-  const [title, sections] = roadmap[index] ?? roadmap[roadmap.length - 1];
-  return { ...phase, id: `aitc-roadmap-${index + 1}`, phaseNumber: index + 1, title, goal: `Build practical competence across ${sections.join(", ")}.`, sections: [...sections], mentorTip: "Transformation is not a technology rollout. Link portfolio choices, operating model, governance, adoption, and benefits to measurable enterprise outcomes.", practicalMissions: [`Create one consulting artifact for ${sections[0]}.`, `Validate a recommendation covering ${sections.slice(1, 4).join(", ")}.`], expectedOutcome: `You can diagnose, design, and communicate ${title.toLowerCase()}.`, quiz: { ...phase.quiz, id: `aitc-roadmap-${index + 1}-quiz`, phaseId: `aitc-roadmap-${index + 1}`, title: `${title} checkpoint` }, lessons: phase.lessons.map((lesson, i) => ({ ...lesson, id: `aitc-roadmap-${index + 1}-lesson-${i + 1}`, title: `${sections[i % sections.length]} consulting practice`, summary: `Apply ${sections[i % sections.length]} in an AI transformation scenario.`, mission: `Create evidence for ${sections[i % sections.length]}.` })) };
-}
-
-const base = aiSolutionsConsultantCareer;
 const career: CareerWorkspaceData = {
-  ...base,
-  slug: "ai-transformation-consultant",
+  ...workspaceLayout,
+  slug,
   title: "AI Transformation Consultant",
   category: "Enterprise AI & Consulting",
-  visual: { nodeLabel: "AI Transformation Consultant", sceneTitle: "Enterprise AI Transformation Command Center", sceneDescription: "An enterprise strategy environment connecting opportunity portfolios, operating models, governance, platforms, workforce adoption, delivery roadmaps, and value realization.", imageAlt: "AI transformation consulting workspace showing enterprise assessment, use-case portfolio, operating model, governance, adoption, and roadmap." },
-  shortDescription: "Help organizations define, govern, deliver, adopt, and scale AI transformation through strategy, prioritized portfolios, operating models, responsible AI, workforce change, and measurable value realization.",
+  visual: {
+    nodeLabel: "AI Transformation Consultant",
+    sceneTitle: "Enterprise AI Transformation Command Center",
+    sceneDescription: "An executive environment connecting strategy, portfolio, governance, operating model, delivery, adoption, workforce, value, and assurance.",
+    imageAlt: "AI Transformation Consultant career journey across enterprise strategy and organizational change.",
+  },
+  shortDescription: "Guide enterprises from fragmented AI activity to a governed, executable, adopted, and measurable transformation through diagnosis, opportunity portfolios, operating models, roadmaps, workforce change, and value realization.",
   difficulty: "Advanced",
-  estimatedLearningTime: "9-14 months part-time",
-  salary: "Varies by market, consulting seniority, industry expertise, and enterprise scope",
-  hiringDemand: "Strong across consulting, enterprise strategy, digital transformation, technology advisory, and AI adoption programs",
-  remoteAvailability: "Medium to High; stakeholder discovery and executive work often require hybrid delivery",
-  aiCompatibilityScore: "97%",
-  bestFor: ["Management and technology consultants", "Digital transformation professionals", "AI solutions consultants", "Product and program leaders", "Business architects", "Change and adoption specialists"],
-  programmingRequirement: "Low to Moderate: sufficient technical fluency to evaluate platforms, data, integrations, feasibility, and delivery risk",
-  mathRequirement: "Moderate: value sizing, scenario analysis, portfolio economics, benefits tracking, and prioritization",
-  creativityLevel: "High", communicationLevel: "Very High", lastUpdated: "2026-08-01",
+  estimatedLearningTime: "10-15 months part-time",
+  salary: "Varies by country, consulting seniority, industry, and transformation scope",
+  hiringDemand: "Growing across consulting firms, technology providers, and enterprises scaling AI beyond pilots",
+  remoteAvailability: "Moderate to High, with frequent stakeholder workshops and executive engagement",
+  aiCompatibilityScore: "96%",
+  bestFor: ["Enterprise systems thinkers","Strategic problem solvers","Cross-functional facilitators","People comfortable with executives, ambiguity, and change"],
+  programmingRequirement: "Low: technical literacy is essential, but the role focuses on enterprise design, decisions, governance, and change",
+  mathRequirement: "Moderate: business cases, scenario analysis, portfolio scoring, metrics, and value realization",
+  creativityLevel: "High",
+  communicationLevel: "Very High",
+  lastUpdated: "2026-08-03",
   metrics: [
-    { label: "Primary outcome", value: "Enterprise value from AI", detail: "A governed portfolio translated into adopted capabilities and measurable outcomes." },
-    { label: "Consulting scope", value: "Strategy to scale", detail: "Discovery, portfolio, operating model, governance, adoption, roadmap, and benefits." },
-    { label: "Core artifact", value: "Transformation blueprint", detail: "A decision-ready target state with ownership, sequencing, investment, and controls." },
-    { label: "Success principle", value: "Adoption over pilots", detail: "Transformation succeeds when work, decisions, skills, and outcomes change sustainably." },
+    { label: "Primary outcome", value: "Enterprise change", detail: "AI strategy becomes governed operating capability and measurable business value." },
+    { label: "Core evidence", value: "Executive-ready artifacts", detail: "Diagnostics, portfolios, operating models, governance, roadmaps, and value systems remain reviewable." },
+    { label: "Operating focus", value: "Transformation system", detail: "Strategy, technology, organization, risk, adoption, workforce, and value move together." },
+    { label: "Professional standard", value: "Evidence and accountability", detail: "Recommendations expose assumptions, trade-offs, owners, decisions, risks, and outcomes." },
   ],
   overview: {
     title: "What does an AI Transformation Consultant do?",
-    body: "An AI Transformation Consultant helps leaders move from isolated AI experiments to a coherent enterprise transformation. The role diagnoses readiness, prioritizes opportunities, defines the target operating model and governance, aligns technology and data direction, leads adoption planning, and establishes delivery and value-realization mechanisms.",
-    responsibilities: ["Assess enterprise AI readiness and current state", "Facilitate executive and stakeholder discovery", "Build and prioritize AI opportunity portfolios", "Define transformation strategy and target operating model", "Recommend platform, data, vendor, and sourcing direction", "Design responsible-AI and portfolio governance", "Plan workforce enablement and change adoption", "Create roadmaps, investment cases, and delivery governance", "Track benefits, risk, and executive decisions"],
-    industries: ["Consulting", "Financial services", "Retail", "Manufacturing", "Healthcare", "Public sector", "Telecommunications", "Professional services"],
+    body: "An AI Transformation Consultant helps organizations move from isolated AI experiments to coordinated enterprise change. The role diagnoses current state, aligns leaders, prioritizes opportunities, designs operating models and governance, sequences delivery and foundations, plans adoption and workforce change, integrates assurance, and establishes measurable value realization.",
+    responsibilities: [
+      "Conduct executive discovery and enterprise AI maturity assessments",
+      "Define transformation north stars and measurable outcomes",
+      "Build and prioritize enterprise AI opportunity portfolios",
+      "Create business cases and benefits ownership models",
+      "Design target operating models and responsible-AI governance",
+      "Align data, platform, architecture, security, and assurance foundations",
+      "Build delivery lifecycles, roadmaps, and program governance",
+      "Lead adoption, workforce capability, leadership alignment, and value realization",
+    ],
+    industries: ["Professional services","Financial services","Retail","Manufacturing","Healthcare","Public sector","Technology","Telecommunications"],
   },
-  journeyMap: { ...base.journeyMap, theme: "tech-city", overviewTitle: "AI Transformation Consultant Journey", overviewDescription: "Progress from enterprise diagnosis through opportunity portfolios, strategy, operating model, governance, platform direction, adoption, delivery, executive capstone, and employment." },
-  journeyStages: base.journeyStages.map(mapStage),
-  roadmap: base.roadmap.map(mapRoadmap),
+  journeyMap: { ...workspaceLayout.journeyMap, overviewTitle: "AI Transformation Consultant Career Journey", overviewDescription: "Progress from enterprise diagnosis to portfolio design, operating models, governance, adoption, value realization, and executive advisory." },
+  journeyStages,
+  roadmap,
   projects: [
-    { id: "aitc-project-assessment", title: "Enterprise AI Readiness Assessment", difficulty: "Intermediate", estimatedTime: "30-45 hours", phaseId: "aitc-roadmap-1", description: "Assess strategy, process, data, technology, risk, talent, culture, governance, and adoption readiness for a representative organization.", deliverables: ["Assessment framework", "Stakeholder findings", "Maturity heatmap", "Executive diagnosis"], skills: ["Discovery", "Assessment", "Executive synthesis"] },
-    { id: "aitc-project-portfolio", title: "AI Opportunity Portfolio and Business Case", difficulty: "Advanced", estimatedTime: "35-50 hours", phaseId: "aitc-roadmap-2", description: "Create a governed opportunity portfolio with value, feasibility, risk, readiness, dependencies, and investment scenarios.", deliverables: ["Use-case inventory", "Prioritization model", "Portfolio map", "Business case"], skills: ["Portfolio strategy", "Value sizing", "Prioritization"] },
-    { id: "aitc-project-operating-model", title: "AI Target Operating Model", difficulty: "Advanced", estimatedTime: "40-60 hours", phaseId: "aitc-roadmap-3", description: "Design capabilities, roles, decision rights, governance forums, funding, delivery pathways, risk controls, and ownership.", deliverables: ["Capability model", "Operating model", "RACI", "Governance design", "Implementation plan"], skills: ["Operating models", "Governance", "Organization design"] },
-    { id: "aitc-project-capstone", title: "Enterprise AI Transformation Blueprint", difficulty: "Advanced", estimatedTime: "75-110 hours", phaseId: "aitc-roadmap-5", description: "Deliver a complete transformation strategy covering diagnosis, ambition, portfolio, operating model, technology direction, responsible AI, adoption, roadmap, investment, and value realization.", deliverables: ["Executive strategy", "Portfolio", "Operating model", "Governance", "Roadmap", "Benefits framework", "Board presentation"], skills: ["Transformation strategy", "Adoption", "Executive consulting", "Value realization"] },
+    { id: `${slug}-project-1`, title: "Enterprise AI Current-State Diagnostic", difficulty: "Intermediate", estimatedTime: "30-45 hours", phaseId: `${slug}-roadmap-1`, description: "Assess strategy, portfolio, data, technology, governance, talent, adoption, operating model, and measurement maturity.", deliverables: ["Discovery plan","Stakeholder map","Maturity assessment","Evidence register","Executive findings"], skills: ["Discovery","Maturity assessment","Synthesis","Executive communication"] },
+    { id: `${slug}-project-2`, title: "AI Opportunity Portfolio and Business Case", difficulty: "Intermediate", estimatedTime: "35-55 hours", phaseId: `${slug}-roadmap-2`, description: "Create, prioritize, and economically justify a balanced portfolio of enterprise AI opportunities.", deliverables: ["Opportunity inventory","Scoring model","Portfolio recommendation","Business case","Benefits map"], skills: ["Use-case discovery","Portfolio prioritization","Business cases","Benefits realization"] },
+    { id: `${slug}-project-3`, title: "AI Operating Model and Governance Design", difficulty: "Advanced", estimatedTime: "45-70 hours", phaseId: `${slug}-roadmap-3`, description: "Design a scalable operating model, responsible-AI governance, decision rights, assurance pathway, and shared foundations.", deliverables: ["Operating-model blueprint","Decision-rights matrix","Governance framework","Risk tiers","Capability roadmap"], skills: ["Operating models","Responsible AI","Governance","Enterprise architecture"] },
+    { id: `${slug}-project-4`, title: "Enterprise AI Transformation Capstone", difficulty: "Advanced", estimatedTime: "75-120 hours", phaseId: `${slug}-roadmap-5`, description: "Deliver and defend an integrated diagnosis, target state, portfolio, roadmap, adoption model, value framework, and executive decision package.", deliverables: ["Diagnostic","Target-state blueprint","Portfolio roadmap","Value and adoption plan","Executive board deck"], skills: ["Transformation strategy","Portfolio design","Operating model","Change","Value realization","Executive advisory"] },
   ],
-  finalChallenge: { title: "Executive AI Transformation Review", description: "Defend an enterprise AI transformation blueprint before executives representing business, technology, finance, risk, HR, and operations.", requirements: ["Evidence-based enterprise diagnosis", "Prioritized opportunity portfolio", "Target operating model and governance", "Technology and data direction", "Adoption and workforce plan", "Roadmap, investment, and benefits model"], deliverables: ["Transformation blueprint", "Portfolio model", "Operating model", "Roadmap", "Benefits dashboard design", "Executive presentation"], evaluation: ["Diagnostic quality", "Strategic coherence", "Value and feasibility", "Governance", "Adoption realism", "Executive communication", "Consulting judgment"] },
-  relatedCareers: ["AI Solutions Consultant", "Enterprise AI Consultant", "Business AI Consultant", "AI Adoption Consultant", "Digital Transformation Consultant"],
+  globalResources: [],
+  finalChallenge: {
+    title: "Enterprise AI Transformation Board Review",
+    description: "Present and defend an enterprise AI transformation recommendation before a simulated executive, technology, risk, finance, workforce, and operations panel.",
+    requirements: ["Evidence-based diagnosis","Prioritized opportunity portfolio","Target operating model and governance","Executable roadmap","Adoption and workforce plan","Value and assurance framework"],
+    deliverables: ["Executive summary","Diagnostic report","Target-state blueprint","Portfolio and roadmap","Risk and value register","Board presentation"],
+    evaluation: ["Strategic judgment","Enterprise coherence","Commercial logic","Governance and responsibility","Executability","Executive communication"],
+  },
+  relatedCareers: ["AI Solutions Consultant","Business AI Consultant","Enterprise AI Consultant","AI Adoption Consultant","AI Product Manager","Digital Transformation Consultant"],
   portfolioTasks: [
-    { id: "aitc-portfolio-assessment", title: "Publish an AI readiness assessment", description: "Show framework, evidence, maturity findings, implications, and recommendations.", type: "portfolio" },
-    { id: "aitc-portfolio-model", title: "Publish a target operating model", description: "Show capabilities, roles, governance, funding, delivery pathways, and accountability.", type: "portfolio" },
-    { id: "aitc-portfolio-blueprint", title: "Publish a transformation blueprint", description: "Show portfolio, roadmap, adoption, governance, investment, and benefits logic.", type: "portfolio" },
+    { id: `${slug}-portfolio-1`, title: "Publish an enterprise AI diagnostic case study", description: "Show discovery, evidence, maturity findings, root causes, risks, and recommendations.", type: "portfolio" },
+    { id: `${slug}-portfolio-2`, title: "Publish an AI portfolio and operating-model case study", description: "Show prioritization, business cases, decision rights, governance, foundations, and trade-offs.", type: "portfolio" },
+    { id: `${slug}-portfolio-3`, title: "Publish a transformation roadmap and value case study", description: "Show sequencing, adoption, workforce, assurance, metrics, ownership, and executive decisions.", type: "portfolio" },
   ],
   jobSearchTasks: [
-    { id: "aitc-job-titles", title: "Build a transformation-role matrix", description: "Track AI Transformation, Digital Transformation, AI Strategy, Enterprise AI, Adoption, and Technology Advisory roles.", type: "job-search" },
-    { id: "aitc-job-evidence", title: "Map consulting requirements to evidence", description: "Connect discovery, strategy, operating model, governance, adoption, and executive communication to portfolio artifacts.", type: "job-search" },
-    { id: "aitc-job-cycle", title: "Run a targeted consulting application cycle", description: "Apply with role-specific transformation cases and review response patterns weekly.", type: "job-search" },
+    { id: `${slug}-job-1`, title: "Build an AI transformation title matrix", description: "Map AI Transformation, Digital Transformation, AI Strategy, Enterprise AI, and adjacent roles.", type: "job-search" },
+    { id: `${slug}-job-2`, title: "Match vacancies to consulting evidence", description: "Map each role to diagnosis, portfolio, operating model, governance, roadmap, adoption, value, and executive artifacts.", type: "job-search" },
+    { id: `${slug}-job-3`, title: "Run a focused consulting application cycle", description: "Prioritize roles with strong industry and evidence fit, then track interview feedback and gaps.", type: "job-search" },
   ],
-  interviewPrep: { title: "AI Transformation Consultant Interview Preparation", practiceAreas: ["Enterprise discovery", "Opportunity portfolios", "Operating models", "Responsible AI", "Platform direction", "Adoption", "Value realization", "Executive cases"], questions: ["How would you assess AI readiness in a global organization?", "How do you prioritize an AI opportunity portfolio?", "Design a target operating model for enterprise AI.", "How should responsible-AI governance connect to delivery?", "How would you choose between centralized and federated models?", "What causes AI pilots to fail at scale?", "How would you measure transformation value?", "Present your capstone to a skeptical executive committee."] },
+  interviewPrep: {
+    title: "AI Transformation Consultant Interview Preparation",
+    practiceAreas: ["Enterprise diagnosis","Opportunity portfolios","Business cases","Operating models","Responsible AI governance","Roadmaps","Adoption and workforce","Value realization","Executive facilitation"],
+    questions: [
+      "How would you diagnose why an enterprise has many AI pilots but little measurable value?",
+      "Design a method for prioritizing twenty AI opportunities across five functions.",
+      "When should an organization centralize or federate AI capabilities?",
+      "How would you design proportionate responsible-AI governance without blocking delivery?",
+      "Create an eighteen-month AI transformation roadmap for a regulated enterprise.",
+      "How would you address employee resistance to an AI-enabled workflow redesign?",
+      "What metrics would you use to prove transformation value?",
+      "Present a recommendation to executives who disagree about speed, risk, and investment.",
+    ],
+  },
 };
 
 export const aiTransformationConsultantCareer = applyCareerTitleAliasPolicy(career);
