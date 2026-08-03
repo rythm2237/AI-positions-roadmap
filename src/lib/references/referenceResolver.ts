@@ -1,6 +1,8 @@
 import catalogData from "../../../content/references/reference-catalog.json";
 import cybersecurityCatalogData from "../../../content/references/cybersecurity-reference-catalog.json";
 import cybersecurityStageCatalogData from "../../../content/references/cybersecurity-stage-reference-catalog.json";
+import { COPILOT_CONSULTANT_LEARNING_DATABASE } from "@/data/learning/copilotConsultantLearningDatabase";
+import { GEO_LEARNING_DATABASE } from "@/data/learning/geoLearningDatabase";
 import type {
   ReferenceLearningOption,
   ReferenceResource,
@@ -12,6 +14,8 @@ const catalog = [
   ...(catalogData as ReferenceResource[]),
   ...(cybersecurityCatalogData as ReferenceResource[]),
   ...(cybersecurityStageCatalogData as ReferenceResource[]),
+  ...COPILOT_CONSULTANT_LEARNING_DATABASE,
+  ...GEO_LEARNING_DATABASE,
 ];
 const byId = new Map(catalog.map((item) => [item.id, item]));
 
