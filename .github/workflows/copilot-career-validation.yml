@@ -7,6 +7,10 @@ on:
       - "src/data/careers/microsoft-copilot-consultant.ts"
       - "src/data/careerCatalog.ts"
       - "src/app/careers/**"
+      - "src/app/experience-fixes.css"
+      - "src/components/career/CareerTitleAliasPanel.tsx"
+      - "src/components/career/learning/LearningWorkspace.tsx"
+      - "src/components/navigation/CareerSwitcherDock.tsx"
       - "scripts/test-microsoft-copilot-consultant.mjs"
       - ".github/workflows/copilot-career-validation.yml"
 
@@ -18,7 +22,7 @@ jobs:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
-          node-version: 20
+          node-version: 22
           cache: npm
       - run: npm ci
       - run: node scripts/test-microsoft-copilot-consultant.mjs
