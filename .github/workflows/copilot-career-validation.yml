@@ -1,0 +1,26 @@
+name: Copilot Career Validation
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - "src/data/careers/microsoft-copilot-consultant.ts"
+      - "src/data/careerCatalog.ts"
+      - "src/app/careers/**"
+      - "scripts/test-microsoft-copilot-consultant.mjs"
+      - ".github/workflows/copilot-career-validation.yml"
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+      - run: npm ci
+      - run: node scripts/test-microsoft-copilot-consultant.mjs
+      - run: npm run typecheck
+      - run: npm run build
