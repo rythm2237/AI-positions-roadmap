@@ -33,11 +33,14 @@ const copilotIds = [...learningDatabase.matchAll(/id: "(mcc-[^"]+)"/g)].map((mat
 if (copilotIds.length !== 10 || new Set(copilotIds).size !== 10) {
   throw new Error(`Expected 10 unique Copilot Registry resources; found ${copilotIds.length}.`);
 }
+if (!learningDatabase.includes('mode: "reading"') || !learningDatabase.includes('mode: "video"') || !learningDatabase.includes('mode: "practice"')) {
+  throw new Error("Copilot Registry does not define all three canonical learning modes.");
+}
 for (const id of copilotIds) {
   const block = learningDatabase.split(`id: "${id}"`)[1]?.split("resource({")[0] ?? "";
-  for (const mode of ["reading", "video", "practice"]) {
-    if (!block.includes(`mode: "${mode}"`)) throw new Error(`${id} is missing verified ${mode}.`);
-  }
+  if (!block.includes('mode: "reading"')) throw new Error(`${id} is missing verified reading.`);
+  if (!block.includes("microsoftVideo(")) throw new Error(`${id} is missing verified video.`);
+  if (!block.includes("microsoftPractice(")) throw new Error(`${id} is missing verified practice.`);
 }
 if (!resolver.includes("COPILOT_CONSULTANT_LEARNING_DATABASE") || !resolver.includes("GEO_LEARNING_DATABASE")) {
   throw new Error("Central reference resolver is not connected to Copilot and GEO learning databases.");
