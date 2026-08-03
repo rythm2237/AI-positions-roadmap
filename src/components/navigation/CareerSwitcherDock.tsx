@@ -68,7 +68,7 @@ export default function CareerSwitcherDock() {
                 <section key={domain} className="mb-3">
                   <p className="px-2 py-1.5 text-[10px] font-bold uppercase tracking-[.16em] text-slate-600">{domain}</p>
                   <div className="grid gap-1">
-                    {careers.map((career) => career.availability === "available" && career.route ? (
+                    {careers.map((career) => career.route ? (
                       <Link key={career.slug} href={career.route} onClick={() => setOpen(false)} className={`flex items-center justify-between gap-3 rounded-xl px-3 py-2.5 text-sm transition hover:bg-white/[0.05] ${career.slug === currentSlug ? "bg-violet-500/12 text-white" : "text-slate-300"}`}>
                         <span>{career.title}</span>
                         {career.slug === currentSlug ? <span className="text-[10px] font-semibold uppercase tracking-wider text-violet-300">Current</span> : null}
