@@ -48,10 +48,14 @@ function curatedVideo(
   title: string,
   description: string,
   url: string,
-  provider: string,
-  durationLabel: string,
-  curationReason: string,
+  providerOrDuration: string,
+  durationOrReason: string,
+  curationReason?: string,
 ): Omit<ReferenceLearningOption, "mode"> {
+  const provider = curationReason ? providerOrDuration : "Curated external educator";
+  const durationLabel = curationReason ? durationOrReason : providerOrDuration;
+  const reason = curationReason ?? durationOrReason;
+
   return {
     title,
     description,
@@ -64,7 +68,7 @@ function curatedVideo(
     verifiedContentType: true,
     verifiedAt: "2026-08-03",
     verificationSource: "curated-video-page",
-    curationReason,
+    curationReason: reason,
   };
 }
 
