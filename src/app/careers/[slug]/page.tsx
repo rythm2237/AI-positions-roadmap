@@ -8,7 +8,6 @@ import {
   aiMarketingSpecialistCareer,
   dataAnalystCareer,
   dataScientistCareer,
-  microsoftCopilotConsultantCareer,
 } from "@/data/careers/activation-batch-five";
 import {
   aiKnowledgeEngineerCareer,
@@ -19,6 +18,7 @@ import {
 } from "@/data/careers/activation-batch-six";
 import { cloudEngineerCareer } from "@/data/careers/activation-batch-seven";
 import { cybersecurityAnalystCareer } from "@/data/careers/cybersecurity-analyst";
+import { microsoftCopilotConsultantCareer } from "@/data/careers/microsoft-copilot-consultant";
 import { getPublishedCareer } from "@/lib/publishedCareerRepository";
 import { absoluteUrl, buildMetadata, seoConfig } from "@/lib/seo";
 import type { CareerWorkspaceData } from "@/types/careerWorkspace";
@@ -72,6 +72,8 @@ export async function generateMetadata({
       `${career.title} career`,
       `${career.title} roadmap`,
       `${career.title} skills`,
+      "Microsoft 365 Copilot consultant",
+      "Copilot Studio consultant",
       "AI career roadmap",
     ],
   });
@@ -106,6 +108,8 @@ export default async function ManagedCareerPage({
       name: career.title,
       description: career.shortDescription,
       mainEntityOfPage: { "@id": `${pageUrl}#webpage` },
+      skills: career.overview.responsibilities,
+      occupationalCategory: career.category,
     },
     {
       "@context": "https://schema.org",
