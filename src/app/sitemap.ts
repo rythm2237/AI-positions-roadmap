@@ -22,11 +22,9 @@ export default function sitemap(): MetadataRoute.Sitemap {
   if (!isIndexableDeployment) return [];
 
   const staticPages: MetadataRoute.Sitemap = [
-    {
-      url: absoluteUrl("/"),
-      changeFrequency: "weekly",
-      priority: 1,
-    },
+    { url: absoluteUrl("/"), changeFrequency: "weekly", priority: 1 },
+    { url: absoluteUrl("/methodology"), changeFrequency: "monthly", priority: 0.6 },
+    { url: absoluteUrl("/sources"), changeFrequency: "monthly", priority: 0.6 },
   ];
 
   const careerPages: MetadataRoute.Sitemap = PUBLIC_CAREER_SLUGS.map((slug) => ({
