@@ -1,6 +1,7 @@
 import fs from "node:fs";
 
 const career = fs.readFileSync("src/data/careers/cloud-engineer.ts", "utf8");
+const milestones = fs.readFileSync("src/data/milestones/cloud-engineer.ts", "utf8");
 const requirements = fs.readFileSync("src/data/resource-requirements/cloud-engineer.ts", "utf8");
 const catalog = fs.readFileSync("src/data/careerCatalog.ts", "utf8");
 const mainRoute = fs.readFileSync("src/app/careers/[slug]/page.tsx", "utf8");
@@ -26,23 +27,54 @@ for (const required of [
   if (!career.includes(required)) throw new Error(`Missing Cloud Engineer content: ${required}`);
 }
 
-const stageIds = [...career.matchAll(/id: `cloud-engineer-stage-\$\{stage\}`/g)].length;
-if (stageIds !== 1 || !career.includes("const stageSpecs: StageSpec[]")) {
-  throw new Error("Cloud Engineer stages are not generated from the dedicated stage specification.");
-}
-
-if ((requirements.match(/requirement\(/g) ?? []).length !== 11) {
-  throw new Error("Expected ten Cloud Engineer requirement contracts plus the helper declaration.");
+const milestoneEntries = milestones.match(/\bm\(\d+,\s*\d+,/g) ?? [];
+if (milestoneEntries.length !== 30) {
+  throw new Error(`Expected 30 granular Cloud Engineer milestones; found ${milestoneEntries.length}.`);
 }
 for (let stage = 1; stage <= 10; stage += 1) {
-  if (!requirements.includes(`requirement(${stage},`)) throw new Error(`Missing resource requirement for stage ${stage}.`);
+  const stageEntries = milestones.match(new RegExp(`\\bm\\(${stage},\\s*\\d+,`, "g")) ?? [];
+  if (stageEntries.length !== 3) {
+    throw new Error(`Expected exactly three milestones for Cloud Engineer stage ${stage}; found ${stageEntries.length}.`);
+  }
+}
+for (const field of [
+  "learningOutcomes",
+  "skills",
+  "practicalTask",
+  "deliverables",
+  "assessmentScope",
+  "resourceRequirementIds",
+]) {
+  if (!milestones.includes(field)) throw new Error(`Milestone contract is missing ${field}.`);
+}
+for (const title of [
+  "Design cloud networking and segmentation",
+  "Control IaC state, policy, validation, and drift",
+  "Build observability and service objectives",
+  "Operate cloud cost and FinOps controls",
+  "Validate the production cloud platform",
+  "Prepare for Cloud Engineer interviews",
+]) {
+  if (!milestones.includes(title)) throw new Error(`Missing required granular milestone: ${title}`);
+}
+
+if (!requirements.includes("CLOUD_ENGINEER_MILESTONES.map")) {
+  throw new Error("Resource requirements must be generated one-to-one from the milestone inventory.");
 }
 for (const mode of ['"reading"', '"video"', '"practice"']) {
   if (!requirements.includes(mode)) throw new Error(`Missing mandatory learning mode ${mode}.`);
 }
-if (!requirements.includes("resourceIds: []")) throw new Error("Resource IDs must remain empty during Career Blueprint production.");
-if (/https?:\/\//.test(career) || /https?:\/\//.test(requirements)) {
-  throw new Error("Direct external URLs are forbidden in the Career Blueprint and requirement contracts.");
+if (!requirements.includes("milestoneId: milestone.id")) {
+  throw new Error("Every resource requirement must target a granular milestone ID.");
+}
+if (!requirements.includes("requiredLearningOutcomes: milestone.learningOutcomes")) {
+  throw new Error("Resource requirements must inherit the exact milestone learning outcomes.");
+}
+if (!requirements.includes("resourceIds: []")) {
+  throw new Error("Resource IDs must remain empty during Career Blueprint production.");
+}
+if (/https?:\/\//.test(career) || /https?:\/\//.test(milestones) || /https?:\/\//.test(requirements)) {
+  throw new Error("Direct external URLs are forbidden in the Career Blueprint, milestones, and requirement contracts.");
 }
 for (const forbidden of [
   "Build practical evidence for",
@@ -50,7 +82,9 @@ for (const forbidden of [
   "Create a reviewable artifact demonstrating",
   "AI Product Management Orientation",
 ]) {
-  if (career.includes(forbidden)) throw new Error(`Template-derived wording detected: ${forbidden}`);
+  if (career.includes(forbidden) || milestones.includes(forbidden)) {
+    throw new Error(`Template-derived wording detected: ${forbidden}`);
+  }
 }
 if (!catalog.includes('["cloud-engineer", "Cloud Engineer"') || !catalog.includes('"available", "/careers/cloud-engineer?entry=galaxy"')) {
   throw new Error("Cloud Engineer is not activated in the Career Catalog.");
@@ -62,4 +96,4 @@ if (mainRoute.includes('cloudEngineerCareer } from "@/data/careers/activation-ba
   throw new Error("Cloud Engineer still resolves from the shared activation template.");
 }
 
-console.log("Cloud Engineer validated: dedicated content, ten milestones, assessments, projects, career preparation, resource requirement contracts, route activation, and no embedded resource URLs.");
+console.log("Cloud Engineer validated: ten stages, thirty granular milestones, measurable outcomes, practical evidence, assessment scopes, one-to-one resource requirement contracts, route activation, and no embedded resource URLs.");
