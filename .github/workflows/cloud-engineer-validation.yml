@@ -1,0 +1,37 @@
+name: Cloud Engineer Validation
+
+on:
+  pull_request:
+    paths:
+      - "src/data/careers/cloud-engineer.ts"
+      - "src/data/resource-requirements/cloud-engineer.ts"
+      - "src/types/resourceRequirement.ts"
+      - "src/data/careerCatalog.ts"
+      - "src/app/careers/**"
+      - "scripts/test-cloud-engineer-career.mjs"
+      - ".github/workflows/cloud-engineer-validation.yml"
+  push:
+    branches:
+      - feature/cloud-engineer-career-blueprint
+    paths:
+      - "src/data/careers/cloud-engineer.ts"
+      - "src/data/resource-requirements/cloud-engineer.ts"
+      - "src/types/resourceRequirement.ts"
+      - "src/data/careerCatalog.ts"
+      - "src/app/careers/**"
+      - "scripts/test-cloud-engineer-career.mjs"
+      - ".github/workflows/cloud-engineer-validation.yml"
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+      - run: npm ci
+      - run: node scripts/test-cloud-engineer-career.mjs
+      - run: npm run typecheck
+      - run: npm run build

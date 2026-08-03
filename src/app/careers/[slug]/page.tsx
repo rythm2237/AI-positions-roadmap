@@ -16,7 +16,7 @@ import {
   dataEngineerCareer,
   devOpsEngineerCareer,
 } from "@/data/careers/activation-batch-six";
-import { cloudEngineerCareer } from "@/data/careers/activation-batch-seven";
+import { cloudEngineerCareer } from "@/data/careers/cloud-engineer";
 import { cybersecurityAnalystCareer } from "@/data/careers/cybersecurity-analyst";
 import { generativeEngineOptimizationSpecialistCareer } from "@/data/careers/generative-engine-optimization-specialist";
 import { microsoftCopilotConsultantCareer } from "@/data/careers/microsoft-copilot-consultant-workspace";
@@ -69,7 +69,9 @@ export async function generateMetadata({
       ? ["Microsoft 365 Copilot consultant", "Copilot Studio consultant"]
       : career.slug === "generative-engine-optimization-specialist"
         ? ["GEO specialist", "generative engine optimization career", "answer engine optimization"]
-        : [];
+        : career.slug === "cloud-engineer"
+          ? ["cloud engineer roadmap", "cloud infrastructure career", "cloud platform engineer skills"]
+          : [];
 
   return buildMetadata({
     title,
@@ -122,18 +124,8 @@ export default async function ManagedCareerPage({
       "@context": "https://schema.org",
       "@type": "BreadcrumbList",
       itemListElement: [
-        {
-          "@type": "ListItem",
-          position: 1,
-          name: "AI Career OS",
-          item: absoluteUrl("/"),
-        },
-        {
-          "@type": "ListItem",
-          position: 2,
-          name: career.title,
-          item: pageUrl,
-        },
+        { "@type": "ListItem", position: 1, name: "AI Career OS", item: absoluteUrl("/") },
+        { "@type": "ListItem", position: 2, name: career.title, item: pageUrl },
       ],
     },
   ];
