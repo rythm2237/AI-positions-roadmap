@@ -1,0 +1,36 @@
+name: Copilot Career Validation
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - "src/data/careers/microsoft-copilot-consultant.ts"
+      - "src/data/careers/microsoft-copilot-consultant-workspace.ts"
+      - "src/data/careers/generative-engine-optimization-specialist.ts"
+      - "src/data/learning/**"
+      - "src/lib/references/referenceResolver.ts"
+      - "src/types/reference.ts"
+      - "src/data/careerCatalog.ts"
+      - "src/app/careers/**"
+      - "src/app/experience-fixes.css"
+      - "src/components/career/CareerTitleAliasPanel.tsx"
+      - "src/components/career/learning/LearningWorkspace.tsx"
+      - "src/components/career/resources/ReferenceLearningChooser.tsx"
+      - "src/components/navigation/CareerSwitcherDock.tsx"
+      - "scripts/test-microsoft-copilot-consultant.mjs"
+      - ".github/workflows/copilot-career-validation.yml"
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: node scripts/test-microsoft-copilot-consultant.mjs
+      - run: npm run typecheck
+      - run: npm run build

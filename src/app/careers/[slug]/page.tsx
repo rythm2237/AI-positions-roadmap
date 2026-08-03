@@ -8,7 +8,6 @@ import {
   aiMarketingSpecialistCareer,
   dataAnalystCareer,
   dataScientistCareer,
-  microsoftCopilotConsultantCareer,
 } from "@/data/careers/activation-batch-five";
 import {
   aiKnowledgeEngineerCareer,
@@ -19,6 +18,8 @@ import {
 } from "@/data/careers/activation-batch-six";
 import { cloudEngineerCareer } from "@/data/careers/activation-batch-seven";
 import { cybersecurityAnalystCareer } from "@/data/careers/cybersecurity-analyst";
+import { generativeEngineOptimizationSpecialistCareer } from "@/data/careers/generative-engine-optimization-specialist";
+import { microsoftCopilotConsultantCareer } from "@/data/careers/microsoft-copilot-consultant-workspace";
 import { getPublishedCareer } from "@/lib/publishedCareerRepository";
 import { absoluteUrl, buildMetadata, seoConfig } from "@/lib/seo";
 import type { CareerWorkspaceData } from "@/types/careerWorkspace";
@@ -29,6 +30,7 @@ const builtIn: Record<string, CareerWorkspaceData> = {
   "ai-adoption-consultant": aiAdoptionConsultantCareer,
   "ai-marketing-specialist": aiMarketingSpecialistCareer,
   "microsoft-copilot-consultant": microsoftCopilotConsultantCareer,
+  "generative-engine-optimization-specialist": generativeEngineOptimizationSpecialistCareer,
   "data-analyst": dataAnalystCareer,
   "data-scientist": dataScientistCareer,
   "bi-developer": biDeveloperCareer,
@@ -62,6 +64,12 @@ export async function generateMetadata({
 
   const title = `${career.title} Career Roadmap`;
   const description = career.shortDescription;
+  const careerSpecificKeywords =
+    career.slug === "microsoft-copilot-consultant"
+      ? ["Microsoft 365 Copilot consultant", "Copilot Studio consultant"]
+      : career.slug === "generative-engine-optimization-specialist"
+        ? ["GEO specialist", "generative engine optimization career", "answer engine optimization"]
+        : [];
 
   return buildMetadata({
     title,
@@ -72,6 +80,7 @@ export async function generateMetadata({
       `${career.title} career`,
       `${career.title} roadmap`,
       `${career.title} skills`,
+      ...careerSpecificKeywords,
       "AI career roadmap",
     ],
   });
@@ -106,6 +115,8 @@ export default async function ManagedCareerPage({
       name: career.title,
       description: career.shortDescription,
       mainEntityOfPage: { "@id": `${pageUrl}#webpage` },
+      skills: career.overview.responsibilities,
+      occupationalCategory: career.category,
     },
     {
       "@context": "https://schema.org",
