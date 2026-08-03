@@ -1,0 +1,55 @@
+/* Product Experience overlap and authenticated waitlist corrections. */
+
+/* The Learning stage control should remain in document flow. The previous
+   sticky implementation collided with the global career/account controls. */
+section > div[class*="sticky top-0 z-30"] {
+  position: relative;
+  top: auto;
+}
+
+.auth-waitlist-notice {
+  display: grid;
+  gap: 0.4rem;
+  margin-bottom: 0.25rem;
+  border: 1px solid rgba(129, 140, 248, 0.24);
+  border-radius: 0.875rem;
+  background: rgba(99, 102, 241, 0.08);
+  padding: 0.9rem 1rem;
+}
+
+.auth-waitlist-eyebrow {
+  margin: 0;
+  color: #a5b4fc;
+  font-size: 0.625rem;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+}
+
+.auth-waitlist-title {
+  margin: 0;
+  color: #f8fafc;
+  font-size: 0.875rem;
+  font-weight: 650;
+  line-height: 1.4;
+}
+
+.auth-waitlist-copy {
+  margin: 0;
+  color: #94a3b8;
+  font-size: 0.75rem;
+  line-height: 1.55;
+  overflow-wrap: anywhere;
+}
+
+.auth-waitlist-copy strong {
+  color: #c7d2fe;
+  font-weight: 600;
+}
+
+@media (min-width: 1024px) and (max-width: 1399px) {
+  header[role="banner"] nav,
+  body > header nav {
+    display: none !important;
+  }
+}
