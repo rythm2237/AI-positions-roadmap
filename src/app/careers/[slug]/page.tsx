@@ -4,6 +4,7 @@ import CareerWorkspace from "@/components/career/CareerWorkspace";
 import { aiEngineerCareer } from "@/data/careers/ai-engineer";
 import { aiAutomationSpecialistCareer } from "@/data/careers/ai-automation-specialist";
 import { aiIntegrationSpecialistCareer } from "@/data/careers/ai-integration-specialist";
+import { aiTransformationConsultantCareer } from "@/data/careers/ai-transformation-consultant";
 import {
   aiAdoptionConsultantCareer,
   aiMarketingSpecialistCareer,
@@ -29,6 +30,7 @@ const builtIn: Record<string, CareerWorkspaceData> = {
   "ai-engineer": aiEngineerCareer,
   "ai-automation-specialist": aiAutomationSpecialistCareer,
   "ai-integration-specialist": aiIntegrationSpecialistCareer,
+  "ai-transformation-consultant": aiTransformationConsultantCareer,
   "ai-adoption-consultant": aiAdoptionConsultantCareer,
   "ai-marketing-specialist": aiMarketingSpecialistCareer,
   "microsoft-copilot-consultant": microsoftCopilotConsultantCareer,
@@ -63,7 +65,9 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
           ? ["cloud engineer roadmap", "cloud infrastructure career", "cloud platform engineer skills"]
           : career.slug === "ai-integration-specialist"
             ? ["AI integration specialist", "AI integration engineer roadmap", "enterprise AI API integration"]
-            : [];
+            : career.slug === "ai-transformation-consultant"
+              ? ["AI transformation consultant", "enterprise AI transformation roadmap", "AI operating model consultant"]
+              : [];
 
   return buildMetadata({
     title: `${career.title} Career Roadmap`,
