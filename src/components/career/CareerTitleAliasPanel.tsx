@@ -9,7 +9,8 @@ export default function CareerTitleAliasPanel({ career }: { career: CareerWorksp
   const remaining = aliases.slice(3);
 
   return (
-    <section aria-label="Related market titles" className="mt-6 max-w-3xl border-l-2 border-violet-300/45 pl-4 sm:pl-5">
+    <section aria-label="Alternative job titles" className="mt-6 max-w-3xl border-l-2 border-violet-300/45 pl-4 sm:pl-5">
+      <p className="sr-only">This career may also be advertised as the following market title variants.</p>
       <div className="flex flex-wrap items-center gap-x-3 gap-y-2">
         <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-violet-200/80">Market title variants</p>
         <span className="hidden h-px w-8 bg-white/10 sm:block" aria-hidden="true" />
