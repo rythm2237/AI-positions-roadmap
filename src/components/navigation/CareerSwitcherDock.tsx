@@ -21,7 +21,7 @@ export default function CareerSwitcherDock() {
   if (!currentSlug) return null;
 
   return (
-    <div className="fixed right-[88px] top-3 z-[57] sm:right-[108px] lg:right-[112px] lg:top-4">
+    <div className="fixed right-[84px] top-3 z-[57] hidden sm:block lg:right-[112px] lg:top-4">
       <button
         type="button"
         onClick={() => setOpen((value) => !value)}
