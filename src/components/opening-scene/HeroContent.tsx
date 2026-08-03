@@ -1,130 +1,47 @@
-
 "use client";
-// src/components/opening-scene/HeroContent.tsx — v6
-//
-// CHANGE: Removed useRouter and the router.push("/#roadmaps") auto-exit.
-// The universe never exits automatically. Navigation is 100% user-controlled.
-// The user leaves only by clicking "Open Roadmap" inside the career preview card.
 
 import { useEffect, useState } from "react";
-import Link from "next/link";
 import { useScene } from "./SceneContext";
 
-const TRANSITION_BASE = "opacity 0.6s cubic-bezier(0.22, 1, 0.36, 1), transform 0.6s cubic-bezier(0.22, 1, 0.36, 1), filter 0.6s cubic-bezier(0.22, 1, 0.36, 1)";
-
-function CTAButton() {
-  const { phase, activate } = useScene();
-  const isActivating = phase === "activating" || phase === "travelling" || phase === "arrived" || phase === "exploring";
-
-  return (
-    <button
-      onClick={activate}
-      disabled={isActivating}
-      className="group relative overflow-hidden"
-      style={{
-        background: "transparent",
-        border: "1px solid rgba(99,102,241,0.45)",
-        borderRadius: "14px",
-        padding: "14px 38px",
-        cursor: isActivating ? "default" : "pointer",
-        pointerEvents: "auto",
-        transition: "transform 0.25s cubic-bezier(0.22, 1, 0.36, 1), box-shadow 0.25s ease",
-      }}
-      aria-label="Enter the AI Career Universe"
-    >
-      <div
-        className="absolute inset-0 rounded-[13px]"
-        style={{
-          background: "radial-gradient(ellipse at center, rgba(99,102,241,0.18) 0%, transparent 70%)",
-          opacity: 0,
-          transition: TRANSITION_BASE,
-        }}
-      />
-      {isActivating && (
-        <div
-          className="absolute inset-0 rounded-[13px]"
-          style={{
-            border: "1px solid rgba(99,102,241,0.9)",
-            boxShadow: "0 0 24px rgba(99,102,241,0.6), inset 0 0 24px rgba(99,102,241,0.1)",
-          }}
-        />
-      )}
-      <span style={{
-        position: "relative", zIndex: 1,
-        fontSize: "clamp(13px, 1.2vw, 15px)",
-        fontWeight: 600, letterSpacing: "0.06em",
-        color: isActivating ? "rgba(165,180,252,0.7)" : "#a5b4fc",
-        transition: "color 0.3s",
-        fontFamily: "inherit",
-      }}>
-        {isActivating ? "Opening Career Network..." : "Explore AI Careers"}
-      </span>
-    </button>
-  );
-}
+const TRANSITION = "opacity .6s cubic-bezier(.22,1,.36,1), transform .6s cubic-bezier(.22,1,.36,1), filter .6s cubic-bezier(.22,1,.36,1)";
 
 export default function HeroContent() {
-  const { phase } = useScene();
-  const isExiting = phase === "activating" || phase === "travelling" || phase === "arrived" || phase === "exploring";
-  const [isMounted, setIsMounted] = useState(false);
+  const { phase, activate } = useScene();
+  const [mounted, setMounted] = useState(false);
+  const exiting = ["activating", "travelling", "arrived", "exploring"].includes(phase);
+  const busy = phase !== "idle";
 
-  useEffect(() => {
-    setIsMounted(true);
-  }, []);
+  useEffect(() => setMounted(true), []);
 
   return (
-    <div
-      className="pointer-events-none absolute inset-x-0 bottom-0 top-[62px] flex items-center justify-center pt-[clamp(12px,3dvh,32px)]"
-      style={{ zIndex: 10 }}
-    >
+    <div className="pointer-events-none absolute inset-x-0 bottom-0 top-[68px] z-10 flex items-center justify-center">
+      <div aria-hidden="true" className="absolute left-1/2 top-[48%] h-[420px] w-[min(760px,90vw)] -translate-x-1/2 -translate-y-1/2 rounded-full bg-[radial-gradient(ellipse_at_center,rgba(99,102,241,.18),rgba(76,29,149,.07)_38%,transparent_72%)] blur-2xl" />
       <div
-        className="w-full max-w-[min(680px,100vw)] lg:max-w-[min(1040px,calc(100vw-96px))]"
+        className="relative flex w-full max-w-5xl flex-col items-center px-5 text-center"
         style={{
-          display: "flex",
-          flexDirection: "column",
-          alignItems: "center",
-          textAlign: "center",
-          gap: "clamp(12px, 1.8vh, 20px)",
-          padding: "0 clamp(20px, 5vw, 60px)",
-          alignSelf: "stretch",
-          margin: "0 auto",
-          boxSizing: "border-box",
-          opacity: isExiting ? 0 : isMounted ? 1 : 0,
-          transform: isExiting ? "translateY(20px)" : isMounted ? "translateY(0)" : "translateY(12px)",
-          filter: isExiting ? "blur(6px)" : "blur(0)",
-          transition: TRANSITION_BASE,
-          pointerEvents: "none",
+          paddingTop: "clamp(58px,11vh,130px)",
+          opacity: exiting ? 0 : mounted ? 1 : 0,
+          transform: exiting ? "translateY(20px)" : mounted ? "translateY(0)" : "translateY(14px)",
+          filter: exiting ? "blur(6px)" : "blur(0)",
+          transition: TRANSITION,
         }}
       >
-        <h1 className="font-display text-[clamp(38px,11vw,54px)] font-bold lg:text-[clamp(68px,5.4vw,84px)]" style={{
-          lineHeight: 0.98,
-          letterSpacing: "-0.04em",
-          color: "#e0e7ff",
-          width: "100%",
-          whiteSpace: "normal",
-          margin: 0, fontFamily: "inherit",
-        }}>
-          <span className="block lg:whitespace-nowrap">Build your career in AI.</span>
+        <p className="mb-5 text-xs font-semibold uppercase tracking-[.24em] text-violet-300/80">Your AI career, organized</p>
+        <h1 className="font-display text-[clamp(46px,10vw,76px)] font-bold leading-[.98] tracking-[-.045em] text-indigo-50 lg:text-[clamp(72px,6.2vw,96px)]">
+          Build your career in AI.
         </h1>
-
-        <p style={{
-          fontSize: "clamp(14px, 1.6vw, 18px)",
-          lineHeight: 1.65, color: "rgba(165,180,252,0.65)",
-          maxWidth: 560, margin: 0, fontFamily: "inherit",
-        }}>
-          Choose an AI career direction, follow a practical roadmap, build proof through projects, and prepare for your next role.
+        <p className="mt-6 max-w-2xl text-[clamp(15px,1.6vw,19px)] font-medium leading-8 text-indigo-200/70">
+          Choose a focused direction, follow a practical roadmap, build evidence through projects, and prepare for your next role.
         </p>
-
-        <div className="flex flex-col items-center gap-3 sm:flex-row">
-          <CTAButton />
-          <Link
-            href="/careers/ai-engineer"
-            className="rounded-xl px-5 py-3 text-sm font-semibold text-slate-300 transition hover:bg-white/[0.05] hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-400"
-            style={{ pointerEvents: "auto" }}
-          >
-            Open AI Engineer Workspace
-          </Link>
-        </div>
+        <button
+          type="button"
+          onClick={activate}
+          disabled={busy}
+          className="pointer-events-auto mt-8 min-h-12 rounded-2xl border border-violet-300/35 bg-gradient-to-r from-indigo-600 to-violet-600 px-8 py-3.5 text-sm font-semibold tracking-[.04em] text-white shadow-[0_18px_55px_rgba(99,102,241,.28)] transition hover:-translate-y-0.5 hover:shadow-[0_22px_70px_rgba(99,102,241,.4)] disabled:cursor-wait disabled:opacity-60"
+        >
+          {busy ? "Opening Career Universe…" : "Explore AI Careers"}
+        </button>
+        <p className="mt-4 text-xs text-slate-600">Explore active workspaces and see which careers are in development.</p>
       </div>
     </div>
   );
