@@ -5,7 +5,6 @@ import {
   aiMarketingSpecialistCareer,
   dataAnalystCareer,
   dataScientistCareer,
-  microsoftCopilotConsultantCareer,
 } from "@/data/careers/activation-batch-five";
 import {
   aiKnowledgeEngineerCareer,
@@ -16,6 +15,7 @@ import {
 } from "@/data/careers/activation-batch-six";
 import { cloudEngineerCareer } from "@/data/careers/activation-batch-seven";
 import { cybersecurityAnalystCareer } from "@/data/careers/cybersecurity-analyst";
+import { microsoftCopilotConsultantCareer } from "@/data/careers/microsoft-copilot-consultant";
 import { getPublishedCareer } from "@/lib/publishedCareerRepository";
 import type { CareerWorkspaceData } from "@/types/careerWorkspace";
 
