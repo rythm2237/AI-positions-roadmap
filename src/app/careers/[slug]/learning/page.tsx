@@ -1,5 +1,6 @@
 import { notFound } from "next/navigation";
 import CareerWorkspace from "@/components/career/CareerWorkspace";
+import { aiIntegrationSpecialistCareer } from "@/data/careers/ai-integration-specialist";
 import {
   aiAdoptionConsultantCareer,
   aiMarketingSpecialistCareer,
@@ -21,6 +22,7 @@ import { getPublishedCareer } from "@/lib/publishedCareerRepository";
 import type { CareerWorkspaceData } from "@/types/careerWorkspace";
 
 const builtIn: Record<string, CareerWorkspaceData> = {
+  "ai-integration-specialist": aiIntegrationSpecialistCareer,
   "ai-adoption-consultant": aiAdoptionConsultantCareer,
   "ai-marketing-specialist": aiMarketingSpecialistCareer,
   "microsoft-copilot-consultant": microsoftCopilotConsultantCareer,
@@ -36,11 +38,7 @@ const builtIn: Record<string, CareerWorkspaceData> = {
   "cloud-engineer": cloudEngineerCareer,
 };
 
-export default async function ManagedCareerLearningPage({
-  params,
-}: {
-  params: Promise<{ slug: string }>;
-}) {
+export default async function ManagedCareerLearningPage({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params;
   const managed = await getPublishedCareer(slug);
   const career = managed?.data ?? builtIn[slug] ?? null;
