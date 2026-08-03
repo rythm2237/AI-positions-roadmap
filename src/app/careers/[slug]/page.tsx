@@ -19,6 +19,7 @@ import {
 } from "@/data/careers/activation-batch-six";
 import { cloudEngineerCareer } from "@/data/careers/activation-batch-seven";
 import { cybersecurityAnalystCareer } from "@/data/careers/cybersecurity-analyst";
+import { generativeEngineOptimizationSpecialistCareer } from "@/data/careers/generative-engine-optimization-specialist";
 import { getPublishedCareer } from "@/lib/publishedCareerRepository";
 import { absoluteUrl, buildMetadata, seoConfig } from "@/lib/seo";
 import type { CareerWorkspaceData } from "@/types/careerWorkspace";
@@ -38,6 +39,7 @@ const builtIn: Record<string, CareerWorkspaceData> = {
   "business-ai-consultant": businessAiConsultantCareer,
   "cybersecurity-analyst": cybersecurityAnalystCareer,
   "cloud-engineer": cloudEngineerCareer,
+  "generative-engine-optimization-specialist": generativeEngineOptimizationSpecialistCareer,
 };
 
 async function resolveCareer(slug: string) {
