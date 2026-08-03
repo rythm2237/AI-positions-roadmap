@@ -4,9 +4,18 @@ import { motion, useReducedMotion } from "framer-motion";
 import ReferenceLearningChooser from "@/components/career/resources/ReferenceLearningChooser";
 import { EffortEstimate } from "@/components/career/EffortEstimate";
 import { isAssessmentQualified } from "@/lib/assessmentPolicy";
-import { getJourneyStageProgress, isJourneyAssessmentUnlocked, isJourneyStageUnlocked } from "@/lib/careerWorkspaceProgress";
+import {
+  getJourneyStageProgress,
+  isJourneyAssessmentUnlocked,
+  isJourneyStageUnlocked,
+} from "@/lib/careerWorkspaceProgress";
 import { resolveCareerStepReferences } from "@/lib/references/referenceResolver";
-import type { CareerAssessment, CareerNote, CareerWorkspaceData, CareerWorkspaceProgress } from "@/types/careerWorkspace";
+import type {
+  CareerAssessment,
+  CareerNote,
+  CareerWorkspaceData,
+  CareerWorkspaceProgress,
+} from "@/types/careerWorkspace";
 
 type Props = {
   career: CareerWorkspaceData;
@@ -18,60 +27,319 @@ type Props = {
   onViewResource: (id: string) => void;
 };
 
-export default function LearningWorkspace({ career, progress, selectedStageId, onSelectStage, onOpenNote, onOpenAssessment, onViewResource }: Props) {
+export default function LearningWorkspace({
+  career,
+  progress,
+  selectedStageId,
+  onSelectStage,
+  onOpenNote,
+  onOpenAssessment,
+  onViewResource,
+}: Props) {
   const reduceMotion = useReducedMotion();
-  const index = Math.max(0, career.journeyStages.findIndex((stage) => stage.id === selectedStageId));
-  const current = career.journeyStages[index] ?? career.journeyStages[0];
+  const stageIndex = Math.max(
+    0,
+    career.journeyStages.findIndex((stage) => stage.id === selectedStageId),
+  );
+  const current = career.journeyStages[stageIndex] ?? career.journeyStages[0];
 
-  if (!current) return <section className="grid h-full place-items-center p-8 text-center"><div><h1 className="text-2xl font-semibold text-white">Learning content is being prepared.</h1><p className="mt-2 text-slate-400">This career has no Journey steps yet.</p></div></section>;
+  if (!current) {
+    return (
+      <section className="grid h-full place-items-center p-8 text-center">
+        <div>
+          <h1 className="text-2xl font-semibold text-white">Learning content is being prepared.</h1>
+          <p className="mt-2 text-slate-400">This career has no Journey steps yet.</p>
+        </div>
+      </section>
+    );
+  }
 
+  const resources = resolveCareerStepReferences(
+    current.resources.map((resource) => resource.id),
+  );
   const unlocked = isJourneyStageUnlocked(current.id, career, progress);
-  const resources = resolveCareerStepReferences(current.resources.map((item) => item.id));
   const stageProgress = getJourneyStageProgress(current.id, career, progress);
-  const completedStages = career.journeyStages.filter((stage) => Boolean(stage.phaseExam && isAssessmentQualified(stage.phaseExam, progress.assessmentResults[stage.phaseExam.id]))).length;
-  const overall = Math.round((completedStages / Math.max(1, career.journeyStages.length)) * 100);
-  const checkpointUnlocked = isJourneyAssessmentUnlocked(current.id, "comprehensive", career, progress);
-  const previous = career.journeyStages[index - 1];
-  const next = career.journeyStages[index + 1];
+  const previous = career.journeyStages[stageIndex - 1];
+  const next = career.journeyStages[stageIndex + 1];
+  const checkpointUnlocked = isJourneyAssessmentUnlocked(
+    current.id,
+    "comprehensive",
+    career,
+    progress,
+  );
+  const completedStages = career.journeyStages.filter((stage) =>
+    Boolean(
+      stage.phaseExam &&
+        isAssessmentQualified(
+          stage.phaseExam,
+          progress.assessmentResults[stage.phaseExam.id],
+        ),
+    ),
+  ).length;
+  const overallProgress = Math.round(
+    (completedStages / Math.max(1, career.journeyStages.length)) * 100,
+  );
 
   return (
-    <motion.section className="h-full w-full min-w-0 overflow-x-hidden overflow-y-auto px-4 pb-28 pt-4 lg:px-7 lg:pb-8" initial={reduceMotion ? false : { opacity: 0 }} animate={{ opacity: 1 }}>
-      <div className="sticky top-0 z-30 mx-auto max-w-7xl pb-3 pt-1">
-        <div className="flex items-center justify-between gap-3 rounded-2xl border border-white/10 bg-[#070a18]/92 px-4 py-3 shadow-2xl backdrop-blur-xl">
-          <button type="button" disabled={!previous} onClick={() => previous && onSelectStage(previous.id)} className="min-h-10 rounded-xl border border-white/10 px-3 text-sm font-semibold text-slate-300 disabled:opacity-30">← Previous</button>
-          <div className="min-w-0 flex-1 text-center"><p className="text-[10px] font-semibold uppercase tracking-[.18em] text-violet-300">Stage {current.order} of {career.journeyStages.length}</p><p className="truncate text-sm font-semibold text-white">{current.title}</p></div>
-          <button type="button" disabled={!next || !isJourneyStageUnlocked(next.id, career, progress)} onClick={() => next && onSelectStage(next.id)} className="min-h-10 rounded-xl border border-white/10 px-3 text-sm font-semibold text-slate-300 disabled:opacity-30">Next →</button>
+    <motion.section
+      className="h-full w-full min-w-0 overflow-x-hidden overflow-y-auto px-4 pb-28 pt-4 lg:px-7 lg:pb-8"
+      initial={reduceMotion ? false : { opacity: 0 }}
+      animate={{ opacity: 1 }}
+    >
+      <div className="mx-auto max-w-7xl pb-3">
+        <div className="flex items-center justify-between gap-3 rounded-2xl border border-white/10 bg-[#070a18]/92 px-4 py-3 shadow-xl backdrop-blur-xl">
+          <button
+            type="button"
+            disabled={!previous}
+            onClick={() => previous && onSelectStage(previous.id)}
+            className="min-h-10 rounded-xl border border-white/10 px-3 text-sm font-semibold text-slate-300 disabled:opacity-30"
+          >
+            ← Previous
+          </button>
+          <div className="min-w-0 flex-1 text-center">
+            <p className="text-[10px] font-semibold uppercase tracking-[.18em] text-violet-300">
+              Stage {current.order} of {career.journeyStages.length}
+            </p>
+            <p className="truncate text-sm font-semibold text-white">{current.title}</p>
+          </div>
+          <button
+            type="button"
+            disabled={!next || !isJourneyStageUnlocked(next.id, career, progress)}
+            onClick={() => next && onSelectStage(next.id)}
+            className="min-h-10 rounded-xl border border-white/10 px-3 text-sm font-semibold text-slate-300 disabled:opacity-30"
+          >
+            Next →
+          </button>
         </div>
       </div>
 
       <header className="mx-auto max-w-7xl rounded-3xl border border-violet-300/15 bg-[radial-gradient(circle_at_15%_0%,rgba(124,58,237,.22),transparent_42%),rgba(2,6,23,.78)] p-5 shadow-premium sm:p-7">
         <div className="flex flex-col justify-between gap-6 lg:flex-row lg:items-end">
-          <div className="max-w-3xl"><p className="eyebrow">{career.title} · Learning Journey</p><h1 className="mt-3 font-display text-3xl font-semibold text-white sm:text-5xl">{current.title}</h1><p className="mt-3 text-sm leading-7 text-slate-300">{current.explanation}</p></div>
-          <div className="w-full max-w-sm rounded-2xl border border-white/10 bg-black/15 p-4"><div className="flex items-center justify-between text-xs text-slate-400"><span>Step progress</span><span>{stageProgress}%</span></div><div className="mt-2 h-2.5 overflow-hidden rounded-full bg-white/10"><div className="h-full rounded-full bg-gradient-to-r from-violet-500 via-cyan-400 to-emerald-400 transition-all" style={{ width: `${stageProgress}%` }} /></div><p className="mt-2 text-xs text-slate-500">{completedStages} of {career.journeyStages.length} stages verified · {overall}% overall</p></div>
+          <div className="max-w-3xl">
+            <p className="eyebrow">{career.title} · Learning Journey</p>
+            <h1 className="mt-3 font-display text-3xl font-semibold text-white sm:text-5xl">
+              {current.title}
+            </h1>
+            <p className="mt-3 text-sm leading-7 text-slate-300">{current.explanation}</p>
+          </div>
+          <div className="w-full max-w-sm rounded-2xl border border-white/10 bg-black/15 p-4">
+            <div className="flex items-center justify-between text-xs text-slate-400">
+              <span>Step progress</span>
+              <span>{stageProgress}%</span>
+            </div>
+            <div className="mt-2 h-2.5 overflow-hidden rounded-full bg-white/10">
+              <div
+                className="h-full rounded-full bg-gradient-to-r from-violet-500 via-cyan-400 to-emerald-400"
+                style={{ width: `${stageProgress}%` }}
+              />
+            </div>
+            <p className="mt-2 text-xs text-slate-500">
+              {completedStages} of {career.journeyStages.length} stages verified · {overallProgress}% overall
+            </p>
+          </div>
         </div>
-        <div className="mt-6 grid gap-3 md:grid-cols-[2fr_1fr_auto]"><EffortEstimate estimate={current.estimatedEffort} /><Info label="Required level" value="Intermediate" /><button type="button" onClick={() => onOpenNote("step", current.id, current.title)} className="btn-secondary min-h-11 self-stretch">Step notes</button></div>
-        {!unlocked ? <p className="mt-4 rounded-xl border border-amber-300/20 bg-amber-400/10 p-3 text-sm text-amber-100">Complete the previous stage assessment to unlock actions. You can still review this stage.</p> : null}
+        <div className="mt-6 grid gap-3 md:grid-cols-[2fr_1fr_auto]">
+          <EffortEstimate estimate={current.estimatedEffort} />
+          <Info label="Required level" value="Intermediate" />
+          <button
+            type="button"
+            onClick={() => onOpenNote("step", current.id, current.title)}
+            className="btn-secondary min-h-11 self-stretch"
+          >
+            Step notes
+          </button>
+        </div>
       </header>
 
-      <div className="mx-auto mt-4 max-w-7xl overflow-x-auto" aria-label="Learning stages"><div className="flex min-w-max gap-2 pb-2" role="tablist">{career.journeyStages.map((stage) => { const available = isJourneyStageUnlocked(stage.id, career, progress); const passed = Boolean(stage.phaseExam && isAssessmentQualified(stage.phaseExam, progress.assessmentResults[stage.phaseExam.id])); return <button key={stage.id} type="button" role="tab" aria-selected={stage.id === current.id} onClick={() => onSelectStage(stage.id)} className={`min-h-11 rounded-xl border px-4 text-left text-xs font-semibold ${stage.id === current.id ? "border-cyan-300/50 bg-cyan-400/10 text-white" : passed ? "border-emerald-300/25 text-emerald-200" : "border-white/10 text-slate-400"}`}><span className="mr-2">{passed ? "✓" : available ? stage.order : "🔒"}</span>{stage.label ?? stage.title}</button>; })}</div></div>
+      <div className="mx-auto mt-4 max-w-7xl overflow-x-auto" aria-label="Learning stages">
+        <div className="flex min-w-max gap-2 pb-2" role="tablist">
+          {career.journeyStages.map((stage) => {
+            const available = isJourneyStageUnlocked(stage.id, career, progress);
+            const passed = Boolean(
+              stage.phaseExam &&
+                isAssessmentQualified(
+                  stage.phaseExam,
+                  progress.assessmentResults[stage.phaseExam.id],
+                ),
+            );
+            return (
+              <button
+                key={stage.id}
+                type="button"
+                role="tab"
+                aria-selected={stage.id === current.id}
+                onClick={() => onSelectStage(stage.id)}
+                className={`min-h-11 rounded-xl border px-4 text-left text-xs font-semibold ${
+                  stage.id === current.id
+                    ? "border-cyan-300/50 bg-cyan-400/10 text-white"
+                    : passed
+                      ? "border-emerald-300/25 text-emerald-200"
+                      : "border-white/10 text-slate-400"
+                }`}
+              >
+                <span className="mr-2">{passed ? "✓" : available ? stage.order : "🔒"}</span>
+                {stage.label ?? stage.title}
+              </button>
+            );
+          })}
+        </div>
+      </div>
 
-      <div className="mx-auto mt-3 grid min-w-0 max-w-7xl gap-4 xl:grid-cols-[minmax(0,1fr)_18rem]">
+      <div className="mx-auto mt-3 grid max-w-7xl gap-4 xl:grid-cols-[minmax(0,1fr)_18rem]">
         <main className="min-w-0 space-y-4">
-          <article className="rounded-3xl border border-white/10 bg-slate-950/70 p-5"><p className="label-sm text-cyan-300">Mission</p><h2 className="mt-2 text-xl font-semibold text-white">What you will accomplish</h2><p className="mt-2 text-sm leading-6 text-slate-400">{current.summary}</p><ul className="mt-4 grid gap-2 sm:grid-cols-2">{current.lessons.map((lesson) => <li key={lesson} className="flex gap-3 rounded-xl border border-white/8 bg-white/[.025] p-3 text-sm leading-6 text-slate-300"><span className="text-cyan-300">◇</span>{lesson}</li>)}</ul></article>
-
-          <article className="rounded-3xl border border-white/10 bg-slate-950/70 p-5 sm:p-6"><div className="flex items-center justify-between gap-3"><div><p className="label-sm text-violet-300">Learn → Watch → Practice → Check</p><h2 className="mt-2 text-xl font-semibold text-white">Your learning path</h2><p className="mt-1 text-xs text-slate-500">Choose a verified format, complete the milestone, and pass its knowledge check before the final checkpoint.</p></div><span className="tag">{resources.length} milestones</span></div>
-            <div className="relative mt-6 space-y-4"><div aria-hidden="true" className="absolute bottom-8 left-[1.18rem] top-8 w-px bg-gradient-to-b from-cyan-300/60 via-violet-400/35 to-emerald-300/60" />{resources.length ? resources.map((resource, resourceIndex) => { const assessment = (current.topicAssessments ?? []).find((item) => item.topicId === resource.id); const result = assessment ? progress.assessmentResults[assessment.id] : undefined; const qualified = Boolean(assessment && isAssessmentQualified(assessment, result)); return <motion.div key={resource.id} className="relative pl-12" initial={reduceMotion ? false : { opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: resourceIndex * .04 }}><div className={`absolute left-0 top-5 z-10 grid h-10 w-10 place-items-center rounded-full border text-sm font-bold shadow-lg ${qualified ? "border-emerald-300/50 bg-emerald-400/15 text-emerald-200" : "border-cyan-300/40 bg-slate-950 text-cyan-200"}`}>{qualified ? "✓" : resourceIndex + 1}</div><div className="overflow-hidden rounded-2xl border border-white/10 bg-[linear-gradient(145deg,rgba(255,255,255,.055),rgba(255,255,255,.018))]"><div className="p-5"><div className="flex flex-wrap items-start justify-between gap-3"><div><p className="text-xs uppercase tracking-wider text-violet-300">{resource.type} · {resource.provider}</p><h3 className="mt-2 text-lg font-semibold text-white">{resource.title}</h3></div><span className={qualified ? "tag tag-cyan" : "tag"}>{qualified ? "Completed" : "In your path"}</span></div><p className="mt-2 text-sm leading-6 text-slate-400">{resource.description}</p><div className="mt-4"><ReferenceLearningChooser resource={resource} disabled={!unlocked} onOpen={() => onViewResource(resource.id)} /></div></div><div className="border-t border-white/10 bg-slate-950/45 p-5"><div className="flex flex-col justify-between gap-3 sm:flex-row sm:items-center"><div><p className="label-sm text-cyan-300">Knowledge check</p><p className="mt-1 text-sm text-slate-300">Five fresh questions · pass with 3 correct</p>{result ? <p className={`mt-1 text-xs ${qualified ? "text-emerald-300" : "text-rose-300"}`}>{qualified ? "Passed — next milestone ready" : "Review and try again"} · {result.score}%</p> : null}</div><button type="button" disabled={!unlocked || !assessment} onClick={() => assessment && onOpenAssessment(assessment, current.id)} className="btn-primary min-h-11 disabled:cursor-not-allowed disabled:opacity-40">{qualified ? "Try a new check" : "Start check"}</button></div></div></div></motion.div>; }) : <p className="text-sm text-amber-200">Resources need review. No valid Registry references are mapped to this step.</p>}</div>
+          <article className="rounded-3xl border border-white/10 bg-slate-950/70 p-5">
+            <p className="label-sm text-cyan-300">Mission</p>
+            <h2 className="mt-2 text-xl font-semibold text-white">What you will accomplish</h2>
+            <p className="mt-2 text-sm leading-6 text-slate-400">{current.summary}</p>
+            <ul className="mt-4 grid gap-2 sm:grid-cols-2">
+              {current.lessons.map((lesson) => (
+                <li
+                  key={lesson}
+                  className="flex gap-3 rounded-xl border border-white/8 bg-white/[.025] p-3 text-sm leading-6 text-slate-300"
+                >
+                  <span className="text-cyan-300">◇</span>
+                  {lesson}
+                </li>
+              ))}
+            </ul>
           </article>
 
-          <article className="rounded-3xl border border-violet-300/15 bg-[radial-gradient(circle_at_10%_0%,rgba(124,58,237,.18),transparent_45%),rgba(2,6,23,.78)] p-5 sm:p-6"><p className="label-sm text-violet-300">Step checkpoint</p><h2 className="mt-2 text-xl font-semibold text-white">Comprehensive step assessment</h2><p className="mt-2 text-sm leading-6 text-slate-400">Pass every milestone check to unlock this final assessment and the next stage.</p>{!checkpointUnlocked ? <p className="mt-3 rounded-xl border border-amber-300/20 bg-amber-400/10 p-3 text-sm text-amber-100">Continue through the learning path above to unlock this checkpoint.</p> : null}<div className="mt-4 flex flex-wrap gap-3"><button type="button" disabled={!checkpointUnlocked || !current.phaseExam} onClick={() => current.phaseExam && onOpenAssessment(current.phaseExam, current.id)} className="btn-primary min-h-11 disabled:opacity-40">{current.phaseExam ? "Start step assessment" : "Assessment not available yet"}</button><button type="button" onClick={() => onOpenNote("step", current.id, current.title)} className="btn-secondary min-h-11">Add reflection note</button></div></article>
+          <article className="rounded-3xl border border-white/10 bg-slate-950/70 p-5 sm:p-6">
+            <div className="flex items-center justify-between gap-3">
+              <div>
+                <p className="label-sm text-violet-300">Learn → Watch → Practice → Check</p>
+                <h2 className="mt-2 text-xl font-semibold text-white">Your learning path</h2>
+                <p className="mt-1 text-xs text-slate-500">
+                  Choose Reading, Video, or Practice for each milestone, then complete its knowledge check.
+                </p>
+              </div>
+              <span className="tag">{resources.length} milestones</span>
+            </div>
+
+            <div className="mt-6 space-y-4">
+              {resources.map((resource, resourceIndex) => {
+                const assessment = (current.topicAssessments ?? []).find(
+                  (item) => item.topicId === resource.id,
+                );
+                const result = assessment
+                  ? progress.assessmentResults[assessment.id]
+                  : undefined;
+                const qualified = Boolean(
+                  assessment && isAssessmentQualified(assessment, result),
+                );
+
+                return (
+                  <motion.div
+                    key={resource.id}
+                    className="overflow-hidden rounded-2xl border border-white/10 bg-[linear-gradient(145deg,rgba(255,255,255,.055),rgba(255,255,255,.018))]"
+                    initial={reduceMotion ? false : { opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: resourceIndex * 0.04 }}
+                  >
+                    <div className="p-5">
+                      <div className="flex flex-wrap items-start justify-between gap-3">
+                        <div>
+                          <p className="text-xs uppercase tracking-wider text-violet-300">
+                            {resource.type} · {resource.provider}
+                          </p>
+                          <h3 className="mt-2 text-lg font-semibold text-white">{resource.title}</h3>
+                        </div>
+                        <span className={qualified ? "tag tag-cyan" : "tag"}>
+                          {qualified ? "Completed" : "Choose format"}
+                        </span>
+                      </div>
+                      <p className="mt-2 text-sm leading-6 text-slate-400">{resource.description}</p>
+                      <div className="mt-4">
+                        <ReferenceLearningChooser
+                          resource={resource}
+                          disabled={!unlocked}
+                          onOpen={() => onViewResource(resource.id)}
+                        />
+                      </div>
+                    </div>
+                    <div className="border-t border-white/10 bg-slate-950/45 p-5">
+                      <div className="flex flex-col justify-between gap-3 sm:flex-row sm:items-center">
+                        <div>
+                          <p className="label-sm text-cyan-300">Knowledge check</p>
+                          <p className="mt-1 text-sm text-slate-300">Five questions · 60% required</p>
+                          {result ? (
+                            <p className={`mt-1 text-xs ${qualified ? "text-emerald-300" : "text-rose-300"}`}>
+                              {qualified ? "Passed" : "Review and try again"} · {result.score}%
+                            </p>
+                          ) : null}
+                        </div>
+                        <button
+                          type="button"
+                          disabled={!unlocked || !assessment}
+                          onClick={() => assessment && onOpenAssessment(assessment, current.id)}
+                          className="btn-primary min-h-11 disabled:cursor-not-allowed disabled:opacity-40"
+                        >
+                          {qualified ? "Try a new check" : "Start check"}
+                        </button>
+                      </div>
+                    </div>
+                  </motion.div>
+                );
+              })}
+            </div>
+          </article>
+
+          <article className="rounded-3xl border border-violet-300/15 bg-slate-950/75 p-5 sm:p-6">
+            <p className="label-sm text-violet-300">Step checkpoint</p>
+            <h2 className="mt-2 text-xl font-semibold text-white">Comprehensive step assessment</h2>
+            <p className="mt-2 text-sm leading-6 text-slate-400">
+              Pass every milestone check to unlock the final assessment and next stage.
+            </p>
+            <div className="mt-4 flex flex-wrap gap-3">
+              <button
+                type="button"
+                disabled={!checkpointUnlocked || !current.phaseExam}
+                onClick={() => current.phaseExam && onOpenAssessment(current.phaseExam, current.id)}
+                className="btn-primary min-h-11 disabled:opacity-40"
+              >
+                Start step assessment
+              </button>
+              <button
+                type="button"
+                onClick={() => onOpenNote("step", current.id, current.title)}
+                className="btn-secondary min-h-11"
+              >
+                Add reflection note
+              </button>
+            </div>
+          </article>
         </main>
 
-        <aside className="min-w-0"><div className="xl:sticky xl:top-[78px] xl:max-h-[calc(100dvh-96px)] xl:overflow-y-auto xl:pr-1"><div className="rounded-3xl border border-cyan-300/15 bg-slate-950/78 p-5"><p className="label-sm text-cyan-300">Current focus</p><h3 className="mt-2 text-lg font-semibold text-white">{current.title}</h3><p className="mt-2 text-sm leading-6 text-slate-400">{current.summary}</p><div className="mt-5"><div className="flex items-center justify-between text-xs text-slate-500"><span>Progress</span><span>{stageProgress}%</span></div><div className="mt-2 h-2 rounded-full bg-white/10"><div className="h-full rounded-full bg-gradient-to-r from-cyan-400 to-violet-500" style={{ width: `${stageProgress}%` }} /></div></div><div className="mt-5 space-y-2"><p className="text-[10px] font-bold uppercase tracking-[.16em] text-slate-600">Practical checklist</p>{current.tasks.map((task) => <div key={task.id} className="rounded-xl border border-white/10 p-3"><p className="text-sm font-medium text-white">{task.title}</p><p className="mt-1 text-xs leading-5 text-slate-400">{task.description}</p></div>)}</div></div></div></div></aside>
+        <aside className="min-w-0">
+          <div className="xl:sticky xl:top-[78px] xl:max-h-[calc(100dvh-96px)] xl:overflow-y-auto xl:pr-1">
+            <div className="rounded-3xl border border-cyan-300/15 bg-slate-950/78 p-5">
+              <p className="label-sm text-cyan-300">Current focus</p>
+              <h3 className="mt-2 text-lg font-semibold text-white">{current.title}</h3>
+              <p className="mt-2 text-sm leading-6 text-slate-400">{current.summary}</p>
+              <div className="mt-5 space-y-2">
+                <p className="text-[10px] font-bold uppercase tracking-[.16em] text-slate-600">
+                  Practical checklist
+                </p>
+                {current.tasks.map((task) => (
+                  <div key={task.id} className="rounded-xl border border-white/10 p-3">
+                    <p className="text-sm font-medium text-white">{task.title}</p>
+                    <p className="mt-1 text-xs leading-5 text-slate-400">{task.description}</p>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        </aside>
       </div>
     </motion.section>
   );
 }
 
 function Info({ label, value }: { label: string; value: string }) {
-  return <div className="rounded-xl border border-white/10 bg-white/[.035] p-3"><p className="text-xs text-slate-500">{label}</p><p className="mt-1 text-sm font-semibold text-white">{value}</p></div>;
+  return (
+    <div className="rounded-xl border border-white/10 bg-white/[.035] p-3">
+      <p className="text-xs text-slate-500">{label}</p>
+      <p className="mt-1 text-sm font-semibold text-white">{value}</p>
+    </div>
+  );
 }
