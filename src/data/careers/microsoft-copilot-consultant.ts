@@ -196,11 +196,12 @@ const stages: readonly StageSpec[] = [
 ] as const;
 
 function makeQuestions(stageIndex: number, concepts: readonly string[]): CareerQuizQuestion[] {
+  const resolvedStageIndex = Math.min(stageIndex, stages.length - 1);
   return Array.from({ length: 12 }, (_, index) => {
     const focus = concepts[index % concepts.length];
     const scenario = index % 3 === 0;
     return {
-      id: `mcc-stage-${stageIndex + 1}-question-${index + 1}`,
+      id: `mcc-stage-${resolvedStageIndex + 1}-question-${index + 1}`,
       question: scenario
         ? `In a Microsoft Copilot consulting engagement, which decision best demonstrates sound judgment about ${focus}?`
         : `Which statement about ${focus} is most accurate for a Microsoft Copilot Consultant?`,
@@ -212,11 +213,11 @@ function makeQuestions(stageIndex: number, concepts: readonly string[]): CareerQ
       ],
       correctAnswerIndex: 0,
       explanation: `Professional Copilot consulting makes ${focus} traceable to business outcomes, platform constraints, access, risk, validation, and accountable ownership.`,
-      difficulty: stageIndex < 3 ? "Beginner" : stageIndex < 7 ? "Intermediate" : "Advanced",
+      difficulty: resolvedStageIndex < 3 ? "Beginner" : resolvedStageIndex < 7 ? "Intermediate" : "Advanced",
       relatedTopic: focus,
-      learningObjectiveId: `mcc-stage-${stageIndex + 1}-${index % concepts.length + 1}`,
+      learningObjectiveId: `mcc-stage-${resolvedStageIndex + 1}-${index % concepts.length + 1}`,
       questionType: scenario ? "scenario" : "multiple-choice",
-      referenceId: stages[stageIndex].resource.id,
+      referenceId: stages[resolvedStageIndex].resource.id,
       status: "active",
       lastReviewedAt: "2026-08-03",
       version: 1,
@@ -225,15 +226,16 @@ function makeQuestions(stageIndex: number, concepts: readonly string[]): CareerQ
 }
 
 function makeAssessment(stageIndex: number, type: "topic" | "comprehensive", topicIndex = 0): CareerAssessment {
-  const stage = stages[stageIndex];
-  const all = makeQuestions(stageIndex, stage.concepts);
+  const resolvedStageIndex = Math.min(stageIndex, stages.length - 1);
+  const stage = stages[resolvedStageIndex];
+  const all = makeQuestions(resolvedStageIndex, stage.concepts);
   const questions = type === "topic"
     ? all.slice(topicIndex * 4, topicIndex * 4 + 5)
     : all;
   return {
     id: type === "topic"
-      ? `mcc-stage-${stageIndex + 1}-topic-${topicIndex + 1}-assessment`
-      : `mcc-stage-${stageIndex + 1}-comprehensive-assessment`,
+      ? `mcc-stage-${resolvedStageIndex + 1}-topic-${topicIndex + 1}-assessment`
+      : `mcc-stage-${resolvedStageIndex + 1}-comprehensive-assessment`,
     title: type === "topic"
       ? `${stage.lessons[topicIndex]} knowledge check`
       : `${stage.title} comprehensive assessment`,
@@ -242,7 +244,7 @@ function makeAssessment(stageIndex: number, type: "topic" | "comprehensive", top
       : `A scenario-based assessment covering ${stage.lessons.join(", ")}.`,
     passingScore: 70,
     assessmentType: type,
-    topicId: type === "topic" ? `mcc-stage-${stageIndex + 1}-topic-${topicIndex + 1}` : undefined,
+    topicId: type === "topic" ? `mcc-stage-${resolvedStageIndex + 1}-topic-${topicIndex + 1}` : undefined,
     topicLabel: type === "topic" ? stage.lessons[topicIndex] : stage.title,
     durationMinutes: type === "topic" ? 10 : 25,
     questionsPerAttempt: type === "topic" ? 5 : 10,
@@ -427,8 +429,8 @@ const career: CareerWorkspaceData = {
     overviewTitle: "Microsoft Copilot Consultant Career Journey",
     overviewDescription: "Progress from Microsoft ecosystem orientation and readiness assessment through Copilot Studio agent delivery, governance, adoption, and client-ready portfolio evidence.",
   },
-  journeyStages: base.journeyStages.map(mapStage),
-  roadmap: base.roadmap.map(mapRoadmap),
+  journeyStages: base.journeyStages.slice(0, stages.length).map(mapStage),
+  roadmap: base.roadmap.slice(0, roadmapSpecs.length).map(mapRoadmap),
   projects: [
     {
       id: "mcc-project-readiness",
