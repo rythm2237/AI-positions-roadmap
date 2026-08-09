@@ -134,6 +134,24 @@ section.touch-none.select-none.overflow-hidden > div.pointer-events-none.absolut
     max-width: 100% !important;
   }
 
+  /* Career hero must scroll instead of clipping when content is taller than the visual viewport. */
+  main > section.relative.h-full.overflow-hidden:has(> div[aria-hidden="true"]) {
+    overflow-y: auto !important;
+    overscroll-behavior-y: contain;
+    padding-top: 1rem !important;
+    padding-bottom: calc(6.75rem + env(safe-area-inset-bottom)) !important;
+  }
+
+  main > section.relative.h-full.overflow-hidden:has(> div[aria-hidden="true"]) > div.relative.z-10 {
+    min-height: max-content !important;
+    height: auto !important;
+    justify-content: flex-start !important;
+  }
+
+  main > section.relative.h-full.overflow-hidden:has(> div[aria-hidden="true"]) h1 {
+    margin-top: 0.75rem !important;
+  }
+
   /* Learning stage navigation is intentionally horizontally scrollable. */
   main [aria-label="Learning stages"] {
     max-width: 100%;
@@ -143,6 +161,19 @@ section.touch-none.select-none.overflow-hidden > div.pointer-events-none.absolut
 
   main [aria-label="Learning stages"]::-webkit-scrollbar {
     display: none;
+  }
+
+  /* Bottom-sheet modals need room above iOS browser controls. */
+  div.fixed.inset-0[class*="z-[65]"] > div,
+  div.fixed.inset-0[class*="z-[70]"] > div,
+  div.fixed.inset-0[class*="z-[80]"] > div {
+    max-height: calc(100dvh - 4.75rem) !important;
+  }
+
+  div.fixed.inset-0[class*="z-[65]"] > div > div[class*="overflow-y-auto"],
+  div.fixed.inset-0[class*="z-[70]"] > div > div[class*="overflow-y-auto"],
+  div.fixed.inset-0[class*="z-[80]"] > div > div[class*="overflow-y-auto"] {
+    padding-bottom: calc(6.5rem + env(safe-area-inset-bottom)) !important;
   }
 }
 
@@ -155,6 +186,33 @@ section.touch-none.select-none.overflow-hidden > div.pointer-events-none.absolut
   main article[class*="rounded-3xl"],
   main header[class*="rounded-3xl"] {
     border-radius: 1.25rem !important;
+  }
+}
+
+/* Short landscape viewports: prioritize usable content over oversized hero composition. */
+@media (orientation: landscape) and (max-height: 560px) {
+  header[role="banner"] > div {
+    height: 3.5rem !important;
+  }
+
+  main > section.relative.h-full.overflow-hidden:has(> div[aria-hidden="true"]) {
+    overflow-y: auto !important;
+    padding-top: 0.5rem !important;
+    padding-bottom: 4rem !important;
+  }
+
+  main > section.relative.h-full.overflow-hidden:has(> div[aria-hidden="true"]) > div.relative.z-10 {
+    justify-content: flex-start !important;
+  }
+
+  main > section.relative.h-full.overflow-hidden:has(> div[aria-hidden="true"]) h1 {
+    font-size: clamp(2.25rem, 8vw, 4.25rem) !important;
+    line-height: 0.95 !important;
+    margin-top: 0.5rem !important;
+  }
+
+  main > section.relative.h-full.overflow-hidden:has(> div[aria-hidden="true"]) p {
+    line-height: 1.45 !important;
   }
 }
 
