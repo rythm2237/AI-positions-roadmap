@@ -16,6 +16,15 @@ function avatarFor(user: User) {
   return metadata.avatar_url || metadata.picture || null;
 }
 
+function UserIcon() {
+  return (
+    <svg viewBox="0 0 24 24" className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+      <circle cx="12" cy="8" r="3.5" />
+      <path d="M5.5 20c.9-4.2 3-6.2 6.5-6.2s5.6 2 6.5 6.2" />
+    </svg>
+  );
+}
+
 export default function AuthDock() {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
@@ -25,9 +34,7 @@ export default function AuthDock() {
   const pathname = usePathname();
   const rootRef = useRef<HTMLDivElement>(null);
   const inCareerWorkspace = pathname.startsWith("/careers/");
-  const mobileTop = inCareerWorkspace
-    ? "top-[calc(env(safe-area-inset-top)+0.5rem)]"
-    : "top-[14px]";
+  const mobileTop = inCareerWorkspace ? "top-[calc(env(safe-area-inset-top)+0.5rem)]" : "top-[14px]";
 
   useEffect(() => {
     const supabase = createClient();
@@ -66,21 +73,17 @@ export default function AuthDock() {
   if (pathname.startsWith("/admin")) return null;
 
   if (loading) {
-    return (
-      <div
-        className={`fixed right-16 z-[65] h-10 w-10 animate-pulse rounded-full border border-white/10 bg-[#0a0d1d]/80 sm:right-4 lg:right-4 ${mobileTop} lg:top-[14px]`}
-        aria-label="Loading account"
-      />
-    );
+    return <div className={`fixed right-[3.75rem] z-[65] h-10 w-10 animate-pulse rounded-full border border-white/10 bg-[#0a0d1d]/80 sm:right-4 lg:right-4 ${mobileTop} lg:top-[14px]`} aria-label="Loading account" />;
   }
 
   if (!user) {
     return (
       <Link
         href="/login?next=%2Fdashboard"
-        className={`fixed right-16 z-[65] rounded-xl border border-violet-300/20 bg-[#090b1d]/90 px-3 py-2.5 text-sm font-semibold text-violet-100 shadow-xl backdrop-blur-xl transition hover:bg-violet-500/15 sm:right-4 sm:px-4 lg:right-4 ${mobileTop} lg:top-[14px]`}
+        aria-label="Sign in"
+        className={`fixed right-[3.75rem] z-[65] grid min-h-11 place-items-center rounded-xl border border-violet-300/20 bg-[#090b1d]/90 px-3 text-sm font-semibold text-violet-100 shadow-xl backdrop-blur-xl transition hover:bg-violet-500/15 sm:right-4 sm:flex sm:px-4 lg:right-4 ${mobileTop} lg:top-[14px]`}
       >
-        Sign in
+        {inCareerWorkspace ? <><span className="sm:hidden"><UserIcon /></span><span className="hidden sm:inline">Sign in</span></> : <span>Sign in</span>}
       </Link>
     );
   }
@@ -89,11 +92,11 @@ export default function AuthDock() {
   const avatar = avatarFor(user);
 
   return (
-    <div ref={rootRef} className={`fixed right-16 z-[65] sm:right-4 lg:right-4 ${inCareerWorkspace ? "top-[calc(env(safe-area-inset-top)+0.375rem)]" : "top-[12px]"} lg:top-[12px]`}>
+    <div ref={rootRef} className={`fixed right-[3.75rem] z-[65] sm:right-4 lg:right-4 ${inCareerWorkspace ? "top-[calc(env(safe-area-inset-top)+0.375rem)]" : "top-[12px]"} lg:top-[12px]`}>
       <button type="button" onClick={() => setOpen((value) => !value)} className="flex h-11 max-w-[13.5rem] items-center gap-2 rounded-full border border-white/10 bg-[#090b1d]/92 p-1.5 pr-2 shadow-xl backdrop-blur-xl transition hover:border-violet-300/25 sm:pr-3" aria-expanded={open} aria-label="Open account menu">
         {avatar ? <img src={avatar} alt="" className="h-8 w-8 shrink-0 rounded-full border border-white/10 object-cover" referrerPolicy="no-referrer" /> : <span className="grid h-8 w-8 shrink-0 place-items-center rounded-full bg-violet-500/20 text-xs font-bold text-violet-100">{name.slice(0, 1).toUpperCase()}</span>}
         <span className="hidden min-w-0 max-w-24 truncate text-sm font-medium text-slate-200 2xl:block">{name}</span>
-        <svg viewBox="0 0 20 20" className={`h-4 w-4 shrink-0 text-slate-500 transition ${open ? "rotate-180" : ""}`} fill="currentColor"><path d="m5.5 7.5 4.5 4 4.5-4" /></svg>
+        <svg viewBox="0 0 20 20" className={`hidden h-4 w-4 shrink-0 text-slate-500 transition sm:block ${open ? "rotate-180" : ""}`} fill="currentColor"><path d="m5.5 7.5 4.5 4 4.5-4" /></svg>
       </button>
       {open ? (
         <div className="absolute right-0 mt-2 w-[min(14rem,calc(100vw-2rem))] overflow-hidden rounded-2xl border border-white/10 bg-[#090b1d]/98 p-2 shadow-2xl backdrop-blur-xl">
