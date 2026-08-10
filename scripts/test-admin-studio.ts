@@ -1,8 +1,10 @@
 import assert from "node:assert/strict";
 import fs from "node:fs";
 import { evaluateAdminAuthorization, safeAdminReturnUrl } from "../src/lib/admin/adminAuthorization.ts";
+import { evaluateContentQualityGate } from "../src/lib/admin/contentQualityGate.ts";
 import { normalizeCareerSlug, validateCareerInput } from "../src/lib/admin/careerValidation.ts";
 import { validateCareerWorkspaceData } from "../src/lib/careerContentValidation.ts";
+import type { ManagedCareer } from "../src/types/adminStudio.ts";
 
 const user = { id: "11111111-1111-4111-8111-111111111111", email: "admin@example.invalid" };
 assert.equal(evaluateAdminAuthorization(undefined, null, []).status, "unauthenticated");
@@ -40,6 +42,7 @@ for(const action of ["career.created","career.updated","career.archived","career
 assert.match(migration,/if not public\.is_app_admin\(\)/g);
 assert.match(actions,/requireAdmin/);
 assert.match(actions,/ADMIN_REQUIRED/);
+assert.match(actions,/evaluateContentQualityGate/);
 assert.doesNotMatch(actions,/deleteCareer|method:\s*["']DELETE/);
 assert.match(layout,/admin\/login\?returnTo=\/admin/);
 assert.match(layout,/AccessDenied/);
@@ -48,6 +51,13 @@ const workspaceFixture={slug:"ai-test",title:"AI Test",titleAliases:[{title:"Art
 assert.equal(validateCareerWorkspaceData(workspaceFixture,"ai-test").valid,true);
 assert.equal(validateCareerWorkspaceData({...workspaceFixture,slug:"wrong"},"ai-test").valid,false);
 assert.equal(validateCareerWorkspaceData({...workspaceFixture,journeyStages:[]},"ai-test").valid,false);
+
+const longCopy="This deliberately long career-specific explanation describes automation discovery, process qualification, exception handling, governance controls, implementation tradeoffs, operational monitoring, and measurable business outcomes for a professional learning path.";
+const otherCareer={id:"22222222-2222-4222-8222-222222222222",title:"Other Career",workspace_data:{overview:{body:longCopy}}} as ManagedCareer;
+assert.equal(evaluateContentQualityGate({workspaceData:{overview:{body:longCopy}},currentCareerId:"11111111-1111-4111-8111-111111111111",careers:[otherCareer]}).passed,false);
+assert.equal(evaluateContentQualityGate({workspaceData:{globalResources:[{url:"https://www.youtube.com/watch?v=test"}]},currentCareerId:"11111111-1111-4111-8111-111111111111",careers:[]}).findings[0]?.code,"direct_youtube");
+assert.equal(evaluateContentQualityGate({workspaceData:{globalResources:[{url:"https://learn.microsoft.com/training/"}]},currentCareerId:"11111111-1111-4111-8111-111111111111",careers:[]}).passed,true);
+
 assert.match(contentMigration,/workspace_data jsonb/);
 assert.match(contentMigration,/careers_public_read_published/);
 assert.match(contentMigration,/admin_save_career_content/);
@@ -56,4 +66,4 @@ assert.match(dynamicCareer,/getPublishedCareer/);
 assert.match(dynamicCareer,/CareerWorkspace career=\{career\}/);
 assert.match(contentEditor,/Validate & save/);
 
-console.log("Admin authorization, full content validation, preview/publishing, protected mutations, audit, and public rendering checks passed.");
+console.log("Admin authorization, content quality gate, full content validation, preview/publishing, protected mutations, audit, and public rendering checks passed.");
