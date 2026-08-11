@@ -48,6 +48,7 @@ export async function createStructuredAdminResponse<T>(options: StructuredRespon
     },
     body: JSON.stringify({
       model,
+      store: false,
       instructions: options.instructions,
       input: options.input,
       text: {
