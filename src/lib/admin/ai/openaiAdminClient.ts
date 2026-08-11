@@ -6,6 +6,7 @@ type StructuredResponseOptions = {
   schema: Record<string, unknown>;
   instructions: string;
   input: string;
+  tools?: Array<{ type: "web_search" }>;
 };
 
 type OpenAIResponse = {
@@ -51,6 +52,7 @@ export async function createStructuredAdminResponse<T>(options: StructuredRespon
       store: false,
       instructions: options.instructions,
       input: options.input,
+      ...(options.tools?.length ? { tools: options.tools } : {}),
       text: {
         format: {
           type: "json_schema",
