@@ -20,7 +20,7 @@ export async function POST(request: Request) {
       slug: career.slug,
       title: career.title,
       shortTitle: career.short_title,
-      summary: career.summary,
+      summary: career.summary ?? undefined,
       primaryTitle: career.taxonomy.primaryTitle,
       aliases: career.taxonomy.aliases,
     });
