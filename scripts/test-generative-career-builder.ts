@@ -11,6 +11,7 @@ const previewPage = fs.readFileSync("src/app/admin/(studio)/careers/[id]/preview
 const generationRoute = fs.readFileSync("src/app/api/admin/careers/generate/route.ts", "utf8");
 const resourceRoute = fs.readFileSync("src/app/api/admin/careers/[id]/resources/generate/route.ts", "utf8");
 const generator = fs.readFileSync("src/lib/ai/careerGenerator.ts", "utf8");
+const aiError = fs.readFileSync("src/lib/ai/aiError.ts", "utf8");
 const actions = fs.readFileSync("src/app/admin/(studio)/careers/actions.ts", "utf8");
 
 assert.match(createPage, /GenerativeCareerBuilder/);
@@ -33,6 +34,11 @@ assert.match(generationRoute, /logCareerAiError/);
 assert.match(resourceRoute, /logCareerAiError/);
 assert.match(generator, /maxOutputTokens:\s*30000/);
 assert.match(generator, /models:\s*\["anthropic\/claude-sonnet-5"\]/);
+assert.match(aiError, /customer_verification_required/);
+assert.ok(
+  aiError.indexOf("customer_verification_required") < aiError.indexOf("statusCode === 401"),
+  "Gateway billing verification errors must be classified before generic 403 authentication failures",
+);
 
 const providerUnsupportedKeywords = [
   "minLength", "maxLength", "pattern", "format", "minimum", "maximum",

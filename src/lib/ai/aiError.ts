@@ -25,11 +25,13 @@ export function classifyCareerAiError(error: unknown, fallback: "CAREER_GENERATI
   const apiError = chain.find(APICallError.isInstance);
   const message = chain.map((item) => item instanceof Error ? `${item.name}: ${item.message}` : String(item)).join(" | ");
 
+  // Gateway account-verification failures currently arrive as 403 responses,
+  // so billing signals must be classified before generic authentication errors.
+  if (apiError?.statusCode === 402 || /billing|payment|required credits|spend limit|valid credit card|customer_verification_required|add-credit-card/i.test(message)) {
+    return { code: "AI_GATEWAY_BILLING_REQUIRED" as const, status: 503 };
+  }
   if (apiError?.statusCode === 401 || apiError?.statusCode === 403 || /Unauthenticated|AI_GATEWAY_API_KEY|GatewayAuthentication|OIDC/i.test(message)) {
     return { code: "AI_GATEWAY_NOT_CONFIGURED" as const, status: 503 };
-  }
-  if (apiError?.statusCode === 402 || /billing|payment|required credits|spend limit/i.test(message)) {
-    return { code: "AI_GATEWAY_BILLING_REQUIRED" as const, status: 503 };
   }
   if (apiError?.statusCode === 429 || /rate.?limit|too many requests/i.test(message)) {
     return { code: "AI_GATEWAY_RATE_LIMITED" as const, status: 429 };
