@@ -32,6 +32,10 @@ export async function generateCareerBlueprint(title: string): Promise<GeneratedC
     model: CAREER_BLUEPRINT_MODEL,
     system: blueprintSystemPrompt,
     prompt: `Generate the complete Career Blueprint for this exact role: “${title}”. Preserve this professional identity and distinguish it from adjacent roles.`,
+    maxOutputTokens: 30000,
+    providerOptions: {
+      gateway: { models: ["anthropic/claude-sonnet-5"] },
+    },
     output: Output.object({ schema: careerBlueprintSchema }),
   });
   if (!output) throw new Error("CAREER_BLUEPRINT_EMPTY");
@@ -67,6 +71,10 @@ async function generateResourcePack(career: CareerWorkspaceData, requirement: Re
   const { output } = await generateText({
     model: CAREER_RESOURCE_MODEL,
     prompt: resourcePrompt(career, requirement),
+    maxOutputTokens: 8000,
+    providerOptions: {
+      gateway: { models: ["anthropic/claude-sonnet-5"] },
+    },
     tools: {
       parallel_search: gateway.tools.parallelSearch({
         mode: "one-shot",

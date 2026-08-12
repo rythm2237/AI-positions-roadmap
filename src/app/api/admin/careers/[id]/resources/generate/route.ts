@@ -3,6 +3,7 @@ import { requireAdmin } from "@/lib/admin/adminAuth";
 import { getCareer, saveCareerContent } from "@/lib/admin/careerRepository";
 import { applyResourcePacks } from "@/lib/ai/careerBlueprintAssembler";
 import { generateCareerResourcePacks } from "@/lib/ai/careerGenerator";
+import { classifyCareerAiError, logCareerAiError } from "@/lib/ai/aiError";
 import { validateCareerWorkspaceData } from "@/lib/careerContentValidation";
 
 export const runtime = "nodejs";
@@ -12,7 +13,9 @@ function errorResponse(code: string, status: number) {
   return NextResponse.json({ ok: false, code }, { status });
 }
 
-export async function POST(_request: Request, { params }: { params: Promise<{ id: string }> }) {
+export async function POST(request: Request, { params }: { params: Promise<{ id: string }> }) {
+  const startedAt = Date.now();
+  const requestId = request.headers.get("x-vercel-id");
   const authorization = await requireAdmin();
   if (authorization.status === "unauthenticated") return errorResponse("AUTH_REQUIRED", 401);
   if (authorization.status !== "admin") return errorResponse("ADMIN_REQUIRED", 403);
@@ -25,10 +28,12 @@ export async function POST(_request: Request, { params }: { params: Promise<{ id
   if (!blueprintValidation.valid) return errorResponse("CAREER_BLUEPRINT_INVALID", 422);
 
   try {
+    console.log(JSON.stringify({ level: "info", message: "Career resource generation started", route: "/api/admin/careers/[id]/resources/generate", requestId, careerId: id }));
     const packs = await generateCareerResourcePacks(blueprintValidation.data);
     const workspace = applyResourcePacks(blueprintValidation.data, packs);
     const validation = validateCareerWorkspaceData(workspace, career.slug);
     await saveCareerContent(authorization.accessToken, id, workspace, validation.errors);
+    console.log(JSON.stringify({ level: "info", message: "Career resource generation completed", route: "/api/admin/careers/[id]/resources/generate", requestId, careerId: id, durationMs: Date.now() - startedAt, resourceCount: workspace.globalResources.length, validationFindings: validation.errors.length }));
     return NextResponse.json({
       ok: true,
       careerId: id,
@@ -37,10 +42,8 @@ export async function POST(_request: Request, { params }: { params: Promise<{ id
       validationErrors: validation.errors,
     });
   } catch (error) {
-    const message = error instanceof Error ? error.message : "";
-    if (/Unauthenticated|AI_GATEWAY_API_KEY|GatewayAuthentication/i.test(message)) {
-      return errorResponse("AI_GATEWAY_NOT_CONFIGURED", 503);
-    }
-    return errorResponse("RESOURCE_GENERATION_FAILED", 500);
+    logCareerAiError(error, { route: "/api/admin/careers/[id]/resources/generate", requestId, startedAt });
+    const classified = classifyCareerAiError(error, "RESOURCE_GENERATION_FAILED");
+    return errorResponse(classified.code, classified.status);
   }
 }

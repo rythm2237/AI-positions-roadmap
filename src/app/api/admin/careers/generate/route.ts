@@ -4,6 +4,7 @@ import { AdminRepositoryError, createCareer, getCareerBySlug, saveCareerContent 
 import { normalizeCareerSlug, validateCareerInput } from "@/lib/admin/careerValidation";
 import { generateCareerBlueprint } from "@/lib/ai/careerGenerator";
 import { assembleCareerWorkspace } from "@/lib/ai/careerBlueprintAssembler";
+import { classifyCareerAiError, logCareerAiError } from "@/lib/ai/aiError";
 import { validateCareerWorkspaceData } from "@/lib/careerContentValidation";
 
 export const runtime = "nodejs";
@@ -14,6 +15,8 @@ function errorResponse(code: string, status: number) {
 }
 
 export async function POST(request: Request) {
+  const startedAt = Date.now();
+  const requestId = request.headers.get("x-vercel-id");
   const authorization = await requireAdmin();
   if (authorization.status === "unauthenticated") return errorResponse("AUTH_REQUIRED", 401);
   if (authorization.status !== "admin") return errorResponse("ADMIN_REQUIRED", 403);
@@ -34,6 +37,7 @@ export async function POST(request: Request) {
   }
 
   try {
+    console.log(JSON.stringify({ level: "info", message: "Career Blueprint generation started", route: "/api/admin/careers/generate", requestId, slug: requestedSlug }));
     const generated = await generateCareerBlueprint(requestedTitle);
     const blueprint = { ...generated, title: requestedTitle };
     const workspace = assembleCareerWorkspace(blueprint, requestedSlug);
@@ -51,6 +55,7 @@ export async function POST(request: Request) {
 
     const career = await createCareer(authorization.accessToken, input.value);
     await saveCareerContent(authorization.accessToken, career.id, workspace, validation.errors);
+    console.log(JSON.stringify({ level: "info", message: "Career Blueprint generation completed", route: "/api/admin/careers/generate", requestId, careerId: career.id, durationMs: Date.now() - startedAt, validationFindings: validation.errors.length }));
     return NextResponse.json({
       ok: true,
       careerId: career.id,
@@ -64,10 +69,8 @@ export async function POST(request: Request) {
     if (error instanceof AdminRepositoryError && error.code === "duplicate_slug") {
       return errorResponse("CAREER_EXISTS", 409);
     }
-    const message = error instanceof Error ? error.message : "";
-    if (/Unauthenticated|AI_GATEWAY_API_KEY|GatewayAuthentication/i.test(message)) {
-      return errorResponse("AI_GATEWAY_NOT_CONFIGURED", 503);
-    }
-    return errorResponse("CAREER_GENERATION_FAILED", 500);
+    logCareerAiError(error, { route: "/api/admin/careers/generate", requestId, startedAt });
+    const classified = classifyCareerAiError(error, "CAREER_GENERATION_FAILED");
+    return errorResponse(classified.code, classified.status);
   }
 }

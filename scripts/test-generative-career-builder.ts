@@ -1,6 +1,7 @@
 import assert from "node:assert/strict";
 import fs from "node:fs";
 import { validateCareerPublicationReadiness, validateCareerWorkspaceData } from "../src/lib/careerContentValidation.ts";
+import { careerBlueprintSchema, resourcePackSchema } from "../src/lib/ai/careerGenerationSchema.ts";
 
 const createPage = fs.readFileSync("src/app/admin/(studio)/careers/new/page.tsx", "utf8");
 const builder = fs.readFileSync("src/components/admin/GenerativeCareerBuilder.tsx", "utf8");
@@ -28,6 +29,23 @@ assert.match(resourceRoute, /requireAdmin/);
 assert.match(generator, /parallelSearch/);
 assert.match(generator, /excludeDomains:\s*\["youtube\.com",\s*"youtu\.be"\]/);
 assert.match(actions, /validateCareerPublicationReadiness/);
+assert.match(generationRoute, /logCareerAiError/);
+assert.match(resourceRoute, /logCareerAiError/);
+assert.match(generator, /maxOutputTokens:\s*30000/);
+assert.match(generator, /models:\s*\["anthropic\/claude-sonnet-5"\]/);
+
+const providerUnsupportedKeywords = [
+  "minLength", "maxLength", "pattern", "format", "minimum", "maximum",
+  "exclusiveMinimum", "exclusiveMaximum", "multipleOf", "minItems", "maxItems",
+  "uniqueItems", "minProperties", "maxProperties",
+];
+for (const schema of [careerBlueprintSchema, resourcePackSchema]) {
+  const providerSchema = await Promise.resolve(schema.jsonSchema);
+  const serialized = JSON.stringify(providerSchema);
+  for (const keyword of providerUnsupportedKeywords) {
+    assert.doesNotMatch(serialized, new RegExp(`"${keyword}"\\s*:`), `${keyword} must not be sent to a Structured Output provider`);
+  }
+}
 
 const questions = Array.from({ length: 20 }, (_, index) => ({
   id: `q-${index}`,
