@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 
-const FALLBACK_SITE_URL = "https://ai-positions-roadmap.vercel.app";
+const FALLBACK_SITE_URL = "https://career.rythm-os.com";
 
 function normalizeSiteUrl(value: string): string {
   return value.trim().replace(/\/+$/, "");
