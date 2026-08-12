@@ -246,6 +246,13 @@ export interface CareerReadinessItem {
 export interface CareerWorkspaceData {
   slug: string;
   title: string;
+  titleAliases?: Array<{
+    title: string;
+    countries?: string[];
+    companies?: string[];
+    keywords?: string[];
+    note?: string;
+  }>;
   category: string;
   visual: CareerVisualMetadata;
   shortDescription: string;
@@ -302,6 +309,9 @@ export interface CareerWorkspaceData {
     practiceAreas: string[];
     questions: string[];
   };
+  resourceRequirements?: import("@/types/resourceRequirement").ResourceRequirement[];
+  resourceMappings?: import("@/types/careerGeneration").CareerResourceMapping[];
+  generationMetadata?: import("@/types/careerGeneration").CareerGenerationMetadata;
 }
 
 export interface CareerNote {

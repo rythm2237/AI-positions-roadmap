@@ -170,7 +170,13 @@ if (validationSource.includes(legacyValidation)) {
     legacyValidation,
     canonicalValidation
   );
-} else if (!validationSource.includes("needs topic assessments")) {
+} else if (
+  !validationSource.includes("needs topic assessments")
+  && !(
+    validationSource.includes("topic assessments must be an array")
+    && validationSource.includes("comprehensive assessment needs at least 20 questions")
+  )
+) {
   throw new Error(
     "Could not locate the legacy career-content assessment validation."
   );

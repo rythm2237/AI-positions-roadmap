@@ -4,7 +4,8 @@ import { revalidatePath } from "next/cache";
 import { requireAdmin } from "@/lib/admin/adminAuth";
 import { AdminRepositoryError, createCareer, saveCareerContent, setCareerArchived, setCareerPublication, updateCareer } from "@/lib/admin/careerRepository";
 import { careerInputFromForm, validateCareerInput } from "@/lib/admin/careerValidation";
-import { validateCareerWorkspaceData } from "@/lib/careerContentValidation";
+import { validateCareerPublicationReadiness, validateCareerWorkspaceData } from "@/lib/careerContentValidation";
+import type { CareerWorkspaceData } from "@/types/careerWorkspace";
 import type { CareerFormState } from "@/types/adminStudio";
 
 async function adminToken() { const authorization = await requireAdmin(); if (authorization.status !== "admin") throw new Error("ADMIN_REQUIRED"); return authorization.accessToken; }
@@ -40,4 +41,49 @@ export async function saveCareerContentAction(formData:FormData){
 async function getCareerForMutation(token:string,id:string){const {getCareer}=await import("@/lib/admin/careerRepository");const career=await getCareer(token,id);if(!career)throw new Error("INVALID_CAREER");return career}
 export async function publishCareerAction(formData:FormData){return changePublication(formData,true)}
 export async function unpublishCareerAction(formData:FormData){return changePublication(formData,false)}
-async function changePublication(formData:FormData,publish:boolean){const id=String(formData.get("id")??"");if(!/^[0-9a-f-]{36}$/i.test(id))throw new Error("INVALID_CAREER");const token=await adminToken();const career=await getCareerForMutation(token,id);const result=validateCareerWorkspaceData(career.workspace_data,career.slug);if(publish&&!result.valid)redirect(`/admin/careers/${id}/content?error=content-invalid`);await setCareerPublication(token,id,publish);revalidatePath(`/careers/${career.slug}`);revalidatePath("/");redirect(`/admin/careers/${id}?saved=${publish?"published":"unpublished"}`)}
+async function changePublication(formData:FormData,publish:boolean){const id=String(formData.get("id")??"");if(!/^[0-9a-f-]{36}$/i.test(id))throw new Error("INVALID_CAREER");const token=await adminToken();const career=await getCareerForMutation(token,id);const result=validateCareerPublicationReadiness(career.workspace_data,career.slug);if(publish&&!result.valid)redirect(`/admin/careers/${id}?error=publication-blocked`);await setCareerPublication(token,id,publish);revalidatePath(`/careers/${career.slug}`);revalidatePath("/");redirect(`/admin/careers/${id}?saved=${publish?"published":"unpublished"}`)}
+
+export async function approveCareerResourcesAction(formData: FormData) {
+  const id = String(formData.get("id") ?? "");
+  if (!/^[0-9a-f-]{36}$/i.test(id)) throw new Error("INVALID_CAREER");
+  const token = await adminToken();
+  const career = await getCareerForMutation(token, id);
+  const content = validateCareerWorkspaceData(career.workspace_data, career.slug);
+  if (!content.valid) redirect(`/admin/careers/${id}/resources?error=content-invalid`);
+
+  const workspace = content.data;
+  const requirements = workspace.resourceRequirements ?? [];
+  const resourcesById = new Map(workspace.globalResources.map((resource) => [resource.id, resource]));
+  const completeMappings = (workspace.resourceMappings ?? []).map((mapping) => {
+    const reading = resourcesById.get(mapping.reading ?? "");
+    const video = resourcesById.get(mapping.video ?? "");
+    const practice = resourcesById.get(mapping.practice ?? "");
+    const hasRequiredModes = Boolean(
+      reading && ["Documentation", "Article", "Course", "Learning Path"].includes(reading.type)
+      && video?.type === "Video"
+      && practice && ["Practice", "Exam"].includes(practice.type),
+    );
+    return { ...mapping, status: hasRequiredModes ? "complete" as const : mapping.status };
+  });
+  const approved: CareerWorkspaceData = {
+    ...workspace,
+    resourceMappings: completeMappings,
+    generationMetadata: workspace.generationMetadata ? {
+      ...workspace.generationMetadata,
+      blueprintStatus: "reviewed",
+      resourceStatus: requirements.length > 0 && completeMappings.length === requirements.length
+        && completeMappings.every((mapping) => mapping.status === "complete")
+        ? "complete"
+        : workspace.generationMetadata.resourceStatus,
+    } : workspace.generationMetadata,
+  };
+  const publication = validateCareerPublicationReadiness(approved, career.slug);
+  if (!publication.valid) {
+    await saveCareerContent(token, id, approved, publication.errors);
+    redirect(`/admin/careers/${id}/resources?error=resources-incomplete`);
+  }
+  await saveCareerContent(token, id, approved, []);
+  revalidatePath(`/admin/careers/${id}`);
+  revalidatePath(`/admin/careers/${id}/resources`);
+  redirect(`/admin/careers/${id}/resources?approved=1`);
+}
