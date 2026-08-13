@@ -2,6 +2,7 @@ import assert from "node:assert/strict";
 import fs from "node:fs";
 import { validateCareerPublicationReadiness, validateCareerWorkspaceData } from "../src/lib/careerContentValidation.ts";
 import { careerBlueprintSchema, resourcePackSchema } from "../src/lib/ai/careerGenerationSchema.ts";
+import { normalizeCareerBlueprintStageCount } from "../src/lib/ai/careerBlueprintNormalization.ts";
 
 const createPage = fs.readFileSync("src/app/admin/(studio)/careers/new/page.tsx", "utf8");
 const builder = fs.readFileSync("src/components/admin/GenerativeCareerBuilder.tsx", "utf8");
@@ -43,6 +44,8 @@ assert.match(generator, /attempt:\$\{attempt\}/);
 assert.match(generator, /generateBlueprintAttempt\([\s\S]+"repair"/);
 assert.match(generator, /previous_blueprint_json/);
 assert.match(generator, /generatedStageCount:\s*repaired\.output\.stages\.length/);
+assert.match(generator, /normalizeBlueprintFromError/);
+assert.match(generator, /Career Blueprint stage count normalized/);
 assert.match(builder, /Validating and repairing the Career Blueprint contract/);
 assert.match(aiError, /customer_verification_required/);
 assert.match(aiError, /AI_GATEWAY_MODEL_RESTRICTED/);
@@ -57,6 +60,49 @@ assert.ok(
   aiError.indexOf("RestrictedModelsError") < aiError.indexOf("statusCode === 401"),
   "Gateway Free Tier model restrictions must be classified before generic 403 authentication failures",
 );
+
+const generatedStageTypes = [
+  "orientation", "foundation", "core-skills", "tools", "projects", "portfolio",
+  "resume", "profile", "job-search", "jobs", "interview", "ready",
+];
+const generatedStages = generatedStageTypes.map((type, index) => ({
+  title: `Stage ${index + 1}`,
+  type,
+  landmark: `Landmark ${index + 1}`,
+  theme: `Theme ${index + 1}`,
+  summary: `A complete summary for generated stage ${index + 1} with measurable professional progress.`,
+  explanation: `A detailed explanation for generated stage ${index + 1} that preserves career-specific evidence, decisions, deliverables and professional standards.`,
+  lessons: Array.from({ length: 3 }, (_, item) => `Stage ${index + 1} lesson ${item + 1}`),
+  learningOutcomes: Array.from({ length: 3 }, (_, item) => `Stage ${index + 1} outcome ${item + 1}`),
+  tasks: Array.from({ length: 3 }, (_, item) => ({ title: `Stage ${index + 1} task ${item + 1}`, description: "Create measurable professional evidence.", type: "lesson" })),
+  phaseGoal: `Complete the professional goal for stage ${index + 1}.`,
+  mentorTip: `Validate the evidence and decisions created in stage ${index + 1}.`,
+  practicalMissions: [`Stage ${index + 1} mission 1`, `Stage ${index + 1} mission 2`],
+  expectedOutcome: `Produce reviewable evidence for stage ${index + 1}.`,
+  resourceTopic: `Stage ${index + 1} professional topic`,
+  preferredProviders: ["Official provider"],
+  skillLevel: index < 4 ? "Beginner" : index < 8 ? "Intermediate" : "Advanced",
+  effortMinutes: { min: 120, max: 240 },
+  assessmentSeeds: Array.from({ length: 5 }, (_, item) => ({
+    scenario: `Stage ${index + 1} assessment scenario ${item + 1} with a practical decision.`,
+    correctPrinciple: `Apply stage ${index + 1} principle ${item + 1}.`,
+    commonMistake: `Avoid stage ${index + 1} mistake ${item + 1}.`,
+  })),
+}));
+const normalizedBlueprint = normalizeCareerBlueprintStageCount({
+  stages: generatedStages,
+  projects: [
+    { title: "Late-stage project", stageNumber: 12 },
+    { title: "Middle project", stageNumber: 7 },
+  ],
+});
+assert.ok(normalizedBlueprint, "A complete 12-stage Blueprint must be structurally normalizable");
+assert.equal(normalizedBlueprint.blueprint.stages.length, 10);
+assert.equal(normalizedBlueprint.mergedStageGroups.length, 2, "Two non-overlapping stage groups should be consolidated");
+assert.match(normalizedBlueprint.blueprint.stages.map((item) => item.title).join(" | "), /Stage 12/, "Final job-readiness content must be preserved");
+assert.equal(normalizedBlueprint.blueprint.projects[0].stageNumber, 10, "Projects linked to stage 12 must map to the final normalized stage");
+assert.ok(normalizedBlueprint.blueprint.stages.every((item) => item.assessmentSeeds.length === 5));
+assert.ok(normalizedBlueprint.blueprint.stages.every((item) => item.lessons.length <= 6 && item.tasks.length <= 5));
 
 const providerUnsupportedKeywords = [
   "minLength", "maxLength", "pattern", "format", "minimum", "maximum",

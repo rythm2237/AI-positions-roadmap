@@ -297,7 +297,7 @@ function requiredStrings(value: Record<string, unknown>, keys: string[]) {
   return keys.every((key) => nonEmptyString(value[key]));
 }
 
-function validateCareerBlueprintOutput(value: unknown) {
+export function validateCareerBlueprintOutput(value: unknown) {
   const invalid = (detail: string) => ({ success: false as const, error: new Error(`CAREER_BLUEPRINT_OUTPUT_INVALID: ${detail}`) });
   if (!record(value)) return invalid("root must be an object");
   if (!requiredStrings(value, [
