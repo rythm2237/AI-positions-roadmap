@@ -15,6 +15,7 @@ const errorMessages: Record<string, string> = {
   GENERATED_IDENTITY_INVALID: "The generated Career identity did not pass validation. Please retry.",
   AI_GATEWAY_NOT_CONFIGURED: "AI generation is not available in this environment. Check the Vercel AI Gateway connection.",
   AI_GATEWAY_BILLING_REQUIRED: "Vercel AI Gateway requires a valid payment card for this team. Add a card in Vercel Billing, then retry.",
+  AI_GATEWAY_MODEL_RESTRICTED: "The selected AI model is not available on this Vercel AI Gateway credit tier. Use a Free Tier model or add paid Gateway credits, then retry.",
   AI_GATEWAY_RATE_LIMITED: "The AI provider is temporarily busy. Wait a moment and retry; your existing Careers were not changed.",
   AI_SCHEMA_REJECTED: "The AI provider rejected the structured content contract. The issue has been logged; please retry after the service update.",
   AI_OUTPUT_INVALID: "AI returned an incomplete Career Blueprint. Nothing was saved; retry to generate a fresh validated draft.",

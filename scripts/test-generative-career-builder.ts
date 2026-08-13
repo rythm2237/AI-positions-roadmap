@@ -33,11 +33,20 @@ assert.match(actions, /validateCareerPublicationReadiness/);
 assert.match(generationRoute, /logCareerAiError/);
 assert.match(resourceRoute, /logCareerAiError/);
 assert.match(generator, /maxOutputTokens:\s*30000/);
-assert.match(generator, /models:\s*\["anthropic\/claude-sonnet-5"\]/);
+assert.match(generator, /CAREER_BLUEPRINT_MODEL[^\n]+"openai\/gpt-5\.4-mini"/);
+assert.match(generator, /CAREER_RESOURCE_MODEL[^\n]+"openai\/gpt-5\.4-mini"/);
+assert.match(generator, /CAREER_FALLBACK_MODELS\s*=\s*\["openai\/gpt-5-mini"\]/);
+assert.doesNotMatch(generator, /gpt-5\.6|claude-sonnet-5/);
 assert.match(aiError, /customer_verification_required/);
+assert.match(aiError, /AI_GATEWAY_MODEL_RESTRICTED/);
+assert.match(aiError, /RestrictedModelsError/);
 assert.ok(
   aiError.indexOf("customer_verification_required") < aiError.indexOf("statusCode === 401"),
   "Gateway billing verification errors must be classified before generic 403 authentication failures",
+);
+assert.ok(
+  aiError.indexOf("RestrictedModelsError") < aiError.indexOf("statusCode === 401"),
+  "Gateway Free Tier model restrictions must be classified before generic 403 authentication failures",
 );
 
 const providerUnsupportedKeywords = [

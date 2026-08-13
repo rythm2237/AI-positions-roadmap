@@ -16,6 +16,7 @@ const generationErrors: Record<string, string> = {
   CAREER_BLUEPRINT_INVALID: "Resolve the Career Blueprint validation findings before creating sources.",
   AI_GATEWAY_NOT_CONFIGURED: "AI resource research is unavailable in this environment. Check the AI Gateway connection.",
   AI_GATEWAY_BILLING_REQUIRED: "Vercel AI Gateway requires a valid payment card for this team. Add a card in Vercel Billing, then retry.",
+  AI_GATEWAY_MODEL_RESTRICTED: "The selected research model is not available on this Vercel AI Gateway credit tier. Use a Free Tier model or add paid Gateway credits, then retry.",
   AI_GATEWAY_RATE_LIMITED: "The AI provider is temporarily busy. Wait a moment and retry; the current draft is unchanged.",
   AI_SCHEMA_REJECTED: "The provider rejected the structured resource contract. The issue has been logged; retry after the service update.",
   AI_OUTPUT_INVALID: "AI returned an incomplete source pack. Nothing was approved; regenerate a fresh validated pack.",

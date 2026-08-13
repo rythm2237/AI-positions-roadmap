@@ -4,6 +4,7 @@ import { APICallError, NoOutputGeneratedError, TypeValidationError } from "ai";
 export type CareerAiErrorCode =
   | "AI_GATEWAY_NOT_CONFIGURED"
   | "AI_GATEWAY_BILLING_REQUIRED"
+  | "AI_GATEWAY_MODEL_RESTRICTED"
   | "AI_GATEWAY_RATE_LIMITED"
   | "AI_SCHEMA_REJECTED"
   | "AI_OUTPUT_INVALID"
@@ -29,6 +30,10 @@ export function classifyCareerAiError(error: unknown, fallback: "CAREER_GENERATI
   // so billing signals must be classified before generic authentication errors.
   if (apiError?.statusCode === 402 || /billing|payment|required credits|spend limit|valid credit card|customer_verification_required|add-credit-card/i.test(message)) {
     return { code: "AI_GATEWAY_BILLING_REQUIRED" as const, status: 503 };
+  }
+  if (apiError?.statusCode === 403
+    && /free tier users do not have access|RestrictedModelsError|restricted model|upgrade to paid credits|modal=top-up/i.test(message)) {
+    return { code: "AI_GATEWAY_MODEL_RESTRICTED" as const, status: 503 };
   }
   if (apiError?.statusCode === 401 || apiError?.statusCode === 403 || /Unauthenticated|AI_GATEWAY_API_KEY|GatewayAuthentication|OIDC/i.test(message)) {
     return { code: "AI_GATEWAY_NOT_CONFIGURED" as const, status: 503 };

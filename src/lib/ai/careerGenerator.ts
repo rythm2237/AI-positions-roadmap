@@ -5,8 +5,12 @@ import type { CareerWorkspaceData } from "@/types/careerWorkspace";
 import type { GeneratedCareerBlueprint, GeneratedResourcePack } from "@/types/careerGeneration";
 import type { ResourceRequirement } from "@/types/resourceRequirement";
 
-export const CAREER_BLUEPRINT_MODEL = process.env.CAREER_BLUEPRINT_MODEL ?? "openai/gpt-5.6-sol";
-export const CAREER_RESOURCE_MODEL = process.env.CAREER_RESOURCE_MODEL ?? "openai/gpt-5.6-terra";
+// GPT-5.6 preview models are currently restricted to paid AI Gateway credits.
+// Keep the default path usable on Vercel's Free Tier while retaining enough
+// output capacity for the complete, validated Career Blueprint contract.
+export const CAREER_BLUEPRINT_MODEL = process.env.CAREER_BLUEPRINT_MODEL ?? "openai/gpt-5.4-mini";
+export const CAREER_RESOURCE_MODEL = process.env.CAREER_RESOURCE_MODEL ?? "openai/gpt-5.4-mini";
+export const CAREER_FALLBACK_MODELS = ["openai/gpt-5-mini"];
 
 const blueprintSystemPrompt = `You are the Career Blueprint Engine inside AI Career OS.
 
@@ -34,7 +38,7 @@ export async function generateCareerBlueprint(title: string): Promise<GeneratedC
     prompt: `Generate the complete Career Blueprint for this exact role: “${title}”. Preserve this professional identity and distinguish it from adjacent roles.`,
     maxOutputTokens: 30000,
     providerOptions: {
-      gateway: { models: ["anthropic/claude-sonnet-5"] },
+      gateway: { models: CAREER_FALLBACK_MODELS },
     },
     output: Output.object({ schema: careerBlueprintSchema }),
   });
@@ -73,7 +77,7 @@ async function generateResourcePack(career: CareerWorkspaceData, requirement: Re
     prompt: resourcePrompt(career, requirement),
     maxOutputTokens: 8000,
     providerOptions: {
-      gateway: { models: ["anthropic/claude-sonnet-5"] },
+      gateway: { models: CAREER_FALLBACK_MODELS },
     },
     tools: {
       parallel_search: gateway.tools.parallelSearch({

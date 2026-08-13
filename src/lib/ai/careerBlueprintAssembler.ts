@@ -277,7 +277,7 @@ export function assembleCareerWorkspace(
       status: "pending",
     })),
     generationMetadata: {
-      model: "openai/gpt-5.6-sol",
+      model: "openai/gpt-5.4-mini",
       generatedAt: new Date().toISOString(),
       blueprintStatus: "generated",
       resourceStatus: "pending",
@@ -409,7 +409,7 @@ export function applyResourcePacks(
     resourceRequirements: updatedRequirements,
     resourceMappings,
     generationMetadata: {
-      model: workspace.generationMetadata?.model ?? "openai/gpt-5.6-sol",
+      model: workspace.generationMetadata?.model ?? "openai/gpt-5.4-mini",
       generatedAt: workspace.generationMetadata?.generatedAt ?? new Date().toISOString(),
       blueprintStatus: "reviewed",
       resourceStatus: resourceMappings.every((mapping) => mapping.status === "needs-review")
