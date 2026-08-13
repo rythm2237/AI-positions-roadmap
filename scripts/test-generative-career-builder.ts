@@ -2,7 +2,7 @@ import assert from "node:assert/strict";
 import fs from "node:fs";
 import { validateCareerPublicationReadiness, validateCareerWorkspaceData } from "../src/lib/careerContentValidation.ts";
 import { careerBlueprintSchema, resourcePackSchema } from "../src/lib/ai/careerGenerationSchema.ts";
-import { normalizeCareerBlueprintStageCount } from "../src/lib/ai/careerBlueprintNormalization.ts";
+import { normalizeCareerBlueprintContract } from "../src/lib/ai/careerBlueprintNormalization.ts";
 
 const createPage = fs.readFileSync("src/app/admin/(studio)/careers/new/page.tsx", "utf8");
 const builder = fs.readFileSync("src/components/admin/GenerativeCareerBuilder.tsx", "utf8");
@@ -45,7 +45,7 @@ assert.match(generator, /generateBlueprintAttempt\([\s\S]+"repair"/);
 assert.match(generator, /previous_blueprint_json/);
 assert.match(generator, /generatedStageCount:\s*repaired\.output\.stages\.length/);
 assert.match(generator, /normalizeBlueprintFromError/);
-assert.match(generator, /Career Blueprint stage count normalized/);
+assert.match(generator, /Career Blueprint contract normalized/);
 assert.match(builder, /Validating and repairing the Career Blueprint contract/);
 assert.match(aiError, /customer_verification_required/);
 assert.match(aiError, /AI_GATEWAY_MODEL_RESTRICTED/);
@@ -89,18 +89,41 @@ const generatedStages = generatedStageTypes.map((type, index) => ({
     commonMistake: `Avoid stage ${index + 1} mistake ${item + 1}.`,
   })),
 }));
-const normalizedBlueprint = normalizeCareerBlueprintStageCount({
-  stages: generatedStages,
-  projects: [
-    { title: "Late-stage project", stageNumber: 12 },
-    { title: "Middle project", stageNumber: 7 },
-  ],
+const overflowingStages = generatedStages.map((stage, index) => index === 0 ? {
+  ...stage,
+  lessons: Array.from({ length: 8 }, (_, item) => `Overflow lesson ${item + 1}`),
+  learningOutcomes: Array.from({ length: 8 }, (_, item) => `Overflow outcome ${item + 1}`),
+  tasks: Array.from({ length: 7 }, (_, item) => ({ title: `Overflow task ${item + 1}`, description: "Create measurable professional evidence.", type: "lesson" })),
+  practicalMissions: Array.from({ length: 7 }, (_, item) => `Overflow mission ${item + 1}`),
+  preferredProviders: Array.from({ length: 7 }, (_, item) => `Official provider ${item + 1}`),
+  assessmentSeeds: Array.from({ length: 7 }, (_, item) => ({
+    scenario: `Overflow assessment scenario ${item + 1} with a practical decision.`,
+    correctPrinciple: `Apply overflow principle ${item + 1}.`,
+    commonMistake: `Avoid overflow mistake ${item + 1}.`,
+  })),
+} : stage);
+const normalizedBlueprint = normalizeCareerBlueprintContract({
+  metrics: Array.from({ length: 10 }, (_, index) => ({ label: `Metric ${index + 1}`, value: "High", detail: "A complete professional metric detail." })),
+  stages: overflowingStages,
+  projects: Array.from({ length: 8 }, (_, index) => ({
+    title: index === 0 ? "Late-stage project" : `Project ${index + 1}`,
+    stageNumber: index === 0 ? 12 : 7,
+    deliverables: Array.from({ length: 9 }, (_, item) => `Deliverable ${item + 1}`),
+    skills: Array.from({ length: 10 }, (_, item) => `Skill ${item + 1}`),
+  })),
 });
 assert.ok(normalizedBlueprint, "A complete 12-stage Blueprint must be structurally normalizable");
 assert.equal(normalizedBlueprint.blueprint.stages.length, 10);
 assert.equal(normalizedBlueprint.mergedStageGroups.length, 2, "Two non-overlapping stage groups should be consolidated");
 assert.match(normalizedBlueprint.blueprint.stages.map((item) => item.title).join(" | "), /Stage 12/, "Final job-readiness content must be preserved");
 assert.equal(normalizedBlueprint.blueprint.projects[0].stageNumber, 10, "Projects linked to stage 12 must map to the final normalized stage");
+assert.equal(normalizedBlueprint.blueprint.projects.length, 6, "Excess projects must be capped at the contract maximum");
+assert.equal(normalizedBlueprint.blueprint.projects[0].deliverables.length, 7);
+assert.equal(normalizedBlueprint.blueprint.projects[0].skills.length, 8);
+assert.equal(normalizedBlueprint.blueprint.metrics.length, 8, "Excess metrics must be capped at the contract maximum");
+assert.equal(normalizedBlueprint.blueprint.stages[0].assessmentSeeds.length, 5);
+assert.ok(normalizedBlueprint.adjustedCollections.some((item) => item.path === "metrics"));
+assert.ok(normalizedBlueprint.adjustedCollections.some((item) => item.path === "stages[0].lessons"));
 assert.ok(normalizedBlueprint.blueprint.stages.every((item) => item.assessmentSeeds.length === 5));
 assert.ok(normalizedBlueprint.blueprint.stages.every((item) => item.lessons.length <= 6 && item.tasks.length <= 5));
 

@@ -1,7 +1,7 @@
 import "server-only";
 import { gateway, generateText, isStepCount, NoObjectGeneratedError, Output } from "ai";
 import { careerBlueprintSchema, resourcePackSchema, validateCareerBlueprintOutput } from "@/lib/ai/careerGenerationSchema";
-import { normalizeCareerBlueprintStageCount } from "@/lib/ai/careerBlueprintNormalization";
+import { normalizeCareerBlueprintContract } from "@/lib/ai/careerBlueprintNormalization";
 import type { CareerWorkspaceData } from "@/types/careerWorkspace";
 import type { GeneratedCareerBlueprint, GeneratedResourcePack } from "@/types/careerGeneration";
 import type { ResourceRequirement } from "@/types/resourceRequirement";
@@ -72,7 +72,7 @@ function isRepairableBlueprintError(error: unknown): error is NoObjectGeneratedE
 function normalizeBlueprintFromError(error: NoObjectGeneratedError, attempt: BlueprintAttempt) {
   if (!error.text) return null;
   try {
-    const normalized = normalizeCareerBlueprintStageCount(JSON.parse(error.text));
+    const normalized = normalizeCareerBlueprintContract(JSON.parse(error.text));
     if (!normalized) return null;
     const validation = validateCareerBlueprintOutput(normalized.blueprint);
     if (!validation.success) {
@@ -81,17 +81,19 @@ function normalizeBlueprintFromError(error: NoObjectGeneratedError, attempt: Blu
         message: "Normalized Career Blueprint did not pass the full contract",
         attempt,
         originalStageCount: normalized.originalStageCount,
+        adjustedCollections: normalized.adjustedCollections,
         validationIssue: validation.error.message,
       }));
       return null;
     }
     console.info(JSON.stringify({
       level: "info",
-      message: "Career Blueprint stage count normalized",
+      message: "Career Blueprint contract normalized",
       attempt,
       originalStageCount: normalized.originalStageCount,
       normalizedStageCount: validation.value.stages.length,
       mergedStageGroups: normalized.mergedStageGroups,
+      adjustedCollections: normalized.adjustedCollections,
       responseModel: error.response?.modelId,
     }));
     return validation.value;

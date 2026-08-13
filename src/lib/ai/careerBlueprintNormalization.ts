@@ -113,13 +113,58 @@ export interface CareerBlueprintNormalizationResult {
   blueprint: GeneratedCareerBlueprint;
   originalStageCount: number;
   mergedStageGroups: number[][];
+  adjustedCollections: Array<{
+    path: string;
+    from: number;
+    to: number;
+  }>;
 }
 
-export function normalizeCareerBlueprintStageCount(value: unknown): CareerBlueprintNormalizationResult | null {
+function capCollection<T>(
+  path: string,
+  collection: T[],
+  maximum: number,
+  adjustments: CareerBlueprintNormalizationResult["adjustedCollections"],
+) {
+  if (collection.length <= maximum) return collection;
+  adjustments.push({ path, from: collection.length, to: maximum });
+  return collection.slice(0, maximum);
+}
+
+function normalizeStageCollections(
+  stage: GeneratedCareerStage,
+  index: number,
+  adjustments: CareerBlueprintNormalizationResult["adjustedCollections"],
+): GeneratedCareerStage {
+  const path = `stages[${index}]`;
+  return {
+    ...stage,
+    lessons: capCollection(`${path}.lessons`, stage.lessons, 6, adjustments),
+    learningOutcomes: capCollection(`${path}.learningOutcomes`, stage.learningOutcomes, 6, adjustments),
+    tasks: capCollection(`${path}.tasks`, stage.tasks, 5, adjustments),
+    practicalMissions: capCollection(`${path}.practicalMissions`, stage.practicalMissions, 5, adjustments),
+    preferredProviders: capCollection(`${path}.preferredProviders`, stage.preferredProviders, 5, adjustments),
+    assessmentSeeds: capCollection(`${path}.assessmentSeeds`, stage.assessmentSeeds, 5, adjustments),
+  };
+}
+
+function capRecordCollection(
+  target: Record<string, unknown>,
+  key: string,
+  maximum: number,
+  adjustments: CareerBlueprintNormalizationResult["adjustedCollections"],
+  path = key,
+) {
+  const collection = target[key];
+  if (Array.isArray(collection)) target[key] = capCollection(path, collection, maximum, adjustments);
+}
+
+export function normalizeCareerBlueprintContract(value: unknown): CareerBlueprintNormalizationResult | null {
   if (!record(value) || !Array.isArray(value.stages) || !Array.isArray(value.projects)) return null;
-  if (value.stages.length <= TARGET_STAGE_COUNT || !value.stages.every(isNormalizableStage)) return null;
+  if (value.stages.length < TARGET_STAGE_COUNT || !value.stages.every(isNormalizableStage)) return null;
 
   const stages = value.stages as GeneratedCareerStage[];
+  const adjustedCollections: CareerBlueprintNormalizationResult["adjustedCollections"] = [];
   const groups = stages.map((_, index) => [index]);
   while (groups.length > TARGET_STAGE_COUNT) {
     let bestIndex = 0;
@@ -138,21 +183,56 @@ export function normalizeCareerBlueprintStageCount(value: unknown): CareerBluepr
   groups.forEach((group, normalizedIndex) => {
     group.forEach((originalIndex) => stageNumberMap.set(originalIndex + 1, normalizedIndex + 1));
   });
-  const normalizedProjects = value.projects.map((project) => {
-    if (!record(project) || typeof project.stageNumber !== "number") return project;
+  const normalizedProjects = capCollection("projects", value.projects, 6, adjustedCollections).map((project, index) => {
+    if (!record(project)) return project;
+    const normalizedProject = { ...project };
+    capRecordCollection(normalizedProject, "deliverables", 7, adjustedCollections, `projects[${index}].deliverables`);
+    capRecordCollection(normalizedProject, "skills", 8, adjustedCollections, `projects[${index}].skills`);
+    if (typeof project.stageNumber !== "number") return normalizedProject;
     const originalStageNumber = Math.min(stages.length, Math.max(1, Math.round(project.stageNumber)));
-    return { ...project, stageNumber: stageNumberMap.get(originalStageNumber) ?? TARGET_STAGE_COUNT };
+    return { ...normalizedProject, stageNumber: stageNumberMap.get(originalStageNumber) ?? TARGET_STAGE_COUNT };
   });
+
+  const normalizedValue: Record<string, unknown> = { ...value };
+  capRecordCollection(normalizedValue, "aliases", 12, adjustedCollections);
+  capRecordCollection(normalizedValue, "bestFor", 8, adjustedCollections);
+  capRecordCollection(normalizedValue, "metrics", 8, adjustedCollections);
+  capRecordCollection(normalizedValue, "readiness", 10, adjustedCollections);
+  capRecordCollection(normalizedValue, "relatedCareers", 8, adjustedCollections);
+  capRecordCollection(normalizedValue, "portfolioTasks", 6, adjustedCollections);
+  capRecordCollection(normalizedValue, "jobSearchTasks", 6, adjustedCollections);
+
+  if (record(value.overview)) {
+    const overview = { ...value.overview };
+    capRecordCollection(overview, "responsibilities", 12, adjustedCollections, "overview.responsibilities");
+    capRecordCollection(overview, "industries", 12, adjustedCollections, "overview.industries");
+    normalizedValue.overview = overview;
+  }
+  if (record(value.finalChallenge)) {
+    const finalChallenge = { ...value.finalChallenge };
+    capRecordCollection(finalChallenge, "requirements", 10, adjustedCollections, "finalChallenge.requirements");
+    capRecordCollection(finalChallenge, "deliverables", 10, adjustedCollections, "finalChallenge.deliverables");
+    capRecordCollection(finalChallenge, "evaluation", 10, adjustedCollections, "finalChallenge.evaluation");
+    normalizedValue.finalChallenge = finalChallenge;
+  }
+  if (record(value.interviewPrep)) {
+    const interviewPrep = { ...value.interviewPrep };
+    capRecordCollection(interviewPrep, "practiceAreas", 12, adjustedCollections, "interviewPrep.practiceAreas");
+    capRecordCollection(interviewPrep, "questions", 20, adjustedCollections, "interviewPrep.questions");
+    normalizedValue.interviewPrep = interviewPrep;
+  }
 
   return {
     blueprint: {
-      ...(value as unknown as GeneratedCareerBlueprint),
+      ...(normalizedValue as unknown as GeneratedCareerBlueprint),
       stages: groups.map((group) => group.length === 1
         ? stages[group[0]]
-        : mergeStages(group.map((index) => stages[index]))),
+        : mergeStages(group.map((index) => stages[index])))
+        .map((stage, index) => normalizeStageCollections(stage, index, adjustedCollections)),
       projects: normalizedProjects as GeneratedCareerBlueprint["projects"],
     },
     originalStageCount: stages.length,
     mergedStageGroups: groups.filter((group) => group.length > 1).map((group) => group.map((index) => index + 1)),
+    adjustedCollections,
   };
 }
