@@ -7,7 +7,7 @@ const generationSteps = [
   "Defining role identity and boundaries",
   "Building the 10-stage professional roadmap",
   "Creating projects, assessments and readiness criteria",
-  "Validating the Career Blueprint contract",
+  "Validating and repairing the Career Blueprint contract",
 ];
 
 const errorMessages: Record<string, string> = {
@@ -18,7 +18,7 @@ const errorMessages: Record<string, string> = {
   AI_GATEWAY_MODEL_RESTRICTED: "The selected AI model is not available on this Vercel AI Gateway credit tier. Use a Free Tier model or add paid Gateway credits, then retry.",
   AI_GATEWAY_RATE_LIMITED: "The AI provider is temporarily busy. Wait a moment and retry; your existing Careers were not changed.",
   AI_SCHEMA_REJECTED: "The AI provider rejected the structured content contract. The issue has been logged; please retry after the service update.",
-  AI_OUTPUT_INVALID: "AI returned an incomplete Career Blueprint. Nothing was saved; retry to generate a fresh validated draft.",
+  AI_OUTPUT_INVALID: "AI could not produce a complete Career Blueprint after automatic repair. Nothing was saved; please retry.",
   CAREER_GENERATION_FAILED: "Generation could not be completed. Your existing Careers were not changed; please retry.",
   AUTH_REQUIRED: "Your Admin session expired. Sign in again and retry.",
   ADMIN_REQUIRED: "This action requires an authorized Admin account.",

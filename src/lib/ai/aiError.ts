@@ -1,5 +1,5 @@
 import "server-only";
-import { APICallError, NoOutputGeneratedError, TypeValidationError } from "ai";
+import { APICallError, NoObjectGeneratedError, NoOutputGeneratedError, TypeValidationError } from "ai";
 
 export type CareerAiErrorCode =
   | "AI_GATEWAY_NOT_CONFIGURED"
@@ -54,6 +54,16 @@ export function classifyCareerAiError(error: unknown, fallback: "CAREER_GENERATI
 export function logCareerAiError(error: unknown, context: { route: string; requestId: string | null; startedAt: number }) {
   const chain = errorChain(error);
   const apiError = chain.find(APICallError.isInstance);
+  const objectError = chain.find(NoObjectGeneratedError.isInstance);
+  let generatedStageCount: number | null = null;
+  if (objectError?.text) {
+    try {
+      const value = JSON.parse(objectError.text) as { stages?: unknown[] };
+      generatedStageCount = Array.isArray(value.stages) ? value.stages.length : null;
+    } catch {
+      generatedStageCount = null;
+    }
+  }
   console.error(JSON.stringify({
     level: "error",
     message: "Career AI request failed",
@@ -65,5 +75,10 @@ export function logCareerAiError(error: unknown, context: { route: string; reque
     cause: chain.slice(1).map((item) => item instanceof Error ? `${item.name}: ${item.message}`.slice(0, 800) : String(item).slice(0, 800)),
     providerStatus: apiError?.statusCode,
     providerResponse: apiError?.responseBody?.slice(0, 1200),
+    finishReason: objectError?.finishReason,
+    usage: objectError?.usage,
+    responseModel: objectError?.response?.modelId,
+    generatedTextLength: objectError?.text?.length,
+    generatedStageCount,
   }));
 }

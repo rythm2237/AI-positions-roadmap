@@ -37,9 +37,18 @@ assert.match(generator, /CAREER_BLUEPRINT_MODEL[^\n]+"openai\/gpt-5\.4-mini"/);
 assert.match(generator, /CAREER_RESOURCE_MODEL[^\n]+"openai\/gpt-5\.4-mini"/);
 assert.match(generator, /CAREER_FALLBACK_MODELS\s*=\s*\["openai\/gpt-5-mini"\]/);
 assert.doesNotMatch(generator, /gpt-5\.6|claude-sonnet-5/);
+assert.match(generator, /NoObjectGeneratedError/);
+assert.match(generator, /Career Blueprint repair started/);
+assert.match(generator, /attempt:\$\{attempt\}/);
+assert.match(generator, /generateBlueprintAttempt\([\s\S]+"repair"/);
+assert.match(generator, /previous_blueprint_json/);
+assert.match(generator, /generatedStageCount:\s*repaired\.output\.stages\.length/);
+assert.match(builder, /Validating and repairing the Career Blueprint contract/);
 assert.match(aiError, /customer_verification_required/);
 assert.match(aiError, /AI_GATEWAY_MODEL_RESTRICTED/);
 assert.match(aiError, /RestrictedModelsError/);
+assert.match(aiError, /finishReason:\s*objectError\?\.finishReason/);
+assert.match(aiError, /generatedStageCount/);
 assert.ok(
   aiError.indexOf("customer_verification_required") < aiError.indexOf("statusCode === 401"),
   "Gateway billing verification errors must be classified before generic 403 authentication failures",
