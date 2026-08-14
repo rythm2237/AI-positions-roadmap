@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import type { CareerWorkspaceData } from "@/types/careerWorkspace";
+import type { CareerResourceMapping } from "@/types/careerGeneration";
 import type { ManagedCareerResource } from "@/lib/learning/adaptiveLearningContract";
 
 const generationErrors: Record<string, string> = {
@@ -21,8 +22,8 @@ const generationErrors: Record<string, string> = {
   ADMIN_REQUIRED: "This action requires an authorized Admin account.",
 };
 
-function mappingComplete(mapping: CareerWorkspaceData["resourceMappings"] extends Array<infer T> | undefined ? T : never) {
-  return Boolean(mapping?.reading && mapping?.video && (mapping?.course || mapping?.practice));
+function mappingComplete(mapping?: CareerResourceMapping) {
+  return Boolean(mapping?.reading && mapping.video && (mapping.course || mapping.practice));
 }
 
 export default function CareerResourceStudio({
