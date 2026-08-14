@@ -103,7 +103,7 @@ export function applyAdaptiveResourcePack(
       title: generated.title,
       type: resourceType(generated.mode),
       provider: generated.provider,
-      cost: generated.cost,
+      cost: generated.cost ?? "Free/Paid",
       estimatedTime: generated.estimatedTime,
       whyUseful: generated.whyUseful,
       url: generated.canonicalUrl,
