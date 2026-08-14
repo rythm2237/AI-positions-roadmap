@@ -1,10 +1,11 @@
+import { isDirectLearningDestination } from "@/lib/references/referenceDestinationPolicy";
 import type { GeneratedLearningResource, GeneratedResourcePack } from "@/types/careerGeneration";
 import type { ResourceRequirement } from "@/types/resourceRequirement";
 
 type AssessmentSeed = GeneratedLearningResource["assessmentSeeds"][number];
 type LearningMode = GeneratedLearningResource["mode"];
 
-const learningModes: LearningMode[] = ["reading", "video", "practice"];
+const learningModes: LearningMode[] = ["reading", "video", "course", "practice"];
 
 function record(value: unknown): value is Record<string, unknown> {
   return Boolean(value) && typeof value === "object" && !Array.isArray(value);
@@ -87,10 +88,12 @@ function normalizeResource(
   const estimatedTime = text(value.estimatedTime);
   const whyUseful = text(value.whyUseful);
   const priority = value.priority === "Essential" || value.priority === "Recommended" ? value.priority : null;
+  const cost = value.cost === "Free" || value.cost === "Paid" || value.cost === "Free/Paid" ? value.cost : "Free/Paid";
   if (!mode || !title || !provider || !canonicalUrl || !contentType || !estimatedTime || !whyUseful || !priority
     || typeof value.official !== "boolean"
     || !/^https:\/\//i.test(canonicalUrl)
-    || /youtube\.com|youtu\.be/i.test(canonicalUrl)) return null;
+    || /youtube\.com|youtu\.be/i.test(canonicalUrl)
+    || !isDirectLearningDestination({ mode, url: canonicalUrl, contentType })) return null;
 
   const sourceSeeds = Array.isArray(value.assessmentSeeds) ? value.assessmentSeeds : [];
   const seenQuestions = new Set<string>();
@@ -120,6 +123,7 @@ function normalizeResource(
       whyUseful,
       priority,
       official: value.official,
+      cost,
       assessmentSeeds,
     } satisfies GeneratedLearningResource,
     repairedAssessmentSeeds: 5 - retainedAssessmentSeeds,
@@ -140,10 +144,13 @@ export function normalizeResourcePackContract(
   const normalized = value.resources.map((resource) => normalizeResource(resource, requirement));
   if (normalized.some((resource) => !resource)) return null;
   const resources = normalized.map((item) => item!.resource);
-  if (!learningModes.every((mode) => resources.filter((resource) => resource.mode === mode).length === 1)) return null;
+  if (resources.filter((resource) => resource.mode === "reading").length !== 1) return null;
+  if (resources.filter((resource) => resource.mode === "video").length !== 1) return null;
+  if (resources.filter((resource) => resource.mode === "course" || resource.mode === "practice").length !== 1) return null;
   const canonicalUrls = resources.map((resource) => resource.canonicalUrl.replace(/\/$/, "").toLocaleLowerCase("en"));
   if (new Set(canonicalUrls).size !== 3) return null;
-  resources.sort((left, right) => learningModes.indexOf(left.mode) - learningModes.indexOf(right.mode));
+  const order: LearningMode[] = ["reading", "video", "course", "practice"];
+  resources.sort((left, right) => order.indexOf(left.mode) - order.indexOf(right.mode));
   return {
     pack: {
       requirementId: requirement.id,
