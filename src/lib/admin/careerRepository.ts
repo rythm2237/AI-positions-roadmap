@@ -29,5 +29,14 @@ export async function listAudit(accessToken: string, entityId?: string, limit = 
 export async function createCareer(accessToken: string, input: CareerInput) { return jsonRequest<ManagedCareer>("rpc/admin_create_career", accessToken, { method: "POST", body: JSON.stringify({ p_slug: input.slug, p_title: input.title, p_short_title: input.shortTitle, p_summary: input.summary, p_taxonomy: { primaryTitle: input.primaryTitle, aliases: input.aliases }, p_default_country_codes: input.defaultCountryCodes }) }); }
 export async function updateCareer(accessToken: string, id: string, input: CareerInput) { return jsonRequest<ManagedCareer>("rpc/admin_update_career", accessToken, { method: "POST", body: JSON.stringify({ p_id: id, p_title: input.title, p_short_title: input.shortTitle, p_summary: input.summary, p_taxonomy: { primaryTitle: input.primaryTitle, aliases: input.aliases }, p_default_country_codes: input.defaultCountryCodes }) }); }
 export async function setCareerArchived(accessToken: string, id: string, archived: boolean) { return jsonRequest<ManagedCareer>("rpc/admin_set_career_archived", accessToken, { method: "POST", body: JSON.stringify({ p_id: id, p_archived: archived }) }); }
-export async function saveCareerContent(accessToken:string,id:string,workspaceData:unknown,validationErrors:string[]){return jsonRequest<ManagedCareer>("rpc/admin_save_career_content",accessToken,{method:"POST",body:JSON.stringify({p_id:id,p_workspace_data:workspaceData,p_validation_errors:validationErrors})})}
+export async function saveCareerContent(accessToken:string,id:string,workspaceData:unknown,validationErrors:string[]){
+  const saved = await jsonRequest<ManagedCareer>("rpc/admin_save_career_content",accessToken,{method:"POST",body:JSON.stringify({p_id:id,p_workspace_data:workspaceData,p_validation_errors:validationErrors})});
+  if (workspaceData && typeof workspaceData === "object" && !Array.isArray(workspaceData)) {
+    await jsonRequest<Record<string, unknown>>("rpc/admin_sync_career_learning_resources", accessToken, {
+      method: "POST",
+      body: JSON.stringify({ p_career_id: id, p_workspace_data: workspaceData }),
+    });
+  }
+  return saved;
+}
 export async function setCareerPublication(accessToken:string,id:string,publish:boolean){return jsonRequest<ManagedCareer>("rpc/admin_set_career_publication",accessToken,{method:"POST",body:JSON.stringify({p_id:id,p_publish:publish})})}

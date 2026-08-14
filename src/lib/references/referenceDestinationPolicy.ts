@@ -1,4 +1,4 @@
-export type LearningDestinationMode = "reading" | "video" | "practice";
+export type LearningDestinationMode = "reading" | "video" | "course" | "practice";
 
 type LearningDestinationOption = {
   mode: LearningDestinationMode;
@@ -75,16 +75,19 @@ function normalizedPath(url: URL) {
   return path || "/";
 }
 
+function pathSegments(url: URL) {
+  return normalizedPath(url).split("/").filter(Boolean);
+}
+
 function isGitHubRepositoryRoot(url: URL) {
   if (normalizedHost(url) !== "github.com") return false;
-  const parts = normalizedPath(url).split("/").filter(Boolean);
-  return parts.length === 2;
+  return pathSegments(url).length === 2;
 }
 
 function isYouTubeDirectVideo(url: URL) {
   const host = normalizedHost(url);
   const path = normalizedPath(url);
-  if (host === "youtu.be") return path.split("/").filter(Boolean).length === 1;
+  if (host === "youtu.be") return pathSegments(url).length === 1;
   if (host !== "youtube.com") return false;
   return path === "/watch" && Boolean(url.searchParams.get("v"));
 }
@@ -96,12 +99,14 @@ function isKnownGenericLanding(url: URL) {
   if (GENERIC_PATHS.has(path)) return true;
   if (path.startsWith("/@")) return true;
   if (path.includes("/search")) return true;
+  if (/\/(?:learning-)?catalog(?:\/[^/]*-catalog)?$/.test(path)) return true;
 
   if (host === "skillsbuild.org") {
     return (
       path === "/adult-learners/explore-learning" ||
       path === "/adult-learners/explore-learning/artificial-intelligence" ||
-      path === "/college-students/course-catalog"
+      path === "/college-students/course-catalog" ||
+      path === "/learning-catalog/university-catalog"
     );
   }
 
@@ -109,6 +114,10 @@ function isKnownGenericLanding(url: URL) {
   if (host === "cloudskillsboost.google") return path === "/paths";
 
   return false;
+}
+
+function isPracticeContentType(contentType?: string) {
+  return /(?:lab|exercise|sandbox|notebook|codelab|challenge|ctf|interactive|hands-on|project)/i.test(contentType ?? "");
 }
 
 export function isDirectLearningDestination(
@@ -132,12 +141,21 @@ export function isDirectLearningDestination(
       return isYouTubeDirectVideo(url);
     }
     if (host === "learn.microsoft.com" && path.includes("/shows/")) {
-      return path.split("/").filter(Boolean).length >= 3;
+      return pathSegments(url).length >= 3;
     }
     return path !== "/";
   }
 
+  if (option.mode === "course") {
+    // A Course must be a specific course, module, path or enrollment page —
+    // never a provider homepage or catalog where the learner must search again.
+    return path !== "/" && pathSegments(url).length >= 2;
+  }
+
   if (option.mode === "practice") {
+    // Practice is deliberately stricter than Course. The declared resource
+    // must actually be hands-on, not merely a documentation/course page.
+    if (!isPracticeContentType(option.contentType)) return false;
     if (host === "github.com") {
       if (path === "/new") {
         return Boolean(

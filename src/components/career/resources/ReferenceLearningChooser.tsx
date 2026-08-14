@@ -3,7 +3,9 @@
 import { useEffect, useMemo, useState } from "react";
 import { getReferenceLearningOptions } from "@/lib/references/referenceResolver";
 import type {
+  ReferenceAccessTier,
   ReferenceLearningMode,
+  ReferenceLearningOption,
   ResolvedReference,
 } from "@/types/reference";
 
@@ -19,30 +21,35 @@ const MODES: Array<{
   icon: string;
   description: string;
 }> = [
-  {
-    mode: "reading",
-    label: "Read",
-    icon: "Aa",
-    description: "Direct reading",
-  },
-  {
-    mode: "video",
-    label: "Watch",
-    icon: "▶",
-    description: "Direct video",
-  },
-  {
-    mode: "practice",
-    label: "Practice",
-    icon: "◇",
-    description: "Direct hands-on",
-  },
+  { mode: "reading", label: "Read", icon: "Aa", description: "Direct reading" },
+  { mode: "video", label: "Watch", icon: "▶", description: "Direct video" },
+  { mode: "course", label: "Course", icon: "▤", description: "Structured course" },
+  { mode: "practice", label: "Practice", icon: "◇", description: "Hands-on environment" },
 ];
+
+type CoursePreference = "free" | "paid" | "any";
 
 function actionLabel(mode: ReferenceLearningMode) {
   if (mode === "video") return "Play video";
+  if (mode === "course") return "Open course";
   if (mode === "practice") return "Start practice";
   return "Open reading";
+}
+
+function inferredAccessTier(option: ReferenceLearningOption): ReferenceAccessTier {
+  if (option.accessTier) return option.accessTier;
+  const access = option.access.toLocaleLowerCase("en");
+  if (/free.?paid|freemium|audit.*free|free.*upgrade/.test(access)) return "freemium";
+  if (/paid|subscription|purchase|tuition|fee/.test(access)) return "paid";
+  if (/free|no cost|open access/.test(access)) return "free";
+  return "unknown";
+}
+
+function optionMatchesPreference(option: ReferenceLearningOption, preference: CoursePreference) {
+  if (preference === "any") return true;
+  const tier = inferredAccessTier(option);
+  if (preference === "free") return tier === "free" || tier === "freemium";
+  return tier === "paid" || tier === "freemium";
 }
 
 export default function ReferenceLearningChooser({
@@ -54,39 +61,51 @@ export default function ReferenceLearningChooser({
     () => getReferenceLearningOptions(resource),
     [resource]
   );
-
+  const verifiedOptions = options.filter((option) => option.verifiedContentType);
+  const availableModes = MODES.filter(({ mode }) =>
+    verifiedOptions.some((option) => option.mode === mode)
+  );
   const defaultMode =
-    options.find((option) => option.mode === "reading")?.mode ??
-    options[0]?.mode ??
+    availableModes.find(({ mode }) => mode === "reading")?.mode ??
+    availableModes[0]?.mode ??
     "reading";
 
-  const [selectedMode, setSelectedMode] =
-    useState<ReferenceLearningMode>(defaultMode);
+  const [selectedMode, setSelectedMode] = useState<ReferenceLearningMode>(defaultMode);
+  const [coursePreference, setCoursePreference] = useState<CoursePreference>("free");
 
   const optionSignature = options
-    .map(
-      (option) =>
-        `${option.mode}:${option.contentType}:${option.url}:${option.verifiedAt}`
-    )
+    .map((option) => `${option.mode}:${option.contentType}:${option.url}:${option.verifiedAt}:${option.access}`)
     .join("|");
 
   useEffect(() => {
+    const modes = MODES.filter(({ mode }) =>
+      options.some((option) => option.mode === mode && option.verifiedContentType)
+    );
     setSelectedMode(
-      options.find((option) => option.mode === "reading")?.mode ??
-        options[0]?.mode ??
+      modes.find(({ mode }) => mode === "reading")?.mode ??
+        modes[0]?.mode ??
         "reading"
     );
-  }, [resource.id, optionSignature, options]);
+  }, [resource.id, optionSignature]);
 
-  const selectedOption =
-    options.find((option) => option.mode === selectedMode) ?? options[0];
+  const modeOptions = verifiedOptions.filter((option) => option.mode === selectedMode);
+  const selectedOption = selectedMode === "course"
+    ? modeOptions.find((option) => optionMatchesPreference(option, coursePreference)) ?? modeOptions[0]
+    : modeOptions[0];
 
-  const canOpen = Boolean(
-    selectedOption &&
-      selectedOption.verifiedContentType &&
-      resource.available &&
-      !disabled
-  );
+  const courseOptions = verifiedOptions.filter((option) => option.mode === "course");
+  const hasFreeCourse = courseOptions.some((option) => optionMatchesPreference(option, "free"));
+  const hasPaidCourse = courseOptions.some((option) => optionMatchesPreference(option, "paid"));
+
+  const canOpen = Boolean(selectedOption && resource.available && !disabled);
+
+  if (!availableModes.length) {
+    return (
+      <div className="mt-4 rounded-xl border border-amber-300/15 bg-amber-400/[0.05] p-3 text-xs leading-5 text-amber-100">
+        No direct verified learning destination is currently available for this resource.
+      </div>
+    );
+  }
 
   return (
     <div className="mt-4">
@@ -95,90 +114,71 @@ export default function ReferenceLearningChooser({
       </p>
 
       <div
-        className="mt-2 grid gap-2 sm:grid-cols-3"
+        className="mt-2 grid gap-2 sm:grid-cols-2 lg:grid-cols-4"
         role="group"
         aria-label={`Choose how to learn ${resource.title}`}
       >
-        {MODES.map(({ mode, label, icon, description }) => {
-          const option = options.find((item) => item.mode === mode);
+        {availableModes.map(({ mode, label, icon, description }) => {
           const selected = selectedMode === mode;
-          const unavailable =
-            disabled || !option || !option.verifiedContentType;
-
           return (
             <button
               key={mode}
               type="button"
-              disabled={unavailable}
+              disabled={disabled}
               aria-pressed={selected}
-              onClick={() => option && setSelectedMode(mode)}
+              onClick={() => setSelectedMode(mode)}
               className={`min-h-16 rounded-xl border px-3 py-2 text-left transition ${
-                unavailable
+                disabled
                   ? "cursor-not-allowed border-white/5 bg-white/[0.02] text-slate-600"
                   : selected
                     ? mode === "practice"
                       ? "border-emerald-300/50 bg-emerald-400/10 text-white"
-                      : "border-cyan-300/50 bg-cyan-400/10 text-white"
+                      : mode === "course"
+                        ? "border-violet-300/50 bg-violet-400/10 text-white"
+                        : "border-cyan-300/50 bg-cyan-400/10 text-white"
                     : "border-white/10 bg-white/[0.03] text-slate-300 hover:border-violet-300/35 hover:bg-violet-400/[0.07]"
               }`}
             >
-              <span className="block text-sm font-semibold">
-                {icon} {label}
-              </span>
-              <span className="mt-1 block text-[11px] leading-4 text-slate-500">
-                {option && option.verifiedContentType
-                  ? description
-                  : `No direct ${label.toLowerCase()} available`}
-              </span>
+              <span className="block text-sm font-semibold">{icon} {label}</span>
+              <span className="mt-1 block text-[11px] leading-4 text-slate-500">{description}</span>
             </button>
           );
         })}
       </div>
 
+      {selectedMode === "course" && courseOptions.length ? (
+        <div className="mt-3 rounded-xl border border-violet-300/15 bg-violet-400/[0.04] p-3">
+          <p className="text-xs font-semibold text-violet-100">Course preference</p>
+          <p className="mt-1 text-[11px] leading-4 text-slate-500">Choose whether you want a free option or are willing to use a paid course.</p>
+          <div className="mt-2 flex flex-wrap gap-2" role="group" aria-label="Course cost preference">
+            <PreferenceButton label="Free" active={coursePreference === "free"} disabled={!hasFreeCourse} onClick={() => setCoursePreference("free")} />
+            <PreferenceButton label="Paid is OK" active={coursePreference === "paid"} disabled={!hasPaidCourse} onClick={() => setCoursePreference("paid")} />
+            <PreferenceButton label="Best available" active={coursePreference === "any"} disabled={false} onClick={() => setCoursePreference("any")} />
+          </div>
+        </div>
+      ) : null}
+
       {selectedOption ? (
         <div className="mt-3 rounded-xl border border-white/10 bg-slate-950/45 p-3">
           <div className="flex flex-wrap items-start justify-between gap-2">
             <div className="min-w-0">
-              <p className="text-sm font-semibold text-white">
-                {selectedOption.title}
-              </p>
+              <p className="text-sm font-semibold text-white">{selectedOption.title}</p>
               <p className="mt-1 text-xs text-slate-500">
                 {selectedOption.provider}
-                {selectedOption.durationLabel
-                  ? ` · ${selectedOption.durationLabel}`
-                  : ""}
-                {selectedOption.isOfficial
-                  ? " · Official resource"
-                  : " · Curated external resource"}
+                {selectedOption.durationLabel ? ` · ${selectedOption.durationLabel}` : ""}
+                {selectedOption.isOfficial ? " · Official resource" : " · Curated external resource"}
+                {selectedOption.mode === "course" ? ` · ${selectedOption.priceLabel ?? selectedOption.access}` : ""}
               </p>
             </div>
-
             <div className="flex flex-wrap gap-1">
-              <span className="rounded-full border border-white/10 px-2 py-1 text-[10px] font-semibold uppercase tracking-wider text-slate-400">
-                {selectedOption.mode}
-              </span>
-              <span className="rounded-full border border-emerald-300/20 bg-emerald-400/[0.06] px-2 py-1 text-[10px] font-semibold text-emerald-200">
-                Direct destination verified
-              </span>
+              <span className="rounded-full border border-white/10 px-2 py-1 text-[10px] font-semibold uppercase tracking-wider text-slate-400">{selectedOption.mode}</span>
+              <span className="rounded-full border border-emerald-300/20 bg-emerald-400/[0.06] px-2 py-1 text-[10px] font-semibold text-emerald-200">Direct destination verified</span>
             </div>
           </div>
 
-          {selectedOption.description ? (
-            <p className="mt-2 text-xs leading-5 text-slate-400">
-              {selectedOption.description}
-            </p>
-          ) : null}
-
-          {!selectedOption.isOfficial && selectedOption.curationReason ? (
-            <p className="mt-2 rounded-lg border border-amber-300/15 bg-amber-400/[0.06] p-2 text-[11px] leading-4 text-amber-100">
-              Why this external resource: {selectedOption.curationReason}
-            </p>
-          ) : null}
-
-          <p className="mt-2 text-[10px] text-slate-600">
-            Content type: {selectedOption.contentType} · Verified{" "}
-            {selectedOption.verifiedAt}
-          </p>
+          {selectedOption.description ? <p className="mt-2 text-xs leading-5 text-slate-400">{selectedOption.description}</p> : null}
+          {!selectedOption.isOfficial && selectedOption.curationReason ? <p className="mt-2 rounded-lg border border-amber-300/15 bg-amber-400/[0.06] p-2 text-[11px] leading-4 text-amber-100">Why this external resource: {selectedOption.curationReason}</p> : null}
+          <p className="mt-2 text-[10px] text-slate-600">Content type: {selectedOption.contentType} · Verified {selectedOption.verifiedAt}</p>
 
           <a
             href={canOpen ? selectedOption.url : undefined}
@@ -203,7 +203,13 @@ export default function ReferenceLearningChooser({
             {canOpen ? actionLabel(selectedOption.mode) : "Direct resource unavailable"}
           </a>
         </div>
-      ) : null}
+      ) : (
+        <div className="mt-3 rounded-xl border border-amber-300/15 bg-amber-400/[0.05] p-3 text-xs text-amber-100">No course matches that access preference yet. Choose another preference.</div>
+      )}
     </div>
   );
+}
+
+function PreferenceButton({ label, active, disabled, onClick }: { label: string; active: boolean; disabled: boolean; onClick: () => void }) {
+  return <button type="button" disabled={disabled} aria-pressed={active} onClick={onClick} className={`min-h-9 rounded-lg border px-3 text-xs font-semibold transition ${disabled ? "cursor-not-allowed border-white/5 text-slate-600" : active ? "border-violet-300/40 bg-violet-400/10 text-violet-100" : "border-white/10 text-slate-300 hover:bg-white/5"}`}>{label}</button>;
 }

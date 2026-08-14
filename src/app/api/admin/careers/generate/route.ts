@@ -6,6 +6,7 @@ import { generateCareerBlueprint } from "@/lib/ai/careerGenerator";
 import { assembleCareerWorkspace } from "@/lib/ai/careerBlueprintAssembler";
 import { classifyCareerAiError, logCareerAiError } from "@/lib/ai/aiError";
 import { validateCareerWorkspaceData } from "@/lib/careerContentValidation";
+import { adaptCareerWorkspaceLearningContract } from "@/lib/learning/adaptiveLearningContract";
 
 export const runtime = "nodejs";
 export const maxDuration = 300;
@@ -40,7 +41,9 @@ export async function POST(request: Request) {
     console.log(JSON.stringify({ level: "info", message: "Career Blueprint generation started", route: "/api/admin/careers/generate", requestId, slug: requestedSlug }));
     const generated = await generateCareerBlueprint(requestedTitle);
     const blueprint = { ...generated, title: requestedTitle };
-    const workspace = assembleCareerWorkspace(blueprint, requestedSlug);
+    const workspace = adaptCareerWorkspaceLearningContract(
+      assembleCareerWorkspace(blueprint, requestedSlug),
+    );
     const validation = validateCareerWorkspaceData(workspace, requestedSlug);
     const input = validateCareerInput({
       slug: requestedSlug,

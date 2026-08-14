@@ -5,7 +5,7 @@ export type ReferenceStatus =
   | "broken"
   | "replaced";
 
-export type ReferenceLearningMode = "reading" | "video" | "practice";
+export type ReferenceLearningMode = "reading" | "video" | "course" | "practice";
 
 export type ReferenceContentType =
   | "documentation"
@@ -42,6 +42,8 @@ export type ReferenceContentType =
   | "guided-career-path"
   | "hands-on-lab-path";
 
+export type ReferenceAccessTier = "free" | "paid" | "freemium" | "unknown";
+
 export type ReferenceLearningOption = {
   mode: ReferenceLearningMode;
   contentType: ReferenceContentType;
@@ -52,6 +54,8 @@ export type ReferenceLearningOption = {
   durationLabel?: string;
   isOfficial: boolean;
   access: string;
+  accessTier?: ReferenceAccessTier;
+  priceLabel?: string;
   verifiedContentType: boolean;
   verifiedAt: string;
   verificationSource: string;

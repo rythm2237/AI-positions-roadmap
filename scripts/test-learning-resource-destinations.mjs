@@ -17,6 +17,36 @@ assert.equal(
 
 assert.equal(
   isDirectLearningDestination({
+    mode: "course",
+    contentType: "official-course",
+    url: "https://skillsbuild.org/learning-catalog/university-catalog",
+  }),
+  false,
+  "course catalogs must not qualify as direct Course destinations",
+);
+
+assert.equal(
+  isDirectLearningDestination({
+    mode: "course",
+    contentType: "official-course",
+    url: "https://learn.microsoft.com/en-us/training/paths/get-started-with-artificial-intelligence-on-azure/",
+  }),
+  true,
+  "a specific course or learning path may qualify as a direct Course destination",
+);
+
+assert.equal(
+  isDirectLearningDestination({
+    mode: "practice",
+    contentType: "documentation",
+    url: "https://docs.python.org/3/tutorial/",
+  }),
+  false,
+  "ordinary documentation must never be relabeled as Practice",
+);
+
+assert.equal(
+  isDirectLearningDestination({
     mode: "practice",
     contentType: "interactive-course",
     url: "https://github.com/skills/introduction-to-github",
@@ -42,7 +72,7 @@ assert.equal(
     url: "https://www.youtube.com/watch?v=rfscVS0vtbw",
   }),
   true,
-  "exact YouTube watch URLs may qualify when a curated video is intentionally used",
+  "exact YouTube watch URLs may qualify at the destination-policy layer when intentionally curated",
 );
 
 const githubStart = getDirectDestinationOverride("journey-github-docs", "practice");
@@ -96,4 +126,4 @@ for (const [referenceId, mode] of [
   );
 }
 
-console.log("Learning resource destination fidelity tests passed.");
+console.log("Learning resource destination fidelity tests passed: Reading, Video, Course and selective Practice.");

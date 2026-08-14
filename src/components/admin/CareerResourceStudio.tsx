@@ -3,6 +3,8 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import type { CareerWorkspaceData } from "@/types/careerWorkspace";
+import type { CareerResourceMapping } from "@/types/careerGeneration";
+import type { ManagedCareerResource } from "@/lib/learning/adaptiveLearningContract";
 
 const generationErrors: Record<string, string> = {
   CAREER_BLUEPRINT_MISSING: "Generate and save the Career Blueprint before creating learning sources.",
@@ -19,6 +21,10 @@ const generationErrors: Record<string, string> = {
   AUTH_REQUIRED: "Your Admin session expired. Sign in again and retry.",
   ADMIN_REQUIRED: "This action requires an authorized Admin account.",
 };
+
+function mappingComplete(mapping?: CareerResourceMapping) {
+  return Boolean(mapping?.reading && mapping.video && (mapping.course || mapping.practice));
+}
 
 export default function CareerResourceStudio({
   careerId,
@@ -38,16 +44,16 @@ export default function CareerResourceStudio({
   const [message, setMessage] = useState("");
   const requirements = workspace.resourceRequirements ?? [];
   const mappings = workspace.resourceMappings ?? [];
-  const mappingComplete = (requirementId: string) => {
+  const isRequirementComplete = (requirementId: string) => {
     const mapping = mappings.find((item) => item.requirementId === requirementId);
-    return Boolean(mapping?.reading && mapping.video && mapping.practice);
+    return mappingComplete(mapping);
   };
-  const completedBeforeRun = requirements.filter((requirement) => mappingComplete(requirement.id)).length;
-  const incompleteRequirements = requirements.filter((requirement) => !mappingComplete(requirement.id));
+  const completedBeforeRun = requirements.filter((requirement) => isRequirementComplete(requirement.id)).length;
+  const incompleteRequirements = requirements.filter((requirement) => !isRequirementComplete(requirement.id));
   const complete = workspace.generationMetadata?.resourceStatus === "complete";
   const readyForApproval = requirements.length > 0
     && mappings.length === requirements.length
-    && mappings.every((mapping) => mapping.reading && mapping.video && mapping.practice);
+    && mappings.every(mappingComplete);
 
   async function generateResources() {
     const targets = incompleteRequirements.length ? incompleteRequirements : requirements;
@@ -102,19 +108,20 @@ export default function CareerResourceStudio({
               <span className="grid h-12 w-12 place-items-center rounded-2xl bg-violet-400/15 text-xl" aria-hidden="true">⌕</span>
               <h2 className="mt-5 font-display text-2xl font-semibold text-white">Create the learning sources</h2>
               <p className="mt-3 max-w-2xl text-sm leading-6 text-slate-400">
-                AI will research current sources for each approved requirement, then map one Reading, one Video and one Practice experience to every Career stage. Nothing is published automatically.
+                AI researches one direct Reading and one direct Video for every Career stage, then chooses one structured Course or—only when the topic genuinely supports it—a hands-on Practice environment. Nothing is published automatically.
               </p>
               <button type="button" onClick={generateResources} disabled={status === "generating"} className="btn-primary mt-6 min-h-12 disabled:cursor-wait disabled:opacity-60">
                 {status === "generating" ? `Creating stage ${processedCount + 1} of ${generationTotal}…` : incompleteRequirements.length < requirements.length ? "Continue creating learning sources" : "Create the learning sources"}
               </button>
             </div>
             <aside className="rounded-2xl border border-white/10 bg-black/15 p-5">
-              <p className="text-xs font-bold uppercase tracking-wide text-slate-500">Guardrails</p>
+              <p className="text-xs font-bold uppercase tracking-wide text-slate-500">Publication guardrails</p>
               <ul className="mt-4 space-y-3 text-xs leading-5 text-slate-400">
-                <li>✓ Career Blueprint remains independent from provider URLs.</li>
-                <li>✓ Official and free sources are preferred.</li>
-                <li>✓ Direct YouTube links are excluded.</li>
-                <li>✓ Every source receives a five-question assessment.</li>
+                <li>✓ Every CTA must deep-link to the exact learning destination.</li>
+                <li>✓ Official and free sources are preferred; paid Course access is labelled.</li>
+                <li>✓ Practice is selected only for genuine labs, sandboxes, notebooks or guided exercises.</li>
+                <li>✓ Catalogs, provider homepages, GitHub repository roots and direct YouTube sources are rejected.</li>
+                <li>✓ Generated sources receive a review date and must stay current.</li>
               </ul>
             </aside>
           </div>
@@ -133,9 +140,10 @@ export default function CareerResourceStudio({
             <div className="flex flex-wrap gap-2">
               <span className={`rounded-full px-3 py-1 text-xs font-semibold ${complete ? "bg-emerald-400/10 text-emerald-300" : "bg-amber-400/10 text-amber-200"}`}>{complete ? "Sources approved" : "Admin review required"}</span>
               <span className="rounded-full bg-cyan-400/10 px-3 py-1 text-xs font-semibold text-cyan-200">AI researched</span>
+              <span className="rounded-full bg-violet-400/10 px-3 py-1 text-xs font-semibold text-violet-200">Adaptive Course / Practice</span>
             </div>
             <h2 className="mt-4 font-display text-2xl font-semibold text-white">Learning-source review</h2>
-            <p className="mt-2 max-w-2xl text-sm leading-6 text-slate-400">Check the selected providers, canonical URLs and Career relevance. Approval unlocks publication only when all mappings pass validation.</p>
+            <p className="mt-2 max-w-2xl text-sm leading-6 text-slate-400">Verify the exact destination, provider, cost/access, Career relevance and review date. Approval is blocked when a source is indirect, stale or the adaptive extension is missing.</p>
           </div>
           <div className="flex flex-wrap gap-3">
             <button type="button" onClick={generateResources} disabled={status === "generating"} className="btn-secondary min-h-11 disabled:cursor-wait disabled:opacity-50">{status === "generating" ? `Creating ${processedCount + 1} of ${generationTotal}…` : incompleteRequirements.length ? "Continue creating sources" : "Regenerate sources"}</button>
@@ -153,17 +161,23 @@ export default function CareerResourceStudio({
             .map((id) => workspace.globalResources.find((resource) => resource.id === id))
             .filter((resource) => Boolean(resource));
           const mapping = mappings.find((item) => item.requirementId === requirement.id);
+          const extensionLabel = mapping?.practice ? "Practice" : mapping?.course ? "Course" : "Course / Practice pending";
           return (
             <details key={requirement.id} open={index === 0} className="group rounded-2xl border border-white/10 bg-white/[.025]">
               <summary className="flex cursor-pointer list-none items-center justify-between gap-4 p-5 focus-visible:outline focus-visible:outline-2 focus-visible:outline-cyan-300">
                 <div className="flex min-w-0 items-center gap-4">
                   <span className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-violet-400/10 text-xs font-bold text-violet-200">{index + 1}</span>
-                  <div className="min-w-0"><h3 className="truncate font-semibold text-white">{stage?.title ?? requirement.topic}</h3><p className="mt-1 truncate text-xs text-slate-500">{requirement.topic} · {resources.length}/3 sources</p></div>
+                  <div className="min-w-0"><h3 className="truncate font-semibold text-white">{stage?.title ?? requirement.topic}</h3><p className="mt-1 truncate text-xs text-slate-500">{requirement.topic} · {resources.length} sources · {extensionLabel}</p></div>
                 </div>
                 <div className="flex items-center gap-3"><span className={`rounded-full px-2.5 py-1 text-[10px] font-semibold uppercase ${mapping?.status === "complete" ? "bg-emerald-400/10 text-emerald-300" : "bg-amber-400/10 text-amber-200"}`}>{mapping?.status ?? "pending"}</span><span className="text-slate-500 transition group-open:rotate-180">⌄</span></div>
               </summary>
               <div className="border-t border-white/10 p-5">
                 <p className="text-sm leading-6 text-slate-400">Required outcomes: {requirement.requiredLearningOutcomes.join(" · ")}</p>
+                <div className="mt-3 flex flex-wrap gap-2 text-[10px] font-semibold uppercase tracking-wide">
+                  <span className="rounded-full bg-cyan-400/10 px-2.5 py-1 text-cyan-200">Reading required</span>
+                  <span className="rounded-full bg-cyan-400/10 px-2.5 py-1 text-cyan-200">Video required</span>
+                  <span className="rounded-full bg-violet-400/10 px-2.5 py-1 text-violet-200">Course or genuine Practice</span>
+                </div>
                 <div className="mt-5 grid gap-3 xl:grid-cols-3">
                   {resources.map((resource) => <ResourceCard key={resource!.id} resource={resource!} />)}
                 </div>
@@ -186,5 +200,7 @@ function GenerationError({ code, message }: { code: string; message: string }) {
 }
 
 function ResourceCard({ resource }: { resource: CareerWorkspaceData["globalResources"][number] }) {
-  return <article className="flex min-h-64 flex-col rounded-2xl border border-white/10 bg-black/15 p-4"><div className="flex items-center justify-between gap-3"><span className="rounded-full bg-cyan-400/10 px-2.5 py-1 text-[10px] font-bold uppercase text-cyan-200">{resource.type}</span><span className="text-[10px] uppercase text-slate-500">{resource.priority}</span></div><h4 className="mt-4 font-semibold leading-6 text-white">{resource.title}</h4><p className="mt-1 text-xs text-slate-500">{resource.provider} · {resource.estimatedTime}</p><p className="mt-4 flex-1 text-sm leading-6 text-slate-400">{resource.whyUseful}</p><a href={resource.url} target="_blank" rel="noreferrer" className="mt-5 min-h-11 rounded-xl border border-white/10 px-3 py-3 text-center text-sm font-semibold text-cyan-300 hover:bg-white/5">Open canonical source ↗</a></article>;
+  const managed = resource as ManagedCareerResource;
+  const reviewLabel = managed.nextReviewAt ? new Date(managed.nextReviewAt).toLocaleDateString("en-GB") : "legacy schedule";
+  return <article className="flex min-h-72 flex-col rounded-2xl border border-white/10 bg-black/15 p-4"><div className="flex items-center justify-between gap-3"><span className="rounded-full bg-cyan-400/10 px-2.5 py-1 text-[10px] font-bold uppercase text-cyan-200">{resource.type}</span><span className="text-[10px] uppercase text-slate-500">{resource.priority}</span></div><h4 className="mt-4 font-semibold leading-6 text-white">{resource.title}</h4><p className="mt-1 text-xs text-slate-500">{resource.provider} · {resource.estimatedTime}</p><div className="mt-3 flex flex-wrap gap-1.5"><span className="rounded-full border border-white/10 px-2 py-1 text-[10px] text-slate-300">{resource.cost}</span>{managed.isOfficial ? <span className="rounded-full border border-emerald-300/20 bg-emerald-400/[.06] px-2 py-1 text-[10px] text-emerald-200">Official</span> : null}{managed.directDestinationVerified ? <span className="rounded-full border border-cyan-300/20 bg-cyan-400/[.06] px-2 py-1 text-[10px] text-cyan-200">Direct destination</span> : null}</div><p className="mt-4 flex-1 text-sm leading-6 text-slate-400">{resource.whyUseful}</p><p className="mt-3 text-[10px] text-slate-500">Next review: {reviewLabel}</p><a href={resource.url} target="_blank" rel="noreferrer" className="mt-4 min-h-11 rounded-xl border border-white/10 px-3 py-3 text-center text-sm font-semibold text-cyan-300 hover:bg-white/5">Open exact destination ↗</a></article>;
 }
