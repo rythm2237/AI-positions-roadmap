@@ -16,7 +16,7 @@ const youtubeResource = `  freeCodeCampPython: {
   },`;
 
 const officialPythonResource = `  pythonTutorial: {
-    id: "journey-python-tutorial",
+    id: "journey-fcc-python",
     title: "The Python Tutorial",
     type: "Documentation" as const,
     provider: "Python Software Foundation",
@@ -54,4 +54,4 @@ if (source.includes("youtube.com/") || source.includes("youtu.be/")) {
 }
 
 fs.writeFileSync(path, source);
-console.log("AI Engineer production content hardened: official Python source, evidence-safe market claims, and transparent jobs messaging applied.");
+console.log("AI Engineer production content hardened: official Python source, evidence-safe market claims, transparent jobs messaging, and Registry-compatible reference ids applied.");

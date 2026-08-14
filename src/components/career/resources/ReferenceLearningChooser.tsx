@@ -23,26 +23,26 @@ const MODES: Array<{
     mode: "reading",
     label: "Read",
     icon: "Aa",
-    description: "Written guidance",
+    description: "Direct reading",
   },
   {
     mode: "video",
     label: "Watch",
     icon: "▶",
-    description: "Verified video",
+    description: "Direct video",
   },
   {
     mode: "practice",
     label: "Practice",
     icon: "◇",
-    description: "Hands-on learning",
+    description: "Direct hands-on",
   },
 ];
 
 function actionLabel(mode: ReferenceLearningMode) {
-  if (mode === "video") return "Watch selected video";
-  if (mode === "practice") return "Start selected practice";
-  return "Open selected reading";
+  if (mode === "video") return "Play video";
+  if (mode === "practice") return "Start practice";
+  return "Open reading";
 }
 
 export default function ReferenceLearningChooser({
@@ -126,9 +126,9 @@ export default function ReferenceLearningChooser({
                 {icon} {label}
               </span>
               <span className="mt-1 block text-[11px] leading-4 text-slate-500">
-                {option
+                {option && option.verifiedContentType
                   ? description
-                  : `No verified ${label.toLowerCase()} option`}
+                  : `No direct ${label.toLowerCase()} available`}
               </span>
             </button>
           );
@@ -158,7 +158,7 @@ export default function ReferenceLearningChooser({
                 {selectedOption.mode}
               </span>
               <span className="rounded-full border border-emerald-300/20 bg-emerald-400/[0.06] px-2 py-1 text-[10px] font-semibold text-emerald-200">
-                Type verified
+                Direct destination verified
               </span>
             </div>
           </div>
@@ -200,7 +200,7 @@ export default function ReferenceLearningChooser({
                 : "cursor-not-allowed border-white/5 text-slate-600"
             }`}
           >
-            {actionLabel(selectedOption.mode)}
+            {canOpen ? actionLabel(selectedOption.mode) : "Direct resource unavailable"}
           </a>
         </div>
       ) : null}
