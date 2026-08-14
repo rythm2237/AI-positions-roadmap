@@ -99,7 +99,8 @@ export interface GeneratedLearningResource {
   whyUseful: string;
   priority: "Essential" | "Recommended";
   official: boolean;
-  cost: ResourceCost;
+  /** New adaptive packs always set cost; optional keeps legacy test/fixture packs readable. */
+  cost?: ResourceCost;
   assessmentSeeds: Array<Pick<CareerQuizQuestion, "question" | "answers" | "correctAnswerIndex" | "explanation">>;
 }
 
