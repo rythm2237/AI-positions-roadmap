@@ -310,7 +310,7 @@ export function validateCareerBlueprintOutput(value: unknown) {
     return invalid("aliases or bestFor counts are outside the contract");
   }
   if (!objectArray(value.metrics, 5, 8) || !(value.metrics as Record<string, unknown>[]).every((item) => requiredStrings(item, ["label", "value", "detail"]))) {
-    return invalid("metrics must contain 5–8 complete items");
+    return invalid(`metrics must contain 5–8 complete items (received ${Array.isArray(value.metrics) ? value.metrics.length : "non-array"})`);
   }
   if (!record(value.overview)
     || !requiredStrings(value.overview, ["title", "body"])
@@ -330,7 +330,8 @@ export function validateCareerBlueprintOutput(value: unknown) {
       || !stringArray(stage.practicalMissions, 2, 5)
       || !stringArray(stage.preferredProviders, 1, 5)
       || !objectArray(stage.assessmentSeeds, 5, 5)) {
-      return invalid(`stage ${index + 1} collections are outside the contract`);
+      const count = (item: unknown) => Array.isArray(item) ? item.length : "non-array";
+      return invalid(`stage ${index + 1} collections are outside the contract (lessons=${count(stage.lessons)}, outcomes=${count(stage.learningOutcomes)}, tasks=${count(stage.tasks)}, missions=${count(stage.practicalMissions)}, providers=${count(stage.preferredProviders)}, assessments=${count(stage.assessmentSeeds)})`);
     }
     if (!(stage.tasks as Record<string, unknown>[]).every((task) => requiredStrings(task, ["title", "description", "type"]))) {
       return invalid(`stage ${index + 1} tasks are incomplete`);

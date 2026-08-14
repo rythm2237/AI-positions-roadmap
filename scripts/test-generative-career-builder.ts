@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import fs from "node:fs";
 import { validateCareerPublicationReadiness, validateCareerWorkspaceData } from "../src/lib/careerContentValidation.ts";
-import { careerBlueprintSchema, resourcePackSchema } from "../src/lib/ai/careerGenerationSchema.ts";
+import { careerBlueprintSchema, resourcePackSchema, validateCareerBlueprintOutput } from "../src/lib/ai/careerGenerationSchema.ts";
 import { normalizeCareerBlueprintContract } from "../src/lib/ai/careerBlueprintNormalization.ts";
 
 const createPage = fs.readFileSync("src/app/admin/(studio)/careers/new/page.tsx", "utf8");
@@ -126,6 +126,81 @@ assert.ok(normalizedBlueprint.adjustedCollections.some((item) => item.path === "
 assert.ok(normalizedBlueprint.adjustedCollections.some((item) => item.path === "stages[0].lessons"));
 assert.ok(normalizedBlueprint.blueprint.stages.every((item) => item.assessmentSeeds.length === 5));
 assert.ok(normalizedBlueprint.blueprint.stages.every((item) => item.lessons.length <= 6 && item.tasks.length <= 5));
+
+const underfilledStages = generatedStages.slice(0, 10).map((stage, index) => index === 0 ? {
+  ...stage,
+  lessons: stage.lessons.slice(0, 2),
+  learningOutcomes: stage.learningOutcomes.slice(0, 2),
+  tasks: stage.tasks.slice(0, 2),
+  practicalMissions: stage.practicalMissions.slice(0, 1),
+  preferredProviders: [],
+  assessmentSeeds: stage.assessmentSeeds.slice(0, 4),
+} : stage);
+const completedBlueprint = normalizeCareerBlueprintContract({
+  title: "AI and Process Innovation Specialist",
+  shortTitle: "AI Process Innovation",
+  category: "AI Transformation",
+  summary: "A complete professional pathway for applying AI to process innovation, operational improvement, adoption and evidence-based transformation decisions.",
+  aliases: ["Process Innovation Specialist"],
+  difficulty: "Intermediate",
+  estimatedLearningTime: "6–12 months",
+  salaryContext: "Salary depends on market, seniority and scope.",
+  hiringDemandContext: "Demand requires current market research before publication.",
+  remoteAvailability: "Hybrid and remote availability varies by employer.",
+  aiCompatibility: "AI is central to analysis, design and implementation.",
+  bestFor: ["Operational improvement professionals"],
+  programmingRequirement: "Low-code to intermediate programming",
+  mathRequirement: "Applied business mathematics and statistics",
+  creativityLevel: "High",
+  communicationLevel: "High",
+  metrics: Array.from({ length: 3 }, (_, index) => ({ label: `Metric ${index + 1}`, value: "High", detail: "A complete professional metric detail." })),
+  overview: {
+    title: "Career overview",
+    body: "This role identifies process problems, designs responsible AI-enabled improvements, validates measurable outcomes and supports stakeholder adoption across operational environments.",
+    responsibilities: ["Analyze operational processes", "Design evidence-based improvements"],
+    industries: ["Technology and software", "Professional services"],
+  },
+  journeyTheme: "ai-laboratory",
+  journeyDescription: "A progressive journey from role orientation through applied delivery, portfolio evidence and job readiness.",
+  stages: underfilledStages,
+  projects: Array.from({ length: 2 }, (_, index) => ({
+    title: `Existing project ${index + 1}`,
+    difficulty: "Intermediate",
+    estimatedTime: "20 hours",
+    stageNumber: index + 4,
+    description: "Create an employer-reviewable process innovation artifact supported by decisions, evidence and measurable acceptance criteria.",
+    deliverables: ["Problem definition", "Implementation artifact"],
+    skills: ["Process analysis", "AI solution design"],
+  })),
+  readiness: [
+    { label: "Process analysis", description: "Can analyze a workflow and define measurable improvement criteria.", weight: 20 },
+    { label: "AI solution design", description: "Can select and justify an appropriate AI-enabled approach.", weight: 20 },
+  ],
+  finalChallenge: {
+    title: "AI process innovation capstone",
+    description: "Deliver an end-to-end, employer-reviewable transformation case with traceable decisions, evidence, risks and measurable outcomes.",
+    requirements: ["Define the professional problem", "Document stakeholder requirements"],
+    deliverables: ["Solution artifact", "Evidence report"],
+    evaluation: ["Problem relevance", "Evidence quality"],
+  },
+  relatedCareers: ["AI Transformation Analyst", "Process Automation Consultant"],
+  portfolioTasks: [{ title: "Publish a case study", description: "Present the problem, decisions, artifact and evidence.", type: "portfolio" }],
+  jobSearchTasks: [{ title: "Map target vacancies", description: "Compare vacancy requirements with verified portfolio evidence.", type: "job-search" }],
+  interviewPrep: {
+    title: "AI process innovation interview preparation",
+    practiceAreas: ["Process analysis", "AI solution design", "Stakeholder alignment", "Risk management"],
+    questions: Array.from({ length: 9 }, (_, index) => `How would you handle professional AI process innovation scenario ${index + 1}?`),
+  },
+});
+assert.ok(completedBlueprint, "A ten-stage Blueprint with underfilled collections must be recoverable");
+assert.equal(validateCareerBlueprintOutput(completedBlueprint.blueprint).success, true, "Contract completion must produce a fully valid Blueprint");
+assert.equal(completedBlueprint.blueprint.metrics.length, 5);
+assert.equal(completedBlueprint.blueprint.stages[0].lessons.length, 3);
+assert.equal(completedBlueprint.blueprint.stages[0].tasks.length, 3);
+assert.equal(completedBlueprint.blueprint.stages[0].assessmentSeeds.length, 5);
+assert.equal(completedBlueprint.blueprint.projects.length, 4);
+assert.ok(completedBlueprint.adjustedCollections.some((item) => item.path === "metrics" && item.reason === "completed"));
+assert.ok(completedBlueprint.adjustedCollections.some((item) => item.path === "stages[0].assessmentSeeds" && item.reason === "completed"));
 
 const providerUnsupportedKeywords = [
   "minLength", "maxLength", "pattern", "format", "minimum", "maximum",
