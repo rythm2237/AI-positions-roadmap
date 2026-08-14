@@ -8,6 +8,7 @@ export type CareerContentValidation =
 const text = (value: unknown) => typeof value === "string" && value.trim().length > 0;
 const list = (value: unknown) => Array.isArray(value);
 const externalUrl = (value: unknown) => typeof value === "string" && /^https?:\/\//i.test(value);
+const genericStageLabel = /^(?:stage|step)\s*#?\s*\d+$/i;
 
 export function validateCareerWorkspaceData(value: unknown, expectedSlug?: string): CareerContentValidation {
   const errors: string[] = [];
@@ -61,6 +62,12 @@ export function validateCareerWorkspaceData(value: unknown, expectedSlug?: strin
   if (new Set(stageIds).size !== stageIds.length) errors.push("Journey stage IDs must be unique.");
   data.journeyStages?.forEach((stage, index) => {
     if (!stage || !text(stage.id) || !text(stage.title)) errors.push(`Journey stage ${index + 1} needs an id and title.`);
+    // Repair legacy generated drafts where the UI label was persisted as
+    // “Stage 1” instead of the Career-specific title. Resource generation is
+    // deliberately independent from this Blueprint identity field.
+    if (stage && text(stage.title) && (!text(stage.label) || genericStageLabel.test(stage.label!.trim()))) {
+      stage.label = stage.title.trim();
+    }
     const topicAssessments = stage?.topicAssessments;
     const resources = stage?.resources ?? [];
     if (!list(topicAssessments)) {

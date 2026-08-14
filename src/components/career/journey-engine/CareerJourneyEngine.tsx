@@ -60,9 +60,8 @@ function GuidedOverlay({ stage, index, total, travelling, navigationOpen, isMobi
   return <>
     <motion.div className="pointer-events-none absolute left-1/2 top-[max(0.5rem,env(safe-area-inset-top))] z-40 w-[min(32rem,calc(100%-1rem))] -translate-x-1/2 rounded-2xl border border-white/10 bg-slate-950/78 px-3 py-2.5 text-center text-slate-100 shadow-[0_12px_36px_rgba(1,4,12,.32)] backdrop-blur-md transition-opacity duration-200 sm:px-4" style={{ opacity: navigationOpen && isMobile ? 0 : 1 }} initial={{opacity:0,y:-5}} animate={{opacity:1,y:0}}>
       <div className="flex flex-wrap items-center justify-center gap-x-3 gap-y-0.5 text-[9px] font-semibold uppercase tracking-[.15em]">
-        <span className="text-cyan-200/80">Phase: {stage.title}</span>
+        <span className="text-cyan-200/80">Stage {index + 1} of {total}</span>
         <span className="text-slate-400">Current checkpoint: {stage.label ?? stage.title}</span>
-        <span className="text-slate-500">Station {index + 1} of {total}</span>
       </div>
       <WritingText text={stage.explanation} className="text-clamp-2 mt-1.5 text-xs leading-4 text-slate-300 sm:leading-5"/>
     </motion.div>

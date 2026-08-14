@@ -12,7 +12,7 @@ import type { ResourceRequirement } from "@/types/resourceRequirement";
 // output capacity for the complete, validated Career Blueprint contract.
 export const CAREER_BLUEPRINT_MODEL = process.env.CAREER_BLUEPRINT_MODEL ?? "openai/gpt-5.4-mini";
 export const CAREER_RESOURCE_MODEL = process.env.CAREER_RESOURCE_MODEL ?? "openai/gpt-5.4-mini";
-export const CAREER_FALLBACK_MODELS = ["openai/gpt-5-mini"];
+export const CAREER_FALLBACK_MODELS = ["google/gemini-3-flash", "openai/gpt-5-mini"];
 
 const blueprintSystemPrompt = `You are the Career Blueprint Engine inside AI Career OS.
 
@@ -38,12 +38,28 @@ type BlueprintAttempt = "initial" | "repair";
 
 function getErrorChain(error: unknown) {
   const chain: unknown[] = [];
-  let current: unknown = error;
-  for (let index = 0; current && index < 6; index += 1) {
+  const queue: unknown[] = [error];
+  const seen = new Set<unknown>();
+  while (queue.length && chain.length < 12) {
+    const current = queue.shift();
+    if (!current || seen.has(current)) continue;
+    seen.add(current);
     chain.push(current);
-    current = current instanceof Error ? current.cause : undefined;
+    if (current instanceof Error && current.cause) queue.push(current.cause);
+    if (typeof current === "object") {
+      const nested = current as { errors?: unknown[]; lastError?: unknown };
+      if (Array.isArray(nested.errors)) queue.push(...nested.errors);
+      if (nested.lastError) queue.push(nested.lastError);
+    }
   }
   return chain;
+}
+
+function isRateLimitError(error: unknown) {
+  return getErrorChain(error).some((item) => {
+    if (typeof item === "object" && item && "statusCode" in item && item.statusCode === 429) return true;
+    return item instanceof Error && /rate.?limit|too many requests|free tier requests on this model/i.test(item.message);
+  });
 }
 
 function getBlueprintValidationIssue(error: unknown) {
@@ -222,6 +238,10 @@ async function generateResourcePackAttempt(
     model: CAREER_RESOURCE_MODEL,
     prompt: `${resourcePrompt(career, requirement)}${attempt === "retry" ? "\n\nThis is an automatic retry. Recheck the exact resource count, learning modes, answer counts and correctAnswerIndex values before returning the replacement pack." : ""}`,
     maxOutputTokens: 8000,
+    // One SDK attempt per Requirement. The Gateway already handles model
+    // failover, and multiplying SDK retries across Career stages can trigger
+    // the Free Tier burst limit before useful work is checkpointed.
+    maxRetries: 0,
     providerOptions: {
       gateway: {
         models: CAREER_FALLBACK_MODELS,
@@ -280,6 +300,7 @@ async function generateResourcePack(career: CareerWorkspaceData, requirement: Re
   try {
     return (await generateResourcePackAttempt(career, requirement, "initial")).output;
   } catch (error) {
+    if (isRateLimitError(error)) throw error;
     const normalized = normalizeResourcePackFromError(error, requirement, "initial");
     if (normalized) return normalized;
     console.warn(JSON.stringify({
@@ -309,15 +330,20 @@ async function generateResourcePack(career: CareerWorkspaceData, requirement: Re
   }
 }
 
+export async function generateCareerResourcePack(
+  career: CareerWorkspaceData,
+  requirement: ResourceRequirement,
+) {
+  return generateResourcePack(career, requirement);
+}
+
 export async function generateCareerResourcePacks(career: CareerWorkspaceData) {
   const requirements = career.resourceRequirements ?? [];
   if (!requirements.length) throw new Error("CAREER_RESOURCE_REQUIREMENTS_MISSING");
 
   const packs: GeneratedResourcePack[] = [];
-  const batchSize = 3;
-  for (let index = 0; index < requirements.length; index += batchSize) {
-    const batch = requirements.slice(index, index + batchSize);
-    packs.push(...await Promise.all(batch.map((requirement) => generateResourcePack(career, requirement))));
+  for (const requirement of requirements) {
+    packs.push(await generateCareerResourcePack(career, requirement));
   }
   return packs;
 }

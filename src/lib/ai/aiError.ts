@@ -5,6 +5,7 @@ export type CareerAiErrorCode =
   | "AI_GATEWAY_NOT_CONFIGURED"
   | "AI_GATEWAY_BILLING_REQUIRED"
   | "AI_GATEWAY_MODEL_RESTRICTED"
+  | "AI_GATEWAY_FREE_TIER_RATE_LIMITED"
   | "AI_GATEWAY_RATE_LIMITED"
   | "AI_SCHEMA_REJECTED"
   | "AI_OUTPUT_INVALID"
@@ -13,10 +14,19 @@ export type CareerAiErrorCode =
 
 function errorChain(error: unknown) {
   const chain: unknown[] = [];
-  let current: unknown = error;
-  for (let index = 0; current && index < 6; index += 1) {
+  const queue: unknown[] = [error];
+  const seen = new Set<unknown>();
+  while (queue.length && chain.length < 12) {
+    const current = queue.shift();
+    if (!current || seen.has(current)) continue;
+    seen.add(current);
     chain.push(current);
-    current = current instanceof Error ? current.cause : undefined;
+    if (current instanceof Error && current.cause) queue.push(current.cause);
+    if (typeof current === "object") {
+      const nested = current as { errors?: unknown[]; lastError?: unknown };
+      if (Array.isArray(nested.errors)) queue.push(...nested.errors);
+      if (nested.lastError) queue.push(nested.lastError);
+    }
   }
   return chain;
 }
@@ -37,6 +47,9 @@ export function classifyCareerAiError(error: unknown, fallback: "CAREER_GENERATI
   }
   if (apiError?.statusCode === 401 || apiError?.statusCode === 403 || /Unauthenticated|AI_GATEWAY_API_KEY|GatewayAuthentication|OIDC/i.test(message)) {
     return { code: "AI_GATEWAY_NOT_CONFIGURED" as const, status: 503 };
+  }
+  if (/free tier requests on this model are rate-limited|free credits.*rate.?limit/i.test(message)) {
+    return { code: "AI_GATEWAY_FREE_TIER_RATE_LIMITED" as const, status: 429 };
   }
   if (apiError?.statusCode === 429 || /rate.?limit|too many requests/i.test(message)) {
     return { code: "AI_GATEWAY_RATE_LIMITED" as const, status: 429 };

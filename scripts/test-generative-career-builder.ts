@@ -2,10 +2,12 @@ import assert from "node:assert/strict";
 import fs from "node:fs";
 import { validateCareerPublicationReadiness, validateCareerWorkspaceData } from "../src/lib/careerContentValidation.ts";
 import { careerBlueprintSchema, resourcePackSchema, validateCareerBlueprintOutput } from "../src/lib/ai/careerGenerationSchema.ts";
+import { applyResourcePacks } from "../src/lib/ai/careerBlueprintAssembler.ts";
 import { normalizeCareerBlueprintContract } from "../src/lib/ai/careerBlueprintNormalization.ts";
 import { getReviewableInterviewQuestions } from "../src/lib/careerInterviewQuality.ts";
 import { careerWorkspaceSectionHref } from "../src/lib/careerNavigation.ts";
 import { normalizeJourneyGeometry } from "../src/lib/journey/normalizeJourneyGeometry.ts";
+import type { GeneratedResourcePack } from "../src/types/careerGeneration.ts";
 
 const createPage = fs.readFileSync("src/app/admin/(studio)/careers/new/page.tsx", "utf8");
 const builder = fs.readFileSync("src/components/admin/GenerativeCareerBuilder.tsx", "utf8");
@@ -48,7 +50,14 @@ assert.match(resourceRoute, /logCareerAiError/);
 assert.match(generator, /maxOutputTokens:\s*30000/);
 assert.match(generator, /CAREER_BLUEPRINT_MODEL[^\n]+"openai\/gpt-5\.4-mini"/);
 assert.match(generator, /CAREER_RESOURCE_MODEL[^\n]+"openai\/gpt-5\.4-mini"/);
-assert.match(generator, /CAREER_FALLBACK_MODELS\s*=\s*\["openai\/gpt-5-mini"\]/);
+assert.match(generator, /CAREER_FALLBACK_MODELS\s*=\s*\["google\/gemini-3-flash",\s*"openai\/gpt-5-mini"\]/);
+assert.match(generator, /maxRetries:\s*0/);
+assert.doesNotMatch(generator, /Promise\.all\(batch/);
+assert.match(resourceRoute, /generateCareerResourcePack/);
+assert.match(resourceRoute, /requirementId/);
+assert.match(resourceStudio, /JSON\.stringify\(\{ requirementId: requirement\.id \}\)/);
+assert.match(resourceStudio, /Each completed stage is validated and saved immediately/);
+assert.match(assembler, /label:\s*stage\.title/);
 assert.doesNotMatch(generator, /gpt-5\.6|claude-sonnet-5/);
 assert.match(generator, /NoObjectGeneratedError/);
 assert.match(generator, /Career Blueprint repair started/);
@@ -61,6 +70,8 @@ assert.match(generator, /Career Blueprint contract normalized/);
 assert.match(builder, /Validating and repairing the Career Blueprint contract/);
 assert.match(aiError, /customer_verification_required/);
 assert.match(aiError, /AI_GATEWAY_MODEL_RESTRICTED/);
+assert.match(aiError, /AI_GATEWAY_FREE_TIER_RATE_LIMITED/);
+assert.match(aiError, /nested\.errors/);
 assert.match(aiError, /RestrictedModelsError/);
 assert.match(aiError, /finishReason:\s*objectError\?\.finishReason/);
 assert.match(aiError, /generatedStageCount/);
@@ -295,6 +306,15 @@ const stage = {
   resources: [],
   tasks: [],
   topicAssessments: [],
+  estimatedEffort: {
+    minMinutes: 100,
+    maxMinutes: 160,
+    breakdown: {
+      resources: { minMinutes: 0, maxMinutes: 0 },
+      activities: { minMinutes: 60, maxMinutes: 100 },
+      assessment: { minMinutes: 40, maxMinutes: 60 },
+    },
+  },
   phaseExam: { id: "exam", title: "Exam", description: "Exam", questions, questionsPerAttempt: 20, passingScore: 70 },
 };
 const workspace = {
@@ -336,8 +356,33 @@ const workspace = {
   generationMetadata: { model: "test", generatedAt: "2026-08-12T00:00:00.000Z", blueprintStatus: "generated", resourceStatus: "pending" },
 };
 
-assert.equal(validateCareerWorkspaceData(workspace, workspace.slug).valid, true, "Blueprint must validate without external resources");
+const workspaceValidation = validateCareerWorkspaceData(workspace, workspace.slug);
+assert.equal(workspaceValidation.valid, true, "Blueprint must validate without external resources");
+assert.equal(workspaceValidation.data.journeyStages[0].label, "Career foundation", "Generic or missing map labels must normalize to the Career-specific stage title");
 assert.equal(validateCareerPublicationReadiness(workspace, workspace.slug).valid, false, "Publication must remain locked before source approval");
+
+const assessmentSeeds = Array.from({ length: 5 }, (_, index) => ({
+  question: `Resource question ${index + 1}`,
+  answers: ["Correct", "Distractor 1", "Distractor 2", "Distractor 3"],
+  correctAnswerIndex: 0,
+  explanation: "The correct answer applies the requirement outcome.",
+}));
+const resourcePack: GeneratedResourcePack = {
+  requirementId: "requirement-1",
+  milestoneId: "career-stage-1",
+  resources: [
+    { mode: "reading", title: "Official reading", provider: "Provider", canonicalUrl: "https://example.com/official-reading", contentType: "documentation", estimatedTime: "60 minutes", whyUseful: "Supports the required learning outcome.", priority: "Essential", official: true, assessmentSeeds },
+    { mode: "video", title: "Official video", provider: "Provider", canonicalUrl: "https://example.com/official-video", contentType: "video-course", estimatedTime: "60 minutes", whyUseful: "Demonstrates the required professional workflow.", priority: "Essential", official: true, assessmentSeeds },
+    { mode: "practice", title: "Official practice", provider: "Provider", canonicalUrl: "https://example.com/official-practice", contentType: "hands-on-lab", estimatedTime: "60 minutes", whyUseful: "Creates evidence for the required outcome.", priority: "Essential", official: true, assessmentSeeds },
+  ],
+};
+const checkpointed = applyResourcePacks(workspaceValidation.data, [resourcePack]);
+const regenerated = applyResourcePacks(checkpointed, [resourcePack]);
+assert.equal(checkpointed.globalResources.length, 3);
+assert.equal(regenerated.globalResources.length, 3, "Regenerating one requirement must not duplicate registry resources");
+assert.equal(checkpointed.journeyStages[0].estimatedEffort?.minMinutes, 160);
+assert.equal(regenerated.journeyStages[0].estimatedEffort?.minMinutes, 160, "Resource effort must be idempotent across retries");
+assert.equal(regenerated.journeyStages[0].topicAssessments?.length, 3);
 
 const resources = [
   { id: "reading", title: "Reading", type: "Documentation", provider: "Provider", cost: "Free", estimatedTime: "1 hour", whyUseful: "Career-specific reading", url: "https://example.com/reading", priority: "Essential" },

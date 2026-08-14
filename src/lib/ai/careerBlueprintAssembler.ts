@@ -13,7 +13,7 @@ import type {
   GeneratedLearningResource,
   GeneratedResourcePack,
 } from "@/types/careerGeneration";
-import { normalizeCareerSlug } from "@/lib/admin/careerValidation";
+import { normalizeCareerSlug } from "../admin/careerValidation.ts";
 
 const JOURNEY_MAP_WIDTH = 3200;
 const JOURNEY_MAP_HEIGHT = 2200;
@@ -147,7 +147,9 @@ export function assembleCareerWorkspace(
       id: `${slug}-stage-${index + 1}`,
       order: index + 1,
       title: stage.title,
-      label: `Stage ${index + 1}`,
+      // The map label is the Career-specific checkpoint name. Stage order is
+      // rendered separately, while Current/Complete/Locked remains a status.
+      label: stage.title,
       type: stage.type,
       landmark: stage.landmark,
       theme: stage.theme,
@@ -331,7 +333,9 @@ export function applyResourcePacks(
   packs: GeneratedResourcePack[],
 ): CareerWorkspaceData {
   const requirements = workspace.resourceRequirements ?? [];
-  const registry = new Map<string, CareerResource>();
+  const registry = new Map<string, CareerResource>(
+    workspace.globalResources.map((resource) => [resource.url.replace(/\/$/, ""), resource]),
+  );
   const generatedById = new Map<string, GeneratedLearningResource>();
   const packByRequirement = new Map(packs.map((pack) => [pack.requirementId, pack]));
 
@@ -339,25 +343,26 @@ export function applyResourcePacks(
     for (const generated of pack.resources) {
       if (/youtube\.com|youtu\.be/i.test(generated.canonicalUrl)) continue;
       const canonical = generated.canonicalUrl.replace(/\/$/, "");
-      if (registry.has(canonical)) continue;
-      const resource: CareerResource = {
-        id: `${workspace.slug}-${idPart(generated.provider)}-${idPart(generated.title)}-${generated.mode}-${registry.size + 1}`,
-        title: generated.title,
-        type: resourceType(generated.mode),
-        provider: generated.provider,
-        cost: "Free/Paid",
-        estimatedTime: generated.estimatedTime,
-        whyUseful: generated.whyUseful,
-        url: generated.canonicalUrl,
-        priority: generated.priority,
-      };
-      registry.set(canonical, resource);
+      const existing = registry.get(canonical);
+      const resource: CareerResource = existing ?? {
+          id: `${workspace.slug}-${idPart(generated.provider)}-${idPart(generated.title)}-${generated.mode}-${registry.size + 1}`,
+          title: generated.title,
+          type: resourceType(generated.mode),
+          provider: generated.provider,
+          cost: "Free/Paid",
+          estimatedTime: generated.estimatedTime,
+          whyUseful: generated.whyUseful,
+          url: generated.canonicalUrl,
+          priority: generated.priority,
+        };
+      if (!existing) registry.set(canonical, resource);
       generatedById.set(resource.id, generated);
     }
   }
 
   const updatedRequirements = requirements.map((requirement) => {
     const pack = packByRequirement.get(requirement.id);
+    if (!pack) return requirement;
     const resourceIds = pack?.resources
       .filter((item) => !/youtube\.com|youtu\.be/i.test(item.canonicalUrl))
       .map((item) => registry.get(item.canonicalUrl.replace(/\/$/, ""))?.id)
@@ -368,6 +373,8 @@ export function applyResourcePacks(
   const resourceById = new Map([...registry.values()].map((resource) => [resource.id, resource]));
   const journeyStages = workspace.journeyStages.map((stage) => {
     const requirement = updatedRequirements.find((item) => item.milestoneId === stage.id);
+    const replaced = requirement ? packByRequirement.has(requirement.id) : false;
+    if (!replaced) return stage;
     const resources = requirement?.resourceIds.map((id) => resourceById.get(id)).filter((item): item is CareerResource => Boolean(item)) ?? [];
     const topicAssessments = resources.flatMap((resource) => {
       const generated = generatedById.get(resource.id);
@@ -379,8 +386,12 @@ export function applyResourcePacks(
       topicAssessments,
       estimatedEffort: stage.estimatedEffort && requirement ? {
         ...stage.estimatedEffort,
-        minMinutes: stage.estimatedEffort.minMinutes + requirement.estimatedDuration.minMinutes,
-        maxMinutes: stage.estimatedEffort.maxMinutes + requirement.estimatedDuration.maxMinutes,
+        minMinutes: stage.estimatedEffort.breakdown.activities.minMinutes
+          + stage.estimatedEffort.breakdown.assessment.minMinutes
+          + requirement.estimatedDuration.minMinutes,
+        maxMinutes: stage.estimatedEffort.breakdown.activities.maxMinutes
+          + stage.estimatedEffort.breakdown.assessment.maxMinutes
+          + requirement.estimatedDuration.maxMinutes,
         breakdown: {
           ...stage.estimatedEffort.breakdown,
           resources: {
@@ -407,10 +418,13 @@ export function applyResourcePacks(
     };
   });
 
+  const referencedResourceIds = new Set(updatedRequirements.flatMap((requirement) => requirement.resourceIds));
+  const globalResources = [...registry.values()].filter((resource) => referencedResourceIds.has(resource.id));
+
   return {
     ...workspace,
     journeyStages,
-    globalResources: [...registry.values()],
+    globalResources,
     resourceRequirements: updatedRequirements,
     resourceMappings,
     generationMetadata: {

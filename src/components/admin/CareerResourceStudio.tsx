@@ -1,15 +1,8 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { useRouter } from "next/navigation";
 import type { CareerWorkspaceData } from "@/types/careerWorkspace";
-
-const generationSteps = [
-  "Researching official and high-quality providers",
-  "Selecting Reading, Video and Practice for every stage",
-  "Creating resource-specific assessments",
-  "Validating links, mappings and publication readiness",
-];
 
 const generationErrors: Record<string, string> = {
   CAREER_BLUEPRINT_MISSING: "Generate and save the Career Blueprint before creating learning sources.",
@@ -17,10 +10,12 @@ const generationErrors: Record<string, string> = {
   AI_GATEWAY_NOT_CONFIGURED: "AI resource research is unavailable in this environment. Check the AI Gateway connection.",
   AI_GATEWAY_BILLING_REQUIRED: "Vercel AI Gateway requires a valid payment card for this team. Add a card in Vercel Billing, then retry.",
   AI_GATEWAY_MODEL_RESTRICTED: "The selected research model is not available on this Vercel AI Gateway credit tier. Use a Free Tier model or add paid Gateway credits, then retry.",
-  AI_GATEWAY_RATE_LIMITED: "The AI provider is temporarily busy. Wait a moment and retry; the current draft is unchanged.",
+  AI_GATEWAY_FREE_TIER_RATE_LIMITED: "The Vercel AI Gateway Free Tier request limit was reached. Completed stages were saved. Purchase AI Gateway credits—adding a card alone does not activate paid credits—or retry later.",
+  AI_GATEWAY_RATE_LIMITED: "The AI provider is temporarily busy. Completed stages were saved; wait a moment and continue.",
   AI_SCHEMA_REJECTED: "The provider rejected the structured resource contract. The issue has been logged; retry after the service update.",
-  AI_OUTPUT_INVALID: "AI returned an incomplete source pack. Nothing was approved; regenerate a fresh validated pack.",
-  RESOURCE_GENERATION_FAILED: "Learning-source generation could not finish. The current draft is unchanged; please retry.",
+  AI_OUTPUT_INVALID: "AI returned an incomplete source pack for the current stage. Earlier completed stages were saved; continue to retry this stage.",
+  RESOURCE_REQUIREMENT_INVALID: "The selected stage is no longer available. Refresh this page and continue.",
+  RESOURCE_GENERATION_FAILED: "Learning-source generation could not finish. Earlier completed stages were saved; please continue.",
   AUTH_REQUIRED: "Your Admin session expired. Sign in again and retry.",
   ADMIN_REQUIRED: "This action requires an authorized Admin account.",
 };
@@ -36,37 +31,65 @@ export default function CareerResourceStudio({
 }) {
   const router = useRouter();
   const [status, setStatus] = useState<"idle" | "generating" | "error">("idle");
-  const [activeStep, setActiveStep] = useState(0);
+  const [processedCount, setProcessedCount] = useState(0);
+  const [generationTotal, setGenerationTotal] = useState(0);
+  const [currentRequirementTitle, setCurrentRequirementTitle] = useState("");
+  const [errorCode, setErrorCode] = useState("");
   const [message, setMessage] = useState("");
   const requirements = workspace.resourceRequirements ?? [];
   const mappings = workspace.resourceMappings ?? [];
+  const mappingComplete = (requirementId: string) => {
+    const mapping = mappings.find((item) => item.requirementId === requirementId);
+    return Boolean(mapping?.reading && mapping.video && mapping.practice);
+  };
+  const completedBeforeRun = requirements.filter((requirement) => mappingComplete(requirement.id)).length;
+  const incompleteRequirements = requirements.filter((requirement) => !mappingComplete(requirement.id));
   const complete = workspace.generationMetadata?.resourceStatus === "complete";
   const readyForApproval = requirements.length > 0
     && mappings.length === requirements.length
     && mappings.every((mapping) => mapping.reading && mapping.video && mapping.practice);
 
-  useEffect(() => {
-    if (status !== "generating") return;
-    const timer = window.setInterval(() => {
-      setActiveStep((current) => Math.min(current + 1, generationSteps.length - 1));
-    }, 11000);
-    return () => window.clearInterval(timer);
-  }, [status]);
-
   async function generateResources() {
+    const targets = incompleteRequirements.length ? incompleteRequirements : requirements;
+    if (!targets.length) return;
     setStatus("generating");
-    setActiveStep(0);
+    setProcessedCount(0);
+    setGenerationTotal(targets.length);
+    setErrorCode("");
     setMessage("");
     try {
-      const response = await fetch(`/api/admin/careers/${careerId}/resources/generate`, { method: "POST" });
-      const result = await response.json() as { ok?: boolean; code?: string };
-      if (!response.ok || !result.ok) throw new Error(result.code || "RESOURCE_GENERATION_FAILED");
+      for (let index = 0; index < targets.length; index += 1) {
+        const requirement = targets[index];
+        const stage = workspace.journeyStages.find((item) => item.id === requirement.milestoneId);
+        const title = stage?.title ?? requirement.topic;
+        let completed = false;
+        for (let attempt = 0; attempt < 2 && !completed; attempt += 1) {
+          setCurrentRequirementTitle(attempt ? `${title} · Gateway cooling down before one automatic retry` : title);
+          const response = await fetch(`/api/admin/careers/${careerId}/resources/generate`, {
+            method: "POST",
+            headers: { "content-type": "application/json" },
+            body: JSON.stringify({ requirementId: requirement.id }),
+          });
+          const result = await response.json() as { ok?: boolean; code?: string };
+          if (response.ok && result.ok) {
+            completed = true;
+            break;
+          }
+          const rateLimited = response.status === 429 || result.code === "AI_GATEWAY_RATE_LIMITED" || result.code === "AI_GATEWAY_FREE_TIER_RATE_LIMITED";
+          if (!rateLimited || attempt === 1) throw new Error(result.code || "RESOURCE_GENERATION_FAILED");
+          await new Promise((resolve) => window.setTimeout(resolve, 20_000));
+        }
+        setProcessedCount(index + 1);
+        if (index < targets.length - 1) await new Promise((resolve) => window.setTimeout(resolve, 1_500));
+      }
       router.refresh();
       setStatus("idle");
     } catch (error) {
       const code = error instanceof Error ? error.message : "RESOURCE_GENERATION_FAILED";
+      setErrorCode(code);
       setMessage(generationErrors[code] ?? generationErrors.RESOURCE_GENERATION_FAILED);
       setStatus("error");
+      router.refresh();
     }
   }
 
@@ -82,7 +105,7 @@ export default function CareerResourceStudio({
                 AI will research current sources for each approved requirement, then map one Reading, one Video and one Practice experience to every Career stage. Nothing is published automatically.
               </p>
               <button type="button" onClick={generateResources} disabled={status === "generating"} className="btn-primary mt-6 min-h-12 disabled:cursor-wait disabled:opacity-60">
-                {status === "generating" ? "Researching learning sources…" : "Create the learning sources"}
+                {status === "generating" ? `Creating stage ${processedCount + 1} of ${generationTotal}…` : incompleteRequirements.length < requirements.length ? "Continue creating learning sources" : "Create the learning sources"}
               </button>
             </div>
             <aside className="rounded-2xl border border-white/10 bg-black/15 p-5">
@@ -95,8 +118,8 @@ export default function CareerResourceStudio({
               </ul>
             </aside>
           </div>
-          {status === "generating" ? <GenerationProgress activeStep={activeStep} /> : null}
-          {status === "error" ? <p role="alert" className="mt-6 rounded-xl border border-rose-300/20 bg-rose-400/10 p-4 text-sm text-rose-100">{message}</p> : null}
+          {status === "generating" ? <GenerationProgress processed={processedCount} total={generationTotal} currentTitle={currentRequirementTitle} alreadySaved={completedBeforeRun} /> : null}
+          {status === "error" ? <GenerationError code={errorCode} message={message} /> : null}
         </div>
       </section>
     );
@@ -115,12 +138,12 @@ export default function CareerResourceStudio({
             <p className="mt-2 max-w-2xl text-sm leading-6 text-slate-400">Check the selected providers, canonical URLs and Career relevance. Approval unlocks publication only when all mappings pass validation.</p>
           </div>
           <div className="flex flex-wrap gap-3">
-            <button type="button" onClick={generateResources} disabled={status === "generating"} className="btn-secondary min-h-11 disabled:cursor-wait disabled:opacity-50">{status === "generating" ? "Regenerating…" : "Regenerate sources"}</button>
+            <button type="button" onClick={generateResources} disabled={status === "generating"} className="btn-secondary min-h-11 disabled:cursor-wait disabled:opacity-50">{status === "generating" ? `Creating ${processedCount + 1} of ${generationTotal}…` : incompleteRequirements.length ? "Continue creating sources" : "Regenerate sources"}</button>
             {!complete ? <form action={approveAction}><input type="hidden" name="id" value={careerId}/><button disabled={!readyForApproval || status === "generating"} className="btn-primary min-h-11 disabled:cursor-not-allowed disabled:opacity-40">Approve learning sources</button></form> : null}
           </div>
         </div>
-        {status === "generating" ? <GenerationProgress activeStep={activeStep} /> : null}
-        {status === "error" ? <p role="alert" className="mt-6 rounded-xl border border-rose-300/20 bg-rose-400/10 p-4 text-sm text-rose-100">{message}</p> : null}
+        {status === "generating" ? <GenerationProgress processed={processedCount} total={generationTotal} currentTitle={currentRequirementTitle} alreadySaved={completedBeforeRun} /> : null}
+        {status === "error" ? <GenerationError code={errorCode} message={message} /> : null}
       </section>
 
       <div className="space-y-4">
@@ -153,8 +176,13 @@ export default function CareerResourceStudio({
   );
 }
 
-function GenerationProgress({ activeStep }: { activeStep: number }) {
-  return <section aria-live="polite" aria-busy="true" className="mt-7 rounded-2xl border border-cyan-300/15 bg-slate-950/45 p-5"><div className="h-1.5 overflow-hidden rounded-full bg-white/10"><div className="h-full w-2/5 animate-pulse rounded-full bg-gradient-to-r from-violet-400 to-cyan-300"/></div><ol className="mt-5 grid gap-3 sm:grid-cols-2">{generationSteps.map((step,index)=><li key={step} className={`flex items-center gap-3 text-sm ${index<=activeStep?"text-slate-100":"text-slate-600"}`}><span className={`grid h-7 w-7 shrink-0 place-items-center rounded-full text-xs font-bold ${index<activeStep?"bg-emerald-400/15 text-emerald-300":index===activeStep?"bg-cyan-300/15 text-cyan-200":"bg-white/5"}`}>{index<activeStep?"✓":index+1}</span>{step}</li>)}</ol><p className="mt-5 text-xs text-slate-500">Source research can take a few minutes. Keep this page open.</p></section>;
+function GenerationProgress({ processed, total, currentTitle, alreadySaved }: { processed: number; total: number; currentTitle: string; alreadySaved: number }) {
+  const percentage = total ? Math.round((processed / total) * 100) : 0;
+  return <section aria-live="polite" aria-busy="true" className="mt-7 rounded-2xl border border-cyan-300/15 bg-slate-950/45 p-5"><div className="flex items-center justify-between gap-4 text-xs"><span className="font-semibold text-cyan-100">{currentTitle ? `Researching: ${currentTitle}` : "Preparing source research…"}</span><span className="text-slate-400">{processed}/{total} completed</span></div><div className="mt-3 h-1.5 overflow-hidden rounded-full bg-white/10"><div className="h-full rounded-full bg-gradient-to-r from-violet-400 to-cyan-300 transition-[width] duration-500" style={{ width: `${percentage}%` }}/></div><p className="mt-4 text-xs leading-5 text-slate-500">Each completed stage is validated and saved immediately. {alreadySaved ? `${alreadySaved} stage${alreadySaved === 1 ? " was" : "s were"} already saved before this run. ` : ""}You can continue from the first unfinished stage if the provider pauses.</p></section>;
+}
+
+function GenerationError({ code, message }: { code: string; message: string }) {
+  return <div role="alert" className="mt-6 rounded-xl border border-rose-300/20 bg-rose-400/10 p-4 text-sm leading-6 text-rose-100"><p>{message}</p>{code === "AI_GATEWAY_FREE_TIER_RATE_LIMITED" ? <a href="https://vercel.com/dashboard" target="_blank" rel="noreferrer" className="mt-2 inline-block font-semibold text-cyan-200 underline">Open Vercel AI Gateway billing ↗</a> : null}</div>;
 }
 
 function ResourceCard({ resource }: { resource: CareerWorkspaceData["globalResources"][number] }) {

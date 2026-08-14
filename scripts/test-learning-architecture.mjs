@@ -64,7 +64,7 @@ assert.match(workspace, /<EffortEstimate estimate=\{stage\.estimatedEffort\} com
 assert.doesNotMatch(workspace, /Duration: \{stage\.duration\}/);
 
 const journeyEngine = fs.readFileSync("src/components/career/journey-engine/CareerJourneyEngine.tsx", "utf8");
-assert.match(journeyEngine, /Phase: \{stage\.title\}/);
+assert.match(journeyEngine, /Stage \{index \+ 1\} of \{total\}/);
 assert.match(journeyEngine, /Current checkpoint: \{stage\.label \?\? stage\.title\}/);
 assert.match(journeyEngine, /from-cyan-400 to-teal-300/);
 assert.match(journeyEngine, /Current.*Complete.*Available.*Locked/);
