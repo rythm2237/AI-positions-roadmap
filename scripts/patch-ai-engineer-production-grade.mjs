@@ -49,7 +49,7 @@ for (const [from, to] of replacements) {
   source = source.replace(from, to);
 }
 
-if (/https?:\\/\\/(?:www\\.)?youtube\\.com/i.test(source) || /https?:\\/\\/youtu\\.be/i.test(source)) {
+if (source.includes("youtube.com/") || source.includes("youtu.be/")) {
   throw new Error("AI Engineer still contains a direct YouTube learning-resource URL.");
 }
 
