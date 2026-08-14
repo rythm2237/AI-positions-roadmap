@@ -9,7 +9,8 @@ import CareerTitleAliasPanel from "@/components/career/CareerTitleAliasPanel";
 import ReferenceLearningChooser from "@/components/career/resources/ReferenceLearningChooser";
 import { EffortEstimate } from "@/components/career/EffortEstimate";
 import { aiEngineerCareer } from "@/data/careers/ai-engineer";
-import { CAREER_NAV_ITEMS, careerSectionHref } from "@/lib/careerNavigation";
+import { CAREER_NAV_ITEMS, careerWorkspaceSectionHref } from "@/lib/careerNavigation";
+import { getReviewableInterviewQuestions } from "@/lib/careerInterviewQuality";
 import { createClient as createSupabaseClient } from "@/lib/supabase/client";
 import {
   didPassAssessment,
@@ -314,18 +315,31 @@ function TypingText({ text, active }: { text: string; active: boolean }) {
   return <p className="text-sm leading-6 text-slate-300">{visibleText}</p>;
 }
 
-function useViewportSize(): ViewportSize {
+function useElementViewport(elementRef: React.RefObject<HTMLElement | null>): ViewportSize {
   const [viewport, setViewport] = useState<ViewportSize>({ width: 1280, height: 720 });
 
   useEffect(() => {
+    const element = elementRef.current;
+    if (!element) return;
+
     function updateViewport() {
-      setViewport({ width: window.innerWidth, height: window.innerHeight });
+      const bounds = element!.getBoundingClientRect();
+      setViewport({
+        width: Math.max(320, Math.round(bounds.width)),
+        height: Math.max(320, Math.round(bounds.height)),
+      });
     }
 
     updateViewport();
-    window.addEventListener("resize", updateViewport);
-    return () => window.removeEventListener("resize", updateViewport);
-  }, []);
+    if (typeof ResizeObserver === "undefined") {
+      window.addEventListener("resize", updateViewport);
+      return () => window.removeEventListener("resize", updateViewport);
+    }
+
+    const observer = new ResizeObserver(updateViewport);
+    observer.observe(element);
+    return () => observer.disconnect();
+  }, [elementRef]);
 
   return viewport;
 }
@@ -333,15 +347,22 @@ function useViewportSize(): ViewportSize {
 type CareerWorkspaceProps = {
   initialSection?: CareerWorkspaceSectionId;
   career?: CareerWorkspaceData;
+  navigationBasePath?: string;
+  learningSourcesHref?: string;
+  embedded?: boolean;
 };
 
 export default function CareerWorkspace({
   initialSection = "hero",
   career: careerData = aiEngineerCareer,
+  navigationBasePath,
+  learningSourcesHref,
+  embedded = false,
 }: CareerWorkspaceProps) {
   const career = careerData;
   const reduceMotion = useReducedMotion();
-  const viewport = useViewportSize();
+  const workspaceMainRef = useRef<HTMLElement>(null);
+  const viewport = useElementViewport(workspaceMainRef);
   const [activeSection, setActiveSection] = useState<CareerWorkspaceSectionId>(initialSection);
   const [progress, setProgress] = useState<CareerWorkspaceProgress>(defaultCareerWorkspaceProgress);
   const [isLoaded, setIsLoaded] = useState(false);
@@ -359,6 +380,15 @@ export default function CareerWorkspace({
   const [noteDraft, setNoteDraft] = useState("");
   const [noteFilter, setNoteFilter] = useState<CareerNote["contextType"] | "all">("all");
   const [examSession, setExamSession] = useState<ExamSession | null>(null);
+  const getSectionHref = React.useCallback(
+    (section: CareerWorkspaceSectionId, stepId?: string) => careerWorkspaceSectionHref(
+      career.slug,
+      section,
+      stepId,
+      navigationBasePath,
+    ),
+    [career.slug, navigationBasePath],
+  );
 
   useEffect(() => {
     const supabase = createSupabaseClient();
@@ -482,7 +512,7 @@ export default function CareerWorkspace({
 
   function switchSection(section: CareerWorkspaceSectionId) {
     setActiveSection(section);
-    window.history.pushState({}, "", careerSectionHref(career.slug, section, section === "learning" ? progress.lastActiveStageId : undefined));
+    window.history.pushState({}, "", getSectionHref(section, section === "learning" ? progress.lastActiveStageId : undefined));
     if (section === "roadmap" && !selectedStageId) setSelectedStageId(career.journeyStages[0].id);
     if (section !== "roadmap") {
       setGuidedMode(false);
@@ -524,7 +554,7 @@ export default function CareerWorkspace({
     setStationModalStageId(null);
     updateProgress((previous) => ({ ...previous, lastActiveStageId: firstUnlockedIncomplete.id }));
     setActiveSection("learning");
-    window.history.pushState({}, "", careerSectionHref(career.slug, "learning", firstUnlockedIncomplete.id));
+    window.history.pushState({}, "", getSectionHref("learning", firstUnlockedIncomplete.id));
   }
 
   function startGuidedJourney() {
@@ -700,11 +730,11 @@ export default function CareerWorkspace({
 
   return (
     <CareerDataContext.Provider value={career}>
-      <div className="neural-bg h-screen overflow-hidden text-slate-200">
+      <div className={`neural-bg overflow-hidden text-slate-200 ${embedded ? "h-full" : "h-screen"}`}>
       <div className="flex h-full">
         <DesktopMenu activeSection={activeSection} open={roadmapMenuOpen} setOpen={setRoadmapMenuOpen} switchSection={switchSection} />
 
-        <main className="relative h-full min-w-0 flex-1 overflow-hidden pt-[calc(3.75rem+env(safe-area-inset-top))] lg:pt-0">
+        <main ref={workspaceMainRef} className="relative h-full min-w-0 flex-1 overflow-hidden pt-[calc(3.75rem+env(safe-area-inset-top))] lg:pt-0">
           <AnimatePresence mode="wait">
             {activeSection === "hero" ? (
               <HeroScene
@@ -742,7 +772,8 @@ export default function CareerWorkspace({
                 career={career}
                 progress={progress}
                 selectedStageId={selectedStageId}
-                onSelectStage={(id) => { setSelectedStageId(id); updateProgress((previous) => ({ ...previous, lastActiveStageId: id })); window.history.replaceState({}, "", careerSectionHref(career.slug, "learning", id)); }}
+                learningSourcesHref={learningSourcesHref}
+                onSelectStage={(id) => { setSelectedStageId(id); updateProgress((previous) => ({ ...previous, lastActiveStageId: id })); window.history.replaceState({}, "", getSectionHref("learning", id)); }}
                 onOpenNote={openNote}
                 onOpenAssessment={(assessment, stageId) => openAssessment(assessment, stageId)}
                 onViewResource={(id) => updateProgress((previous) => ({ ...previous, completedResources: previous.completedResources.includes(id) ? previous.completedResources : [...previous.completedResources, id], resourceViewedAt: { ...previous.resourceViewedAt, [id]: new Date().toISOString() } }))}
@@ -762,6 +793,7 @@ export default function CareerWorkspace({
                 updateProgress={updateProgress}
                 deleteNote={deleteNote}
                 exportNotesAsPdf={exportNotesAsPdf}
+                getSectionHref={getSectionHref}
               />
             )}
           </AnimatePresence>
@@ -1351,6 +1383,7 @@ function ModuleScene({
   updateProgress,
   deleteNote,
   exportNotesAsPdf,
+  getSectionHref,
 }: {
   section: CareerWorkspaceSectionId;
   progress: CareerWorkspaceProgress;
@@ -1364,6 +1397,7 @@ function ModuleScene({
   updateProgress: (updater: (previous: CareerWorkspaceProgress) => CareerWorkspaceProgress) => void;
   deleteNote: (id: string) => void;
   exportNotesAsPdf: () => void;
+  getSectionHref: (section: CareerWorkspaceSectionId, stepId?: string) => string;
 }) {
   const career = useCareerData();
   const current = career.mapSections.find((item) => item.id === section);
@@ -1378,8 +1412,8 @@ function ModuleScene({
         </div>
         <div className="min-h-0 flex-1 overflow-y-auto">
           {section === "project" ? <ProjectsModule progress={progress} updateProgress={updateProgress} openNote={openNote} /> : null}
-          {section === "portfolio" ? <TaskModule title="Portfolio proof" tasks={career.portfolioTasks} progress={progress} updateProgress={updateProgress} /> : null}
-          {section === "jobs" ? <JobsModule progress={progress} updateProgress={updateProgress} /> : null}
+          {section === "portfolio" ? <PortfolioModule progress={progress} updateProgress={updateProgress} getSectionHref={getSectionHref} /> : null}
+          {section === "jobs" ? <JobsModule progress={progress} updateProgress={updateProgress} getSectionHref={getSectionHref} /> : null}
           {section === "interview-brief" ? <InterviewModule /> : null}
         </div>
       </div>
@@ -1520,6 +1554,63 @@ function TaskModule({
   );
 }
 
+function PortfolioModule({
+  progress,
+  updateProgress,
+  getSectionHref,
+}: {
+  progress: CareerWorkspaceProgress;
+  updateProgress: (updater: (previous: CareerWorkspaceProgress) => CareerWorkspaceProgress) => void;
+  getSectionHref: (section: CareerWorkspaceSectionId, stepId?: string) => string;
+}) {
+  const career = useCareerData();
+  const completedCount = career.portfolioTasks.filter((task) => progress.completedStageTasks.includes(task.id)).length;
+  const completion = Math.round((completedCount / Math.max(1, career.portfolioTasks.length)) * 100);
+
+  return (
+    <div className="space-y-5">
+      <PanelCard className="bg-[radial-gradient(circle_at_15%_0%,rgba(34,211,238,.1),transparent_42%),rgba(2,6,23,.72)]">
+        <div className="flex flex-col justify-between gap-5 sm:flex-row sm:items-end">
+          <div className="max-w-2xl">
+            <p className="label-sm text-cyan-300">Evidence workspace</p>
+            <h3 className="mt-2 font-display text-2xl font-semibold text-white">Turn completed work into employer-reviewable proof.</h3>
+            <p className="mt-2 text-sm leading-6 text-slate-400">Each portfolio artifact should connect a real problem, your decisions, the resulting evidence, and an honest account of limitations.</p>
+          </div>
+          <Link href={getSectionHref("project")} className="btn-secondary min-h-11 shrink-0">Review source projects</Link>
+        </div>
+        <div className="mt-5 flex items-center justify-between text-xs text-slate-400">
+          <span>{completedCount} of {career.portfolioTasks.length} artifacts prepared</span>
+          <span>{completion}%</span>
+        </div>
+        <ProgressBar value={completion} />
+      </PanelCard>
+
+      <div className="grid gap-3 lg:grid-cols-2 xl:grid-cols-3">
+        {career.portfolioTasks.map((task, index) => {
+          const complete = progress.completedStageTasks.includes(task.id);
+          return (
+            <PanelCard key={task.id} className="flex min-h-52 flex-col">
+              <div className="flex items-start justify-between gap-3">
+                <span className="grid h-8 w-8 place-items-center rounded-full border border-cyan-300/20 bg-cyan-400/[.07] text-xs font-semibold text-cyan-200">{index + 1}</span>
+                <span className={complete ? "tag tag-cyan" : "tag"}>{complete ? "Evidence ready" : "Needs evidence"}</span>
+              </div>
+              <h4 className="mt-4 font-semibold text-white">{task.title}</h4>
+              <p className="mt-2 flex-1 text-sm leading-6 text-slate-400">{task.description}</p>
+              <button
+                type="button"
+                onClick={() => updateProgress((previous) => ({ ...previous, completedStageTasks: toggleId(previous.completedStageTasks, task.id) }))}
+                className={`mt-5 min-h-11 rounded-xl border px-4 py-2 text-sm font-semibold ${shellButton(complete)}`}
+              >
+                {complete ? "Mark as in progress" : "Mark evidence ready"}
+              </button>
+            </PanelCard>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
 function ExamsModule({
   assessments,
   progress,
@@ -1598,9 +1689,11 @@ function ReadinessModule({
 function JobsModule({
   progress,
   updateProgress,
+  getSectionHref,
 }: {
   progress: CareerWorkspaceProgress;
   updateProgress: (updater: (previous: CareerWorkspaceProgress) => CareerWorkspaceProgress) => void;
+  getSectionHref: (section: CareerWorkspaceSectionId, stepId?: string) => string;
 }) {
   const career = useCareerData();
   const hasProjectProof = progress.completedProjects.length > 0;
@@ -1611,14 +1704,14 @@ function JobsModule({
       title: "Resume",
       purpose: "Turn project decisions and measurable outcomes into concise, role-specific evidence.",
       status: hasProjectProof ? "Proof available" : "Needs project evidence",
-      href: careerSectionHref(career.slug, "project"),
+      href: getSectionHref("project"),
       action: hasProjectProof ? "Review project evidence" : "Build project evidence",
     },
     {
       title: "LinkedIn",
       purpose: `Use a clear ${career.title} headline, focused skills, and featured project case studies.`,
       status: hasPortfolioProof ? "Portfolio proof available" : "Needs portfolio proof",
-      href: careerSectionHref(career.slug, "portfolio"),
+      href: getSectionHref("portfolio"),
       action: "Prepare portfolio proof",
     },
     {
@@ -1630,7 +1723,7 @@ function JobsModule({
       title: "Positioning",
       purpose: "Explain the AI systems you can build, evaluate, deploy, and improve—not just the tools you have tried.",
       status: "Practice available",
-      href: careerSectionHref(career.slug, "interview-brief"),
+      href: getSectionHref("interview-brief"),
       action: "Open interview brief",
     },
   ];
@@ -1644,7 +1737,7 @@ function JobsModule({
           <div className="mt-8 rounded-2xl border border-indigo-300/15 bg-indigo-500/[0.06] p-5">
             <p className="text-sm font-semibold text-indigo-100">Recommended next step</p>
             <p className="mt-2 text-sm leading-6 text-slate-300">{hasProjectProof ? "Shape your strongest completed project into a concise case study." : "Complete one practical project before drafting application claims."}</p>
-            <Link href={careerSectionHref(career.slug, "project")} className="mt-4 inline-flex min-h-11 items-center rounded-xl border border-indigo-300/25 px-4 py-2 text-sm font-semibold text-indigo-100 hover:bg-indigo-400/10">
+            <Link href={getSectionHref("project")} className="mt-4 inline-flex min-h-11 items-center rounded-xl border border-indigo-300/25 px-4 py-2 text-sm font-semibold text-indigo-100 hover:bg-indigo-400/10">
               {hasProjectProof ? "Review project proof" : "Go to projects"}
             </Link>
           </div>
@@ -1672,25 +1765,13 @@ function JobsModule({
           updateProgress={updateProgress}
         />
       </div>
-      <ol className="relative space-y-0 border-l border-white/10 pl-6">
-        {steps.map((step, index) => (
-          <li key={step.title} className="relative pb-6 last:pb-0">
-            <span aria-hidden="true" className="absolute -left-[31px] top-0 grid h-4 w-4 place-items-center rounded-full border border-indigo-300/30 bg-[#080b1c] text-[9px] text-indigo-200">{index + 1}</span>
-            <div className="flex items-start justify-between gap-3">
-              <h4 className="font-semibold text-white">{step.title}</h4>
-              <span className="rounded-full bg-white/[0.05] px-2 py-1 text-[10px] font-medium text-slate-400">{step.status}</span>
-            </div>
-            <p className="mt-2 text-sm leading-6 text-slate-400">{step.purpose}</p>
-            {step.href && step.action ? <Link href={step.href} className="mt-2 inline-flex min-h-11 items-center text-sm font-semibold text-cyan-200 hover:text-white">{step.action} <span className="ml-1" aria-hidden="true">→</span></Link> : null}
-          </li>
-        ))}
-      </ol>
     </div>
   );
 }
 
 function InterviewModule() {
   const career = useCareerData();
+  const questions = getReviewableInterviewQuestions(career.title, career.interviewPrep.questions);
   return (
     <div className="grid gap-4 lg:grid-cols-2">
       <PanelCard>
@@ -1702,7 +1783,7 @@ function InterviewModule() {
       <PanelCard>
         <h3 className="text-lg font-semibold text-white">Practice prompts</h3>
         <div className="mt-3 space-y-2 text-sm text-slate-300">
-          {career.interviewPrep.questions.map((question) => <p key={question} className="rounded-xl border border-white/10 bg-white/[0.035] p-3">{question}</p>)}
+          {questions.map((question) => <p key={question} className="rounded-xl border border-white/10 bg-white/[0.035] p-3">{question}</p>)}
         </div>
       </PanelCard>
     </div>
