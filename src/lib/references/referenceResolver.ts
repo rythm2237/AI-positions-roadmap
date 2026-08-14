@@ -4,6 +4,7 @@ import cybersecurityStageCatalogData from "../../../content/references/cybersecu
 import { COPILOT_CONSULTANT_LEARNING_DATABASE } from "@/data/learning/copilotConsultantLearningDatabase";
 import { COPILOT_ROLE_ORIENTATION_RESOURCE } from "@/data/learning/copilotRoleOrientationResource";
 import { GEO_LEARNING_DATABASE } from "@/data/learning/geoLearningDatabase";
+import { applyLearningDestinationPolicy } from "@/lib/references/referenceDestinationPolicy";
 import type {
   ReferenceLearningOption,
   ReferenceResource,
@@ -36,26 +37,28 @@ function segmentUrl(resource: ReferenceResource, segment?: ReferenceSegment): st
 export function getReferenceLearningOptions(
   resource: ReferenceResource | ResolvedReference
 ): ReferenceLearningOption[] {
-  if (resource.learningOptions?.length) {
-    return resource.learningOptions;
-  }
+  const options: ReferenceLearningOption[] = resource.learningOptions?.length
+    ? resource.learningOptions
+    : [
+        {
+          mode: "reading",
+          title: resource.title,
+          description: resource.description,
+          url: resource.canonicalUrl,
+          provider: resource.provider,
+          durationLabel: resource.durationLabel,
+          isOfficial: resource.isOfficial,
+          access: resource.access,
+          contentType: "documentation",
+          verifiedContentType: false,
+          verifiedAt: resource.lastVerifiedAt,
+          verificationSource: "legacy-registry-fallback",
+        },
+      ];
 
-  return [
-    {
-      mode: "reading",
-      title: resource.title,
-      description: resource.description,
-      url: resource.canonicalUrl,
-      provider: resource.provider,
-      durationLabel: resource.durationLabel,
-      isOfficial: resource.isOfficial,
-      access: resource.access,
-      contentType: "documentation",
-      verifiedContentType: false,
-      verifiedAt: resource.lastVerifiedAt,
-      verificationSource: "legacy-registry-fallback",
-    },
-  ];
+  return options.map((option) =>
+    applyLearningDestinationPolicy(resource.id, option)
+  );
 }
 
 export function resolveReference(
