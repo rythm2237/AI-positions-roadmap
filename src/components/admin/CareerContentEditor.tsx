@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useMemo, useState } from "react";
 import { useFormStatus } from "react-dom";
+import { getReviewableInterviewQuestions } from "@/lib/careerInterviewQuality";
 import type { CareerWorkspaceData } from "@/types/careerWorkspace";
 
 type Section = "identity" | "roadmap" | "projects" | "readiness";
@@ -173,7 +174,7 @@ function ProjectsReview({ career }: { career: CareerWorkspaceData }) {
 }
 
 function ReadinessReview({ career }: { career: CareerWorkspaceData }) {
-  return <div className="space-y-4"><ReviewCard title={career.finalChallenge.title}><p>{career.finalChallenge.description}</p><div className="mt-4"><ListCard title="Final deliverables" items={career.finalChallenge.deliverables}/></div></ReviewCard><div className="grid gap-3 sm:grid-cols-2">{career.readiness.map((item) => <div key={item.id} className="rounded-2xl border border-white/10 bg-white/[.025] p-4"><div className="flex items-center justify-between gap-3"><p className="font-semibold text-white">{item.label}</p><span className="text-xs text-cyan-300">{item.weight}%</span></div><p className="mt-2 text-sm leading-6 text-slate-400">{item.description}</p></div>)}</div><ListCard title="Interview practice" items={career.interviewPrep.questions}/></div>;
+  return <div className="space-y-4"><ReviewCard title={career.finalChallenge.title}><p>{career.finalChallenge.description}</p><div className="mt-4"><ListCard title="Final deliverables" items={career.finalChallenge.deliverables}/></div></ReviewCard><div className="grid gap-3 sm:grid-cols-2">{career.readiness.map((item) => <div key={item.id} className="rounded-2xl border border-white/10 bg-white/[.025] p-4"><div className="flex items-center justify-between gap-3"><p className="font-semibold text-white">{item.label}</p><span className="text-xs text-cyan-300">{item.weight}%</span></div><p className="mt-2 text-sm leading-6 text-slate-400">{item.description}</p></div>)}</div><ListCard title="Interview practice" items={getReviewableInterviewQuestions(career.title, career.interviewPrep.questions)}/></div>;
 }
 
 function ReviewCard({ title, children }: { title: string; children: React.ReactNode }) {
