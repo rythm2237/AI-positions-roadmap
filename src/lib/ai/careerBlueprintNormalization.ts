@@ -1,4 +1,5 @@
 import type { GeneratedCareerBlueprint, GeneratedCareerStage } from "@/types/careerGeneration";
+import { createCareerInterviewQuestionFallbacks } from "../careerInterviewQuality.ts";
 
 const TARGET_STAGE_COUNT = 10;
 const stageLevel = { Beginner: 0, Intermediate: 1, Advanced: 2 } as const;
@@ -527,6 +528,7 @@ export function normalizeCareerBlueprintContract(value: unknown): CareerBlueprin
 
   if (record(value.interviewPrep)) {
     const interviewPrep = { ...value.interviewPrep };
+    const interviewFallbacks = createCareerInterviewQuestionFallbacks(title);
     interviewPrep.practiceAreas = fitTextCollection(
       "interviewPrep.practiceAreas", arrayValue(value.interviewPrep.practiceAreas), 5, 12,
       (item) => normalizedStages[item % normalizedStages.length].title,
@@ -534,10 +536,7 @@ export function normalizeCareerBlueprintContract(value: unknown): CareerBlueprin
     );
     interviewPrep.questions = fitTextCollection(
       "interviewPrep.questions", arrayValue(value.interviewPrep.questions), 10, 20,
-      (item) => {
-        const stage = normalizedStages[item % normalizedStages.length];
-        return `Describe a situation where you applied ${stage.resourceTopic}, the trade-offs you considered and the evidence you produced.`;
-      },
+      (item) => interviewFallbacks[item % interviewFallbacks.length],
       adjustedCollections,
     );
     normalizedValue.interviewPrep = interviewPrep;
