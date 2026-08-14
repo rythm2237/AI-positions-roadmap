@@ -15,7 +15,10 @@ import type {
 } from "@/types/careerGeneration";
 import { normalizeCareerSlug } from "@/lib/admin/careerValidation";
 
-const coordinates = [
+const JOURNEY_MAP_WIDTH = 3200;
+const JOURNEY_MAP_HEIGHT = 2200;
+
+const coordinatePercentages = [
   [18, 12], [38, 20], [63, 14], [78, 28], [66, 43],
   [42, 39], [22, 53], [39, 66], [65, 62], [79, 78],
 ] as const;
@@ -132,7 +135,9 @@ export function assembleCareerWorkspace(
 ): CareerWorkspaceData {
   const resourceRequirements = blueprint.stages.map((stage, index) => buildRequirement(slug, stage, index));
   const journeyStages: CareerJourneyStage[] = blueprint.stages.map((stage, index) => {
-    const [x, y] = coordinates[index] ?? [50, 50];
+    const [xPercent, yPercent] = coordinatePercentages[index] ?? [50, 50];
+    const x = Math.round((xPercent / 100) * JOURNEY_MAP_WIDTH);
+    const y = Math.round((yPercent / 100) * JOURNEY_MAP_HEIGHT);
     const assessment = buildPhaseExam(slug, stage, index);
     const assessmentMinutes = 40;
     const normalizedMaxEffort = Math.max(stage.effortMinutes.min, stage.effortMinutes.max);
@@ -207,9 +212,9 @@ export function assembleCareerWorkspace(
       theme: blueprint.journeyTheme,
       overviewTitle: `${blueprint.shortTitle} journey`,
       overviewDescription: blueprint.journeyDescription,
-      width: 1200,
-      height: 900,
-      worldPadding: 80,
+      width: JOURNEY_MAP_WIDTH,
+      height: JOURNEY_MAP_HEIGHT,
+      worldPadding: 240,
     },
     journeyStages,
     roadmap: blueprint.stages.map((stage, index) => ({
