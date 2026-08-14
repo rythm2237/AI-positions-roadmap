@@ -5,6 +5,11 @@ import { requireAdmin } from "@/lib/admin/adminAuth";
 import { AdminRepositoryError, createCareer, saveCareerContent, setCareerArchived, setCareerPublication, updateCareer } from "@/lib/admin/careerRepository";
 import { careerInputFromForm, validateCareerInput } from "@/lib/admin/careerValidation";
 import { validateCareerPublicationReadiness, validateCareerWorkspaceData } from "@/lib/careerContentValidation";
+import {
+  mappingHasAdaptiveCoverage,
+  resourceIsFresh,
+  resourcePassesDirectDestinationGate,
+} from "@/lib/learning/adaptiveLearningContract";
 import type { CareerWorkspaceData } from "@/types/careerWorkspace";
 import type { CareerFormState } from "@/types/adminStudio";
 
@@ -57,11 +62,15 @@ export async function approveCareerResourcesAction(formData: FormData) {
   const completeMappings = (workspace.resourceMappings ?? []).map((mapping) => {
     const reading = resourcesById.get(mapping.reading ?? "");
     const video = resourcesById.get(mapping.video ?? "");
+    const course = resourcesById.get(mapping.course ?? "");
     const practice = resourcesById.get(mapping.practice ?? "");
+    const extension = course ?? practice;
     const hasRequiredModes = Boolean(
-      reading && ["Documentation", "Article", "Course", "Learning Path"].includes(reading.type)
+      reading && ["Documentation", "Article"].includes(reading.type)
       && video?.type === "Video"
-      && practice && ["Practice", "Exam"].includes(practice.type),
+      && extension && ["Course", "Learning Path", "Practice", "Exam"].includes(extension.type)
+      && [reading, video, extension].every(resourcePassesDirectDestinationGate)
+      && [reading, video, extension].every(resourceIsFresh),
     );
     return { ...mapping, status: hasRequiredModes ? "complete" as const : mapping.status };
   });
@@ -72,7 +81,7 @@ export async function approveCareerResourcesAction(formData: FormData) {
       ...workspace.generationMetadata,
       blueprintStatus: "reviewed",
       resourceStatus: requirements.length > 0 && completeMappings.length === requirements.length
-        && completeMappings.every((mapping) => mapping.status === "complete")
+        && completeMappings.every((mapping) => mapping.status === "complete" && mappingHasAdaptiveCoverage(mapping))
         ? "complete"
         : workspace.generationMetadata.resourceStatus,
     } : workspace.generationMetadata,
