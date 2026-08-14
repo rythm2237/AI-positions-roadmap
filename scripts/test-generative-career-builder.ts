@@ -3,6 +3,9 @@ import fs from "node:fs";
 import { validateCareerPublicationReadiness, validateCareerWorkspaceData } from "../src/lib/careerContentValidation.ts";
 import { careerBlueprintSchema, resourcePackSchema, validateCareerBlueprintOutput } from "../src/lib/ai/careerGenerationSchema.ts";
 import { normalizeCareerBlueprintContract } from "../src/lib/ai/careerBlueprintNormalization.ts";
+import { getReviewableInterviewQuestions } from "../src/lib/careerInterviewQuality.ts";
+import { careerWorkspaceSectionHref } from "../src/lib/careerNavigation.ts";
+import { normalizeJourneyGeometry } from "../src/lib/journey/normalizeJourneyGeometry.ts";
 
 const createPage = fs.readFileSync("src/app/admin/(studio)/careers/new/page.tsx", "utf8");
 const builder = fs.readFileSync("src/components/admin/GenerativeCareerBuilder.tsx", "utf8");
@@ -14,6 +17,9 @@ const resourceRoute = fs.readFileSync("src/app/api/admin/careers/[id]/resources/
 const generator = fs.readFileSync("src/lib/ai/careerGenerator.ts", "utf8");
 const aiError = fs.readFileSync("src/lib/ai/aiError.ts", "utf8");
 const actions = fs.readFileSync("src/app/admin/(studio)/careers/actions.ts", "utf8");
+const workspaceComponent = fs.readFileSync("src/components/career/CareerWorkspace.tsx", "utf8");
+const learningWorkspace = fs.readFileSync("src/components/career/learning/LearningWorkspace.tsx", "utf8");
+const assembler = fs.readFileSync("src/lib/ai/careerBlueprintAssembler.ts", "utf8");
 
 assert.match(createPage, /GenerativeCareerBuilder/);
 assert.doesNotMatch(createPage, /CareerForm/);
@@ -26,6 +32,12 @@ assert.match(resourceStudio, /Approve learning sources/);
 assert.match(resourceStudio, /Direct YouTube links are excluded/);
 assert.doesNotMatch(previewPage, /Preview unavailable/);
 assert.match(previewPage, /Admin Draft Preview/);
+assert.match(previewPage, /navigationBasePath/);
+assert.match(previewPage, /learningSourcesHref/);
+assert.match(workspaceComponent, /ResizeObserver/);
+assert.equal((workspaceComponent.match(/steps\.map\(/g) ?? []).length, 1, "Job preparation steps must render once");
+assert.match(learningWorkspace, /Learning sources are not mapped yet/);
+assert.match(assembler, /JOURNEY_MAP_WIDTH\s*=\s*3200/);
 assert.match(generationRoute, /requireAdmin/);
 assert.match(resourceRoute, /requireAdmin/);
 assert.match(generator, /parallelSearch/);
@@ -201,6 +213,49 @@ assert.equal(completedBlueprint.blueprint.stages[0].assessmentSeeds.length, 5);
 assert.equal(completedBlueprint.blueprint.projects.length, 4);
 assert.ok(completedBlueprint.adjustedCollections.some((item) => item.path === "metrics" && item.reason === "completed"));
 assert.ok(completedBlueprint.adjustedCollections.some((item) => item.path === "stages[0].assessmentSeeds" && item.reason === "completed"));
+assert.equal(completedBlueprint.blueprint.interviewPrep.questions.length, 10);
+assert.doesNotMatch(
+  completedBlueprint.blueprint.interviewPrep.questions.join("\n"),
+  /Describe a situation where you applied Stage \d+ professional topic/,
+  "Interview completion must not expose internal stage resource topics",
+);
+
+const legacyInterviewQuestions = getReviewableInterviewQuestions(
+  "AI & Process Innovation",
+  [
+    "Walk me through a process you improved and how you measured the result.",
+    "Describe a situation where you applied Resume strategy, candidate positioning, and role-aligned profile writing, the trade-offs you considered and the evidence you produced.",
+  ],
+);
+assert.equal(legacyInterviewQuestions.length, 10);
+assert.doesNotMatch(legacyInterviewQuestions.join("\n"), /Resume strategy, candidate positioning/);
+
+const legacyGeometry = normalizeJourneyGeometry(
+  Array.from({ length: 10 }, (_, index) => ({
+    id: `stage-${index + 1}`,
+    order: index + 1,
+    title: `Stage ${index + 1}`,
+    type: "foundation" as const,
+    landmark: `Landmark ${index + 1}`,
+    theme: "Professional progression",
+    x: 18 + index * 5,
+    y: 12 + index * 6,
+    summary: "Build professional evidence.",
+    explanation: "Complete this career stage with reviewable evidence.",
+    lessons: ["Career lesson"],
+    resources: [],
+    tasks: [],
+  })),
+  1200,
+  900,
+);
+assert.equal(legacyGeometry.convertedFromPercentages, true);
+assert.equal(legacyGeometry.width, 3200);
+assert.ok(legacyGeometry.stages.every((item) => item.x > 100 && item.y > 100));
+assert.equal(
+  careerWorkspaceSectionHref("ai-process-innovation", "learning", "stage-1", "/admin/careers/career-id/preview"),
+  "/admin/careers/career-id/preview?section=learning&step=stage-1",
+);
 
 const providerUnsupportedKeywords = [
   "minLength", "maxLength", "pattern", "format", "minimum", "maximum",
