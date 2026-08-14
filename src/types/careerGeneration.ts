@@ -3,6 +3,7 @@ import type {
   CareerJourneyThemeId,
   CareerJourneyTask,
   CareerQuizQuestion,
+  ResourceCost,
   WorkspaceDifficulty,
 } from "@/types/careerWorkspace";
 
@@ -89,7 +90,7 @@ export interface GeneratedCareerBlueprint {
 }
 
 export interface GeneratedLearningResource {
-  mode: "reading" | "video" | "practice";
+  mode: "reading" | "video" | "course" | "practice";
   title: string;
   provider: string;
   canonicalUrl: string;
@@ -98,6 +99,7 @@ export interface GeneratedLearningResource {
   whyUseful: string;
   priority: "Essential" | "Recommended";
   official: boolean;
+  cost: ResourceCost;
   assessmentSeeds: Array<Pick<CareerQuizQuestion, "question" | "answers" | "correctAnswerIndex" | "explanation">>;
 }
 
@@ -112,6 +114,7 @@ export interface CareerResourceMapping {
   milestoneId: string;
   reading?: string;
   video?: string;
+  course?: string;
   practice?: string;
   status: "pending" | "partial" | "complete" | "needs-review";
 }
