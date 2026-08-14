@@ -1,6 +1,7 @@
 "use client";
 
 import { motion, useReducedMotion } from "framer-motion";
+import Link from "next/link";
 import ReferenceLearningChooser from "@/components/career/resources/ReferenceLearningChooser";
 import { EffortEstimate } from "@/components/career/EffortEstimate";
 import { isAssessmentQualified } from "@/lib/assessmentPolicy";
@@ -21,6 +22,7 @@ type Props = {
   career: CareerWorkspaceData;
   progress: CareerWorkspaceProgress;
   selectedStageId: string;
+  learningSourcesHref?: string;
   onSelectStage: (id: string) => void;
   onOpenNote: (type: CareerNote["contextType"], id: string, label: string) => void;
   onOpenAssessment: (assessment: CareerAssessment, stageId: string) => void;
@@ -31,6 +33,7 @@ export default function LearningWorkspace({
   career,
   progress,
   selectedStageId,
+  learningSourcesHref,
   onSelectStage,
   onOpenNote,
   onOpenAssessment,
@@ -57,6 +60,7 @@ export default function LearningWorkspace({
   const resources = resolveCareerStepReferences(
     current.resources.map((resource) => resource.id),
   );
+  const resourceRequirement = career.resourceRequirements?.find((requirement) => requirement.milestoneId === current.id);
   const unlocked = isJourneyStageUnlocked(current.id, career, progress);
   const stageProgress = getJourneyStageProgress(current.id, career, progress);
   const previous = career.journeyStages[stageIndex - 1];
@@ -213,10 +217,37 @@ export default function LearningWorkspace({
                   Choose Reading, Video, or Practice for each milestone, then complete its knowledge check.
                 </p>
               </div>
-              <span className="tag">{resources.length} milestones</span>
+              <span className={resources.length ? "tag" : "tag tag-amber"}>
+                {resources.length ? `${resources.length} milestones` : "Sources pending"}
+              </span>
             </div>
 
             <div className="mt-6 space-y-4">
+              {!resources.length ? (
+                <div role="status" className="rounded-2xl border border-amber-200/20 bg-amber-400/[.055] p-5 sm:p-6">
+                  <div className="flex flex-col justify-between gap-5 sm:flex-row sm:items-start">
+                    <div className="max-w-2xl">
+                      <p className="label-sm text-amber-200">Controlled curation state</p>
+                      <h3 className="mt-2 text-lg font-semibold text-white">Learning sources are not mapped yet.</h3>
+                      <p className="mt-2 text-sm leading-6 text-slate-300">
+                        The Career Blueprint is ready, but its Reading, Video, and Practice sources are created and approved separately before this stage can be assessed or published.
+                      </p>
+                      {resourceRequirement ? (
+                        <div className="mt-4 rounded-xl border border-white/10 bg-black/15 p-4">
+                          <p className="text-xs font-semibold uppercase tracking-[.14em] text-slate-500">Source requirement</p>
+                          <p className="mt-2 text-sm font-medium text-white">{resourceRequirement.topic}</p>
+                          <div className="mt-3 flex flex-wrap gap-2">
+                            {resourceRequirement.requiredModes.map((mode) => <span key={mode} className="tag capitalize">{mode}</span>)}
+                          </div>
+                        </div>
+                      ) : null}
+                    </div>
+                    {learningSourcesHref ? (
+                      <Link href={learningSourcesHref} className="btn-primary min-h-11 shrink-0">Create or review sources</Link>
+                    ) : null}
+                  </div>
+                </div>
+              ) : null}
               {resources.map((resource, resourceIndex) => {
                 const assessment = (current.topicAssessments ?? []).find(
                   (item) => item.topicId === resource.id,
@@ -268,14 +299,24 @@ export default function LearningWorkspace({
                             </p>
                           ) : null}
                         </div>
-                        <button
-                          type="button"
-                          disabled={!unlocked || !assessment}
-                          onClick={() => assessment && onOpenAssessment(assessment, current.id)}
-                          className="btn-primary min-h-11 disabled:cursor-not-allowed disabled:opacity-40"
-                        >
-                          {qualified ? "Try a new check" : "Start check"}
-                        </button>
+                        <div className="flex flex-wrap gap-2">
+                          <button
+                            type="button"
+                            disabled={!unlocked || !assessment}
+                            onClick={() => assessment && onOpenAssessment(assessment, current.id)}
+                            className="btn-primary min-h-11 disabled:cursor-not-allowed disabled:opacity-40"
+                          >
+                            {qualified ? "Try a new check" : "Start check"}
+                          </button>
+                          <button
+                            type="button"
+                            disabled={!unlocked}
+                            onClick={() => onOpenNote("resource", resource.id, resource.title)}
+                            className="btn-secondary min-h-11 disabled:cursor-not-allowed disabled:opacity-40"
+                          >
+                            Resource note
+                          </button>
+                        </div>
                       </div>
                     </div>
                   </motion.div>
@@ -288,7 +329,9 @@ export default function LearningWorkspace({
             <p className="label-sm text-violet-300">Step checkpoint</p>
             <h2 className="mt-2 text-xl font-semibold text-white">Comprehensive step assessment</h2>
             <p className="mt-2 text-sm leading-6 text-slate-400">
-              Pass every milestone check to unlock the final assessment and next stage.
+              {resources.length
+                ? "Pass every milestone check to unlock the final assessment and next stage."
+                : "This assessment stays locked until the required learning sources and their knowledge checks are mapped and approved."}
             </p>
             <div className="mt-4 flex flex-wrap gap-3">
               <button
