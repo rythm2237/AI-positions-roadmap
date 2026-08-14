@@ -3,6 +3,7 @@
 import { motion, useReducedMotion } from "framer-motion";
 import React from "react";
 import { isAssessmentQualified } from "@/lib/assessmentPolicy";
+import { normalizeJourneyGeometry } from "@/lib/journey/normalizeJourneyGeometry";
 import type { CareerJourneyStage } from "@/types/careerWorkspace";
 import type { JourneyEngineProps } from "./types";
 import { getWorldSize, useJourneyCamera } from "./useJourneyCamera";
@@ -75,13 +76,20 @@ function GuidedOverlay({ stage, index, total, travelling, navigationOpen, isMobi
 
 export default function CareerJourneyEngine(props: JourneyEngineProps) {
   const { map, stages, progress, viewport, focusedStage, selectedStage, guidedMode, navigationOpen, guidedIndex, cameraPhase, learningMode, reduceMotion, dataWarnings, isStageUnlocked, getStageProgress, onSelectStage, onStartJourney, onExitJourney, onGuidedIndexChange } = props;
-  const [presentedStage, setPresentedStage] = React.useState(focusedStage);
+  const geometry = React.useMemo(
+    () => normalizeJourneyGeometry(stages, map.width, map.height),
+    [map.height, map.width, stages],
+  );
+  const positionedStages = geometry.stages;
+  const positionedFocusedStage = positionedStages.find((stage) => stage.id === focusedStage.id) ?? positionedStages[0];
+  const positionedSelectedStage = positionedStages.find((stage) => stage.id === selectedStage.id) ?? positionedStages[0];
+  const [presentedStage, setPresentedStage] = React.useState(positionedFocusedStage);
   const [presentedIndex, setPresentedIndex] = React.useState(guidedIndex);
   const [travelling, setTravelling] = React.useState(false);
   const [showStartPopup, setShowStartPopup] = React.useState(true);
   const guidedModeRef = React.useRef(guidedMode);
-  const world = getWorldSize(stages, map.width, map.height, map.worldPadding);
-  const camera = useJourneyCamera({ stages, focusedStage, viewport, mapWidth: world.width, mapHeight: world.height, guidedMode, cameraPhase, learningMode });
+  const world = getWorldSize(positionedStages, geometry.width, geometry.height, map.worldPadding);
+  const camera = useJourneyCamera({ stages: positionedStages, focusedStage: positionedFocusedStage, viewport, mapWidth: world.width, mapHeight: world.height, guidedMode, cameraPhase, learningMode });
   const [pan, setPan] = React.useState({ x: 0, y: 0 });
   const [dragging, setDragging] = React.useState(false);
   const drag = React.useRef<{ id: number; x: number; y: number; panX: number; panY: number } | null>(null);
@@ -104,31 +112,31 @@ export default function CareerJourneyEngine(props: JourneyEngineProps) {
     const enteringGuidedMode = guidedMode && !guidedModeRef.current;
     guidedModeRef.current = guidedMode;
     if (!guidedMode || reduceMotion) {
-      setPresentedStage(focusedStage); setPresentedIndex(guidedIndex); setTravelling(false); return;
+      setPresentedStage(positionedFocusedStage); setPresentedIndex(guidedIndex); setTravelling(false); return;
     }
-    if (presentedStage.id === focusedStage.id && !enteringGuidedMode) return;
+    if (presentedStage.id === positionedFocusedStage.id && !enteringGuidedMode) return;
     setTravelling(true);
     const mobile = viewport.width < 640;
-    const presentTimer = window.setTimeout(() => { setPresentedStage(focusedStage); setPresentedIndex(guidedIndex); }, mobile ? 500 : 650);
+    const presentTimer = window.setTimeout(() => { setPresentedStage(positionedFocusedStage); setPresentedIndex(guidedIndex); }, mobile ? 500 : 650);
     const endTimer = window.setTimeout(() => setTravelling(false), mobile ? 950 : 1200);
     return () => { window.clearTimeout(presentTimer); window.clearTimeout(endTimer); };
   // Presented copy follows near arrival so the camera destination can change immediately.
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [focusedStage.id, guidedIndex, guidedMode, reduceMotion, viewport.width]);
+  }, [positionedFocusedStage.id, guidedIndex, guidedMode, reduceMotion, viewport.width]);
 
-  if (!stages.length) return <section className="grid h-full place-items-center bg-[#030712] p-6 text-center text-slate-100"><div><h2 className="font-display text-2xl font-bold">Journey unavailable</h2><p className="mt-2 text-slate-400">This career map has no stations yet.</p></div></section>;
+  if (!positionedStages.length) return <section className="grid h-full place-items-center bg-[#030712] p-6 text-center text-slate-100"><div><h2 className="font-display text-2xl font-bold">Journey unavailable</h2><p className="mt-2 text-slate-400">This career map has no stations yet.</p></div></section>;
 
   return (
     <motion.section className={`relative h-full touch-none select-none overflow-hidden bg-[#030712] ${dragging ? "cursor-grabbing" : "cursor-grab"}`} initial={false} animate={{opacity:1}} exit={{opacity:0}} tabIndex={-1}
       onPointerDown={(event) => { if ((event.target as HTMLElement).closest("button")) return; event.currentTarget.setPointerCapture(event.pointerId); drag.current = { id:event.pointerId, x:event.clientX, y:event.clientY, panX:pan.x, panY:pan.y }; setDragging(true); }}
       onPointerMove={(event) => { const start=drag.current; if (!start || start.id!==event.pointerId) return; movePan(start.panX+event.clientX-start.x,start.panY+event.clientY-start.y); }}
       onPointerUp={(event) => { if (drag.current?.id===event.pointerId) { drag.current=null; setDragging(false); event.currentTarget.releasePointerCapture(event.pointerId); } }} onPointerCancel={() => { drag.current=null; setDragging(false); }}
-      onKeyDown={(event) => { if (!guidedMode || travelling) return; if (event.key === "ArrowRight" && guidedIndex < stages.length - 1) { event.preventDefault(); setPan({x:0,y:0}); onGuidedIndexChange(guidedIndex + 1); } if (event.key === "ArrowLeft" && guidedIndex > 0) { event.preventDefault(); setPan({x:0,y:0}); onGuidedIndexChange(guidedIndex - 1); } }}>
+      onKeyDown={(event) => { if (!guidedMode || travelling) return; if (event.key === "ArrowRight" && guidedIndex < positionedStages.length - 1) { event.preventDefault(); setPan({x:0,y:0}); onGuidedIndexChange(guidedIndex + 1); } if (event.key === "ArrowLeft" && guidedIndex > 0) { event.preventDefault(); setPan({x:0,y:0}); onGuidedIndexChange(guidedIndex - 1); } }}>
       <InfiniteLeatherBackground />
       <div className="absolute inset-0">
         <div className="absolute left-0 top-0 origin-top-left will-change-transform" style={{ width: world.width, height: world.height, transform: `translate3d(${camera.x + pan.x}px,${camera.y + pan.y}px,0) scale(${camera.scale})`, transition: reduceMotion || dragging ? "none" : `transform ${camera.transitionMs}ms cubic-bezier(.22,1,.36,1)` }}>
           <TreasureMapSurface width={world.width} height={world.height}>
-            {stages.map((stage, index) => <TreasureTerrainFeature key={`${stage.id}-terrain`} stage={stage} technologyLevel={index / Math.max(1, stages.length - 1)}/>)}
+            {positionedStages.map((stage, index) => <TreasureTerrainFeature key={`${stage.id}-terrain`} stage={stage} technologyLevel={index / Math.max(1, positionedStages.length - 1)}/>)}
             <svg className="absolute inset-0 h-full w-full" viewBox={`0 0 ${world.width} ${world.height}`} fill="none" aria-hidden="true">
               <defs>
                 <linearGradient id="expedition-route" x1="0" x2={world.width} gradientUnits="userSpaceOnUse">
@@ -142,7 +150,7 @@ export default function CareerJourneyEngine(props: JourneyEngineProps) {
               <path d={camera.path} stroke="url(#expedition-route)" strokeOpacity=".48" strokeWidth="3.4" strokeLinecap="round"/>
               <path d={camera.path} stroke="url(#expedition-route)" strokeOpacity=".92" strokeWidth="1.3" strokeLinecap="round" strokeDasharray="3 12"/>
             </svg>
-            {stages.map((stage, index) => { const passed = Boolean(stage.phaseExam && isAssessmentQualified(stage.phaseExam, progress.assessmentResults[stage.phaseExam.id])); return <StationLandmark key={stage.id} stage={stage} active={(guidedMode ? focusedStage : selectedStage).id === stage.id} unlocked={isStageUnlocked(stage.id)} passed={passed} progress={getStageProgress(stage.id)} technologyLevel={index / Math.max(1, stages.length - 1)} guidedMode={guidedMode} transitioning={travelling} onSelect={() => onSelectStage(stage)}/>; })}
+            {positionedStages.map((stage, index) => { const passed = Boolean(stage.phaseExam && isAssessmentQualified(stage.phaseExam, progress.assessmentResults[stage.phaseExam.id])); return <StationLandmark key={stage.id} stage={stage} active={(guidedMode ? positionedFocusedStage : positionedSelectedStage).id === stage.id} unlocked={isStageUnlocked(stage.id)} passed={passed} progress={getStageProgress(stage.id)} technologyLevel={index / Math.max(1, positionedStages.length - 1)} guidedMode={guidedMode} transitioning={travelling} onSelect={() => onSelectStage(stages.find((sourceStage) => sourceStage.id === stage.id) ?? stage)}/>; })}
           </TreasureMapSurface>
         </div>
       </div>
@@ -156,10 +164,10 @@ export default function CareerJourneyEngine(props: JourneyEngineProps) {
           <button autoFocus type="button" className="mt-6 min-h-11 rounded-full border border-cyan-200/30 bg-gradient-to-r from-cyan-500 via-teal-400 to-cyan-500 px-7 py-3 text-sm font-bold text-slate-950 shadow-[0_8px_28px_rgba(34,211,238,.22)] transition hover:brightness-110 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-cyan-200" onClick={() => { setShowStartPopup(false); onStartJourney(); }}>Begin Journey →</button>
         </section>
       </motion.div> : !guidedMode ? null : (
-        <GuidedOverlay stage={presentedStage} index={presentedIndex} total={stages.length} travelling={travelling} navigationOpen={navigationOpen} isMobile={viewport.width < 640} onChange={(index) => onGuidedIndexChange(index)} onExit={onExitJourney}/>
+        <GuidedOverlay stage={presentedStage} index={presentedIndex} total={positionedStages.length} travelling={travelling} navigationOpen={navigationOpen} isMobile={viewport.width < 640} onChange={(index) => onGuidedIndexChange(index)} onExit={onExitJourney}/>
       )}
       {pan.x || pan.y ? <button type="button" onClick={() => setPan({x:0,y:0})} className="absolute bottom-[max(1rem,env(safe-area-inset-bottom))] right-3 z-40 min-h-11 rounded-full border border-white/10 bg-slate-950/80 px-4 text-xs font-semibold text-slate-300 shadow-lg backdrop-blur-md transition hover:border-cyan-300/40 hover:text-cyan-100 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-cyan-300">Recenter</button> : null}
-      <div className="sr-only" aria-live="polite">{guidedMode && !travelling ? `Arrived at ${presentedStage.title}, station ${presentedIndex + 1} of ${stages.length}.` : ""}</div>
+      <div className="sr-only" aria-live="polite">{guidedMode && !travelling ? `Arrived at ${presentedStage.title}, station ${presentedIndex + 1} of ${positionedStages.length}.` : ""}</div>
     </motion.section>
   );
 }
