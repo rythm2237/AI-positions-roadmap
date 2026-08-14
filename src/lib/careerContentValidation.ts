@@ -1,5 +1,11 @@
 import type { CareerWorkspaceData } from "@/types/careerWorkspace";
 import { getDefaultCareerTitleAliases } from "../data/careerTitleAliases.ts";
+import {
+  mappingHasAdaptiveCoverage,
+  requirementHasAdaptiveResources,
+  resourcePassesDirectDestinationGate,
+  resourceIsFresh,
+} from "@/lib/learning/adaptiveLearningContract";
 
 export type CareerContentValidation =
   | { valid: true; data: CareerWorkspaceData; errors: [] }
@@ -9,6 +15,7 @@ const text = (value: unknown) => typeof value === "string" && value.trim().lengt
 const list = (value: unknown) => Array.isArray(value);
 const externalUrl = (value: unknown) => typeof value === "string" && /^https?:\/\//i.test(value);
 const genericStageLabel = /^(?:stage|step)\s*#?\s*\d+$/i;
+const validLearningModes = new Set(["reading", "video", "course", "practice"]);
 
 export function validateCareerWorkspaceData(value: unknown, expectedSlug?: string): CareerContentValidation {
   const errors: string[] = [];
@@ -62,9 +69,6 @@ export function validateCareerWorkspaceData(value: unknown, expectedSlug?: strin
   if (new Set(stageIds).size !== stageIds.length) errors.push("Journey stage IDs must be unique.");
   data.journeyStages?.forEach((stage, index) => {
     if (!stage || !text(stage.id) || !text(stage.title)) errors.push(`Journey stage ${index + 1} needs an id and title.`);
-    // Repair legacy generated drafts where the UI label was persisted as
-    // “Stage 1” instead of the Career-specific title. Resource generation is
-    // deliberately independent from this Blueprint identity field.
     if (stage && text(stage.title) && (!text(stage.label) || genericStageLabel.test(stage.label!.trim()))) {
       stage.label = stage.title.trim();
     }
@@ -119,8 +123,16 @@ export function validateCareerWorkspaceData(value: unknown, expectedSlug?: strin
       if (!text(requirement.id) || !milestoneIds.has(requirement.milestoneId)) {
         errors.push(`Resource requirement ${index + 1} must reference an existing milestone.`);
       }
-      if (requirement.requiredModes?.join(",") !== "reading,video,practice") {
-        errors.push(`Resource requirement ${index + 1} must request reading, video and practice.`);
+      const requiredModes = Array.isArray(requirement.requiredModes) ? requirement.requiredModes : [];
+      if (!requiredModes.includes("reading") || !requiredModes.includes("video") || requiredModes.some((mode) => !validLearningModes.has(mode))) {
+        errors.push(`Resource requirement ${index + 1} must require Reading and Video and may only use supported learning modes.`);
+      }
+      const adaptiveModes = requirement.adaptiveModes ?? (requiredModes.includes("practice") ? ["practice" as const] : []);
+      if (adaptiveModes.some((mode) => mode !== "course" && mode !== "practice")) {
+        errors.push(`Resource requirement ${index + 1} contains an unsupported adaptive learning mode.`);
+      }
+      if (requirement.minimumAdaptiveModes && requirement.minimumAdaptiveModes > adaptiveModes.length) {
+        errors.push(`Resource requirement ${index + 1} cannot satisfy its adaptive learning requirement.`);
       }
       if (!requirement.requiredLearningOutcomes?.length) {
         errors.push(`Resource requirement ${index + 1} needs measurable learning outcomes.`);
@@ -139,7 +151,7 @@ export function validateCareerPublicationReadiness(value: unknown, expectedSlug?
 
   const data = content.data;
   const requirements = data.resourceRequirements ?? [];
-  if (!requirements.length) return content; // Existing legacy Careers keep their current publication contract.
+  if (!requirements.length) return content;
 
   const errors: string[] = [];
   const mappings = data.resourceMappings ?? [];
@@ -158,26 +170,31 @@ export function validateCareerPublicationReadiness(value: unknown, expectedSlug?
   if (data.globalResources.some((resource) => /youtube\.com|youtu\.be/i.test(resource.url))) {
     errors.push("Direct YouTube learning sources are not allowed in this workflow.");
   }
+  if (data.globalResources.some((resource) => !resourcePassesDirectDestinationGate(resource))) {
+    errors.push("Every learning source must deep-link directly to the intended reading, video, course, or hands-on activity.");
+  }
+  if (data.globalResources.some((resource) => !resourceIsFresh(resource))) {
+    errors.push("One or more learning sources are past their review date and must be re-verified before publication.");
+  }
 
   for (const requirement of requirements) {
     const mapping = mappings.find((item) => item.requirementId === requirement.id);
-    const reading = data.globalResources.find((resource) => resource.id === mapping?.reading);
-    const video = data.globalResources.find((resource) => resource.id === mapping?.video);
-    const practice = data.globalResources.find((resource) => resource.id === mapping?.practice);
-    const modesValid = Boolean(
-      reading && (reading.type === "Documentation" || reading.type === "Article" || reading.type === "Course" || reading.type === "Learning Path")
-      && video?.type === "Video"
-      && practice && (practice.type === "Practice" || practice.type === "Exam"),
-    );
-    if (!mapping || mapping.status !== "complete" || !modesValid) {
-      errors.push(`Learning sources for “${requirement.topic}” are incomplete or unapproved.`);
+    if (!mapping || mapping.status !== "complete" || !mappingHasAdaptiveCoverage(mapping)
+      || !requirementHasAdaptiveResources(requirement, mapping, data.globalResources)) {
+      errors.push(`Learning sources for “${requirement.topic}” are incomplete, indirect, stale, or unapproved.`);
     }
+
     const stage = data.journeyStages.find((item) => item.id === requirement.milestoneId);
-    const stageModes = new Set(stage?.resources.map((resource) => resource.type) ?? []);
-    const stageModesValid = (stageModes.has("Documentation") || stageModes.has("Article") || stageModes.has("Course") || stageModes.has("Learning Path"))
-      && stageModes.has("Video")
-      && (stageModes.has("Practice") || stageModes.has("Exam"));
-    if (!stage || !stageModesValid || stage.topicAssessments?.length !== stage.resources.length) {
+    const stageResources = stage?.resources ?? [];
+    const hasReading = stageResources.some((resource) => resource.type === "Documentation" || resource.type === "Article");
+    const hasVideo = stageResources.some((resource) => resource.type === "Video");
+    const hasExtension = stageResources.some((resource) => ["Course", "Learning Path", "Practice", "Exam"].includes(resource.type));
+    const stageValid = hasReading
+      && hasVideo
+      && hasExtension
+      && stageResources.every(resourcePassesDirectDestinationGate)
+      && stageResources.every((resource) => resourceIsFresh(resource));
+    if (!stage || !stageValid || stage.topicAssessments?.length !== stage.resources.length) {
       errors.push(`The Learning experience for “${requirement.topic}” is incomplete.`);
     }
   }
