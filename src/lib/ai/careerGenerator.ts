@@ -1,7 +1,8 @@
 import "server-only";
 import { gateway, generateText, isStepCount, NoObjectGeneratedError, Output } from "ai";
-import { careerBlueprintSchema, resourcePackSchema, validateCareerBlueprintOutput } from "@/lib/ai/careerGenerationSchema";
+import { careerBlueprintSchema, resourcePackSchema, validateCareerBlueprintOutput, validateResourcePackOutput } from "@/lib/ai/careerGenerationSchema";
 import { normalizeCareerBlueprintContract } from "@/lib/ai/careerBlueprintNormalization";
+import { normalizeResourcePackContract } from "@/lib/ai/careerResourcePackNormalization";
 import type { CareerWorkspaceData } from "@/types/careerWorkspace";
 import type { GeneratedCareerBlueprint, GeneratedResourcePack } from "@/types/careerGeneration";
 import type { ResourceRequirement } from "@/types/resourceRequirement";
@@ -205,17 +206,27 @@ Rules:
 - Do not invent URLs, titles, providers, durations or claims.
 - Choose resources that directly support the listed outcomes at the declared level.
 - Generate five resource-specific assessment questions per resource.
+- Every assessment must contain exactly four distinct, non-empty answers, an integer correctAnswerIndex from 0 to 3, and a substantive explanation.
 - Use the exact Requirement ID and Milestone ID supplied above.
 - If the best resource is not fully free, say so implicitly through the explanation; do not fabricate access terms.`;
 }
 
-async function generateResourcePack(career: CareerWorkspaceData, requirement: ResourceRequirement): Promise<GeneratedResourcePack> {
-  const { output } = await generateText({
+type ResourceAttempt = "initial" | "retry";
+
+async function generateResourcePackAttempt(
+  career: CareerWorkspaceData,
+  requirement: ResourceRequirement,
+  attempt: ResourceAttempt,
+) {
+  const result = await generateText({
     model: CAREER_RESOURCE_MODEL,
-    prompt: resourcePrompt(career, requirement),
+    prompt: `${resourcePrompt(career, requirement)}${attempt === "retry" ? "\n\nThis is an automatic retry. Recheck the exact resource count, learning modes, answer counts and correctAnswerIndex values before returning the replacement pack." : ""}`,
     maxOutputTokens: 8000,
     providerOptions: {
-      gateway: { models: CAREER_FALLBACK_MODELS },
+      gateway: {
+        models: CAREER_FALLBACK_MODELS,
+        tags: ["feature:career-resources", `attempt:${attempt}`],
+      },
     },
     tools: {
       parallel_search: gateway.tools.parallelSearch({
@@ -228,12 +239,74 @@ async function generateResourcePack(career: CareerWorkspaceData, requirement: Re
     stopWhen: isStepCount(4),
     output: Output.object({ schema: resourcePackSchema }),
   });
+  const output = result.output;
   if (!output) throw new Error("CAREER_RESOURCE_PACK_EMPTY");
   const modes = new Set(output.resources.map((resource) => resource.mode));
   if (!modes.has("reading") || !modes.has("video") || !modes.has("practice")) {
     throw new Error("CAREER_RESOURCE_MODES_INCOMPLETE");
   }
-  return { ...output, requirementId: requirement.id, milestoneId: requirement.milestoneId };
+  return {
+    output: { ...output, requirementId: requirement.id, milestoneId: requirement.milestoneId },
+    finishReason: result.finishReason,
+    usage: result.usage,
+    responseModel: result.response.modelId,
+  };
+}
+
+function normalizeResourcePackFromError(error: unknown, requirement: ResourceRequirement, attempt: ResourceAttempt) {
+  if (!NoObjectGeneratedError.isInstance(error) || !error.text) return null;
+  try {
+    const normalized = normalizeResourcePackContract(JSON.parse(error.text), requirement);
+    if (!normalized) return null;
+    const validation = validateResourcePackOutput(normalized.pack);
+    if (!validation.success) return null;
+    console.info(JSON.stringify({
+      level: "info",
+      message: "Career resource pack contract normalized",
+      attempt,
+      requirementId: requirement.id,
+      milestoneId: requirement.milestoneId,
+      repairedResourceCount: normalized.repairedResourceCount,
+      repairedAssessmentSeeds: normalized.repairedAssessmentSeeds,
+      responseModel: error.response?.modelId,
+    }));
+    return validation.value;
+  } catch {
+    return null;
+  }
+}
+
+async function generateResourcePack(career: CareerWorkspaceData, requirement: ResourceRequirement): Promise<GeneratedResourcePack> {
+  try {
+    return (await generateResourcePackAttempt(career, requirement, "initial")).output;
+  } catch (error) {
+    const normalized = normalizeResourcePackFromError(error, requirement, "initial");
+    if (normalized) return normalized;
+    console.warn(JSON.stringify({
+      level: "warn",
+      message: "Career resource pack retry started",
+      requirementId: requirement.id,
+      milestoneId: requirement.milestoneId,
+      errorName: error instanceof Error ? error.name : "UnknownError",
+    }));
+    try {
+      const retried = await generateResourcePackAttempt(career, requirement, "retry");
+      console.info(JSON.stringify({
+        level: "info",
+        message: "Career resource pack retry completed",
+        requirementId: requirement.id,
+        milestoneId: requirement.milestoneId,
+        finishReason: retried.finishReason,
+        usage: retried.usage,
+        responseModel: retried.responseModel,
+      }));
+      return retried.output;
+    } catch (retryError) {
+      const normalizedRetry = normalizeResourcePackFromError(retryError, requirement, "retry");
+      if (normalizedRetry) return normalizedRetry;
+      throw retryError;
+    }
+  }
 }
 
 export async function generateCareerResourcePacks(career: CareerWorkspaceData) {

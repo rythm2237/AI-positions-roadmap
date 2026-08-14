@@ -56,12 +56,20 @@ export function logCareerAiError(error: unknown, context: { route: string; reque
   const apiError = chain.find(APICallError.isInstance);
   const objectError = chain.find(NoObjectGeneratedError.isInstance);
   let generatedStageCount: number | null = null;
+  let generatedResourceCount: number | null = null;
+  let generatedResourceModes: string[] | null = null;
   if (objectError?.text) {
     try {
-      const value = JSON.parse(objectError.text) as { stages?: unknown[] };
+      const value = JSON.parse(objectError.text) as { stages?: unknown[]; resources?: Array<{ mode?: unknown }> };
       generatedStageCount = Array.isArray(value.stages) ? value.stages.length : null;
+      generatedResourceCount = Array.isArray(value.resources) ? value.resources.length : null;
+      generatedResourceModes = Array.isArray(value.resources)
+        ? value.resources.map((resource) => typeof resource?.mode === "string" ? resource.mode : "invalid")
+        : null;
     } catch {
       generatedStageCount = null;
+      generatedResourceCount = null;
+      generatedResourceModes = null;
     }
   }
   console.error(JSON.stringify({
@@ -80,5 +88,7 @@ export function logCareerAiError(error: unknown, context: { route: string; reque
     responseModel: objectError?.response?.modelId,
     generatedTextLength: objectError?.text?.length,
     generatedStageCount,
+    generatedResourceCount,
+    generatedResourceModes,
   }));
 }

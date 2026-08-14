@@ -379,12 +379,13 @@ export function validateCareerBlueprintOutput(value: unknown) {
   return { success: true as const, value: value as unknown as GeneratedCareerBlueprint };
 }
 
-function validateResourcePackOutput(value: unknown) {
+export function validateResourcePackOutput(value: unknown) {
   const invalid = (detail: string) => ({ success: false as const, error: new Error(`CAREER_RESOURCE_OUTPUT_INVALID: ${detail}`) });
   if (!record(value) || !requiredStrings(value, ["requirementId", "milestoneId"]) || !objectArray(value.resources, 3, 3)) {
     return invalid("pack identity or resource count is invalid");
   }
   const modes = new Set<string>();
+  const canonicalUrls = new Set<string>();
   for (const resource of value.resources as Record<string, unknown>[]) {
     if (!requiredStrings(resource, ["mode", "title", "provider", "canonicalUrl", "contentType", "estimatedTime", "whyUseful", "priority"])
       || typeof resource.official !== "boolean"
@@ -392,15 +393,20 @@ function validateResourcePackOutput(value: unknown) {
       || /youtube\.com|youtu\.be/i.test(String(resource.canonicalUrl))
       || !objectArray(resource.assessmentSeeds, 5, 5)) return invalid("a resource is incomplete or unsafe");
     modes.add(String(resource.mode));
+    canonicalUrls.add(String(resource.canonicalUrl).replace(/\/$/, "").toLocaleLowerCase("en"));
     for (const seed of resource.assessmentSeeds as Record<string, unknown>[]) {
+      const answers = Array.isArray(seed.answers) ? seed.answers.map((answer) => String(answer).trim().toLocaleLowerCase("en")) : [];
       if (!requiredStrings(seed, ["question", "explanation"])
         || !stringArray(seed.answers, 4, 4)
+        || new Set(answers).size !== 4
         || typeof seed.correctAnswerIndex !== "number"
+        || !Number.isInteger(seed.correctAnswerIndex)
         || seed.correctAnswerIndex < 0
         || seed.correctAnswerIndex > 3) return invalid("a resource assessment is invalid");
     }
   }
   if (!["reading", "video", "practice"].every((mode) => modes.has(mode))) return invalid("reading, video and practice are all required");
+  if (canonicalUrls.size !== 3) return invalid("resources must use three distinct canonical URLs");
   return { success: true as const, value: value as unknown as GeneratedResourcePack };
 }
 
