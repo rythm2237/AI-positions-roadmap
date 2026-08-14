@@ -69,9 +69,10 @@ export function resourcePassesDirectDestinationGate(resource: CareerResource) {
   return isDirectLearningDestination({ mode, url: resource.url, contentType });
 }
 
-export function resourceIsFresh(resource: CareerResource, now = new Date()) {
+export function resourceIsFresh(resource: CareerResource, nowOrIndex?: Date | number) {
   const managed = resource as ManagedCareerResource;
   if (!managed.nextReviewAt) return true;
+  const now = nowOrIndex instanceof Date ? nowOrIndex : new Date();
   const nextReview = new Date(managed.nextReviewAt);
   return Number.isFinite(nextReview.getTime()) && nextReview.getTime() >= now.getTime();
 }
