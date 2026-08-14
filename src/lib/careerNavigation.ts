@@ -15,3 +15,17 @@ export function careerSectionHref(slug: string, section: CareerWorkspaceSectionI
   if (section === "learning") return `/careers/${slug}/learning${stepId ? `?step=${encodeURIComponent(stepId)}` : ""}`;
   return `/careers/${slug}?section=${section}`;
 }
+
+export function careerWorkspaceSectionHref(
+  slug: string,
+  section: CareerWorkspaceSectionId,
+  stepId?: string,
+  navigationBasePath?: string,
+) {
+  if (!navigationBasePath) return careerSectionHref(slug, section, stepId);
+  if (section === "hero") return navigationBasePath;
+
+  const parameters = new URLSearchParams({ section });
+  if (section === "learning" && stepId) parameters.set("step", stepId);
+  return `${navigationBasePath}?${parameters.toString()}`;
+}
