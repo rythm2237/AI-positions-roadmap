@@ -15,6 +15,7 @@ import {
 } from "@/data/careers/activation-batch-six";
 import { cloudEngineerCareer } from "@/data/careers/cloud-engineer";
 import { cybersecurityAnalystCareer } from "@/data/careers/cybersecurity-analyst";
+import { enterpriseAiConsultantCareer } from "@/data/careers/enterprise-ai-consultant";
 import { generativeEngineOptimizationSpecialistCareer } from "@/data/careers/generative-engine-optimization-specialist";
 import { microsoftCopilotConsultantCareer } from "@/data/careers/microsoft-copilot-consultant-workspace";
 import { getPublishedCareer } from "@/lib/publishedCareerRepository";
@@ -25,6 +26,7 @@ const builtIn: Record<string, CareerWorkspaceData> = {
   "ai-marketing-specialist": aiMarketingSpecialistCareer,
   "microsoft-copilot-consultant": microsoftCopilotConsultantCareer,
   "generative-engine-optimization-specialist": generativeEngineOptimizationSpecialistCareer,
+  "enterprise-ai-consultant": enterpriseAiConsultantCareer,
   "data-analyst": dataAnalystCareer,
   "data-scientist": dataScientistCareer,
   "bi-developer": biDeveloperCareer,
