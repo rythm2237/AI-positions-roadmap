@@ -18,6 +18,7 @@ import {
 } from "@/data/careers/activation-batch-six";
 import { cloudEngineerCareer } from "@/data/careers/cloud-engineer";
 import { cybersecurityAnalystCareer } from "@/data/careers/cybersecurity-analyst";
+import { enterpriseAiConsultantCareer } from "@/data/careers/enterprise-ai-consultant";
 import { generativeEngineOptimizationSpecialistCareer } from "@/data/careers/generative-engine-optimization-specialist";
 import { microsoftCopilotConsultantCareer } from "@/data/careers/microsoft-copilot-consultant-workspace";
 import { getPublishedCareer } from "@/lib/publishedCareerRepository";
@@ -31,6 +32,7 @@ const builtIn: Record<string, CareerWorkspaceData> = {
   "ai-marketing-specialist": aiMarketingSpecialistCareer,
   "microsoft-copilot-consultant": microsoftCopilotConsultantCareer,
   "generative-engine-optimization-specialist": generativeEngineOptimizationSpecialistCareer,
+  "enterprise-ai-consultant": enterpriseAiConsultantCareer,
   "data-analyst": dataAnalystCareer,
   "data-scientist": dataScientistCareer,
   "bi-developer": biDeveloperCareer,
@@ -67,11 +69,13 @@ export async function generateMetadata({
   const careerSpecificKeywords =
     career.slug === "microsoft-copilot-consultant"
       ? ["Microsoft 365 Copilot consultant", "Copilot Studio consultant"]
-      : career.slug === "generative-engine-optimization-specialist"
-        ? ["GEO specialist", "generative engine optimization career", "answer engine optimization"]
-        : career.slug === "cloud-engineer"
-          ? ["cloud engineer roadmap", "cloud infrastructure career", "cloud platform engineer skills"]
-          : [];
+      : career.slug === "enterprise-ai-consultant"
+        ? ["enterprise AI consultant", "enterprise AI strategy", "AI governance consultant", "enterprise AI advisory"]
+        : career.slug === "generative-engine-optimization-specialist"
+          ? ["GEO specialist", "generative engine optimization career", "answer engine optimization"]
+          : career.slug === "cloud-engineer"
+            ? ["cloud engineer roadmap", "cloud infrastructure career", "cloud platform engineer skills"]
+            : [];
 
   return buildMetadata({
     title,
