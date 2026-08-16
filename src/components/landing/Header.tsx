@@ -50,7 +50,7 @@ export default function Header() {
   return (
     <>
       <header className="fixed inset-x-0 top-0 z-50 border-b border-white/[0.045] bg-[#03050e]/78 backdrop-blur-xl" role="banner">
-        <div className="mx-auto flex h-[68px] max-w-7xl items-center gap-4 px-5 pr-[5.25rem] sm:px-8 sm:pr-[5.75rem] 2xl:pr-[17.5rem]">
+        <div className="mx-auto flex h-[68px] max-w-7xl items-center gap-4 px-5 pr-[7.25rem] sm:px-8 sm:pr-[7.75rem] 2xl:pr-[17.5rem]">
           <Link href="/" className="group flex shrink-0 items-center gap-3 rounded-xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-400" aria-label="AI Career OS home"><BrandMark /><span className="hidden min-[430px]:block"><span className="block font-display text-[15px] font-bold tracking-tight text-white">AI Career <span className="text-violet-300">OS</span></span><span className="mt-0.5 block text-[9px] font-semibold uppercase tracking-[0.18em] text-slate-600">Career Operating System</span></span></Link>
           <nav className="ml-auto hidden min-w-0 items-center gap-1 2xl:flex" aria-label="Primary navigation">
             {NAV_ITEMS.map((item) => item.kind === "link" ? <Link key={item.label} href={item.href} className="whitespace-nowrap rounded-xl px-4 py-2 text-sm font-medium text-slate-400 transition hover:bg-white/[0.045] hover:text-white">{item.label}</Link> : <button key={item.label} type="button" onClick={() => setOverlay(item.overlay)} className="whitespace-nowrap rounded-xl px-4 py-2 text-sm font-medium text-slate-400 transition hover:bg-white/[0.045] hover:text-white">{item.label}</button>)}
