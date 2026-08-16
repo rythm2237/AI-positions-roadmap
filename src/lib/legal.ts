@@ -2,6 +2,9 @@ const VERIFIED_LEGAL_ENTITY_NAME = "Tayyebialashti Yaser e.v.";
 const VERIFIED_REGISTERED_ADDRESS = "1143 Budapest, Gizella út 35, Hungary";
 const VERIFIED_TAX_NUMBER = "48332376-1-42";
 const VERIFIED_REGISTRATION_NUMBER = "58642889";
+const VERIFIED_LEGAL_CONTACT_EMAIL = "career-legal@rythm-os.com";
+const VERIFIED_SUPPORT_EMAIL = "career-support@rythm-os.com";
+const VERIFIED_BILLING_EMAIL = "career-billing@rythm-os.com";
 
 export const legalOperator = {
   legalName: (process.env.NEXT_PUBLIC_LEGAL_ENTITY_NAME || VERIFIED_LEGAL_ENTITY_NAME).trim(),
@@ -9,8 +12,9 @@ export const legalOperator = {
   registeredAddress: (process.env.NEXT_PUBLIC_REGISTERED_ADDRESS || VERIFIED_REGISTERED_ADDRESS).trim(),
   registrationNumber: (process.env.NEXT_PUBLIC_COMPANY_REGISTRATION_NUMBER || VERIFIED_REGISTRATION_NUMBER).trim(),
   vatNumber: (process.env.NEXT_PUBLIC_VAT_NUMBER || VERIFIED_TAX_NUMBER).trim(),
-  contactEmail: (process.env.NEXT_PUBLIC_LEGAL_CONTACT_EMAIL || "").trim(),
-  supportEmail: (process.env.NEXT_PUBLIC_SUPPORT_EMAIL || "").trim(),
+  contactEmail: (process.env.NEXT_PUBLIC_LEGAL_CONTACT_EMAIL || VERIFIED_LEGAL_CONTACT_EMAIL).trim(),
+  supportEmail: (process.env.NEXT_PUBLIC_SUPPORT_EMAIL || VERIFIED_SUPPORT_EMAIL).trim(),
+  billingEmail: (process.env.NEXT_PUBLIC_BILLING_EMAIL || VERIFIED_BILLING_EMAIL).trim(),
   phone: (process.env.NEXT_PUBLIC_SUPPORT_PHONE || "").trim(),
   complaintAddress: (process.env.NEXT_PUBLIC_COMPLAINT_ADDRESS || VERIFIED_REGISTERED_ADDRESS).trim(),
   disputeResolutionBody: (process.env.NEXT_PUBLIC_DISPUTE_RESOLUTION_BODY || "").trim(),
