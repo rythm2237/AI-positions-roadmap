@@ -3,6 +3,7 @@ import type { ReactNode } from "react";
 import AnalyticsScripts from "@/components/analytics/AnalyticsScripts";
 import AuthDock from "@/components/identity/AuthDock";
 import AuthenticatedWaitlistEnhancer from "@/components/identity/AuthenticatedWaitlistEnhancer";
+import CookieConsent from "@/components/legal/CookieConsent";
 import CareerSwitcherDock from "@/components/navigation/CareerSwitcherDock";
 import { absoluteUrl, isIndexableDeployment, seoConfig } from "@/lib/seo";
 import "./globals.css";
@@ -90,6 +91,7 @@ export default function RootLayout({ children }: { children: ReactNode }) {
         <CareerSwitcherDock />
         <AuthDock />
         <AuthenticatedWaitlistEnhancer />
+        <CookieConsent />
       </body>
     </html>
   );
