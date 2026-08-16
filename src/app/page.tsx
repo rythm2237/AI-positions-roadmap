@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import CookieSettingsButton from "@/components/legal/CookieSettingsButton";
 import Header from "@/components/landing/Header";
 import SafeCareerUniverse from "@/components/landing/SafeCareerUniverse";
 import { AVAILABLE_CAREERS, CAREER_DOMAINS } from "@/data/careerCatalog";
@@ -188,8 +189,13 @@ export default function LandingPage() {
           <p>AI Career OS · Public Beta</p>
           <nav className="flex flex-wrap gap-x-5 gap-y-2" aria-label="Footer navigation">
             <Link href="#career-directory" className="transition hover:text-slate-300">Careers</Link>
-            <Link href="#how-it-works" className="transition hover:text-slate-300">How it works</Link>
             <Link href="/methodology" className="transition hover:text-slate-300">Methodology</Link>
+            <Link href="/legal" className="transition hover:text-slate-300">Legal</Link>
+            <Link href="/legal/privacy" className="transition hover:text-slate-300">Privacy</Link>
+            <Link href="/legal/terms" className="transition hover:text-slate-300">Terms</Link>
+            <Link href="/legal/refunds" className="transition hover:text-slate-300">Refunds</Link>
+            <Link href="/legal/withdraw" className="transition hover:text-slate-300">Withdraw</Link>
+            <CookieSettingsButton />
             <Link href="/login" className="transition hover:text-slate-300">Sign in</Link>
           </nav>
         </div>
