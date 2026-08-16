@@ -4,14 +4,27 @@ import { useEffect, useState } from "react";
 import { useScene } from "./SceneContext";
 
 const TRANSITION = "opacity .6s cubic-bezier(.22,1,.36,1), transform .6s cubic-bezier(.22,1,.36,1), filter .6s cubic-bezier(.22,1,.36,1)";
+const CAREER_EXPLORER_OPEN_EVENT = "ai-career-explorer-open";
 
 export default function HeroContent() {
-  const { phase, activate } = useScene();
+  const { phase, advance } = useScene();
   const [mounted, setMounted] = useState(false);
-  const exiting = ["activating", "travelling", "arrived", "exploring"].includes(phase);
+  const exiting = phase !== "idle";
   const busy = phase !== "idle";
 
   useEffect(() => setMounted(true), []);
+
+  function openCareerExplorer() {
+    if (busy) return;
+
+    // “Explore” is a browse action, not a recommendation. Enter the universe
+    // overview directly and open the complete career directory instead of
+    // flying the camera to an arbitrary career first.
+    advance("exploring");
+    window.requestAnimationFrame(() => {
+      window.dispatchEvent(new Event(CAREER_EXPLORER_OPEN_EVENT));
+    });
+  }
 
   return (
     <div className="pointer-events-none absolute inset-x-0 bottom-0 top-[68px] z-10 flex items-center justify-center">
@@ -35,13 +48,13 @@ export default function HeroContent() {
         </p>
         <button
           type="button"
-          onClick={activate}
+          onClick={openCareerExplorer}
           disabled={busy}
           className="pointer-events-auto mt-8 min-h-12 rounded-2xl border border-violet-300/35 bg-gradient-to-r from-indigo-600 to-violet-600 px-8 py-3.5 text-sm font-semibold tracking-[.04em] text-white shadow-[0_18px_55px_rgba(99,102,241,.28)] transition hover:-translate-y-0.5 hover:shadow-[0_22px_70px_rgba(99,102,241,.4)] disabled:cursor-wait disabled:opacity-60"
         >
-          {busy ? "Opening Career Universe…" : "Explore AI Careers"}
+          {busy ? "Opening Career Explorer…" : "Explore AI Careers"}
         </button>
-        <p className="mt-4 text-xs text-slate-600">Explore active workspaces and see which careers are in development.</p>
+        <p className="mt-4 text-xs text-slate-600">Browse every active career and compare what is coming next.</p>
       </div>
     </div>
   );
