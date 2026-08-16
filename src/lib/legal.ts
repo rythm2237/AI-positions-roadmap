@@ -20,7 +20,7 @@ export const requiredCommercialLegalFields = [
   ["Legal entity name", legalOperator.legalName],
   ["Registered address", legalOperator.registeredAddress],
   ["Sole-trader registration number (EVNY nyilvántartási szám)", legalOperator.registrationNumber],
-  ["Tax / VAT number", legalOperator.vatNumber],
+  ["Hungarian tax number (adószám)", legalOperator.vatNumber],
   ["Legal contact email", legalOperator.contactEmail],
 ] as const;
 
