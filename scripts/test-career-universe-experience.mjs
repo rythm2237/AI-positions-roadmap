@@ -3,6 +3,10 @@ import { readFile } from "node:fs/promises";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 
+// Preview-only final interaction layer. Keeping it here means Vercel Preview
+// applies the experimental control model during prebuild without changing main.
+await import("./patch-career-universe-user-takeover.mjs");
+
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const read = (relativePath) => readFile(path.join(root, relativePath), "utf8");
 
@@ -26,13 +30,20 @@ assert.match(world, /nextCruiseFocusAt = now \+ CAREER_ORBIT_FOCUS_INTERVAL_MS/,
 assert.match(world, /new THREE\.CatmullRomCurve3\(cruisePoints, true/, "Universe cruise must remain one continuous closed route.");
 assert.match(world, /cruiseDistance = \(cruiseDistance \+ CAREER_IMMERSIVE_PILOT_SPEED \* delta\)/, "Cruise progress must remain frame-rate independent.");
 
+assert.match(world, /CAREER_USER_CONTROL_TAKEOVER_MS = 3200/, "Pointer activity must own the camera for a 3.2 second inactivity grace period.");
+assert.match(world, /lastPointerActivityAt = performance\.now\(\)/, "Pointer movement must immediately transfer control to the user.");
+assert.match(world, /userControlActive = now - lastPointerActivityAt < CAREER_USER_CONTROL_TAKEOVER_MS/, "User-control activity must be determined independently of auto-tour focus.");
+assert.match(world, /interactionPaused = hoveredPlanet !== null \|\| o\.isDragging \|\| userControlActive/, "Cruise translation must freeze during mouse takeover, hover, or drag.");
+assert.match(world, /camPos\.copy\(camPosSmoothed\)[\s\S]*camTarget\.copy\(cruiseAhead\)/, "Mouse takeover must freeze camera position while allowing stable gaze steering.");
+assert.match(world, /pointerStabilizesPlanets \? 1 : 1 \+ Math\.sin/, "Planet pulse must stop during pointer control so hover targets cannot oscillate under the cursor.");
+assert.match(world, /nextCruiseFocusAt = Math\.max\(nextCruiseFocusAt, now \+ 500\)/, "Automatic focus must stay dormant while the user is actively looking around.");
+
 assert.match(world, /hoveredNodeRef\.current = node/, "Raycast hover state must pause the cruise without React frame churn.");
-assert.match(world, /interactionPaused = hoveredPlanet !== null \|\| o\.isDragging/, "Hovering a planet or dragging must freeze travel.");
 assert.match(world, /focusLocked = cruiseFocusNode !== null && now < cruisePauseUntil/, "Automatic Career presentation must use an explicit focus-lock state.");
 assert.match(world, /camPos\.copy\(cruiseFocusCameraPosition\)/, "Focused Career framing must lock camera position.");
 assert.match(world, /camTarget\.copy\(cruiseFocusPosition\)/, "Focused Career framing must use one stable target.");
-assert.match(world, /focusSuppressesBank = performance\.now\(\) < cruisePauseUntil \|\| hoveredNodeRef\.current !== null/, "Automatic and hovered focus must suppress banking to prevent wobble.");
-assert.match(world, /camera\.rotateZ\(roll\)/, "Free cruise may retain subtle cinematic banking.");
+assert.match(world, /focusSuppressesBank = performance\.now\(\) < cruisePauseUntil \|\| hoveredNodeRef\.current !== null \|\| performance\.now\(\) - lastPointerActivityAt < CAREER_USER_CONTROL_TAKEOVER_MS/, "Auto focus, hover, and pointer control must suppress banking to prevent wobble.");
+assert.match(world, /camera\.rotateZ\(roll\)/, "Free cruise may retain subtle cinematic banking outside direct user control.");
 
 assert.match(world, /cruiseLabelEl\.append\(cruiseLabelTitle\)/, "Cruise label must render only the Career title.");
 assert.doesNotMatch(world, /Explore its roadmap, skills, projects, and career evidence\./, "Cruise label must not show explanatory microcopy.");
@@ -50,6 +61,8 @@ assert.match(world, /closeEnoughForDetail = dist < 78/, "Planet detail must be d
 assert.match(world, /getPlanetEntryBackground\(entry\.family, entry\.color\)/, "Close-up entry must reveal a textured family-specific planet surface.");
 assert.match(world, /family: PlanetVisualFamily/, "Career entry transition must carry the selected planet family.");
 
+assert.match(world, /CAREER_ENTRY_ZOOM_MS = 1950/, "Selected planet entry must be slow enough to read as a deliberate cinematic approach.");
+assert.match(world, /cubic-bezier\(\.28,\.08,\.18,1\)/, "Planet entry must use a gradual cinematic acceleration/ease instead of an abrupt wipe.");
 assert.match(world, /innerWidth < 768 \? 1\.35 : 1\.75/, "WebGL pixel ratio must remain adaptively capped for mobile and desktop performance.");
 assert.match(world, /scheduleCareerEntry\(node, entry\.careerPath, e\.clientX, e\.clientY\)/, "A single node click or tap must start Career entry from the selected screen position.");
 assert.doesNotMatch(world, /wasFocused/, "Node entry must not require a second click.");
@@ -65,4 +78,4 @@ assert.match(controller, /exploring is intentionally timer-free/, "Continuous mo
 assert.match(hero, /Enter Career Universe/, "Homepage must retain an explicit Universe entry action.");
 assert.match(hero, /pointerEvents: exiting \? "none" : "auto"/, "Hidden landing CTAs must not intercept pointer or touch input after entering the Universe.");
 
-console.log("Career Universe cinematic preview checks passed: slower continuous cruise, title-only fly-bys, stable focus, compact side browser, procedural planet families, performance culling, and textured single-tap entry.");
+console.log("Career Universe cinematic preview checks passed: slower textured planet entry, exclusive mouse takeover, stable hover, idle cruise resume, title-only fly-bys, compact side browser, and performance-capped planet families.");
