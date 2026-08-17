@@ -62,7 +62,11 @@ assert.match(homepage, /<SafeCareerUniverse\s*\/>/, "Homepage must use Career Un
 assert.doesNotMatch(homepage, /id="career-directory"/, "Homepage must not duplicate the scrollable career directory.");
 assert.match(safeUniverse, /<h1[\s\S]*?homepage-title/, "Career Universe fallback must expose the server-rendered homepage H1.");
 assert.match(safeUniverse, /href="\/careers"/, "WebGL fallback must retain direct public Career discovery.");
-assert.match(heroContent, /href="\/careers"/, "Primary Explore AI Careers CTA must open the scrollable Career hub.");
+assert.match(heroContent, /const \{ phase, activate \} = useScene\(\)/, "Interactive homepage CTA must have access to the Universe activation action.");
+assert.match(heroContent, /onClick=\{enterUniverse\}/, "Primary homepage CTA must activate the Career Universe instead of navigating away.");
+assert.match(heroContent, /Enter Career Universe/, "Primary homepage CTA must clearly describe the interactive Universe experience.");
+assert.match(heroContent, /href="\/careers"/, "Homepage must also retain a separate link to the scrollable Career hub.");
+assert.match(heroContent, /Browse career list/, "The standard Career list must be presented as a distinct secondary action.");
 
 assert.match(careerPage, /name: "Careers", item: absoluteUrl\("\/careers"\)/, "Career breadcrumbs must include the Careers hub.");
 assert.match(careerPage, /career\.projects\.flatMap\(\(project\) => project\.skills\)/, "Occupation skills must come from actual project skill data.");
