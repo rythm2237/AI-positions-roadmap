@@ -15,12 +15,28 @@ const [world, controller, hero] = await Promise.all([
 assert.doesNotMatch(world, /CareerPreviewCard/, "Universe must not show a default right-side Career preview card.");
 assert.doesNotMatch(world, /<FocusedCareerLabel \/>/, "Universe must not render the old bottom-center focused Career label.");
 assert.doesNotMatch(world, /<ExploreHint \/>/, "Universe must not render a redundant bottom instruction above the Explore Careers dock.");
-assert.match(world, /CAREER_ORBIT_CRUISE_SPEED = 13\.5/, "Universe cruise must use one explicit constant world-space speed.");
-assert.match(world, /CAREER_ORBIT_PAUSE_MS = 620/, "Universe cruise must use only a short pause beside each Career node.");
+assert.doesNotMatch(world, /<HoverLabel node=/, "Universe must avoid a duplicate React hover card over the immersive planet label.");
+
+assert.match(world, /CAREER_IMMERSIVE_PILOT_SPEED = 4\.2/, "Universe must cruise slowly enough for a rider-like experience.");
+assert.match(world, /CAREER_ORBIT_PAUSE_MS = 1900/, "Desktop fly-bys must pause long enough for the Career label to be read.");
+assert.match(world, /clientWidth < 768 \? 2500 : CAREER_ORBIT_PAUSE_MS/, "Mobile fly-bys must give touch users extra decision time.");
 assert.match(world, /new THREE\.CatmullRomCurve3\(cruisePoints, true/, "Universe cruise must follow one continuous closed route instead of node-to-node zoom resets.");
-assert.match(world, /cruiseDistance = \(cruiseDistance \+ CAREER_ORBIT_CRUISE_SPEED \* delta\)/, "Cruise distance must advance continuously from delta time at constant speed.");
-assert.match(world, /cruiseLabelTitle\.textContent = node\.title/, "Career name must appear beside the planet during its short pause.");
+assert.match(world, /cruiseDistance = \(cruiseDistance \+ CAREER_IMMERSIVE_PILOT_SPEED \* delta\)/, "Cruise progress must remain frame-rate independent.");
+
+assert.match(world, /hoveredNodeRef\.current = node/, "Raycast hover state must be available to pause the cruise without React frame churn.");
+assert.match(world, /interactionPaused = hoveredPlanet !== null \|\| o\.isDragging/, "Hovering a planet or actively dragging must freeze travel.");
+assert.match(world, /if \(!motionPaused\)[\s\S]*cruiseDistance =/, "Cruise distance must stop advancing while the user is interacting.");
+assert.match(world, /mouse\.x \+ o\.yaw \* 0\.18/, "Pointer and drag input must steer the cockpit view horizontally.");
+assert.match(world, /-mouse\.y \+ o\.pitch \* 0\.22/, "Pointer and drag input must steer the cockpit view vertically.");
+assert.match(world, /camera\.rotateZ\(roll\)/, "Cockpit view must include only subtle cinematic banking.");
+
+assert.match(world, /SphereGeometry\(0\.58, 16, 16\)/, "Career planets must be comfortably visible and targetable without excessive geometry.");
+assert.match(world, /innerWidth < 768 \? 1\.35 : 1\.75/, "WebGL pixel ratio must be capped adaptively for mobile and desktop performance.");
+assert.match(world, /Explore its roadmap, skills, projects, and career evidence\./, "Planet label must include concise useful Career microcopy.");
+assert.match(world, /Click or tap the planet to enter/, "Planet label must make the interaction affordance explicit.");
+assert.match(world, /cruiseLabelTitle\.textContent = node\.title/, "Career name must stay visually attached to the nearby planet.");
 assert.match(world, /bottom: 58,[\s\S]*left: "50%"/, "Desktop Explore Careers control must remain fixed near the bottom center.");
+
 assert.match(world, /scheduleCareerEntry\(node, entry\.careerPath, e\.clientX, e\.clientY\)/, "A single node click or tap must start Career entry from the selected screen position.");
 assert.doesNotMatch(world, /wasFocused/, "Node entry must not require a second click on an already focused node.");
 assert.match(world, /zooming \? 190 : 1/, "Selected node must expand monotonically to cover the viewport.");
@@ -36,4 +52,4 @@ assert.match(hero, /Enter Career Universe/, "Homepage must retain an explicit Un
 assert.match(hero, /tour AI roles automatically/, "Homepage copy must still describe the automatic Universe experience.");
 assert.match(hero, /pointerEvents: exiting \? "none" : "auto"/, "Hidden landing CTAs must not intercept pointer or touch input after entering the Universe.");
 
-console.log("Career Universe experience checks passed: initial-only zoom, constant orbital cruise, short planet-side labels, fixed Explore Careers dock, and single-tap entry.");
+console.log("Career Universe experience checks passed: slow immersive cockpit cruise, pointer steering, hover-to-pause, readable planet microcopy, mobile decision time, adaptive WebGL rendering, and single-tap entry.");
