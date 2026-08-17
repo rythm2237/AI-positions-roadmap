@@ -5,9 +5,11 @@ import AuthDock from "@/components/identity/AuthDock";
 import AuthenticatedWaitlistEnhancer from "@/components/identity/AuthenticatedWaitlistEnhancer";
 import CookieConsent from "@/components/legal/CookieConsent";
 import CareerSwitcherDock from "@/components/navigation/CareerSwitcherDock";
+import FirstVisitGuidedTour from "@/components/onboarding/FirstVisitGuidedTour";
 import { absoluteUrl, isIndexableDeployment, seoConfig } from "@/lib/seo";
 import "./globals.css";
 import "./experience-fixes.css";
+import "./guided-tour-mobile.css";
 
 export const viewport: Viewport = {
   themeColor: "#03050e",
@@ -92,6 +94,7 @@ export default function RootLayout({ children }: { children: ReactNode }) {
         <AuthDock />
         <AuthenticatedWaitlistEnhancer />
         <CookieConsent />
+        <FirstVisitGuidedTour />
       </body>
     </html>
   );

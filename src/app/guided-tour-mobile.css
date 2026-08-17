@@ -1,0 +1,19 @@
+@media (max-width: 639px) {
+  [role="dialog"][aria-label^="Guided tour:"] {
+    bottom: calc(env(safe-area-inset-bottom, 0px) + 72px) !important;
+    max-height: min(40dvh, 360px) !important;
+    overflow-y: auto !important;
+    overscroll-behavior: contain;
+    scrollbar-width: none;
+  }
+
+  [role="dialog"][aria-label^="Guided tour:"]::-webkit-scrollbar {
+    display: none;
+  }
+
+  @supports (height: 100dvh) {
+    [role="dialog"][aria-label^="Guided tour:"] {
+      max-height: min(40dvh, 360px) !important;
+    }
+  }
+}
