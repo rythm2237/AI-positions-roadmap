@@ -1,56 +1,70 @@
-
 "use client";
-// src/components/opening-scene/TransitionController.tsx — v6
-//
-// Drives ONLY the timed phase transitions that require no user input.
-//
-// Sequence:
-//   activating → 900ms  → travelling
-//   travelling → 3000ms → arrived    (matches TRAVEL_DURATION in World.tsx)
-//   arrived    → 600ms  → exploring  (let arrival animation play)
-//
-// What this controller does NOT do:
-//   • Does NOT advance to "complete" — that phase is removed.
-//   • Does NOT scroll the page.
-//   • Does NOT trigger navigation.
-//
-// The "exploring" phase is permanent until the user clicks another node,
-// which calls travelTo() → sets destination → phase = "travelling" again.
-// This cycle can repeat indefinitely. The user is never forced to leave.
+
+// Career Universe phase controller.
+// After the user enters the Universe, the camera keeps touring career nodes:
+// travel → settle → show the node name for a short pause → travel again.
+// The ambient tour stops as soon as the user opens Explore Careers or chooses
+// a node to enter.
 
 import { useEffect, useRef } from "react";
 import { useScene } from "./SceneContext";
 
+const ACTIVATE_MS = 900;
+const TRAVEL_MS = 2920;
+const ARRIVAL_SETTLE_MS = 620;
+const AUTO_TOUR_PAUSE_MS = 2600;
+const AUTOTOUR_STOP_EVENT = "ai-career-autotour-stop";
+const CAREER_ENTRY_EVENT = "ai-career-node-entry";
+
 export default function TransitionController() {
-  const { phase, advance } = useScene();
+  const { phase, advance, nodes, destination, travelTo } = useScene();
   const timersRef = useRef<ReturnType<typeof setTimeout>[]>([]);
+  const autoTourEnabledRef = useRef(true);
 
   useEffect(() => {
-    // Clear any pending timers from previous phase
+    function stopAutoTour() {
+      autoTourEnabledRef.current = false;
+      timersRef.current.forEach(clearTimeout);
+      timersRef.current = [];
+    }
+
+    window.addEventListener(AUTOTOUR_STOP_EVENT, stopAutoTour);
+    window.addEventListener(CAREER_ENTRY_EVENT, stopAutoTour);
+    return () => {
+      window.removeEventListener(AUTOTOUR_STOP_EVENT, stopAutoTour);
+      window.removeEventListener(CAREER_ENTRY_EVENT, stopAutoTour);
+    };
+  }, []);
+
+  useEffect(() => {
     timersRef.current.forEach(clearTimeout);
     timersRef.current = [];
 
     if (phase === "activating") {
-      // Camera pulls back, world reacts, then begin travel
-      timersRef.current.push(setTimeout(() => advance("travelling"), 900));
+      timersRef.current.push(setTimeout(() => advance("travelling"), ACTIVATE_MS));
+    } else if (phase === "travelling") {
+      timersRef.current.push(setTimeout(() => advance("arrived"), TRAVEL_MS));
+    } else if (phase === "arrived") {
+      timersRef.current.push(setTimeout(() => advance("exploring"), ARRIVAL_SETTLE_MS));
+    } else if (phase === "exploring" && autoTourEnabledRef.current && nodes.length > 1) {
+      timersRef.current.push(setTimeout(() => {
+        if (!autoTourEnabledRef.current) return;
+        const currentIndex = destination
+          ? nodes.findIndex((node) => node.id === destination.id)
+          : -1;
+        const nextIndex = currentIndex >= 0
+          ? (currentIndex + 1) % nodes.length
+          : 0;
+        const nextNode = nodes[nextIndex];
+        if (nextNode) travelTo(nextNode);
+      }, AUTO_TOUR_PAUSE_MS));
     }
-
-    if (phase === "travelling") {
-      // Travel duration (3000ms ≈ TRAVEL_DURATION + small buffer) then arrive
-      timersRef.current.push(setTimeout(() => advance("arrived"), 3000));
-    }
-
-    if (phase === "arrived") {
-      // Let the arrival animation settle, then enter free exploration
-      timersRef.current.push(setTimeout(() => advance("exploring"), 600));
-    }
-
-    // "exploring" has no timer — permanent until user action.
 
     return () => {
       timersRef.current.forEach(clearTimeout);
+      timersRef.current = [];
     };
-  }, [phase, advance]);
+  }, [phase, advance, nodes, destination, travelTo]);
 
   return null;
 }
