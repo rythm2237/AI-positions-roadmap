@@ -1,6 +1,9 @@
 // next.config.ts
 import type { NextConfig } from "next";
 
+const LEGACY_PUBLIC_HOST = "career.rythm-os.com";
+const PRIMARY_PUBLIC_ORIGIN = "https://www.airolepath.com";
+
 const privateRoutePatterns = [
   "/admin/:path*",
   "/api/:path*",
@@ -17,6 +20,16 @@ const privateRoutePatterns = [
 ];
 
 const nextConfig: NextConfig = {
+  async redirects() {
+    return [
+      {
+        source: "/:path*",
+        has: [{ type: "host", value: LEGACY_PUBLIC_HOST }],
+        destination: `${PRIMARY_PUBLIC_ORIGIN}/:path*`,
+        permanent: true,
+      },
+    ];
+  },
   async headers() {
     return privateRoutePatterns.map((source) => ({
       source,
