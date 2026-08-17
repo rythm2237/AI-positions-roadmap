@@ -1,10 +1,27 @@
+"use client";
+
 import Script from "next/script";
+import { useEffect, useState } from "react";
+import { consentEventName, readConsent, type ConsentState } from "@/components/legal/CookieConsent";
 
 export default function AnalyticsScripts() {
   const gtmId = process.env.NEXT_PUBLIC_GTM_ID;
   const gaId = process.env.NEXT_PUBLIC_GA_MEASUREMENT_ID;
+  const [analyticsAllowed, setAnalyticsAllowed] = useState(false);
 
-  if (process.env.NODE_ENV !== "production") return null;
+  useEffect(() => {
+    setAnalyticsAllowed(readConsent()?.analytics === true);
+
+    const onConsentChanged = (event: Event) => {
+      const customEvent = event as CustomEvent<ConsentState>;
+      setAnalyticsAllowed(customEvent.detail?.analytics === true);
+    };
+
+    window.addEventListener(consentEventName, onConsentChanged);
+    return () => window.removeEventListener(consentEventName, onConsentChanged);
+  }, []);
+
+  if (process.env.NODE_ENV !== "production" || !analyticsAllowed) return null;
 
   if (gtmId) {
     return (
