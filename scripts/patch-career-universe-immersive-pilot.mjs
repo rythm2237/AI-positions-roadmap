@@ -19,8 +19,10 @@ function replaceRequired(search, replacement, label) {
 }
 
 function replaceSection(startMarker, endMarker, replacement, label) {
-  const start = source.indexOf(startMarker);
-  const end = source.indexOf(endMarker, start + startMarker.length);
+  let start = source.indexOf(startMarker);
+  if (start < 0) start = source.indexOf(startMarker.trim());
+  let end = source.indexOf(endMarker, Math.max(0, start) + startMarker.trim().length);
+  if (end < 0) end = source.indexOf(endMarker.trim(), Math.max(0, start) + startMarker.trim().length);
   if (start < 0 || end < 0) {
     throw new Error(`Career Universe immersive pilot patch failed: could not locate ${label}.`);
   }
