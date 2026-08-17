@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import crypto from "node:crypto";
+import { legalOperator } from "@/lib/legal";
 
 interface WithdrawalPayload {
   name: string;
@@ -39,7 +40,7 @@ async function sendEmail(args: { to: string[]; subject: string; html: string }) 
 export async function POST(req: NextRequest) {
   try {
     const payload = validate(await req.json().catch(() => null));
-    const operatorEmail = (process.env.NEXT_PUBLIC_LEGAL_CONTACT_EMAIL || process.env.NEXT_PUBLIC_SUPPORT_EMAIL || "").trim();
+    const operatorEmail = legalOperator.contactEmail || legalOperator.supportEmail;
     if (!operatorEmail) {
       return NextResponse.json({ error: "Legal contact is not configured. Paid sales must remain disabled until it is configured." }, { status: 503 });
     }
