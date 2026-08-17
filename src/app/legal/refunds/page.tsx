@@ -1,9 +1,13 @@
-import type { Metadata } from "next";
 import Link from "next/link";
 import LegalShell from "@/components/legal/LegalShell";
 import { legalLastUpdated, legalOperator, legalValue } from "@/lib/legal";
+import { buildMetadata } from "@/lib/seo";
 
-export const metadata: Metadata = { title: "Refunds & Cancellation" };
+export const metadata = buildMetadata({
+  title: "Refunds & Cancellation",
+  description: "Refund, cancellation, conformity, and statutory withdrawal information for AI Career OS consumers.",
+  path: "/legal/refunds",
+});
 
 export default function RefundsPage() {
   return (

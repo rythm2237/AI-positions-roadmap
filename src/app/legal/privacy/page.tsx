@@ -1,8 +1,12 @@
-import type { Metadata } from "next";
 import LegalShell from "@/components/legal/LegalShell";
 import { legalLastUpdated, legalOperator } from "@/lib/legal";
+import { buildMetadata } from "@/lib/seo";
 
-export const metadata: Metadata = { title: "Privacy Notice" };
+export const metadata = buildMetadata({
+  title: "Privacy Notice",
+  description: "Privacy notice explaining how AI Career OS processes personal data.",
+  path: "/legal/privacy",
+});
 
 export default function PrivacyPage() {
   return (

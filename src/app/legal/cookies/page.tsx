@@ -1,8 +1,12 @@
-import type { Metadata } from "next";
 import LegalShell from "@/components/legal/LegalShell";
 import { legalLastUpdated } from "@/lib/legal";
+import { buildMetadata } from "@/lib/seo";
 
-export const metadata: Metadata = { title: "Cookie Notice" };
+export const metadata = buildMetadata({
+  title: "Cookie Notice",
+  description: "Cookie and analytics consent information for AI Career OS.",
+  path: "/legal/cookies",
+});
 
 export default function CookiesPage() {
   return (

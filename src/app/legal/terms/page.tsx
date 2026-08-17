@@ -1,8 +1,12 @@
-import type { Metadata } from "next";
 import LegalShell from "@/components/legal/LegalShell";
 import { legalLastUpdated, legalOperator, legalValue } from "@/lib/legal";
+import { buildMetadata } from "@/lib/seo";
 
-export const metadata: Metadata = { title: "Terms of Service" };
+export const metadata = buildMetadata({
+  title: "Terms of Service",
+  description: "Terms governing consumer use of AI Career OS and its paid digital services.",
+  path: "/legal/terms",
+});
 
 export default function TermsPage() {
   return (

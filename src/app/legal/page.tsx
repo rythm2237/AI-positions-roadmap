@@ -1,4 +1,3 @@
-import type { Metadata } from "next";
 import Link from "next/link";
 import LegalShell from "@/components/legal/LegalShell";
 import {
@@ -10,11 +9,13 @@ import {
   paidCheckoutReleaseGate,
   requiredLegalIdentityFields,
 } from "@/lib/legal";
+import { buildMetadata } from "@/lib/seo";
 
-export const metadata: Metadata = {
+export const metadata = buildMetadata({
   title: "Legal & Consumer Information",
   description: "Legal, privacy, cookie, cancellation, refund, and consumer-rights information for AI Career OS.",
-};
+  path: "/legal",
+});
 
 export default function LegalHubPage() {
   const pendingCheckoutItems = [
