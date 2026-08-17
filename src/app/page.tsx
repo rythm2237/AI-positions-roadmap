@@ -19,9 +19,10 @@ export default function LandingPage() {
         <SafeCareerUniverse />
       </main>
 
-      <footer className="pointer-events-none fixed inset-x-0 bottom-3 z-40 hidden justify-center px-3 sm:flex">
+      {/* Preview V2: utility links stay outside the cinematic focal area. */}
+      <footer className="pointer-events-none fixed bottom-3 right-3 z-40 hidden justify-end sm:flex">
         <nav
-          className="pointer-events-auto flex max-w-full flex-wrap items-center justify-center gap-x-3 gap-y-1 rounded-full border border-white/10 bg-[#050817]/78 px-4 py-2 text-[11px] text-slate-400 shadow-lg backdrop-blur-md"
+          className="pointer-events-auto flex items-center gap-2 rounded-full border border-white/[0.06] bg-[#050817]/55 px-3 py-1.5 text-[10px] text-slate-500 opacity-50 shadow-md backdrop-blur-md transition-opacity duration-300 hover:opacity-90"
           aria-label="Legal and privacy navigation"
         >
           <Link href="/legal" className="transition hover:text-white">Legal</Link>
