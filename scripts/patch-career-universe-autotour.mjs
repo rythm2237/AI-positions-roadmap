@@ -113,7 +113,8 @@ replaceSection(
   `    function onPointerUp(e: PointerEvent) {
       const o = orbitRef.current;
       o.isDragging = false;
-      if (o.dragDist < 5 && (phaseRef.current === "exploring" || phaseRef.current === "arrived")) {
+      const canSelectNode = phaseRef.current === "travelling" || phaseRef.current === "arrived" || phaseRef.current === "exploring";
+      if (o.dragDist < 5 && canSelectNode) {
         const idx = doRaycast(e.clientX, e.clientY);
         if (idx >= 0) {
           const node = allNodesRef.current[idx];
@@ -145,6 +146,7 @@ replaceSection(
   `function CareerEntryTransitionOverlay() {
   const [entry, setEntry] = useState<CareerEntryDetail | null>(null);
   const [zooming, setZooming] = useState(false);
+  const entryStartedRef = useRef(false);
   const navigationTimerRef = useRef<number | null>(null);
   const frameOneRef = useRef<number | null>(null);
   const frameTwoRef = useRef<number | null>(null);
@@ -152,7 +154,8 @@ replaceSection(
   useEffect(() => {
     function handleEntry(event: Event) {
       const detail = (event as CustomEvent<CareerEntryDetail>).detail;
-      if (!detail?.path || entry) return;
+      if (!detail?.path || entryStartedRef.current) return;
+      entryStartedRef.current = true;
 
       const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
       setEntry(detail);
@@ -172,7 +175,7 @@ replaceSection(
       if (frameOneRef.current !== null) window.cancelAnimationFrame(frameOneRef.current);
       if (frameTwoRef.current !== null) window.cancelAnimationFrame(frameTwoRef.current);
     };
-  }, [entry]);
+  }, []);
 
   if (!entry) return null;
 
