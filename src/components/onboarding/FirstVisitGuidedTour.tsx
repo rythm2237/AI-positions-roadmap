@@ -1,6 +1,7 @@
 "use client";
 
 import { usePathname, useRouter } from "next/navigation";
+import type { CSSProperties } from "react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 const STORAGE_KEY = "ai-career-os-guided-tour-v1";
@@ -28,7 +29,7 @@ const STEPS: TourStep[] = [
   {
     id: "navigation",
     route: "/",
-    selector: '[data-tour="primary-navigation"]',
+    selector: 'header[role="banner"]',
     eyebrow: "01 · Navigate",
     title: "Everything starts from here",
     body: "Use the top navigation to browse Careers, understand how Career OS works, and return to the Universe whenever you want.",
@@ -36,15 +37,15 @@ const STEPS: TourStep[] = [
   {
     id: "universe",
     route: "/",
-    selector: '[data-tour="career-universe"]',
     eyebrow: "02 · Discover",
     title: "Explore the Career Universe",
-    body: "The Universe is an interactive way to discover roles. Let it cruise, move your pointer to take control, hover a planet to pause, or select one to enter its career workspace.",
+    body: "The Universe is an interactive way to discover roles. Enter it when you’re ready, let it cruise, move your pointer to take control, hover a planet to pause, or select one to enter its Career Workspace.",
+    placement: "center",
   },
   {
     id: "directory",
     route: "/careers",
-    selector: '[data-tour="career-directory"]',
+    selector: "#careers-title",
     eyebrow: "03 · Compare",
     title: "Prefer a standard list?",
     body: "The Career Directory groups available roles by domain so you can compare paths without using the 3D experience.",
@@ -52,18 +53,18 @@ const STEPS: TourStep[] = [
   {
     id: "career-card",
     route: "/careers",
-    selector: '[data-tour="career-card"]',
+    selector: "main article",
     eyebrow: "04 · Choose",
-    title: "Open any career workspace",
+    title: "Open any Career Workspace",
     body: "Each role has its own structured workspace. Career descriptions help you decide which direction is worth exploring before committing to a learning path.",
   },
   {
     id: "workspace",
     route: "/careers/ai-engineer",
-    selector: '[data-tour="career-workspace"]',
     eyebrow: "05 · Build your path",
     title: "One workspace connects the whole journey",
-    body: "Inside a Career Workspace you can move through Roadmap, Learning, Projects, Portfolio evidence, Jobs, Interview preparation, and career intelligence while keeping your progress connected.",
+    body: "A Career Workspace brings Roadmap, Learning, Projects, Portfolio evidence, Jobs, Interview preparation, and career intelligence into one connected journey instead of sending you between unrelated tools.",
+    placement: "center",
   },
   {
     id: "finish",
@@ -78,7 +79,7 @@ const STEPS: TourStep[] = [
 type Rect = { top: number; left: number; width: number; height: number };
 
 function routeMatches(pathname: string, route: string) {
-  return route === "/" ? pathname === "/" : pathname === route || pathname.startsWith(`${route}/`);
+  return pathname === route;
 }
 
 function readTourStatus() {
@@ -116,11 +117,12 @@ export default function FirstVisitGuidedTour() {
 
   useEffect(() => {
     setMounted(true);
+    if (active) return;
     if (pathname === "/" && readTourStatus() === null) {
       const timer = window.setTimeout(() => setInviteOpen(true), 1400);
       return () => window.clearTimeout(timer);
     }
-  }, [pathname]);
+  }, [active, pathname]);
 
   const startTour = useCallback(() => {
     setInviteOpen(false);
@@ -225,7 +227,7 @@ export default function FirstVisitGuidedTour() {
 
   const progress = `${stepIndex + 1} / ${STEPS.length}`;
   const isCentered = step?.placement === "center" || !targetRect;
-  const cardStyle: React.CSSProperties = isCentered
+  const cardStyle: CSSProperties = isCentered
     ? { left: "50%", top: "50%", transform: "translate(-50%, -50%)" }
     : (() => {
         const cardWidth = Math.min(390, window.innerWidth - 32);
@@ -260,7 +262,7 @@ export default function FirstVisitGuidedTour() {
         <div className="fixed inset-0 z-[90] grid place-items-end bg-black/35 p-4 backdrop-blur-[2px] sm:place-items-center" role="dialog" aria-modal="true" aria-labelledby="tour-invite-title">
           <div className="w-full max-w-md rounded-3xl border border-violet-300/20 bg-[#070a18]/96 p-5 text-white shadow-[0_28px_90px_rgba(0,0,0,.55)] backdrop-blur-2xl sm:p-6">
             <div className="flex items-start gap-4">
-              <div className="grid h-11 w-11 shrink-0 place-items-center rounded-2xl border border-violet-300/20 bg-violet-500/10 text-xl text-violet-200">✦</div>
+              <div className="grid h-11 w-11 shrink-0 place-items-center rounded-2xl border border-violet-300/20 bg-violet-500/10 text-xl text-violet-200" aria-hidden="true">✦</div>
               <div>
                 <p className="text-[10px] font-semibold uppercase tracking-[.18em] text-violet-300">First visit</p>
                 <h2 id="tour-invite-title" className="mt-1 font-display text-xl font-semibold">Want a 1-minute guided tour?</h2>
@@ -276,22 +278,22 @@ export default function FirstVisitGuidedTour() {
       ) : null}
 
       {active && step ? (
-        <div className="fixed inset-0 z-[100] pointer-events-none" aria-live="polite">
+        <div className="pointer-events-auto fixed inset-0 z-[100]" aria-live="polite">
           {targetRect && step.placement !== "center" ? (
             <div
-              className="absolute rounded-2xl border border-violet-300/70 shadow-[0_0_0_9999px_rgba(1,3,10,.72),0_0_40px_rgba(139,92,246,.4)] transition-[top,left,width,height] duration-300"
+              className="pointer-events-none absolute rounded-2xl border border-violet-300/70 shadow-[0_0_0_9999px_rgba(1,3,10,.72),0_0_40px_rgba(139,92,246,.4)] transition-[top,left,width,height] duration-300"
               style={{ top: targetRect.top, left: targetRect.left, width: targetRect.width, height: targetRect.height }}
               aria-hidden="true"
             />
           ) : (
-            <div className="absolute inset-0 bg-[#01030a]/76 backdrop-blur-[2px]" aria-hidden="true" />
+            <div className="pointer-events-none absolute inset-0 bg-[#01030a]/76 backdrop-blur-[2px]" aria-hidden="true" />
           )}
 
           <section
             role="dialog"
             aria-modal="true"
             aria-label={`Guided tour: ${step.title}`}
-            className={`pointer-events-auto fixed z-[102] w-[min(390px,calc(100vw-32px))] rounded-3xl border border-white/10 bg-[#080b1c]/97 p-5 text-white shadow-[0_25px_90px_rgba(0,0,0,.62)] backdrop-blur-2xl transition-opacity ${targetReady ? "opacity-100" : "opacity-0"}`}
+            className={`fixed z-[102] w-[min(390px,calc(100vw-32px))] rounded-3xl border border-white/10 bg-[#080b1c]/97 p-5 text-white shadow-[0_25px_90px_rgba(0,0,0,.62)] backdrop-blur-2xl transition-opacity ${targetReady ? "opacity-100" : "opacity-0"}`}
             style={cardStyle}
           >
             <div className="flex items-center justify-between gap-3">
