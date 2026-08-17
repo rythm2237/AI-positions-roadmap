@@ -89,8 +89,7 @@ function scheduleCareerEntry(node: CareerNode, path: string, originX: number, or
     detail: { title: node.title, path, originX, originY, color },
   }));
 }
-
-// ─── Vignette overlay`,
+`,
   "career entry event contract",
 );
 
@@ -136,8 +135,7 @@ replaceSection(
         }
       }
     }
-
-    function onPointerLeave()`,
+`,
   "node pointer-up handler",
 );
 
@@ -210,8 +208,7 @@ replaceSection(
     </div>
   );
 }
-
-// ─── World inner`,
+`,
   "career entry transition overlay",
 );
 
