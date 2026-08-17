@@ -10,12 +10,14 @@ type NavItem =
 
 const NAV_ITEMS: NavItem[] = [
   { kind: "link", label: "Explore Careers", href: "/careers" },
+  { kind: "link", label: "CV Analyzer", href: "/cv-analyzer" },
   { kind: "overlay", label: "How It Works", overlay: "how" },
   { kind: "overlay", label: "Why Career OS", overlay: "why" },
 ];
 
 const STEPS = [
   ["Explore", "Compare focused AI career directions."],
+  ["Analyze", "Upload or build your CV to understand strengths, gaps, and role fit."],
   ["Choose", "Select the role that fits your goals and background."],
   ["Learn", "Follow one connected roadmap and learning journey."],
   ["Prove", "Build projects, portfolio evidence, and job readiness."],
@@ -83,7 +85,7 @@ export default function Header() {
       <button type="button" onClick={() => setOverlay(null)} aria-label="Close information" className={`fixed inset-0 z-[80] bg-black/70 backdrop-blur-md transition ${overlay ? "pointer-events-auto opacity-100" : "pointer-events-none opacity-0"}`} />
       <div role="dialog" aria-modal="true" aria-hidden={!overlay} className={`fixed left-1/2 top-1/2 z-[81] max-h-[calc(100dvh-2rem)] w-[min(680px,calc(100vw-2rem))] -translate-x-1/2 -translate-y-1/2 overflow-y-auto rounded-3xl border border-white/10 bg-[#080b1c]/98 p-5 shadow-2xl transition sm:p-6 ${overlay ? "scale-100 opacity-100" : "pointer-events-none scale-95 opacity-0"}`}>
         <div className="flex items-start justify-between gap-4"><div><p className="text-[10px] font-semibold uppercase tracking-[.18em] text-violet-300 sm:text-xs">{overlay === "why" ? "Connected by design" : "A clear path forward"}</p><h2 className="mt-2 font-display text-2xl font-bold text-white sm:text-3xl">{overlay === "why" ? "Why Career OS" : "How It Works"}</h2></div><button type="button" onClick={() => setOverlay(null)} className="grid h-10 w-10 shrink-0 place-items-center rounded-xl border border-white/10 text-slate-300">×</button></div>
-        {overlay === "why" ? <div className="mt-5 space-y-4 text-sm leading-6 text-slate-300 sm:mt-6 sm:leading-7"><p className="font-display text-lg font-semibold text-white sm:text-xl">Not another list of courses.</p><p>Career OS connects discovery, Roadmap, Learning, projects, portfolio evidence, and job preparation in one coherent journey.</p><p className="rounded-2xl border border-violet-300/15 bg-violet-500/[0.07] px-4 py-3 text-center text-xs font-semibold tracking-[.06em] text-violet-100 sm:text-sm sm:tracking-[.08em]">CHOOSE → LEARN → BUILD → PROVE → APPLY</p></div> : <ol className="mt-5 grid gap-3 sm:mt-6 sm:grid-cols-2">{STEPS.map(([title, description], index) => <li key={title} className="rounded-2xl border border-white/10 bg-white/[0.025] p-4"><span className="text-xs font-bold text-violet-300">0{index + 1}</span><h3 className="mt-2 font-display text-lg font-semibold text-white">{title}</h3><p className="mt-1 text-sm leading-6 text-slate-400">{description}</p></li>)}</ol>}
+        {overlay === "why" ? <div className="mt-5 space-y-4 text-sm leading-6 text-slate-300 sm:mt-6 sm:leading-7"><p className="font-display text-lg font-semibold text-white sm:text-xl">Not another list of courses.</p><p>Career OS connects discovery, CV analysis, Roadmap, Learning, projects, portfolio evidence, and job preparation in one coherent journey.</p><p className="rounded-2xl border border-violet-300/15 bg-violet-500/[0.07] px-4 py-3 text-center text-xs font-semibold tracking-[.06em] text-violet-100 sm:text-sm sm:tracking-[.08em]">ANALYZE → CHOOSE → LEARN → BUILD → PROVE → APPLY</p></div> : <ol className="mt-5 grid gap-3 sm:mt-6 sm:grid-cols-2">{STEPS.map(([title, description], index) => <li key={title} className="rounded-2xl border border-white/10 bg-white/[0.025] p-4"><span className="text-xs font-bold text-violet-300">0{index + 1}</span><h3 className="mt-2 font-display text-lg font-semibold text-white">{title}</h3><p className="mt-1 text-sm leading-6 text-slate-400">{description}</p></li>)}</ol>}
       </div>
     </>
   );
