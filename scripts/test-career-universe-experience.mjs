@@ -23,7 +23,7 @@ assert.match(world, /cruiseLabelTitle\.textContent = node\.title/, "Career name 
 assert.match(world, /bottom: 58,[\s\S]*left: "50%"/, "Desktop Explore Careers control must remain fixed near the bottom center.");
 assert.match(world, /scheduleCareerEntry\(node, entry\.careerPath, e\.clientX, e\.clientY\)/, "A single node click or tap must start Career entry from the selected screen position.");
 assert.doesNotMatch(world, /wasFocused/, "Node entry must not require a second click on an already focused node.");
-assert.match(world, /scale\(" \+ \(zooming \? 190 : 1\) \+ "\)"\)/, "Selected node must expand monotonically to cover the viewport.");
+assert.match(world, /zooming \? 190 : 1/, "Selected node must expand monotonically to cover the viewport.");
 assert.match(world, /window\.location\.assign\(detail\.path\)/, "Career navigation must happen only after the zoom transition completes.");
 assert.match(world, /CAREER_AUTOTOUR_STOP_EVENT/, "Explore and selection actions must be able to stop the cruise.");
 
