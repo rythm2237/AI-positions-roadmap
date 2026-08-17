@@ -60,4 +60,4 @@ export function legalValue(value: string, fallback = "To be published before pai
   return value || fallback;
 }
 
-export const legalLastUpdated = "16 August 2026";
+export const legalLastUpdated = "17 August 2026";
