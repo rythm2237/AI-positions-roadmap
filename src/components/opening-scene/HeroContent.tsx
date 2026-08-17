@@ -30,6 +30,7 @@ export default function HeroContent() {
           transform: exiting ? "translateY(20px)" : mounted ? "translateY(0)" : "translateY(14px)",
           filter: exiting ? "blur(6px)" : "blur(0)",
           transition: TRANSITION,
+          pointerEvents: exiting ? "none" : "auto",
         }}
       >
         <p className="mb-3 text-[10px] font-semibold uppercase tracking-[.22em] text-violet-300/80 sm:mb-5 sm:text-xs sm:tracking-[.24em]">Your AI career, organized</p>
@@ -37,7 +38,7 @@ export default function HeroContent() {
           Build your career in AI.
         </h1>
         <p className="mt-4 max-w-2xl text-sm font-medium leading-6 text-indigo-200/70 sm:mt-6 sm:text-[clamp(15px,1.6vw,19px)] sm:leading-8">
-          Enter the Career Universe, travel through the network, and discover the AI role that fits your direction.
+          Enter the Career Universe and let it tour AI roles automatically. Choose a node whenever one catches your attention.
         </p>
 
         <div className="pointer-events-auto mt-6 flex w-full max-w-[310px] flex-col gap-3 sm:mt-8 sm:max-w-none sm:flex-row sm:items-center sm:justify-center">
@@ -58,7 +59,7 @@ export default function HeroContent() {
         </div>
 
         <p className="mt-3 max-w-sm text-[11px] leading-5 text-slate-500 sm:mt-4 sm:max-w-none sm:text-xs">
-          Watch the Universe come alive, then drag to look around and select a career node. Prefer a standard list? Use Browse career list.
+          The tour pauses briefly on each role. Click or tap any node to zoom into that Career Journey, or use Browse career list for the standard directory.
         </p>
       </div>
     </div>
