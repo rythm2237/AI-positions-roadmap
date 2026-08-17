@@ -107,8 +107,10 @@ export default function FirstVisitGuidedTour() {
   const [targetRect, setTargetRect] = useState<Rect | null>(null);
   const [targetReady, setTargetReady] = useState(false);
   const [mounted, setMounted] = useState(false);
+  const [viewportWidth, setViewportWidth] = useState(1280);
   const targetRef = useRef<HTMLElement | null>(null);
   const step = STEPS[stepIndex];
+  const isMobile = viewportWidth < 640;
 
   const publicRoute = useMemo(
     () => !pathname.startsWith("/admin") && !pathname.startsWith("/login") && !pathname.startsWith("/auth"),
@@ -117,6 +119,13 @@ export default function FirstVisitGuidedTour() {
 
   useEffect(() => {
     setMounted(true);
+    const updateViewport = () => setViewportWidth(window.innerWidth);
+    updateViewport();
+    window.addEventListener("resize", updateViewport);
+    return () => window.removeEventListener("resize", updateViewport);
+  }, []);
+
+  useEffect(() => {
     if (active) return;
     if (pathname === "/" && readTourStatus() === null) {
       const timer = window.setTimeout(() => setInviteOpen(true), 1400);
@@ -153,13 +162,17 @@ export default function FirstVisitGuidedTour() {
     if (!element) return;
     const rect = element.getBoundingClientRect();
     const padding = 8;
+    const mobileVisibleHeight = Math.max(120, window.innerHeight * 0.46);
     setTargetRect({
       top: Math.max(8, rect.top - padding),
       left: Math.max(8, rect.left - padding),
       width: Math.min(window.innerWidth - 16, rect.width + padding * 2),
-      height: Math.min(window.innerHeight - 16, rect.height + padding * 2),
+      height: Math.min(
+        window.innerHeight - 16,
+        isMobile ? mobileVisibleHeight : rect.height + padding * 2,
+      ),
     });
-  }, []);
+  }, [isMobile]);
 
   useEffect(() => {
     if (!active || !step) return;
@@ -184,12 +197,18 @@ export default function FirstVisitGuidedTour() {
       const element = document.querySelector<HTMLElement>(step.selector!);
       if (element) {
         targetRef.current = element;
-        element.scrollIntoView({ behavior: "smooth", block: "center", inline: "nearest" });
+        if (isMobile) {
+          const rect = element.getBoundingClientRect();
+          const desiredTop = Math.max(84, Math.min(118, window.innerHeight * 0.12));
+          window.scrollBy({ top: rect.top - desiredTop, behavior: "smooth" });
+        } else {
+          element.scrollIntoView({ behavior: "smooth", block: "center", inline: "nearest" });
+        }
         window.setTimeout(() => {
           if (cancelled) return;
           updateTargetRect();
           setTargetReady(true);
-        }, 260);
+        }, isMobile ? 340 : 260);
         return;
       }
       attempts += 1;
@@ -199,7 +218,7 @@ export default function FirstVisitGuidedTour() {
     findTarget();
 
     return () => { cancelled = true; };
-  }, [active, pathname, router, step, updateTargetRect]);
+  }, [active, isMobile, pathname, router, step, updateTargetRect]);
 
   useEffect(() => {
     if (!active || !targetRef.current) return;
@@ -227,22 +246,29 @@ export default function FirstVisitGuidedTour() {
 
   const progress = `${stepIndex + 1} / ${STEPS.length}`;
   const isCentered = step?.placement === "center" || !targetRect;
-  const cardStyle: CSSProperties = isCentered
-    ? { left: "50%", top: "50%", transform: "translate(-50%, -50%)" }
-    : (() => {
-        const cardWidth = Math.min(390, window.innerWidth - 32);
-        const estimatedHeight = 285;
-        const gap = 18;
-        let left = Math.min(window.innerWidth - cardWidth - 16, Math.max(16, targetRect.left));
-        let top = targetRect.top + targetRect.height + gap;
-        if (top + estimatedHeight > window.innerHeight - 16) top = targetRect.top - estimatedHeight - gap;
-        if (top < 16) {
-          top = Math.max(16, Math.min(window.innerHeight - estimatedHeight - 16, targetRect.top));
-          left = targetRect.left + targetRect.width + gap;
-          if (left + cardWidth > window.innerWidth - 16) left = Math.max(16, targetRect.left - cardWidth - gap);
-        }
-        return { left, top };
-      })();
+  const cardStyle: CSSProperties = isMobile
+    ? {
+        left: 12,
+        right: 12,
+        bottom: "max(12px, env(safe-area-inset-bottom))",
+        width: "auto",
+      }
+    : isCentered
+      ? { left: "50%", top: "50%", transform: "translate(-50%, -50%)" }
+      : (() => {
+          const cardWidth = Math.min(390, window.innerWidth - 32);
+          const estimatedHeight = 285;
+          const gap = 18;
+          let left = Math.min(window.innerWidth - cardWidth - 16, Math.max(16, targetRect.left));
+          let top = targetRect.top + targetRect.height + gap;
+          if (top + estimatedHeight > window.innerHeight - 16) top = targetRect.top - estimatedHeight - gap;
+          if (top < 16) {
+            top = Math.max(16, Math.min(window.innerHeight - estimatedHeight - 16, targetRect.top));
+            left = targetRect.left + targetRect.width + gap;
+            if (left + cardWidth > window.innerWidth - 16) left = Math.max(16, targetRect.left - cardWidth - gap);
+          }
+          return { left, top };
+        })();
 
   return (
     <>
@@ -259,19 +285,19 @@ export default function FirstVisitGuidedTour() {
       ) : null}
 
       {inviteOpen && !active ? (
-        <div className="fixed inset-0 z-[90] grid place-items-end bg-black/35 p-4 backdrop-blur-[2px] sm:place-items-center" role="dialog" aria-modal="true" aria-labelledby="tour-invite-title">
-          <div className="w-full max-w-md rounded-3xl border border-violet-300/20 bg-[#070a18]/96 p-5 text-white shadow-[0_28px_90px_rgba(0,0,0,.55)] backdrop-blur-2xl sm:p-6">
-            <div className="flex items-start gap-4">
-              <div className="grid h-11 w-11 shrink-0 place-items-center rounded-2xl border border-violet-300/20 bg-violet-500/10 text-xl text-violet-200" aria-hidden="true">✦</div>
+        <div className="fixed inset-0 z-[90] grid place-items-end bg-black/35 p-3 pb-[max(12px,env(safe-area-inset-bottom))] backdrop-blur-[2px] sm:place-items-center sm:p-4" role="dialog" aria-modal="true" aria-labelledby="tour-invite-title">
+          <div className="w-full max-w-md rounded-3xl border border-violet-300/20 bg-[#070a18]/96 p-4 text-white shadow-[0_28px_90px_rgba(0,0,0,.55)] backdrop-blur-2xl sm:p-6">
+            <div className="flex items-start gap-3 sm:gap-4">
+              <div className="grid h-10 w-10 shrink-0 place-items-center rounded-2xl border border-violet-300/20 bg-violet-500/10 text-lg text-violet-200 sm:h-11 sm:w-11 sm:text-xl" aria-hidden="true">✦</div>
               <div>
                 <p className="text-[10px] font-semibold uppercase tracking-[.18em] text-violet-300">First visit</p>
-                <h2 id="tour-invite-title" className="mt-1 font-display text-xl font-semibold">Want a 1-minute guided tour?</h2>
-                <p className="mt-2 text-sm leading-6 text-slate-400">We’ll show you the Career Universe, the standard Career Directory, and how a Career Workspace connects learning to real career evidence.</p>
+                <h2 id="tour-invite-title" className="mt-1 font-display text-lg font-semibold sm:text-xl">Want a 1-minute guided tour?</h2>
+                <p className="mt-2 text-[13px] leading-5 text-slate-400 sm:text-sm sm:leading-6">We’ll show you the Career Universe, the standard Career Directory, and how a Career Workspace connects learning to real career evidence.</p>
               </div>
             </div>
-            <div className="mt-5 flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
-              <button type="button" onClick={() => closeTour("dismissed")} className="min-h-11 rounded-xl px-4 py-2 text-sm font-semibold text-slate-400 transition hover:bg-white/[0.05] hover:text-white">Maybe later</button>
-              <button type="button" onClick={startTour} className="min-h-11 rounded-xl bg-violet-500 px-5 py-2 text-sm font-semibold text-white shadow-[0_10px_35px_rgba(124,58,237,.3)] transition hover:bg-violet-400 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-300">Start tour</button>
+            <div className="mt-4 flex flex-col-reverse gap-2 sm:mt-5 sm:flex-row sm:justify-end">
+              <button type="button" onClick={() => closeTour("dismissed")} className="min-h-10 rounded-xl px-4 py-2 text-sm font-semibold text-slate-400 transition hover:bg-white/[0.05] hover:text-white sm:min-h-11">Maybe later</button>
+              <button type="button" onClick={startTour} className="min-h-10 rounded-xl bg-violet-500 px-5 py-2 text-sm font-semibold text-white shadow-[0_10px_35px_rgba(124,58,237,.3)] transition hover:bg-violet-400 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-300 sm:min-h-11">Start tour</button>
             </div>
           </div>
         </div>
@@ -293,30 +319,31 @@ export default function FirstVisitGuidedTour() {
             role="dialog"
             aria-modal="true"
             aria-label={`Guided tour: ${step.title}`}
-            className={`fixed z-[102] w-[min(390px,calc(100vw-32px))] rounded-3xl border border-white/10 bg-[#080b1c]/97 p-5 text-white shadow-[0_25px_90px_rgba(0,0,0,.62)] backdrop-blur-2xl transition-opacity ${targetReady ? "opacity-100" : "opacity-0"}`}
+            className={`fixed z-[102] max-h-[44svh] overflow-y-auto overscroll-contain rounded-[26px] border border-white/10 bg-[#080b1c]/97 p-4 text-white shadow-[0_25px_90px_rgba(0,0,0,.62)] backdrop-blur-2xl transition-opacity sm:max-h-none sm:w-[min(390px,calc(100vw-32px))] sm:rounded-3xl sm:p-5 ${targetReady ? "opacity-100" : "opacity-0"}`}
             style={cardStyle}
           >
+            {isMobile ? <div className="mx-auto mb-3 h-1 w-10 rounded-full bg-white/15" aria-hidden="true" /> : null}
             <div className="flex items-center justify-between gap-3">
               <p className="text-[10px] font-bold uppercase tracking-[.18em] text-violet-300">{step.eyebrow}</p>
               <span className="rounded-full border border-white/10 bg-white/[0.04] px-2.5 py-1 text-[10px] font-semibold text-slate-500">{progress}</span>
             </div>
-            <h2 className="mt-3 font-display text-xl font-semibold leading-tight sm:text-2xl">{step.title}</h2>
-            <p className="mt-3 text-sm leading-6 text-slate-300">{step.body}</p>
+            <h2 className="mt-2.5 font-display text-lg font-semibold leading-tight sm:mt-3 sm:text-2xl">{step.title}</h2>
+            <p className="mt-2.5 text-[13px] leading-5 text-slate-300 sm:mt-3 sm:text-sm sm:leading-6">{step.body}</p>
 
-            <div className="mt-5 h-1 overflow-hidden rounded-full bg-white/[0.07]" aria-hidden="true">
+            <div className="mt-4 h-1 overflow-hidden rounded-full bg-white/[0.07] sm:mt-5" aria-hidden="true">
               <div className="h-full rounded-full bg-gradient-to-r from-violet-500 to-cyan-400 transition-[width] duration-300" style={{ width: `${((stepIndex + 1) / STEPS.length) * 100}%` }} />
             </div>
 
-            <div className="mt-5 flex items-center justify-between gap-3">
-              <button type="button" onClick={() => closeTour("dismissed")} className="min-h-10 rounded-xl px-2 text-xs font-semibold text-slate-500 transition hover:text-white">Skip tour</button>
+            <div className="mt-4 flex items-center justify-between gap-2 sm:mt-5 sm:gap-3">
+              <button type="button" onClick={() => closeTour("dismissed")} className="min-h-9 rounded-xl px-1 text-[11px] font-semibold text-slate-500 transition hover:text-white sm:min-h-10 sm:px-2 sm:text-xs">Skip tour</button>
               <div className="flex items-center gap-2">
                 {stepIndex > 0 ? (
-                  <button type="button" onClick={() => setStepIndex((value) => value - 1)} className="min-h-10 rounded-xl border border-white/10 bg-white/[0.03] px-3.5 text-sm font-semibold text-slate-300 transition hover:bg-white/[0.07] hover:text-white">Back</button>
+                  <button type="button" onClick={() => setStepIndex((value) => value - 1)} className="min-h-9 rounded-xl border border-white/10 bg-white/[0.03] px-3 text-[13px] font-semibold text-slate-300 transition hover:bg-white/[0.07] hover:text-white sm:min-h-10 sm:px-3.5 sm:text-sm">Back</button>
                 ) : null}
                 {stepIndex < STEPS.length - 1 ? (
-                  <button type="button" onClick={() => setStepIndex((value) => value + 1)} className="min-h-10 rounded-xl bg-violet-500 px-4 text-sm font-semibold text-white transition hover:bg-violet-400">Next</button>
+                  <button type="button" onClick={() => setStepIndex((value) => value + 1)} className="min-h-9 rounded-xl bg-violet-500 px-3.5 text-[13px] font-semibold text-white transition hover:bg-violet-400 sm:min-h-10 sm:px-4 sm:text-sm">Next</button>
                 ) : (
-                  <button type="button" onClick={() => closeTour("completed")} className="min-h-10 rounded-xl bg-violet-500 px-4 text-sm font-semibold text-white transition hover:bg-violet-400">Finish</button>
+                  <button type="button" onClick={() => closeTour("completed")} className="min-h-9 rounded-xl bg-violet-500 px-3.5 text-[13px] font-semibold text-white transition hover:bg-violet-400 sm:min-h-10 sm:px-4 sm:text-sm">Finish</button>
                 )}
               </div>
             </div>
