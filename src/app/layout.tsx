@@ -9,6 +9,7 @@ import FirstVisitGuidedTour from "@/components/onboarding/FirstVisitGuidedTour";
 import { absoluteUrl, isIndexableDeployment, seoConfig } from "@/lib/seo";
 import "./globals.css";
 import "./experience-fixes.css";
+import "./guided-tour-mobile.css";
 
 export const viewport: Viewport = {
   themeColor: "#03050e",
