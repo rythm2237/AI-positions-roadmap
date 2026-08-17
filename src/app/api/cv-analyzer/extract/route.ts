@@ -11,7 +11,7 @@ function extensionOf(name: string) {
 
 async function extractPdf(buffer: Buffer) {
   const pdfjs = await import("pdfjs-dist/legacy/build/pdf.mjs");
-  const document = await pdfjs.getDocument({ data: new Uint8Array(buffer), disableWorker: true }).promise;
+  const document = await pdfjs.getDocument({ data: new Uint8Array(buffer), disableWorker: true } as Parameters<typeof pdfjs.getDocument>[0]).promise;
   const pages: string[] = [];
 
   for (let pageNumber = 1; pageNumber <= document.numPages; pageNumber += 1) {
