@@ -23,6 +23,7 @@ import { cybersecurityAnalystCareer } from "@/data/careers/cybersecurity-analyst
 import { enterpriseAiConsultantCareer } from "@/data/careers/enterprise-ai-consultant";
 import { generativeEngineOptimizationSpecialistCareer } from "@/data/careers/generative-engine-optimization-specialist";
 import { microsoftCopilotConsultantCareer } from "@/data/careers/microsoft-copilot-consultant-workspace";
+import { occupationFamilyForRoadmap } from "@/lib/intelligence/occupationRepository";
 import { getPublishedCareer } from "@/lib/publishedCareerRepository";
 import { absoluteUrl, buildMetadata, seoConfig } from "@/lib/seo";
 import type { CareerWorkspaceData } from "@/types/careerWorkspace";
@@ -105,7 +106,7 @@ export default async function ManagedCareerPage({
 
   const pageUrl = absoluteUrl(`/careers/${career.slug}`);
   const occupationSkills = Array.from(
-    new Set(career.projects.flatMap((project) => project.skills).filter(Boolean))
+    new Set(career.projects.flatMap((project) => project.skills).filter(Boolean)),
   ).slice(0, 30);
   const relatedCareerLinks = career.relatedCareers
     .map((reference) => {
@@ -113,14 +114,23 @@ export default async function ManagedCareerPage({
       return AVAILABLE_CAREERS.find(
         (candidate) =>
           candidate.slug.toLowerCase() === normalized ||
-          candidate.title.toLowerCase() === normalized
+          candidate.title.toLowerCase() === normalized,
       );
     })
     .filter((candidate): candidate is (typeof AVAILABLE_CAREERS)[number] => Boolean(candidate))
-    .filter((candidate, index, collection) =>
-      candidate.slug !== career.slug &&
-      collection.findIndex((item) => item.slug === candidate.slug) === index
+    .filter(
+      (candidate, index, collection) =>
+        candidate.slug !== career.slug &&
+        collection.findIndex((item) => item.slug === candidate.slug) === index,
     );
+  const occupationFamily = await occupationFamilyForRoadmap(career.slug).catch(() => null);
+  const marketIntelligencePath = occupationFamily
+    ? `/career-intelligence/occupations/${occupationFamily.slug}`
+    : null;
+  const semanticRelatedLinks = [
+    ...relatedCareerLinks.map((item) => absoluteUrl(`/careers/${item.slug}`)),
+    ...(marketIntelligencePath ? [absoluteUrl(marketIntelligencePath)] : []),
+  ];
 
   const schemas = [
     {
@@ -133,9 +143,7 @@ export default async function ManagedCareerPage({
       inLanguage: seoConfig.language,
       isPartOf: { "@id": `${absoluteUrl("/")}#website` },
       about: { "@id": `${pageUrl}#occupation` },
-      ...(relatedCareerLinks.length
-        ? { relatedLink: relatedCareerLinks.map((item) => absoluteUrl(`/careers/${item.slug}`)) }
-        : {}),
+      ...(semanticRelatedLinks.length ? { relatedLink: semanticRelatedLinks } : {}),
     },
     {
       "@context": "https://schema.org",
@@ -168,6 +176,29 @@ export default async function ManagedCareerPage({
         />
       ))}
       <CareerWorkspace career={career} />
+
+      {occupationFamily && marketIntelligencePath ? (
+        <section className="border-t border-white/10 bg-[#050817] px-5 py-8 text-white sm:px-8" aria-labelledby="market-evidence-title">
+          <div className="mx-auto flex max-w-6xl flex-col gap-5 rounded-2xl border border-cyan-300/15 bg-cyan-400/[0.045] p-5 sm:flex-row sm:items-center sm:justify-between sm:p-6">
+            <div className="max-w-3xl">
+              <p className="text-xs font-semibold uppercase tracking-[.18em] text-cyan-300">Evidence layer</p>
+              <h2 id="market-evidence-title" className="mt-2 font-display text-xl font-semibold sm:text-2xl">
+                Verified market evidence for {occupationFamily.name}
+              </h2>
+              <p className="mt-2 text-sm leading-6 text-slate-300">
+                Salary and market evidence is kept separate from the learning roadmap. Only published snapshots are shown, with provider, publication, and retrieval dates preserved where data is available.
+              </p>
+            </div>
+            <Link
+              href={marketIntelligencePath}
+              className="inline-flex min-h-11 shrink-0 items-center justify-center rounded-xl border border-cyan-300/25 bg-cyan-400/10 px-4 py-2 text-sm font-semibold text-cyan-100 transition hover:bg-cyan-400/15 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-300"
+            >
+              View market evidence →
+            </Link>
+          </div>
+        </section>
+      ) : null}
+
       <section className="border-t border-white/10 bg-[#03050e] px-5 py-10 text-white sm:px-8" aria-labelledby="related-careers-title">
         <div className="mx-auto max-w-6xl">
           <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
