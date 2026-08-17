@@ -102,6 +102,10 @@ export default async function ManagedCareerPage({
   if (!career) notFound();
 
   const pageUrl = absoluteUrl(`/careers/${career.slug}`);
+  const occupationSkills = Array.from(
+    new Set(career.projects.flatMap((project) => project.skills).filter(Boolean))
+  ).slice(0, 30);
+
   const schemas = [
     {
       "@context": "https://schema.org",
@@ -121,7 +125,7 @@ export default async function ManagedCareerPage({
       name: career.title,
       description: career.shortDescription,
       mainEntityOfPage: { "@id": `${pageUrl}#webpage` },
-      skills: career.overview.responsibilities,
+      ...(occupationSkills.length ? { skills: occupationSkills } : {}),
       occupationalCategory: career.category,
     },
     {
@@ -129,7 +133,8 @@ export default async function ManagedCareerPage({
       "@type": "BreadcrumbList",
       itemListElement: [
         { "@type": "ListItem", position: 1, name: "AI Career OS", item: absoluteUrl("/") },
-        { "@type": "ListItem", position: 2, name: career.title, item: pageUrl },
+        { "@type": "ListItem", position: 2, name: "Careers", item: absoluteUrl("/careers") },
+        { "@type": "ListItem", position: 3, name: career.title, item: pageUrl },
       ],
     },
   ];
