@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 
-const FALLBACK_SITE_URL = "https://career.rythm-os.com";
+const CANONICAL_SITE_URL = "https://www.airolepath.com";
 
 function normalizeSiteUrl(value: string): string {
   return value.trim().replace(/\/+$/, "");
@@ -9,7 +9,10 @@ function normalizeSiteUrl(value: string): string {
 export const seoConfig = {
   productName: "AI Career OS",
   siteName: "AI Career OS",
-  siteUrl: normalizeSiteUrl(process.env.NEXT_PUBLIC_SITE_URL || FALLBACK_SITE_URL),
+  // Canonical SEO URLs must not depend on a stale deployment environment value
+  // during a domain migration. Preview deployments intentionally canonicalize to
+  // the production origin as well.
+  siteUrl: normalizeSiteUrl(CANONICAL_SITE_URL),
   defaultTitle: "AI Career OS — Your Personal AI Career Operating System",
   titleTemplate: "%s · AI Career OS",
   defaultDescription:

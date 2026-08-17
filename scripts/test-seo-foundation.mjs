@@ -16,6 +16,8 @@ const [
   homepage,
   safeUniverse,
   careerPage,
+  seoSource,
+  envExample,
 ] = await Promise.all([
   read("src/app/sitemap.ts"),
   read("src/app/careers/page.tsx"),
@@ -25,6 +27,8 @@ const [
   read("src/app/page.tsx"),
   read("src/components/landing/SafeCareerUniverse.tsx"),
   read("src/app/careers/[slug]/page.tsx"),
+  read("src/lib/seo.ts"),
+  read(".env.example"),
 ]);
 
 assert.ok(AVAILABLE_CAREERS.length > 0, "At least one public career must be available.");
@@ -58,5 +62,25 @@ assert.match(careerPage, /name: "Careers", item: absoluteUrl\("\/careers"\)/, "C
 assert.match(careerPage, /career\.projects\.flatMap\(\(project\) => project\.skills\)/, "Occupation skills must come from actual project skill data.");
 assert.doesNotMatch(careerPage, /skills:\s*career\.overview\.responsibilities/, "Responsibilities must not be mislabeled as Occupation skills.");
 assert.match(careerPage, /occupationFamilyForRoadmap/, "Career pages must be able to link to verified market evidence.");
+
+assert.match(
+  seoSource,
+  /const CANONICAL_SITE_URL = "https:\/\/www\.airolepath\.com"/,
+  "Canonical SEO origin must be the AI Role Path production domain.",
+);
+assert.doesNotMatch(
+  seoSource,
+  /siteUrl:\s*normalizeSiteUrl\(process\.env\.NEXT_PUBLIC_SITE_URL/,
+  "Production canonicals must not be vulnerable to a stale NEXT_PUBLIC_SITE_URL during migration.",
+);
+assert.match(
+  envExample,
+  /NEXT_PUBLIC_SITE_URL=https:\/\/www\.airolepath\.com/,
+  "Environment documentation must point at the new production origin.",
+);
+assert.match(nextConfig, /LEGACY_PUBLIC_HOST = "career\.rythm-os\.com"/, "Legacy public host must be retained as a redirect source.");
+assert.match(nextConfig, /PRIMARY_PUBLIC_ORIGIN = "https:\/\/www\.airolepath\.com"/, "Legacy traffic must redirect directly to the canonical production origin.");
+assert.match(nextConfig, /has: \[\{ type: "host", value: LEGACY_PUBLIC_HOST \}\]/, "Legacy redirect must be hostname-specific.");
+assert.match(nextConfig, /permanent: true/, "Legacy host redirect must be permanent.");
 
 console.log(`SEO foundation checks passed for ${AVAILABLE_CAREERS.length} available Careers.`);
