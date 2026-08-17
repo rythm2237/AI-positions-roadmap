@@ -4,7 +4,7 @@ import { usePathname, useRouter } from "next/navigation";
 import type { CSSProperties } from "react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
-const STORAGE_KEY = "ai-career-os-guided-tour-v1";
+const STORAGE_KEY = "ai-career-os-guided-tour-v2";
 const TOUR_EVENT = "ai-career-os:start-guided-tour";
 
 type TourStep = {
@@ -23,7 +23,7 @@ const STEPS: TourStep[] = [
     route: "/",
     eyebrow: "Welcome to AI Career OS",
     title: "A quick tour before you explore?",
-    body: "In about a minute, we’ll show you how to discover an AI career, understand its roadmap, learn the right skills, build evidence, and prepare for opportunities.",
+    body: "In about a minute, we’ll show you how to discover a career, analyze your CV, understand your roadmap, build evidence, and prepare for opportunities.",
     placement: "center",
   },
   {
@@ -32,38 +32,54 @@ const STEPS: TourStep[] = [
     selector: 'header[role="banner"]',
     eyebrow: "01 · Navigate",
     title: "Everything starts from here",
-    body: "Use the top navigation to browse Careers, understand how Career OS works, and return to the Universe whenever you want.",
+    body: "Use the top navigation to browse Careers, open the CV Analyzer, understand how Career OS works, and return to the Universe whenever you want.",
   },
   {
     id: "universe",
     route: "/",
     eyebrow: "02 · Discover",
     title: "Explore the Career Universe",
-    body: "The Universe is an interactive way to discover roles. Enter it when you’re ready, let it cruise, move your pointer to take control, hover a planet to pause, or select one to enter its Career Workspace.",
+    body: "Use the Career Universe to discover roles visually, or open the standard Career Directory when you want a conventional list.",
     placement: "center",
+  },
+  {
+    id: "cv-analyzer",
+    route: "/cv-analyzer",
+    selector: '[data-help-title="CV Analyzer overview"]',
+    eyebrow: "03 · Analyze",
+    title: "Start from your current profile",
+    body: "Upload an existing CV or build one with the guided wizard. Career OS evaluates structure, achievements, evidence, skills and role fit, then turns gaps into next actions and career recommendations.",
+  },
+  {
+    id: "cv-input",
+    route: "/cv-analyzer",
+    selector: '[aria-label="CV input options"]',
+    eyebrow: "04 · Choose your input",
+    title: "Upload, build, or bring LinkedIn data",
+    body: "Use PDF, DOCX or TXT, complete the guided CV builder, or add a LinkedIn profile URL. Direct LinkedIn import will use approved access when that integration is enabled.",
   },
   {
     id: "directory",
     route: "/careers",
     selector: "#careers-title",
-    eyebrow: "03 · Compare",
-    title: "Prefer a standard list?",
-    body: "The Career Directory groups available roles by domain so you can compare paths without using the 3D experience.",
+    eyebrow: "05 · Compare",
+    title: "Compare career directions",
+    body: "The Career Directory groups available roles by domain so you can compare paths and open the workspace that best fits your goals.",
   },
   {
     id: "career-card",
     route: "/careers",
     selector: "main article",
-    eyebrow: "04 · Choose",
+    eyebrow: "06 · Choose",
     title: "Open any Career Workspace",
-    body: "Each role has its own structured workspace. Career descriptions help you decide which direction is worth exploring before committing to a learning path.",
+    body: "Each role has a structured workspace. Use it to judge whether a direction is worth pursuing before committing to a learning path.",
   },
   {
     id: "workspace",
     route: "/careers/ai-engineer",
-    eyebrow: "05 · Build your path",
+    eyebrow: "07 · Build your path",
     title: "One workspace connects the whole journey",
-    body: "A Career Workspace brings Roadmap, Learning, Projects, Portfolio evidence, Jobs, Interview preparation, and career intelligence into one connected journey instead of sending you between unrelated tools.",
+    body: "A Career Workspace brings Roadmap, Learning, Projects, Portfolio evidence, Jobs, Interview preparation, and career intelligence into one connected journey.",
     placement: "center",
   },
   {
@@ -71,16 +87,12 @@ const STEPS: TourStep[] = [
     route: "/careers/ai-engineer",
     eyebrow: "You’re ready",
     title: "Explore at your own pace",
-    body: "Choose a role that fits your goals, follow its roadmap, complete the learning and projects, and use your evidence to prepare for real opportunities. You can restart this tour any time from the Tour button.",
+    body: "Analyze your starting point, choose a role, close the highest-value gaps, build evidence, and prepare for real opportunities. You can restart this tour any time from the Tour button.",
     placement: "center",
   },
 ];
 
 type Rect = { top: number; left: number; width: number; height: number };
-
-function routeMatches(pathname: string, route: string) {
-  return pathname === route;
-}
 
 function readTourStatus() {
   try {
@@ -94,7 +106,7 @@ function writeTourStatus(value: "completed" | "dismissed") {
   try {
     window.localStorage.setItem(STORAGE_KEY, value);
   } catch {
-    // Storage can be unavailable in hardened/private browser modes. The tour still works for this session.
+    // The tour remains usable for the current session if localStorage is unavailable.
   }
 }
 
@@ -119,10 +131,10 @@ export default function FirstVisitGuidedTour() {
 
   useEffect(() => {
     setMounted(true);
-    const updateViewport = () => setViewportWidth(window.innerWidth);
-    updateViewport();
-    window.addEventListener("resize", updateViewport);
-    return () => window.removeEventListener("resize", updateViewport);
+    const update = () => setViewportWidth(window.innerWidth);
+    update();
+    window.addEventListener("resize", update);
+    return () => window.removeEventListener("resize", update);
   }, []);
 
   useEffect(() => {
@@ -162,15 +174,12 @@ export default function FirstVisitGuidedTour() {
     if (!element) return;
     const rect = element.getBoundingClientRect();
     const padding = 8;
-    const mobileVisibleHeight = Math.max(120, window.innerHeight * 0.46);
+    const visibleHeight = Math.max(120, window.innerHeight * 0.46);
     setTargetRect({
       top: Math.max(8, rect.top - padding),
       left: Math.max(8, rect.left - padding),
       width: Math.min(window.innerWidth - 16, rect.width + padding * 2),
-      height: Math.min(
-        window.innerHeight - 16,
-        isMobile ? mobileVisibleHeight : rect.height + padding * 2,
-      ),
+      height: Math.min(window.innerHeight - 16, isMobile ? visibleHeight : rect.height + padding * 2),
     });
   }, [isMobile]);
 
@@ -180,7 +189,7 @@ export default function FirstVisitGuidedTour() {
     targetRef.current = null;
     setTargetRect(null);
 
-    if (!routeMatches(pathname, step.route)) {
+    if (pathname !== step.route) {
       router.push(step.route);
       return;
     }
@@ -197,13 +206,7 @@ export default function FirstVisitGuidedTour() {
       const element = document.querySelector<HTMLElement>(step.selector!);
       if (element) {
         targetRef.current = element;
-        if (isMobile) {
-          const rect = element.getBoundingClientRect();
-          const desiredTop = Math.max(84, Math.min(118, window.innerHeight * 0.12));
-          window.scrollBy({ top: rect.top - desiredTop, behavior: "smooth" });
-        } else {
-          element.scrollIntoView({ behavior: "smooth", block: "center", inline: "nearest" });
-        }
+        element.scrollIntoView({ behavior: "smooth", block: isMobile ? "start" : "center", inline: "nearest" });
         window.setTimeout(() => {
           if (cancelled) return;
           updateTargetRect();
@@ -216,7 +219,6 @@ export default function FirstVisitGuidedTour() {
       else setTargetReady(true);
     };
     findTarget();
-
     return () => { cancelled = true; };
   }, [active, isMobile, pathname, router, step, updateTargetRect]);
 
@@ -247,12 +249,7 @@ export default function FirstVisitGuidedTour() {
   const progress = `${stepIndex + 1} / ${STEPS.length}`;
   const isCentered = step?.placement === "center" || !targetRect;
   const cardStyle: CSSProperties = isMobile
-    ? {
-        left: 12,
-        right: 12,
-        bottom: "max(12px, env(safe-area-inset-bottom))",
-        width: "auto",
-      }
+    ? { left: 12, right: 12, bottom: "max(12px, env(safe-area-inset-bottom))", width: "auto" }
     : isCentered
       ? { left: "50%", top: "50%", transform: "translate(-50%, -50%)" }
       : (() => {
@@ -273,12 +270,7 @@ export default function FirstVisitGuidedTour() {
   return (
     <>
       {!active && !inviteOpen ? (
-        <button
-          type="button"
-          onClick={startTour}
-          className="fixed bottom-4 left-4 z-[62] inline-flex min-h-10 items-center gap-2 rounded-full border border-white/10 bg-[#070a18]/80 px-3.5 py-2 text-xs font-semibold text-slate-300 shadow-lg backdrop-blur-xl transition hover:border-violet-300/30 hover:bg-[#0a0d20]/95 hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-400"
-          aria-label="Start guided tour"
-        >
+        <button type="button" onClick={startTour} className="fixed bottom-4 left-4 z-[62] inline-flex min-h-10 items-center gap-2 rounded-full border border-white/10 bg-[#070a18]/80 px-3.5 py-2 text-xs font-semibold text-slate-300 shadow-lg backdrop-blur-xl transition hover:border-violet-300/30 hover:bg-[#0a0d20]/95 hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-400" aria-label="Start guided tour">
           <span className="grid h-5 w-5 place-items-center rounded-full bg-violet-500/15 text-[11px] text-violet-200" aria-hidden="true">?</span>
           Tour
         </button>
@@ -289,71 +281,25 @@ export default function FirstVisitGuidedTour() {
           <div className="w-full max-w-md rounded-3xl border border-violet-300/20 bg-[#070a18]/96 p-4 text-white shadow-[0_28px_90px_rgba(0,0,0,.55)] backdrop-blur-2xl sm:p-6">
             <div className="flex items-start gap-3 sm:gap-4">
               <div className="grid h-10 w-10 shrink-0 place-items-center rounded-2xl border border-violet-300/20 bg-violet-500/10 text-lg text-violet-200 sm:h-11 sm:w-11 sm:text-xl" aria-hidden="true">✦</div>
-              <div>
-                <p className="text-[10px] font-semibold uppercase tracking-[.18em] text-violet-300">First visit</p>
-                <h2 id="tour-invite-title" className="mt-1 font-display text-lg font-semibold sm:text-xl">Want a 1-minute guided tour?</h2>
-                <p className="mt-2 text-[13px] leading-5 text-slate-400 sm:text-sm sm:leading-6">We’ll show you the Career Universe, the standard Career Directory, and how a Career Workspace connects learning to real career evidence.</p>
-              </div>
+              <div><p className="text-[10px] font-semibold uppercase tracking-[.18em] text-violet-300">First visit</p><h2 id="tour-invite-title" className="mt-1 font-display text-lg font-semibold sm:text-xl">Want a 1-minute guided tour?</h2><p className="mt-2 text-[13px] leading-5 text-slate-400 sm:text-sm sm:leading-6">We’ll show you Career discovery, CV analysis, Career Workspaces, and how the system connects gaps to learning and evidence.</p></div>
             </div>
-            <div className="mt-4 flex flex-col-reverse gap-2 sm:mt-5 sm:flex-row sm:justify-end">
-              <button type="button" onClick={() => closeTour("dismissed")} className="min-h-10 rounded-xl px-4 py-2 text-sm font-semibold text-slate-400 transition hover:bg-white/[0.05] hover:text-white sm:min-h-11">Maybe later</button>
-              <button type="button" onClick={startTour} className="min-h-10 rounded-xl bg-violet-500 px-5 py-2 text-sm font-semibold text-white shadow-[0_10px_35px_rgba(124,58,237,.3)] transition hover:bg-violet-400 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-300 sm:min-h-11">Start tour</button>
-            </div>
+            <div className="mt-4 flex flex-col-reverse gap-2 sm:mt-5 sm:flex-row sm:justify-end"><button type="button" onClick={() => closeTour("dismissed")} className="min-h-10 rounded-xl px-4 py-2 text-sm font-semibold text-slate-400 transition hover:bg-white/[0.05] hover:text-white sm:min-h-11">Maybe later</button><button type="button" onClick={startTour} className="min-h-10 rounded-xl bg-violet-500 px-5 py-2 text-sm font-semibold text-white shadow-[0_10px_35px_rgba(124,58,237,.3)] transition hover:bg-violet-400 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-300 sm:min-h-11">Start tour</button></div>
           </div>
         </div>
       ) : null}
 
       {active && step ? (
         <div className="pointer-events-auto fixed inset-0 z-[100]" aria-live="polite">
-          {targetRect && step.placement !== "center" ? (
-            <div
-              className="pointer-events-none absolute rounded-2xl border border-violet-300/70 shadow-[0_0_0_9999px_rgba(1,3,10,.72),0_0_40px_rgba(139,92,246,.4)] transition-[top,left,width,height] duration-300"
-              style={{ top: targetRect.top, left: targetRect.left, width: targetRect.width, height: targetRect.height }}
-              aria-hidden="true"
-            />
-          ) : (
-            <div className="pointer-events-none absolute inset-0 bg-[#01030a]/76 backdrop-blur-[2px]" aria-hidden="true" />
-          )}
-
-          <section
-            role="dialog"
-            aria-modal="true"
-            aria-label={`Guided tour: ${step.title}`}
-            className={`fixed z-[102] max-h-[44svh] overflow-y-auto overscroll-contain rounded-[26px] border border-white/10 bg-[#080b1c]/97 p-4 text-white shadow-[0_25px_90px_rgba(0,0,0,.62)] backdrop-blur-2xl transition-opacity sm:max-h-none sm:w-[min(390px,calc(100vw-32px))] sm:rounded-3xl sm:p-5 ${targetReady ? "opacity-100" : "opacity-0"}`}
-            style={cardStyle}
-          >
+          {targetRect && step.placement !== "center" ? <div className="pointer-events-none absolute rounded-2xl border border-violet-300/70 shadow-[0_0_0_9999px_rgba(1,3,10,.72),0_0_40px_rgba(139,92,246,.4)] transition-[top,left,width,height] duration-300" style={{ top: targetRect.top, left: targetRect.left, width: targetRect.width, height: targetRect.height }} aria-hidden="true" /> : <div className="pointer-events-none absolute inset-0 bg-[#01030a]/76 backdrop-blur-[2px]" aria-hidden="true" />}
+          <section role="dialog" aria-modal="true" aria-label={`Guided tour: ${step.title}`} className={`fixed z-[102] max-h-[44svh] overflow-y-auto overscroll-contain rounded-[26px] border border-white/10 bg-[#080b1c]/97 p-4 text-white shadow-[0_25px_90px_rgba(0,0,0,.62)] backdrop-blur-2xl transition-opacity sm:max-h-none sm:w-[min(390px,calc(100vw-32px))] sm:rounded-3xl sm:p-5 ${targetReady ? "opacity-100" : "opacity-0"}`} style={cardStyle}>
             {isMobile ? <div className="mx-auto mb-3 h-1 w-10 rounded-full bg-white/15" aria-hidden="true" /> : null}
-            <div className="flex items-center justify-between gap-3">
-              <p className="text-[10px] font-bold uppercase tracking-[.18em] text-violet-300">{step.eyebrow}</p>
-              <span className="rounded-full border border-white/10 bg-white/[0.04] px-2.5 py-1 text-[10px] font-semibold text-slate-500">{progress}</span>
-            </div>
+            <div className="flex items-center justify-between gap-3"><p className="text-[10px] font-bold uppercase tracking-[.18em] text-violet-300">{step.eyebrow}</p><span className="rounded-full border border-white/10 bg-white/[0.04] px-2.5 py-1 text-[10px] font-semibold text-slate-500">{progress}</span></div>
             <h2 className="mt-2.5 font-display text-lg font-semibold leading-tight sm:mt-3 sm:text-2xl">{step.title}</h2>
-            <p className="mt-2.5 text-[13px] leading-5 text-slate-300 sm:mt-3 sm:text-sm sm:leading-6">{step.body}</p>
-
-            <div className="mt-4 h-1 overflow-hidden rounded-full bg-white/[0.07] sm:mt-5" aria-hidden="true">
-              <div className="h-full rounded-full bg-gradient-to-r from-violet-500 to-cyan-400 transition-[width] duration-300" style={{ width: `${((stepIndex + 1) / STEPS.length) * 100}%` }} />
-            </div>
-
-            <div className="mt-4 flex items-center justify-between gap-2 sm:mt-5 sm:gap-3">
-              <button type="button" onClick={() => closeTour("dismissed")} className="min-h-9 rounded-xl px-1 text-[11px] font-semibold text-slate-500 transition hover:text-white sm:min-h-10 sm:px-2 sm:text-xs">Skip tour</button>
-              <div className="flex items-center gap-2">
-                {stepIndex > 0 ? (
-                  <button type="button" onClick={() => setStepIndex((value) => value - 1)} className="min-h-9 rounded-xl border border-white/10 bg-white/[0.03] px-3 text-[13px] font-semibold text-slate-300 transition hover:bg-white/[0.07] hover:text-white sm:min-h-10 sm:px-3.5 sm:text-sm">Back</button>
-                ) : null}
-                {stepIndex < STEPS.length - 1 ? (
-                  <button type="button" onClick={() => setStepIndex((value) => value + 1)} className="min-h-9 rounded-xl bg-violet-500 px-3.5 text-[13px] font-semibold text-white transition hover:bg-violet-400 sm:min-h-10 sm:px-4 sm:text-sm">Next</button>
-                ) : (
-                  <button type="button" onClick={() => closeTour("completed")} className="min-h-9 rounded-xl bg-violet-500 px-3.5 text-[13px] font-semibold text-white transition hover:bg-violet-400 sm:min-h-10 sm:px-4 sm:text-sm">Finish</button>
-                )}
-              </div>
-            </div>
+            <p className="mt-2 text-[13px] leading-5 text-slate-400 sm:text-sm sm:leading-6">{step.body}</p>
+            <div className="mt-4 flex items-center justify-between gap-2 border-t border-white/10 pt-3 sm:mt-5 sm:pt-4"><button type="button" onClick={() => closeTour("dismissed")} className="rounded-lg px-2.5 py-2 text-xs font-semibold text-slate-500 hover:bg-white/[0.04] hover:text-slate-300">Skip</button><div className="flex items-center gap-2"><button type="button" disabled={stepIndex === 0} onClick={() => setStepIndex((value) => Math.max(0, value - 1))} className="min-h-9 rounded-xl border border-white/10 px-3 py-2 text-xs font-semibold text-slate-300 disabled:opacity-30">Back</button>{stepIndex === STEPS.length - 1 ? <button type="button" onClick={() => closeTour("completed")} className="min-h-9 rounded-xl bg-violet-500 px-4 py-2 text-xs font-bold text-white hover:bg-violet-400">Finish</button> : <button type="button" onClick={() => setStepIndex((value) => Math.min(STEPS.length - 1, value + 1))} className="min-h-9 rounded-xl bg-violet-500 px-4 py-2 text-xs font-bold text-white hover:bg-violet-400">Next</button>}</div></div>
           </section>
         </div>
       ) : null}
     </>
   );
-}
-
-export function restartFirstVisitGuidedTour() {
-  window.dispatchEvent(new Event(TOUR_EVENT));
 }
