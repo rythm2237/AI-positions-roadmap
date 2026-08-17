@@ -1,6 +1,8 @@
 import type { Metadata } from "next";
+import Link from "next/link";
 import { notFound } from "next/navigation";
 import CareerWorkspace from "@/components/career/CareerWorkspace";
+import { AVAILABLE_CAREERS } from "@/data/careerCatalog";
 import { aiEngineerCareer } from "@/data/careers/ai-engineer";
 import { aiAutomationSpecialistCareer } from "@/data/careers/ai-automation-specialist";
 import {
@@ -105,6 +107,20 @@ export default async function ManagedCareerPage({
   const occupationSkills = Array.from(
     new Set(career.projects.flatMap((project) => project.skills).filter(Boolean))
   ).slice(0, 30);
+  const relatedCareerLinks = career.relatedCareers
+    .map((reference) => {
+      const normalized = reference.trim().toLowerCase();
+      return AVAILABLE_CAREERS.find(
+        (candidate) =>
+          candidate.slug.toLowerCase() === normalized ||
+          candidate.title.toLowerCase() === normalized
+      );
+    })
+    .filter((candidate): candidate is (typeof AVAILABLE_CAREERS)[number] => Boolean(candidate))
+    .filter((candidate, index, collection) =>
+      candidate.slug !== career.slug &&
+      collection.findIndex((item) => item.slug === candidate.slug) === index
+    );
 
   const schemas = [
     {
@@ -117,6 +133,9 @@ export default async function ManagedCareerPage({
       inLanguage: seoConfig.language,
       isPartOf: { "@id": `${absoluteUrl("/")}#website` },
       about: { "@id": `${pageUrl}#occupation` },
+      ...(relatedCareerLinks.length
+        ? { relatedLink: relatedCareerLinks.map((item) => absoluteUrl(`/careers/${item.slug}`)) }
+        : {}),
     },
     {
       "@context": "https://schema.org",
@@ -149,6 +168,39 @@ export default async function ManagedCareerPage({
         />
       ))}
       <CareerWorkspace career={career} />
+      <section className="border-t border-white/10 bg-[#03050e] px-5 py-10 text-white sm:px-8" aria-labelledby="related-careers-title">
+        <div className="mx-auto max-w-6xl">
+          <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+            <div>
+              <p className="text-xs font-semibold uppercase tracking-[.18em] text-violet-300">Keep exploring</p>
+              <h2 id="related-careers-title" className="mt-2 font-display text-2xl font-semibold">Related careers</h2>
+            </div>
+            <Link href="/careers" className="text-sm font-semibold text-violet-300 transition hover:text-violet-200">
+              Browse all careers →
+            </Link>
+          </div>
+          {relatedCareerLinks.length ? (
+            <ul className="mt-6 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+              {relatedCareerLinks.map((related) => (
+                <li key={related.slug}>
+                  <Link
+                    href={`/careers/${related.slug}`}
+                    className="block rounded-2xl border border-white/10 bg-white/[0.03] p-4 transition hover:border-violet-300/30 hover:bg-white/[0.05] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-400"
+                  >
+                    <span className="text-xs font-medium text-slate-500">{related.domain}</span>
+                    <span className="mt-1 block font-display text-base font-semibold text-white">{related.title}</span>
+                    <span className="mt-2 block text-sm leading-6 text-slate-400">{related.description}</span>
+                  </Link>
+                </li>
+              ))}
+            </ul>
+          ) : (
+            <p className="mt-5 text-sm leading-6 text-slate-400">
+              Explore the full Career Network to compare other available paths.
+            </p>
+          )}
+        </div>
+      </section>
     </>
   );
 }
