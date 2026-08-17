@@ -19,7 +19,7 @@ export default function LandingPage() {
         <SafeCareerUniverse />
       </main>
 
-      {/* Preview iteration 2: keep utility links outside the cinematic focal area. */}
+      {/* Preview V2: utility links stay outside the cinematic focal area. */}
       <footer className="pointer-events-none fixed bottom-3 right-3 z-40 hidden justify-end sm:flex">
         <nav
           className="pointer-events-auto flex items-center gap-2 rounded-full border border-white/[0.06] bg-[#050817]/55 px-3 py-1.5 text-[10px] text-slate-500 opacity-50 shadow-md backdrop-blur-md transition-opacity duration-300 hover:opacity-90"
