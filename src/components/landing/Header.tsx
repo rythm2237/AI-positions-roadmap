@@ -9,7 +9,7 @@ type NavItem =
   | { kind: "overlay"; label: string; overlay: PublicOverlay };
 
 const NAV_ITEMS: NavItem[] = [
-  { kind: "link", label: "Explore Careers", href: "/#career-universe" },
+  { kind: "link", label: "Explore Careers", href: "/careers" },
   { kind: "overlay", label: "How It Works", overlay: "how" },
   { kind: "overlay", label: "Why Career OS", overlay: "why" },
 ];
