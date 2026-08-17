@@ -1,22 +1,6 @@
 import type { MetadataRoute } from "next";
+import { AVAILABLE_CAREERS } from "@/data/careerCatalog";
 import { absoluteUrl, isIndexableDeployment } from "@/lib/seo";
-
-const PUBLIC_CAREER_SLUGS = [
-  "ai-engineer",
-  "ai-automation-specialist",
-  "ai-adoption-consultant",
-  "ai-marketing-specialist",
-  "microsoft-copilot-consultant",
-  "data-analyst",
-  "data-scientist",
-  "bi-developer",
-  "ai-knowledge-engineer",
-  "data-engineer",
-  "devops-engineer",
-  "business-ai-consultant",
-  "cybersecurity-analyst",
-  "cloud-engineer",
-] as const;
 
 export default function sitemap(): MetadataRoute.Sitemap {
   if (!isIndexableDeployment) return [];
@@ -27,8 +11,8 @@ export default function sitemap(): MetadataRoute.Sitemap {
     { url: absoluteUrl("/sources"), changeFrequency: "monthly", priority: 0.6 },
   ];
 
-  const careerPages: MetadataRoute.Sitemap = PUBLIC_CAREER_SLUGS.map((slug) => ({
-    url: absoluteUrl(`/careers/${slug}`),
+  const careerPages: MetadataRoute.Sitemap = AVAILABLE_CAREERS.map((career) => ({
+    url: absoluteUrl(`/careers/${career.slug}`),
     changeFrequency: "monthly",
     priority: 0.8,
   }));
