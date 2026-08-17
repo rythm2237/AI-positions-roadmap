@@ -7,8 +7,8 @@ const worldPath = path.join(root, "src/components/opening-scene/World.tsx");
 let source = await readFile(worldPath, "utf8");
 
 if (
-  source.includes("function FocusedCareerLabel()") &&
-  source.includes("scale(${zooming ? 190 : 1})") &&
+  (source.includes("function FocusedCareerLabel()") || source.includes("function CruiseCareerLabel()")) &&
+  source.includes("const CAREER_ENTRY_ZOOM_MS = 1080;") &&
   !source.includes("CareerPreviewCard")
 ) {
   console.log("Career Universe auto-tour patch already applied.");
@@ -189,7 +189,7 @@ replaceSection(
         overflow: "hidden",
         pointerEvents: "auto",
         background: zooming ? "rgba(3,5,14,.18)" : "transparent",
-        transition: \`background \${CAREER_ENTRY_ZOOM_MS}ms linear\`,
+        transition: "background " + CAREER_ENTRY_ZOOM_MS + "ms linear",
       }}
     >
       <div
@@ -200,11 +200,11 @@ replaceSection(
           width: 30,
           height: 30,
           borderRadius: "999px",
-          transform: \`translate(-50%,-50%) scale(\${zooming ? 190 : 1})\`,
+          transform: "translate(-50%,-50%) scale(" + (zooming ? 190 : 1) + ")",
           transformOrigin: "50% 50%",
-          background: \`radial-gradient(circle at 35% 30%, #ffffff 0%, \${entry.color} 16%, \${entry.color} 52%, #080b1c 100%)\`,
-          boxShadow: \`0 0 42px \${entry.color}, inset 0 0 18px rgba(255,255,255,.28)\`,
-          transition: \`transform \${CAREER_ENTRY_ZOOM_MS}ms cubic-bezier(.65,0,.35,1), box-shadow \${CAREER_ENTRY_ZOOM_MS}ms ease\`,
+          background: "radial-gradient(circle at 35% 30%, #ffffff 0%, " + entry.color + " 16%, " + entry.color + " 52%, #080b1c 100%)",
+          boxShadow: "0 0 42px " + entry.color + ", inset 0 0 18px rgba(255,255,255,.28)",
+          transition: "transform " + CAREER_ENTRY_ZOOM_MS + "ms cubic-bezier(.65,0,.35,1), box-shadow " + CAREER_ENTRY_ZOOM_MS + "ms ease",
           willChange: "transform",
         }}
       />
@@ -224,7 +224,7 @@ source = source.replace(
 if (source.includes("CareerPreviewCard")) {
   throw new Error("Career Universe patch failed: legacy CareerPreviewCard is still present.");
 }
-if (!source.includes("FocusedCareerLabel") || !source.includes("scale(${zooming ? 190 : 1})")) {
+if (!source.includes("FocusedCareerLabel") || !source.includes("const CAREER_ENTRY_ZOOM_MS = 1080;")) {
   throw new Error("Career Universe patch failed: expected auto-tour entry UI was not installed.");
 }
 
