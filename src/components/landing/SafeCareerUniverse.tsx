@@ -31,18 +31,23 @@ function UniverseFallback({ checking = false }: { checking?: boolean }) {
           </svg>
         </div>
         <p className="mt-6 text-xs font-semibold uppercase tracking-[.2em] text-violet-300">Career Universe</p>
-        <h3 className="mt-3 font-display text-3xl font-bold tracking-tight text-white sm:text-4xl">
+        <h2 className="mt-3 font-display text-3xl font-bold tracking-tight text-white sm:text-4xl">
           {checking ? "Preparing the interactive map" : "Career Universe is unavailable on this device"}
-        </h3>
+        </h2>
         <p className="mx-auto mt-4 max-w-xl text-sm leading-7 text-slate-400 sm:text-base">
           {checking
             ? "We are checking whether this device can run the interactive 3D career map safely."
-            : "This device cannot create a stable WebGL context. You can still sign in and use Career OS normally."}
+            : "This device cannot create a stable WebGL context. You can still browse every public career roadmap or sign in to your private workspace."}
         </p>
         {!checking && (
-          <Link href="/login" className="mt-7 inline-flex items-center justify-center rounded-xl bg-white px-5 py-3 text-sm font-semibold text-slate-950 transition hover:bg-violet-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-400">
-            Continue to Career OS
-          </Link>
+          <div className="mt-7 flex flex-wrap items-center justify-center gap-3">
+            <Link href="/careers" className="inline-flex min-h-11 items-center justify-center rounded-xl bg-white px-5 py-3 text-sm font-semibold text-slate-950 transition hover:bg-violet-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-400">
+              Browse careers
+            </Link>
+            <Link href="/login" className="inline-flex min-h-11 items-center justify-center rounded-xl border border-white/10 bg-white/[0.04] px-5 py-3 text-sm font-semibold text-white transition hover:bg-white/[0.08] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-400">
+              Sign in
+            </Link>
+          </div>
         )}
       </div>
     </div>
