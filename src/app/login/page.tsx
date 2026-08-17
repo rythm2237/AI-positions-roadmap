@@ -2,7 +2,10 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import { getCurrentUser } from "@/lib/auth/session";
 import { safeInternalRedirect } from "@/lib/auth/redirects";
+import { privateRouteMetadata } from "@/lib/seo";
 import { signInWithOAuth } from "./actions";
+
+export const metadata = privateRouteMetadata("Sign in");
 
 export default async function LoginPage({ searchParams }: { searchParams: Promise<{ next?: string; error?: string }> }) {
   if (await getCurrentUser()) redirect("/dashboard");
