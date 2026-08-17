@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from "next";
 import type { ReactNode } from "react";
 import AnalyticsScripts from "@/components/analytics/AnalyticsScripts";
+import GlobalExplainMode from "@/components/help/GlobalExplainMode";
 import AuthDock from "@/components/identity/AuthDock";
 import AuthenticatedWaitlistEnhancer from "@/components/identity/AuthenticatedWaitlistEnhancer";
 import CookieConsent from "@/components/legal/CookieConsent";
@@ -95,6 +96,7 @@ export default function RootLayout({ children }: { children: ReactNode }) {
         <AuthenticatedWaitlistEnhancer />
         <CookieConsent />
         <FirstVisitGuidedTour />
+        <GlobalExplainMode />
       </body>
     </html>
   );
