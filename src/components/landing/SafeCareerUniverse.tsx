@@ -1,8 +1,8 @@
 "use client";
 
+import dynamic from "next/dynamic";
 import Link from "next/link";
 import { Component, type ErrorInfo, type ReactNode, useEffect, useState } from "react";
-import OpeningScene from "@/components/opening-scene/OpeningScene";
 
 type SupportState = "checking" | "supported" | "unsupported";
 
@@ -53,6 +53,11 @@ function UniverseFallback({ checking = false }: { checking?: boolean }) {
     </div>
   );
 }
+
+const OpeningScene = dynamic(() => import("@/components/opening-scene/OpeningScene"), {
+  ssr: false,
+  loading: () => <UniverseFallback checking />,
+});
 
 class UniverseErrorBoundary extends Component<{ children: ReactNode }, { failed: boolean }> {
   state = { failed: false };
