@@ -15,6 +15,7 @@ const [
   nextConfig,
   homepage,
   safeUniverse,
+  heroContent,
   careerPage,
   seoSource,
   envExample,
@@ -26,6 +27,7 @@ const [
   read("next.config.ts"),
   read("src/app/page.tsx"),
   read("src/components/landing/SafeCareerUniverse.tsx"),
+  read("src/components/opening-scene/HeroContent.tsx"),
   read("src/app/careers/[slug]/page.tsx"),
   read("src/lib/seo.ts"),
   read(".env.example"),
@@ -48,15 +50,19 @@ assert.doesNotMatch(
 
 assert.match(careersHub, /AVAILABLE_CAREERS/, "Careers hub must use the public Career catalog.");
 assert.match(careersHub, /href=\{`\/careers\/\$\{career\.slug\}`\}/, "Careers hub must render direct Career links.");
+assert.match(careersHub, /min-h-dvh/, "Careers hub must remain a normal scrollable document rather than a locked viewport.");
 
 assert.match(loginPage, /privateRouteMetadata\("Sign in"\)/, "Login must explicitly be noindex.");
 assert.match(accountLayout, /privateRouteMetadata\("Private workspace"\)/, "Account route group must explicitly be noindex.");
 assert.match(nextConfig, /"\/login\/:path\*"/, "Login must have an X-Robots-Tag private-route rule.");
 assert.match(nextConfig, /"\/profile\/:path\*"/, "Profile must have an X-Robots-Tag private-route rule.");
 
-assert.match(homepage, /<h1[\s\S]*?homepage-title/, "Homepage must expose a server-rendered H1.");
-assert.match(homepage, /href="\/careers"/, "Homepage must link directly to the Career hub.");
-assert.match(safeUniverse, /href="\/careers"/, "WebGL fallback must retain public Career discovery.");
+assert.match(homepage, /h-dvh[\s\S]*overflow-hidden/, "Homepage must stay locked to one viewport with no landing-page scroll.");
+assert.match(homepage, /<SafeCareerUniverse\s*\/>/, "Homepage must use Career Universe as the primary landing experience.");
+assert.doesNotMatch(homepage, /id="career-directory"/, "Homepage must not duplicate the scrollable career directory.");
+assert.match(safeUniverse, /<h1[\s\S]*?homepage-title/, "Career Universe fallback must expose the server-rendered homepage H1.");
+assert.match(safeUniverse, /href="\/careers"/, "WebGL fallback must retain direct public Career discovery.");
+assert.match(heroContent, /href="\/careers"/, "Primary Explore AI Careers CTA must open the scrollable Career hub.");
 
 assert.match(careerPage, /name: "Careers", item: absoluteUrl\("\/careers"\)/, "Career breadcrumbs must include the Careers hub.");
 assert.match(careerPage, /career\.projects\.flatMap\(\(project\) => project\.skills\)/, "Occupation skills must come from actual project skill data.");
