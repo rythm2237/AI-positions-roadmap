@@ -3,10 +3,12 @@ import { pathToFileURL } from "node:url";
 import { NextResponse } from "next/server";
 
 export const runtime = "nodejs";
+export const dynamic = "force-dynamic";
 
 const MAX_FILE_BYTES = 8 * 1024 * 1024;
 const ALLOWED_EXTENSIONS = new Set(["pdf", "docx", "txt"]);
 const require = createRequire(import.meta.url);
+const SELF_TEST_PDF_BASE64 = "JVBERi0xLjQKMSAwIG9iago8PCAvVHlwZSAvQ2F0YWxvZyAvUGFnZXMgMiAwIFIgPj4KZW5kb2JqCjIgMCBvYmoKPDwgL1R5cGUgL1BhZ2VzIC9LaWRzIFszIDAgUl0gL0NvdW50IDEgPj4KZW5kb2JqCjMgMCBvYmoKPDwgL1R5cGUgL1BhZ2UgL1BhcmVudCAyIDAgUiAvTWVkaWFCb3ggWzAgMCA2MTIgNzkyXSAvUmVzb3VyY2VzIDw8IC9Gb250IDw8IC9GMSA1IDAgUiA+PiA+PiAvQ29udGVudHMgNCAwIFIgPj4KZW5kb2JqCjQgMCBvYmoKPDwgL0xlbmd0aCA1NiA+PgpzdHJlYW0KQlQgL0YxIDE4IFRmIDcyIDcyMCBUZCAoQ1YgQW5hbHl6ZXIgUERGIHNlbGYtdGVzdCkgVGogRVQKZW5kc3RyZWFtCmVuZG9iago1IDAgb2JqCjw8IC9UeXBlIC9Gb250IC9TdWJ0eXBlIC9UeXBlMSAvQmFzZUZvbnQgL0hlbHZldGljYSA+PgplbmRvYmoKeHJlZgowIDYKMDAwMDAwMDAwMCA2NTUzNSBmIAowMDAwMDAwMDA5IDAwMDAwIG4gCjAwMDAwMDAwNTggMDAwMDAgbiAKMDAwMDAwMDExNSAwMDAwMCBuIAowMDAwMDAwMjQxIDAwMDAwIG4gCjAwMDAwMDAzNDcgMDAwMDAgbiAKdHJhaWxlcgo8PCAvU2l6ZSA2IC9Sb290IDEgMCBSID4+CnN0YXJ0eHJlZgo0MTcKJSVFT0YK";
 
 function extensionOf(name: string) {
   return name.toLowerCase().split(".").pop() ?? "";
@@ -133,6 +135,28 @@ async function extractDocx(buffer: Buffer) {
   return result.value;
 }
 
+function normalizeText(text: string) {
+  return text.replace(/\u0000/g, "").replace(/[ \t]+\n/g, "\n").trim();
+}
+
+export async function GET() {
+  try {
+    const text = normalizeText(await extractPdf(Buffer.from(SELF_TEST_PDF_BASE64, "base64")));
+    const ok = text.includes("CV Analyzer PDF self-test");
+    return NextResponse.json(
+      { ok, parser: "pdfjs-dist", extracted: text },
+      { status: ok ? 200 : 500, headers: { "Cache-Control": "no-store" } },
+    );
+  } catch (error) {
+    const message = error instanceof Error ? error.message : String(error);
+    console.error("CV PDF self-test failed", error);
+    return NextResponse.json(
+      { ok: false, parser: "pdfjs-dist", error: message },
+      { status: 500, headers: { "Cache-Control": "no-store" } },
+    );
+  }
+}
+
 export async function POST(request: Request) {
   try {
     const formData = await request.formData();
@@ -158,7 +182,7 @@ export async function POST(request: Request) {
     else if (extension === "docx") text = await extractDocx(buffer);
     else text = buffer.toString("utf8");
 
-    const normalized = text.replace(/\u0000/g, "").replace(/[ \t]+\n/g, "\n").trim();
+    const normalized = normalizeText(text);
     if (!normalized) {
       return NextResponse.json({ error: "We could not extract readable text from this CV." }, { status: 422 });
     }
