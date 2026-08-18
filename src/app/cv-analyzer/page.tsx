@@ -10,6 +10,7 @@ export const metadata: Metadata = {
   alternates: { canonical: absoluteUrl("/cv-analyzer") },
 };
 
+// CV Analyzer public entry point. Keep this page server-rendered for metadata and route stability.
 export default function CVAnalyzerPage() {
   return (
     <div className="relative bg-[#03050e]">
