@@ -101,11 +101,16 @@ function ensurePdfJsServerGlobals() {
 
 async function extractPdf(buffer: Buffer) {
   ensurePdfJsServerGlobals();
-  const pdfjs = await import("pdfjs-dist/legacy/build/pdf.mjs");
+
+  // pdfjs-dist 6.x ships the generic library and its worker together under build/.
+  // Keep these paired; mixing legacy/build/pdf.mjs with build/pdf.worker.mjs causes
+  // fake-worker resolution failures in serverless runtimes.
+  const pdfjs = await import("pdfjs-dist/build/pdf.mjs");
   const workerPath = require.resolve("pdfjs-dist/build/pdf.worker.mjs");
   pdfjs.GlobalWorkerOptions.workerSrc = pathToFileURL(workerPath).href;
 
-  const document = await pdfjs.getDocument({ data: new Uint8Array(buffer) }).promise;
+  const loadingTask = pdfjs.getDocument({ data: new Uint8Array(buffer) });
+  const document = await loadingTask.promise;
   const pages: string[] = [];
 
   try {
@@ -124,6 +129,7 @@ async function extractPdf(buffer: Buffer) {
     }
   } finally {
     document.cleanup();
+    await loadingTask.destroy();
   }
 
   return pages.join("\n");
@@ -144,14 +150,14 @@ export async function GET() {
     const text = normalizeText(await extractPdf(Buffer.from(SELF_TEST_PDF_BASE64, "base64")));
     const ok = text.includes("CV Analyzer PDF self-test");
     return NextResponse.json(
-      { ok, parser: "pdfjs-dist", extracted: text },
+      { ok, parser: "pdfjs-dist/build", extracted: text },
       { status: ok ? 200 : 500, headers: { "Cache-Control": "no-store" } },
     );
   } catch (error) {
     const message = error instanceof Error ? error.message : String(error);
     console.error("CV PDF self-test failed", error);
     return NextResponse.json(
-      { ok: false, parser: "pdfjs-dist", error: message },
+      { ok: false, parser: "pdfjs-dist/build", error: message },
       { status: 500, headers: { "Cache-Control": "no-store" } },
     );
   }
