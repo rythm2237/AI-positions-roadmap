@@ -100,19 +100,24 @@ async function extractPdf(buffer: Buffer) {
   const document = await pdfjs.getDocument({ data: new Uint8Array(buffer) }).promise;
   const pages: string[] = [];
 
-  for (let pageNumber = 1; pageNumber <= document.numPages; pageNumber += 1) {
-    const page = await document.getPage(pageNumber);
-    const content = await page.getTextContent();
-    const text = content.items
-      .map((item) => ("str" in item ? item.str : ""))
-      .filter(Boolean)
-      .join(" ");
-    pages.push(text);
-    page.cleanup();
+  try {
+    for (let pageNumber = 1; pageNumber <= document.numPages; pageNumber += 1) {
+      const page = await document.getPage(pageNumber);
+      try {
+        const content = await page.getTextContent();
+        const text = content.items
+          .map((item) => ("str" in item ? item.str : ""))
+          .filter(Boolean)
+          .join(" ");
+        pages.push(text);
+      } finally {
+        page.cleanup();
+      }
+    }
+  } finally {
+    document.cleanup();
   }
 
-  document.cleanup();
-  await document.destroy();
   return pages.join("\n");
 }
 
