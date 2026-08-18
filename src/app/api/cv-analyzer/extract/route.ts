@@ -9,7 +9,93 @@ function extensionOf(name: string) {
   return name.toLowerCase().split(".").pop() ?? "";
 }
 
+function ensurePdfJsServerGlobals() {
+  const scope = globalThis as Record<string, unknown>;
+  if (typeof scope.DOMMatrix !== "undefined") return;
+
+  class ServerDOMMatrix {
+    a = 1;
+    b = 0;
+    c = 0;
+    d = 1;
+    e = 0;
+    f = 0;
+    is2D = true;
+
+    constructor(init?: number[] | Float32Array | Float64Array) {
+      if (init && init.length >= 6) {
+        [this.a, this.b, this.c, this.d, this.e, this.f] = Array.from(init).slice(0, 6);
+      }
+    }
+
+    get isIdentity() {
+      return this.a === 1 && this.b === 0 && this.c === 0 && this.d === 1 && this.e === 0 && this.f === 0;
+    }
+
+    multiplySelf(other: ServerDOMMatrix) {
+      const { a, b, c, d, e, f } = this;
+      this.a = a * other.a + c * other.b;
+      this.b = b * other.a + d * other.b;
+      this.c = a * other.c + c * other.d;
+      this.d = b * other.c + d * other.d;
+      this.e = a * other.e + c * other.f + e;
+      this.f = b * other.e + d * other.f + f;
+      return this;
+    }
+
+    preMultiplySelf(other: ServerDOMMatrix) {
+      const current = new ServerDOMMatrix([this.a, this.b, this.c, this.d, this.e, this.f]);
+      this.a = other.a;
+      this.b = other.b;
+      this.c = other.c;
+      this.d = other.d;
+      this.e = other.e;
+      this.f = other.f;
+      return this.multiplySelf(current);
+    }
+
+    translateSelf(tx = 0, ty = 0) {
+      return this.multiplySelf(new ServerDOMMatrix([1, 0, 0, 1, tx, ty]));
+    }
+
+    scaleSelf(scaleX = 1, scaleY = scaleX) {
+      return this.multiplySelf(new ServerDOMMatrix([scaleX, 0, 0, scaleY, 0, 0]));
+    }
+
+    rotateSelf(angle = 0) {
+      const radians = (angle * Math.PI) / 180;
+      const cos = Math.cos(radians);
+      const sin = Math.sin(radians);
+      return this.multiplySelf(new ServerDOMMatrix([cos, sin, -sin, cos, 0, 0]));
+    }
+
+    invertSelf() {
+      const determinant = this.a * this.d - this.b * this.c;
+      if (!determinant) return this;
+      const { a, b, c, d, e, f } = this;
+      this.a = d / determinant;
+      this.b = -b / determinant;
+      this.c = -c / determinant;
+      this.d = a / determinant;
+      this.e = (c * f - d * e) / determinant;
+      this.f = (b * e - a * f) / determinant;
+      return this;
+    }
+
+    toFloat32Array() {
+      return new Float32Array([this.a, this.b, this.c, this.d, this.e, this.f]);
+    }
+
+    toFloat64Array() {
+      return new Float64Array([this.a, this.b, this.c, this.d, this.e, this.f]);
+    }
+  }
+
+  scope.DOMMatrix = ServerDOMMatrix;
+}
+
 async function extractPdf(buffer: Buffer) {
+  ensurePdfJsServerGlobals();
   const pdfjs = await import("pdfjs-dist/legacy/build/pdf.mjs");
   const document = await pdfjs.getDocument({ data: new Uint8Array(buffer) }).promise;
   const pages: string[] = [];
@@ -22,8 +108,11 @@ async function extractPdf(buffer: Buffer) {
       .filter(Boolean)
       .join(" ");
     pages.push(text);
+    page.cleanup();
   }
 
+  document.cleanup();
+  await document.destroy();
   return pages.join("\n");
 }
 
