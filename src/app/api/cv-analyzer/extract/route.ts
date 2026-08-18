@@ -1,9 +1,12 @@
+import { createRequire } from "node:module";
+import { pathToFileURL } from "node:url";
 import { NextResponse } from "next/server";
 
 export const runtime = "nodejs";
 
 const MAX_FILE_BYTES = 8 * 1024 * 1024;
 const ALLOWED_EXTENSIONS = new Set(["pdf", "docx", "txt"]);
+const require = createRequire(import.meta.url);
 
 function extensionOf(name: string) {
   return name.toLowerCase().split(".").pop() ?? "";
@@ -97,6 +100,9 @@ function ensurePdfJsServerGlobals() {
 async function extractPdf(buffer: Buffer) {
   ensurePdfJsServerGlobals();
   const pdfjs = await import("pdfjs-dist/legacy/build/pdf.mjs");
+  const workerPath = require.resolve("pdfjs-dist/build/pdf.worker.mjs");
+  pdfjs.GlobalWorkerOptions.workerSrc = pathToFileURL(workerPath).href;
+
   const document = await pdfjs.getDocument({ data: new Uint8Array(buffer) }).promise;
   const pages: string[] = [];
 
