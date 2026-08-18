@@ -1,5 +1,3 @@
-import { createRequire } from "node:module";
-import { pathToFileURL } from "node:url";
 import { NextResponse } from "next/server";
 
 export const runtime = "nodejs";
@@ -7,7 +5,6 @@ export const dynamic = "force-dynamic";
 
 const MAX_FILE_BYTES = 8 * 1024 * 1024;
 const ALLOWED_EXTENSIONS = new Set(["pdf", "docx", "txt"]);
-const require = createRequire(import.meta.url);
 const SELF_TEST_PDF_BASE64 = "JVBERi0xLjQKMSAwIG9iago8PCAvVHlwZSAvQ2F0YWxvZyAvUGFnZXMgMiAwIFIgPj4KZW5kb2JqCjIgMCBvYmoKPDwgL1R5cGUgL1BhZ2VzIC9LaWRzIFszIDAgUl0gL0NvdW50IDEgPj4KZW5kb2JqCjMgMCBvYmoKPDwgL1R5cGUgL1BhZ2UgL1BhcmVudCAyIDAgUiAvTWVkaWFCb3ggWzAgMCA2MTIgNzkyXSAvUmVzb3VyY2VzIDw8IC9Gb250IDw8IC9GMSA1IDAgUiA+PiA+PiAvQ29udGVudHMgNCAwIFIgPj4KZW5kb2JqCjQgMCBvYmoKPDwgL0xlbmd0aCA1NiA+PgpzdHJlYW0KQlQgL0YxIDE4IFRmIDcyIDcyMCBUZCAoQ1YgQW5hbHl6ZXIgUERGIHNlbGYtdGVzdCkgVGogRVQKZW5kc3RyZWFtCmVuZG9iago1IDAgb2JqCjw8IC9UeXBlIC9Gb250IC9TdWJ0eXBlIC9UeXBlMSAvQmFzZUZvbnQgL0hlbHZldGljYSA+PgplbmRvYmoKeHJlZgowIDYKMDAwMDAwMDAwMCA2NTUzNSBmIAowMDAwMDAwMDA5IDAwMDAwIG4gCjAwMDAwMDAwNTggMDAwMDAgbiAKMDAwMDAwMDExNSAwMDAwMCBuIAowMDAwMDAwMjQxIDAwMDAwIG4gCjAwMDAwMDAzNDcgMDAwMDAgbiAKdHJhaWxlcgo8PCAvU2l6ZSA2IC9Sb290IDEgMCBSID4+CnN0YXJ0eHJlZgo0MTcKJSVFT0YK";
 
 function extensionOf(name: string) {
@@ -102,12 +99,11 @@ function ensurePdfJsServerGlobals() {
 async function extractPdf(buffer: Buffer) {
   ensurePdfJsServerGlobals();
 
-  // pdfjs-dist 6.x ships the generic library and its worker together under build/.
-  // Keep these paired; mixing legacy/build/pdf.mjs with build/pdf.worker.mjs causes
-  // fake-worker resolution failures in serverless runtimes.
   const pdfjs = await import("pdfjs-dist/build/pdf.mjs");
-  const workerPath = require.resolve("pdfjs-dist/build/pdf.worker.mjs");
-  pdfjs.GlobalWorkerOptions.workerSrc = pathToFileURL(workerPath).href;
+  pdfjs.GlobalWorkerOptions.workerSrc = new URL(
+    "pdfjs-dist/build/pdf.worker.mjs",
+    import.meta.url,
+  ).toString();
 
   const loadingTask = pdfjs.getDocument({ data: new Uint8Array(buffer) });
   const document = await loadingTask.promise;
