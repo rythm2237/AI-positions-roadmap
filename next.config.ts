@@ -20,6 +20,7 @@ const privateRoutePatterns = [
 ];
 
 const nextConfig: NextConfig = {
+  serverExternalPackages: ["pdfjs-dist"],
   async redirects() {
     return [
       {
