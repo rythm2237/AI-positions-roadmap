@@ -80,8 +80,40 @@ assert.ok(analysis.overall > 50 && analysis.overall <= 100, "Overall semantic ba
 assert.equal(analysis.matches[0]?.title, "AI Automation Specialist", "Role ranking should use CV evidence against real career definitions.");
 assert.ok(analysis.matches[0].match > analysis.matches.at(-1).match, "Career evidence alignment must differentiate roles.");
 assert.match(analysis.matches[0].weeks, /weeks at 5h\/week/, "Gap-closing estimate must be tied to available learning time.");
+assert.equal(analysis.freshness.status, "current", "A Present-dated role should be treated as current.");
+assert.equal(analysis.freshness.recommendationConfidence, "high", "Current timelines should retain high recommendation confidence.");
+
+const outdatedCV = `
+Yaser Example
+email@example.com
+
+ABOUT ME
+Experienced logistics, digital marketing and IT professional focused on workflow optimization and business operations.
+
+EXPERIENCE
+Digital Marketer | Freelance | 2023
+Managed content creation and campaign analysis.
+CEO | Advertising Agency | 2012 - 2020
+Developed integrated media strategies and managed a content team.
+Logistics | Retail Company | 2017 - 2019
+Supported operational efficiency and teamwork.
+
+SKILLS
+Digital Marketing, SEO, workflow optimization, Microsoft Office
+
+EDUCATION
+Bachelor of Business Management | 2017 - 2019
+`;
+
+const outdated = analyzeSemanticCV(profile, outdatedCV, careers);
+assert.equal(outdated.freshness.status, "outdated", "A CV whose latest dated experience is several years old should be flagged as outdated.");
+assert.equal(outdated.freshness.latestExperienceYear, 2023, "Freshness must use the latest year found in the experience timeline, not education dates.");
+assert.equal(outdated.freshness.recommendationConfidence, "low", "Outdated experience timelines should lower recommendation confidence.");
+assert.match(outdated.freshness.message, /2023/, "Freshness warning should explain the detected latest experience year.");
+assert.ok(outdated.gaps.some((gap) => /current profile|recent roles|most recent dated experience/i.test(gap)), "Outdated CVs should surface freshness as an actionable gap.");
 
 const sparse = analyzeSemanticCV(profile, "Name\nemail@example.com\nI am hardworking and motivated.", careers);
 assert.ok(sparse.overall < analysis.overall, "Sparse unstructured CVs must score below evidence-rich CVs.");
+assert.equal(sparse.freshness.status, "unknown", "A CV without dated experience should expose unknown freshness instead of pretending it is current.");
 
-console.log("CV semantic analysis tests passed: section detection, evidence scoring, live-role ranking, and gap estimates.");
+console.log("CV semantic analysis tests passed: section detection, evidence scoring, live-role ranking, gap estimates, and freshness confidence.");
