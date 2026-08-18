@@ -4,7 +4,9 @@ import { fileURLToPath } from "node:url";
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const target = path.join(root, "src/components/cv-analyzer/CVAnalyzerClient.tsx");
+const semanticTarget = path.join(root, "src/lib/cvAnalyzer/semanticAnalysis.ts");
 let source = fs.readFileSync(target, "utf8");
+let semanticSource = fs.readFileSync(semanticTarget, "utf8");
 
 const semanticImport = 'import { analyzeSemanticCV } from "@/lib/cvAnalyzer/semanticAnalysis";';
 const catalogImport = 'import { AVAILABLE_CAREERS } from "@/data/careerCatalog";';
@@ -59,5 +61,19 @@ for (const [before, after] of replacements) {
   source = source.replace(before, after);
 }
 
+semanticSource = semanticSource.replace(
+  '/\\b\\d+(?:\\.\\d+)?\\s*%\\b/g,',
+  '/\\b\\d+(?:\\.\\d+)?\\s*%/g,',
+);
+semanticSource = semanticSource.replace(
+  '"lead time", "utilization", "utilisation", "availability", "reliability", "compliance", "risk reduction",',
+  '"lead time", "utilization", "utilisation", "availability", "reliability", "compliance", "risk reduction", "reduced", "increased", "improved", "accelerated",',
+);
+semanticSource = semanticSource.replace(
+  'reports?|dashboards?|sites?|locations?|countries?|minutes?|seconds?',
+  'reports?|dashboards?|sites?|locations?|areas?|items?|orders?|articles?|countries?|minutes?|seconds?',
+);
+
 fs.writeFileSync(target, source);
+fs.writeFileSync(semanticTarget, semanticSource);
 console.log("CV Analyzer semantic parser/scoring patch applied.");
