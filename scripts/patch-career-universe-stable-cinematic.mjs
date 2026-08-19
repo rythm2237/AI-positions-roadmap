@@ -36,13 +36,13 @@ if (!source.includes("const CAREER_NATURAL_CRUISE = true;")) {
 // route variant, hover arbitration, and deliberate planet-entry approach stable.
 replaceRequired(
   `const CAREER_NATURAL_CRUISE = true;\nconst CAREER_NATURAL_FOCUS_MAX_DISTANCE = 34;\nconst CAREER_NATURAL_FOCUS_MIN_FORWARD_DOT = 0.2;`,
-  `const CAREER_NATURAL_CRUISE = true;\nconst CAREER_NATURAL_FOCUS_MAX_DISTANCE = 34;\nconst CAREER_NATURAL_FOCUS_MIN_FORWARD_DOT = 0.2;\nconst CAREER_UNIVERSE_STABLE_CINEMATIC_V3 = true;\nconst CAREER_STABLE_FOCUS_INTERVAL_MS = 3600;\nconst CAREER_LANDING_APPROACH_MS = 2650;\nconst CAREER_ENTRY_HANDOFF_MS = 900;`,
+  `const CAREER_NATURAL_CRUISE = true;\nconst CAREER_NATURAL_FOCUS_MAX_DISTANCE = 34;\nconst CAREER_NATURAL_FOCUS_MIN_FORWARD_DOT = 0.2;\nconst CAREER_UNIVERSE_STABLE_CINEMATIC_V3 = true;\nconst CAREER_STABLE_FOCUS_INTERVAL_MS = 3600;\nconst CAREER_LANDING_APPROACH_MS = 2650;`,
   "stable cinematic constants",
 );
 
 replaceRequired(
   `const CAREER_ENTRY_ZOOM_MS = 1950;`,
-  `const CAREER_ENTRY_ZOOM_MS = CAREER_ENTRY_HANDOFF_MS;`,
+  `const CAREER_ENTRY_ZOOM_MS = 900;`,
   "entry handoff duration",
 );
 
@@ -124,7 +124,7 @@ replaceSection(candidateStart, candidateEnd, stableCandidateBlock, "stable visib
 // and navigate to the Career workspace.
 replaceRequired(
   `          if (entry?.careerPath) {\n            scheduleCareerEntry(node, entry.careerPath, e.clientX, e.clientY);\n            return;\n          }`,
-  `          if (entry?.careerPath) {\n            destNodeRef.current = node;\n            destPosRef.current.set(...node.position);\n            destCamPosRef.current.set(node.position[0], node.position[1] + 0.7, node.position[2] + 3.2);\n            startCamPosRef.current.copy(camPosSmoothed);\n            startCamTargetRef.current.copy(camTargetSmoothed);\n            activeCameraBehaviorRef.current = CAMERA_BEHAVIORS.find((behavior) => behavior.name === "forwardFlyIn") ?? CAMERA_BEHAVIORS[0];\n            rebuildConnections(node);\n            o.yaw = 0;\n            o.pitch = 0;\n            travelToRef.current(node);\n            hideCruiseLabel();\n            const reduceEntryMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;\n            window.setTimeout(() => {\n              scheduleCareerEntry(node, entry.careerPath, e.clientX, e.clientY);\n            }, reduceEntryMotion ? 120 : CAREER_LANDING_APPROACH_MS);\n            return;\n          }`,
+  `          if (entry?.careerPath) {\n            const careerPath = entry.careerPath;\n            destNodeRef.current = node;\n            destPosRef.current.set(...node.position);\n            destCamPosRef.current.set(node.position[0], node.position[1] + 0.7, node.position[2] + 3.2);\n            startCamPosRef.current.copy(camPosSmoothed);\n            startCamTargetRef.current.copy(camTargetSmoothed);\n            activeCameraBehaviorRef.current = CAMERA_BEHAVIORS.find((behavior) => behavior.name === "forwardFlyIn") ?? CAMERA_BEHAVIORS[0];\n            rebuildConnections(node);\n            o.yaw = 0;\n            o.pitch = 0;\n            travelToRef.current(node);\n            hideCruiseLabel();\n            const reduceEntryMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;\n            window.setTimeout(() => {\n              scheduleCareerEntry(node, careerPath, e.clientX, e.clientY);\n            }, reduceEntryMotion ? 120 : CAREER_LANDING_APPROACH_MS);\n            return;\n          }`,
   "single-click cinematic landing",
 );
 
