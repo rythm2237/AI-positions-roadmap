@@ -23,7 +23,9 @@ export async function prepareApplication(form: FormData) {
   const resume = resumeResult.data;
   if (!resume) redirect("/job-agent?error=master-cv");
   const agent = agentResult.data;
+  const job = jobResult.data;
   if (agent.automation_mode === "discovery_only") redirect("/job-agent?error=mode");
+  if (job.recommendation === "skip" || job.status === "skipped") redirect(`/job-agent/jobs/${jobId}?error=not-eligible`);
 
   const existing = await supabase.from("applications").select("id,status").eq("user_id", user.id).eq("job_id", jobId).maybeSingle();
   let applicationId = existing.data?.id as string | undefined;
@@ -39,14 +41,14 @@ export async function prepareApplication(form: FormData) {
   await supabase.from("job_opportunities").update({ status: "preparing", updated_at: new Date().toISOString() }).eq("id", jobId).eq("user_id", user.id);
 
   try {
-    const { pack, facts } = await generateApplicationPack({ profile: profileResult.data, resume, job: jobResult.data });
+    const { pack, facts } = await generateApplicationPack({ profile: profileResult.data, resume, job });
     const version = Date.now().toString();
     const assetRows = [
       { asset_type: "cv", structured_content: { professionalSummary: pack.professionalSummary, selectedSkills: pack.selectedSkills, highlights: pack.cvHighlights } },
       { asset_type: "portfolio", structured_content: { cases: pack.portfolioCases, founderPositioning: pack.founderPositioning } },
       { asset_type: "cover_note", structured_content: { paragraphs: pack.coverNote } },
-      { asset_type: "job_snapshot", structured_content: { company: jobResult.data.company, role: jobResult.data.role, location: jobResult.data.location, url: jobResult.data.job_url, description: jobResult.data.job_description ?? null } },
-      { asset_type: "fit_analysis", structured_content: { score: jobResult.data.fit_score, recommendation: jobResult.data.recommendation, strengths: jobResult.data.strengths, gaps: jobResult.data.gaps, canonicalFactIds: facts.map((fact) => fact.id) } },
+      { asset_type: "job_snapshot", structured_content: { company: job.company, role: job.role, location: job.location, url: job.job_url, description: job.job_description ?? null } },
+      { asset_type: "fit_analysis", structured_content: { score: job.fit_score, recommendation: job.recommendation, strengths: job.strengths, gaps: job.gaps, canonicalFactIds: facts.map((fact) => fact.id) } },
       { asset_type: "screening_answers", structured_content: { answers: pack.screeningAnswers, missingUserDecisions: pack.missingUserDecisions } },
     ].map((asset) => ({
       user_id: user.id, application_id: applicationId, asset_type: asset.asset_type, version, structured_content: asset.structured_content, source_resume_id: resume.id,
@@ -63,9 +65,13 @@ export async function prepareApplication(form: FormData) {
   } catch (error) {
     const code = error instanceof Error ? error.message.slice(0, 160) : "APPLICATION_PACK_FAILED";
     console.error("prepareApplication failed", { userId: user.id, jobId, code });
+    const restoredStatus = job.recommendation === "review" ? "discovered" : job.recommendation === "skip" ? "skipped" : "recommended";
+    const action = code.includes("MASTER_CV_DOC") ? "Upload your Master CV as PDF or DOCX."
+      : code.includes("MASTER_CV_EMPTY") ? "Your Master CV could not be read. Upload a text-based PDF or DOCX and retry."
+        : "Application pack generation failed. Retry after reviewing the Master CV and profile.";
     await Promise.all([
-      supabase.from("applications").update({ status: "preparing", next_action: code.includes("MASTER_CV_DOC") ? "Upload your Master CV as PDF or DOCX." : "Application pack generation needs review or retry.", notes: code, updated_at: new Date().toISOString() }).eq("id", applicationId).eq("user_id", user.id),
-      supabase.from("job_opportunities").update({ status: "recommended", updated_at: new Date().toISOString() }).eq("id", jobId).eq("user_id", user.id),
+      supabase.from("applications").update({ status: "preparing", next_action: action, notes: code, updated_at: new Date().toISOString() }).eq("id", applicationId).eq("user_id", user.id),
+      supabase.from("job_opportunities").update({ status: restoredStatus, updated_at: new Date().toISOString() }).eq("id", jobId).eq("user_id", user.id),
     ]);
     redirect(`/job-agent?error=pack&application=${applicationId}`);
   }
