@@ -177,6 +177,27 @@ export default async function ManagedCareerPage({
       ))}
       <CareerWorkspace career={career} />
 
+      <section className="border-t border-white/10 bg-[#050817] px-5 py-10 text-white sm:px-8" aria-labelledby="job-agent-title">
+        <div className="mx-auto grid max-w-6xl gap-6 rounded-3xl border border-violet-300/20 bg-gradient-to-br from-violet-400/[.09] via-white/[.025] to-cyan-400/[.05] p-6 lg:grid-cols-[1fr_auto] lg:items-center lg:p-8">
+          <div className="max-w-3xl">
+            <p className="text-xs font-semibold uppercase tracking-[.18em] text-violet-300">Final execution stage</p>
+            <h2 id="job-agent-title" className="mt-2 font-display text-2xl font-semibold sm:text-3xl">Activate your Job Application Agent</h2>
+            <p className="mt-3 text-sm leading-6 text-slate-300 sm:text-base">
+              When you are ready to move from preparation into applications, the Agent can use your career profile, roadmap, CV, skills and projects to find matching roles, calculate Fit Scores, prepare tailored application packs and keep your application history organized.
+            </p>
+            <div className="mt-4 flex flex-wrap gap-x-5 gap-y-2 text-xs text-slate-400">
+              <span>✓ Reuses your Career Identity</span><span>✓ No fabricated experience</span><span>✓ User-controlled authority</span><span>✓ Transparent ATS status</span>
+            </div>
+          </div>
+          <Link
+            href={`/job-agent?career=${encodeURIComponent(career.slug)}`}
+            className="inline-flex min-h-12 items-center justify-center rounded-xl bg-violet-500 px-5 py-3 text-sm font-semibold text-white transition hover:bg-violet-400 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-300"
+          >
+            Start job search →
+          </Link>
+        </div>
+      </section>
+
       {occupationFamily && marketIntelligencePath ? (
         <section className="border-t border-white/10 bg-[#050817] px-5 py-8 text-white sm:px-8" aria-labelledby="market-evidence-title">
           <div className="mx-auto flex max-w-6xl flex-col gap-5 rounded-2xl border border-cyan-300/15 bg-cyan-400/[0.045] p-5 sm:flex-row sm:items-center sm:justify-between sm:p-6">
