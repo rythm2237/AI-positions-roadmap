@@ -4,9 +4,11 @@ import { fileURLToPath } from "node:url";
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const worldPath = path.join(root, "src/components/opening-scene/World.tsx");
+const tourPath = path.join(root, "src/components/onboarding/FirstVisitGuidedTour.tsx");
 let source = await readFile(worldPath, "utf8");
+let tourSource = await readFile(tourPath, "utf8");
 
-if (source.includes("const CAREER_UNIVERSE_STABLE_CINEMATIC_V3 = true;")) {
+if (source.includes("const CAREER_UNIVERSE_STABLE_CINEMATIC_V4 = true;")) {
   console.log("Career Universe stable cinematic patch already applied.");
   process.exit(0);
 }
@@ -16,6 +18,13 @@ function replaceRequired(search, replacement, label) {
     throw new Error(`Career Universe stable cinematic patch failed: could not locate ${label}.`);
   }
   source = source.replace(search, replacement);
+}
+
+function replaceTourRequired(search, replacement, label) {
+  if (!tourSource.includes(search)) {
+    throw new Error(`Guided Tour completion patch failed: could not locate ${label}.`);
+  }
+  tourSource = tourSource.replace(search, replacement);
 }
 
 function replaceSection(startMarker, endMarker, replacement, label) {
@@ -36,7 +45,7 @@ if (!source.includes("const CAREER_NATURAL_CRUISE = true;")) {
 // route variant, hover arbitration, and deliberate planet-entry approach stable.
 replaceRequired(
   `const CAREER_NATURAL_CRUISE = true;\nconst CAREER_NATURAL_FOCUS_MAX_DISTANCE = 34;\nconst CAREER_NATURAL_FOCUS_MIN_FORWARD_DOT = 0.2;`,
-  `const CAREER_NATURAL_CRUISE = true;\nconst CAREER_NATURAL_FOCUS_MAX_DISTANCE = 34;\nconst CAREER_NATURAL_FOCUS_MIN_FORWARD_DOT = 0.2;\nconst CAREER_UNIVERSE_STABLE_CINEMATIC_V3 = true;\nconst CAREER_STABLE_FOCUS_INTERVAL_MS = 3600;\nconst CAREER_LANDING_APPROACH_MS = 2650;`,
+  `const CAREER_NATURAL_CRUISE = true;\nconst CAREER_NATURAL_FOCUS_MAX_DISTANCE = 34;\nconst CAREER_NATURAL_FOCUS_MIN_FORWARD_DOT = 0.2;\nconst CAREER_UNIVERSE_STABLE_CINEMATIC_V4 = true;\nconst CAREER_STABLE_FOCUS_INTERVAL_MS = 3600;\nconst CAREER_LANDING_APPROACH_MS = 2650;`,
   "stable cinematic constants",
 );
 
@@ -59,7 +68,7 @@ replaceRequired(
 // the hit target and title cannot drift away from the user.
 replaceRequired(
   `          if (userControlActive) {\n            // Mouse movement hands control to the user immediately. Freeze forward\n            // translation at the exact cruise distance and only steer the gaze.\n            // This removes camera-position jitter while preserving responsive looking.\n            camPos.copy(camPosSmoothed);\n            camTarget.copy(cruiseAhead)\n              .addScaledVector(cruiseRight, steerX * CAREER_ORBIT_STEER_X)\n              .addScaledVector(cruiseVertical, steerY * CAREER_ORBIT_STEER_Y);\n          } else {`,
-  `          if (hoveredPlanet) {\n            // Hover lock: once the pointer acquires a planet, freeze the rendered\n            // camera pose completely. This keeps the planet and its title stationary\n            // until the user clicks or moves away.\n            camPos.copy(camPosSmoothed);\n            camTarget.copy(camTargetSmoothed);\n          } else if (userControlActive) {\n            // Free-space pointer movement can steer the gaze without translating\n            // the ship. It must never compete with a locked hover target.\n            camPos.copy(camPosSmoothed);\n            camTarget.copy(cruiseAhead)\n              .addScaledVector(cruiseRight, steerX * CAREER_ORBIT_STEER_X)\n              .addScaledVector(cruiseVertical, steerY * CAREER_ORBIT_STEER_Y);\n          } else {`,
+  `          if (hoveredPlanet) {\n            // Hover means literal frame freeze. The camera pose itself is preserved\n            // later in the render pipeline, so no hover-specific retarget belongs here.\n            camPos.copy(camPosSmoothed);\n            camTarget.copy(camTargetSmoothed);\n          } else if (userControlActive) {\n            // Free-space pointer movement can steer the gaze without translating\n            // the ship. It must never compete with a locked hover target.\n            camPos.copy(camPosSmoothed);\n            camTarget.copy(cruiseAhead)\n              .addScaledVector(cruiseRight, steerX * CAREER_ORBIT_STEER_X)\n              .addScaledVector(cruiseVertical, steerY * CAREER_ORBIT_STEER_Y);\n          } else {`,
   "hover-locked camera arbitration",
 );
 
@@ -69,12 +78,28 @@ replaceRequired(
   "hover-safe automatic focus clearing",
 );
 
+// Hover never changes the visual size of a Career node. This removes the 30%
+// scale jump that made the planet appear to move under a stationary pointer.
+replaceRequired(
+  `        if (isHovered) scale *= 1.3;`,
+  `        // Keep hovered geometry at the exact pre-hover scale for a stable hit target.`,
+  "hover planet scale jump",
+);
+
 // Remove the legacy hover retarget. Hover means one thing only: freeze the exact
 // frame that the user acquired, keep the title projected, and wait for click.
 replaceRequired(
   `          if (hoveredPlanet) {\n            // Hover is a stronger intent than the automatic cadence. Keep the\n            // viewer physically still and look only at the hovered Career.\n            cruiseFocusNode = null;\n            cruisePauseUntil = 0;\n            nextCruiseFocusAt = Math.max(nextCruiseFocusAt, now + 900);\n            camPos.copy(camPosSmoothed);\n            cruiseFocusPosition.set(...hoveredPlanet.position);\n            camTarget.copy(cruiseFocusPosition);\n            if (now - lastCruiseLabelProjectionAt > 60) {\n              lastCruiseLabelProjectionAt = now;\n              showCruiseLabel(hoveredPlanet);\n            }\n          } else if (o.isDragging) {`,
   `          if (hoveredPlanet) {\n            // True frame freeze: no retarget, orbit adjustment, zoom, or camera\n            // interpolation is allowed while a planet is under the pointer.\n            cruiseFocusNode = null;\n            cruisePauseUntil = 0;\n            nextCruiseFocusAt = Math.max(nextCruiseFocusAt, now + 900);\n            camPos.copy(camPosSmoothed);\n            camTarget.copy(camTargetSmoothed);\n            if (now - lastCruiseLabelProjectionAt > 60) {\n              lastCruiseLabelProjectionAt = now;\n              showCruiseLabel(hoveredPlanet);\n            }\n          } else if (o.isDragging) {`,
   "true frame-freeze hover",
+);
+
+// Freeze the *rendered* camera frame as well. Upstream smoothing and cockpit roll
+// otherwise continue changing the pose for several RAF frames after hover starts.
+replaceRequired(
+  `      // Smooth camera\n      const lerpSpeed = phase === "idle" ? 2.5 : phase === "exploring" ? 3.2 : 5.5;\n      camPosSmoothed.lerp(camPos, delta * lerpSpeed);\n      camTargetSmoothed.lerp(camTarget, delta * lerpSpeed);\n      camera.position.copy(camPosSmoothed);\n      camera.lookAt(camTargetSmoothed);\n      if (phase === "exploring") {\n        const o = orbitRef.current;\n        const focusSuppressesBank = hoveredNodeRef.current !== null || performance.now() - lastPointerActivityAt < CAREER_USER_CONTROL_TAKEOVER_MS;\n        const roll = focusSuppressesBank ? 0 : THREE.MathUtils.clamp(-(mouse.x + o.yaw * 0.18) * 0.022, -0.034, 0.034);\n        camera.rotateZ(roll);\n      }`,
+  `      // Hover is a literal freeze of the last rendered camera frame. Do not\n      // smooth, retarget, or roll until the pointer leaves the Career node.\n      const hoverFrameFrozen = phase === "exploring" && hoveredNodeRef.current !== null;\n      if (!hoverFrameFrozen) {\n        const lerpSpeed = phase === "idle" ? 2.5 : phase === "exploring" ? 3.2 : 5.5;\n        camPosSmoothed.lerp(camPos, delta * lerpSpeed);\n        camTargetSmoothed.lerp(camTarget, delta * lerpSpeed);\n        camera.position.copy(camPosSmoothed);\n        camera.lookAt(camTargetSmoothed);\n        if (phase === "exploring") {\n          const o = orbitRef.current;\n          const focusSuppressesBank = performance.now() - lastPointerActivityAt < CAREER_USER_CONTROL_TAKEOVER_MS;\n          const roll = focusSuppressesBank ? 0 : THREE.MathUtils.clamp(-(mouse.x + o.yaw * 0.18) * 0.022, -0.034, 0.034);\n          camera.rotateZ(roll);\n        }\n      }`,
+  "render-pipeline hover freeze",
 );
 
 // Replace proximity-dependent focus discovery with a screen-space cadence. The
@@ -136,18 +161,43 @@ replaceRequired(
   "single-click cinematic landing",
 );
 
-if (!source.includes("CAREER_UNIVERSE_STABLE_CINEMATIC_V3 = true")) {
+// Completing the onboarding is distinct from dismissing it. Persist completion
+// first, then always return the user to the landing page instead of leaving them
+// on the final Career Workspace used by the walkthrough.
+if (!tourSource.includes("const finishTour = useCallback")) {
+  replaceTourRequired(
+    `  const closeTour = useCallback((status: "completed" | "dismissed") => {\n    writeTourStatus(status);\n    setInviteOpen(false);\n    setActive(false);\n    setTargetRect(null);\n    setTargetReady(false);\n    targetRef.current = null;\n  }, []);`,
+    `  const closeTour = useCallback((status: "completed" | "dismissed") => {\n    writeTourStatus(status);\n    setInviteOpen(false);\n    setActive(false);\n    setTargetRect(null);\n    setTargetReady(false);\n    targetRef.current = null;\n  }, []);\n\n  const finishTour = useCallback(() => {\n    closeTour("completed");\n    window.location.assign("/");\n  }, [closeTour]);`,
+    "tour completion handler",
+  );
+  replaceTourRequired(
+    `onClick={() => closeTour("completed")}`,
+    `onClick={finishTour}`,
+    "Finish button completion action",
+  );
+}
+
+if (!source.includes("CAREER_UNIVERSE_STABLE_CINEMATIC_V4 = true")) {
   throw new Error("Career Universe stable cinematic patch failed: marker missing.");
 }
 if (!source.includes("CAREER_STABLE_FOCUS_INTERVAL_MS = 3600")) {
   throw new Error("Career Universe stable cinematic patch failed: stable cadence missing.");
 }
-if (!source.includes("True frame freeze")) {
-  throw new Error("Career Universe stable cinematic patch failed: true hover freeze missing.");
+if (source.includes("if (isHovered) scale *= 1.3;")) {
+  throw new Error("Career Universe stable cinematic patch failed: hover scale jump remains.");
+}
+if (!source.includes(`const hoverFrameFrozen = phase === "exploring" && hoveredNodeRef.current !== null;`)) {
+  throw new Error("Career Universe stable cinematic patch failed: rendered frame freeze missing.");
 }
 if (!source.includes("CAREER_LANDING_APPROACH_MS")) {
   throw new Error("Career Universe stable cinematic patch failed: landing approach missing.");
 }
+if (!tourSource.includes("window.location.assign(\"/\")") || !tourSource.includes("onClick={finishTour}")) {
+  throw new Error("Guided Tour completion patch failed: landing-page return is missing.");
+}
 
-await writeFile(worldPath, source, "utf8");
-console.log("Career Universe stable cinematic applied: three route variants, ~3.6s reveal cadence, true hover frame freeze, and deliberate camera landing before workspace handoff.");
+await Promise.all([
+  writeFile(worldPath, source, "utf8"),
+  writeFile(tourPath, tourSource, "utf8"),
+]);
+console.log("Career Universe stable cinematic applied: three route variants, ~3.6s reveal cadence, zero-motion hover freeze, deliberate click landing, and Guided Tour home return.");
