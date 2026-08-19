@@ -20,7 +20,8 @@ export async function prepareApplication(form: FormData) {
     supabase.from("job_opportunities").select("*").eq("user_id", user.id).eq("id", jobId).single<JobOpportunity & { job_description?: string | null; required_languages?: string[] }>(),
   ]);
   if (agentResult.error || profileResult.error || jobResult.error) redirect("/job-agent?error=job");
-  if (!resumeResult.data) redirect("/job-agent?error=master-cv");
+  const resume = resumeResult.data;
+  if (!resume) redirect("/job-agent?error=master-cv");
   const agent = agentResult.data;
   if (agent.automation_mode === "discovery_only") redirect("/job-agent?error=mode");
 
@@ -38,7 +39,7 @@ export async function prepareApplication(form: FormData) {
   await supabase.from("job_opportunities").update({ status: "preparing", updated_at: new Date().toISOString() }).eq("id", jobId).eq("user_id", user.id);
 
   try {
-    const { pack, facts } = await generateApplicationPack({ profile: profileResult.data, resume: resumeResult.data, job: jobResult.data });
+    const { pack, facts } = await generateApplicationPack({ profile: profileResult.data, resume, job: jobResult.data });
     const version = new Date().toISOString().replace(/[-:.TZ]/g, "").slice(0, 14);
     const assetRows = [
       { asset_type: "cv", structured_content: { professionalSummary: pack.professionalSummary, selectedSkills: pack.selectedSkills, highlights: pack.cvHighlights } },
@@ -48,7 +49,7 @@ export async function prepareApplication(form: FormData) {
       { asset_type: "fit_analysis", structured_content: { score: jobResult.data.fit_score, recommendation: jobResult.data.recommendation, strengths: jobResult.data.strengths, gaps: jobResult.data.gaps, canonicalFactIds: facts.map((fact) => fact.id) } },
       { asset_type: "screening_answers", structured_content: { answers: pack.screeningAnswers, missingUserDecisions: pack.missingUserDecisions } },
     ].map((asset) => ({
-      user_id: user.id, application_id: applicationId, asset_type: asset.asset_type, version, structured_content: asset.structured_content, source_resume_id: resumeResult.data.id,
+      user_id: user.id, application_id: applicationId, asset_type: asset.asset_type, version, structured_content: asset.structured_content, source_resume_id: resume.id,
     }));
     const assets = await supabase.from("application_assets").insert(assetRows);
     if (assets.error) throw assets.error;
@@ -57,7 +58,7 @@ export async function prepareApplication(form: FormData) {
         status: "ready_for_review", next_action: pack.missingUserDecisions.length ? `Review ${pack.missingUserDecisions.length} unresolved decision(s).` : "Review the tailored application pack before submission.", updated_at: new Date().toISOString(),
       }).eq("id", applicationId).eq("user_id", user.id),
       supabase.from("job_opportunities").update({ founder_positioning: `${pack.founderPositioning.decision}: ${pack.founderPositioning.explanation}`, status: "ready_for_review", updated_at: new Date().toISOString() }).eq("id", jobId).eq("user_id", user.id),
-      supabase.from("application_events").insert({ user_id: user.id, application_id: applicationId, event_type: "application_pack_generated", metadata: { source_resume_id: resumeResult.data.id, version, missing_decisions: pack.missingUserDecisions.length } }),
+      supabase.from("application_events").insert({ user_id: user.id, application_id: applicationId, event_type: "application_pack_generated", metadata: { source_resume_id: resume.id, version, missing_decisions: pack.missingUserDecisions.length } }),
     ]);
   } catch (error) {
     const code = error instanceof Error ? error.message.slice(0, 160) : "APPLICATION_PACK_FAILED";
