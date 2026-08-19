@@ -69,6 +69,14 @@ replaceRequired(
   "hover-safe automatic focus clearing",
 );
 
+// Remove the legacy hover retarget. Hover means one thing only: freeze the exact
+// frame that the user acquired, keep the title projected, and wait for click.
+replaceRequired(
+  `          if (hoveredPlanet) {\n            // Hover is a stronger intent than the automatic cadence. Keep the\n            // viewer physically still and look only at the hovered Career.\n            cruiseFocusNode = null;\n            cruisePauseUntil = 0;\n            nextCruiseFocusAt = Math.max(nextCruiseFocusAt, now + 900);\n            camPos.copy(camPosSmoothed);\n            cruiseFocusPosition.set(...hoveredPlanet.position);\n            camTarget.copy(cruiseFocusPosition);\n            if (now - lastCruiseLabelProjectionAt > 60) {\n              lastCruiseLabelProjectionAt = now;\n              showCruiseLabel(hoveredPlanet);\n            }\n          } else if (o.isDragging) {`,
+  `          if (hoveredPlanet) {\n            // True frame freeze: no retarget, orbit adjustment, zoom, or camera\n            // interpolation is allowed while a planet is under the pointer.\n            cruiseFocusNode = null;\n            cruisePauseUntil = 0;\n            nextCruiseFocusAt = Math.max(nextCruiseFocusAt, now + 900);\n            camPos.copy(camPosSmoothed);\n            camTarget.copy(camTargetSmoothed);\n            if (now - lastCruiseLabelProjectionAt > 60) {\n              lastCruiseLabelProjectionAt = now;\n              showCruiseLabel(hoveredPlanet);\n            }\n          } else if (o.isDragging) {`,
+  "true frame-freeze hover",
+);
+
 // Replace proximity-dependent focus discovery with a screen-space cadence. The
 // camera still follows exactly the natural closed curve; every ~3.6 s we choose
 // the best already-visible Career rather than waiting an unpredictable time for
@@ -134,12 +142,12 @@ if (!source.includes("CAREER_UNIVERSE_STABLE_CINEMATIC_V3 = true")) {
 if (!source.includes("CAREER_STABLE_FOCUS_INTERVAL_MS = 3600")) {
   throw new Error("Career Universe stable cinematic patch failed: stable cadence missing.");
 }
-if (!source.includes("if (hoveredPlanet) {\n            // Hover lock")) {
-  throw new Error("Career Universe stable cinematic patch failed: hover lock missing.");
+if (!source.includes("True frame freeze")) {
+  throw new Error("Career Universe stable cinematic patch failed: true hover freeze missing.");
 }
 if (!source.includes("CAREER_LANDING_APPROACH_MS")) {
   throw new Error("Career Universe stable cinematic patch failed: landing approach missing.");
 }
 
 await writeFile(worldPath, source, "utf8");
-console.log("Career Universe stable cinematic applied: three route variants, ~3.6s reveal cadence, hover-locked targets, and deliberate camera landing before workspace handoff.");
+console.log("Career Universe stable cinematic applied: three route variants, ~3.6s reveal cadence, true hover frame freeze, and deliberate camera landing before workspace handoff.");
