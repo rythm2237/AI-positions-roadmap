@@ -6,6 +6,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 const STORAGE_KEY = "ai-career-os-guided-tour-v2";
 const TOUR_EVENT = "ai-career-os:start-guided-tour";
+const INVITE_DELAY_MS = 3000;
 
 type TourStep = {
   id: string;
@@ -140,7 +141,7 @@ export default function FirstVisitGuidedTour() {
   useEffect(() => {
     if (active) return;
     if (pathname === "/" && readTourStatus() === null) {
-      const timer = window.setTimeout(() => setInviteOpen(true), 1400);
+      const timer = window.setTimeout(() => setInviteOpen(true), INVITE_DELAY_MS);
       return () => window.clearTimeout(timer);
     }
   }, [active, pathname]);
@@ -278,12 +279,12 @@ export default function FirstVisitGuidedTour() {
 
       {inviteOpen && !active ? (
         <div className="fixed inset-0 z-[90] grid place-items-end bg-black/35 p-3 pb-[max(12px,env(safe-area-inset-bottom))] backdrop-blur-[2px] sm:place-items-center sm:p-4" role="dialog" aria-modal="true" aria-labelledby="tour-invite-title">
-          <div className="w-full max-w-md rounded-3xl border border-violet-300/20 bg-[#070a18]/96 p-4 text-white shadow-[0_28px_90px_rgba(0,0,0,.55)] backdrop-blur-2xl sm:p-6">
+          <div className="w-full max-w-md rounded-3xl border border-violet-300/20 bg-[#070a18] p-4 text-white shadow-[0_28px_90px_rgba(0,0,0,.55)] sm:p-6">
             <div className="flex items-start gap-3 sm:gap-4">
               <div className="grid h-10 w-10 shrink-0 place-items-center rounded-2xl border border-violet-300/20 bg-violet-500/10 text-lg text-violet-200 sm:h-11 sm:w-11 sm:text-xl" aria-hidden="true">✦</div>
-              <div><p className="text-[10px] font-semibold uppercase tracking-[.18em] text-violet-300">First visit</p><h2 id="tour-invite-title" className="mt-1 font-display text-lg font-semibold sm:text-xl">Want a 1-minute guided tour?</h2><p className="mt-2 text-[13px] leading-5 text-slate-400 sm:text-sm sm:leading-6">We’ll show you Career discovery, CV analysis, Career Workspaces, and how the system connects gaps to learning and evidence.</p></div>
+              <div><p className="text-[10px] font-semibold uppercase tracking-[.18em] text-violet-300">First visit</p><h2 id="tour-invite-title" className="mt-1 font-display text-lg font-semibold sm:text-xl">Want a 1-minute guided tour?</h2><p className="mt-2 text-[13px] leading-5 text-slate-300 sm:text-sm sm:leading-6">We’ll show you Career discovery, CV analysis, Career Workspaces, and how the system connects gaps to learning and evidence.</p></div>
             </div>
-            <div className="mt-4 flex flex-col-reverse gap-2 sm:mt-5 sm:flex-row sm:justify-end"><button type="button" onClick={() => closeTour("dismissed")} className="min-h-10 rounded-xl px-4 py-2 text-sm font-semibold text-slate-400 transition hover:bg-white/[0.05] hover:text-white sm:min-h-11">Maybe later</button><button type="button" onClick={startTour} className="min-h-10 rounded-xl bg-violet-500 px-5 py-2 text-sm font-semibold text-white shadow-[0_10px_35px_rgba(124,58,237,.3)] transition hover:bg-violet-400 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-300 sm:min-h-11">Start tour</button></div>
+            <div className="mt-4 flex flex-col-reverse gap-2 sm:mt-5 sm:flex-row sm:justify-end"><button type="button" onClick={() => closeTour("dismissed")} className="min-h-10 rounded-xl px-4 py-2 text-sm font-semibold text-slate-300 transition hover:bg-white/[0.05] hover:text-white sm:min-h-11">Maybe later</button><button type="button" onClick={startTour} className="min-h-10 rounded-xl bg-violet-500 px-5 py-2 text-sm font-semibold text-white shadow-[0_10px_35px_rgba(124,58,237,.3)] transition hover:bg-violet-400 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-300 sm:min-h-11">Start tour</button></div>
           </div>
         </div>
       ) : null}
@@ -291,12 +292,12 @@ export default function FirstVisitGuidedTour() {
       {active && step ? (
         <div className="pointer-events-auto fixed inset-0 z-[100]" aria-live="polite">
           {targetRect && step.placement !== "center" ? <div className="pointer-events-none absolute rounded-2xl border border-violet-300/70 shadow-[0_0_0_9999px_rgba(1,3,10,.72),0_0_40px_rgba(139,92,246,.4)] transition-[top,left,width,height] duration-300" style={{ top: targetRect.top, left: targetRect.left, width: targetRect.width, height: targetRect.height }} aria-hidden="true" /> : <div className="pointer-events-none absolute inset-0 bg-[#01030a]/76 backdrop-blur-[2px]" aria-hidden="true" />}
-          <section role="dialog" aria-modal="true" aria-label={`Guided tour: ${step.title}`} className={`fixed z-[102] max-h-[44svh] overflow-y-auto overscroll-contain rounded-[26px] border border-white/10 bg-[#080b1c]/97 p-4 text-white shadow-[0_25px_90px_rgba(0,0,0,.62)] backdrop-blur-2xl transition-opacity sm:max-h-none sm:w-[min(390px,calc(100vw-32px))] sm:rounded-3xl sm:p-5 ${targetReady ? "opacity-100" : "opacity-0"}`} style={cardStyle}>
+          <section role="dialog" aria-modal="true" aria-label={`Guided tour: ${step.title}`} className={`fixed z-[102] max-h-[44svh] overflow-y-auto overscroll-contain rounded-[26px] border border-white/10 bg-[#080b1c] p-4 text-white shadow-[0_25px_90px_rgba(0,0,0,.62)] transition-opacity sm:max-h-none sm:w-[min(390px,calc(100vw-32px))] sm:rounded-3xl sm:p-5 ${targetReady ? "opacity-100" : "opacity-0"}`} style={cardStyle}>
             {isMobile ? <div className="mx-auto mb-3 h-1 w-10 rounded-full bg-white/15" aria-hidden="true" /> : null}
             <div className="flex items-center justify-between gap-3"><p className="text-[10px] font-bold uppercase tracking-[.18em] text-violet-300">{step.eyebrow}</p><span className="rounded-full border border-white/10 bg-white/[0.04] px-2.5 py-1 text-[10px] font-semibold text-slate-500">{progress}</span></div>
             <h2 className="mt-2.5 font-display text-lg font-semibold leading-tight sm:mt-3 sm:text-2xl">{step.title}</h2>
-            <p className="mt-2 text-[13px] leading-5 text-slate-400 sm:text-sm sm:leading-6">{step.body}</p>
-            <div className="mt-4 flex items-center justify-between gap-2 border-t border-white/10 pt-3 sm:mt-5 sm:pt-4"><button type="button" onClick={() => closeTour("dismissed")} className="rounded-lg px-2.5 py-2 text-xs font-semibold text-slate-500 hover:bg-white/[0.04] hover:text-slate-300">Skip</button><div className="flex items-center gap-2"><button type="button" disabled={stepIndex === 0} onClick={() => setStepIndex((value) => Math.max(0, value - 1))} className="min-h-9 rounded-xl border border-white/10 px-3 py-2 text-xs font-semibold text-slate-300 disabled:opacity-30">Back</button>{stepIndex === STEPS.length - 1 ? <button type="button" onClick={() => closeTour("completed")} className="min-h-9 rounded-xl bg-violet-500 px-4 py-2 text-xs font-bold text-white hover:bg-violet-400">Finish</button> : <button type="button" onClick={() => setStepIndex((value) => Math.min(STEPS.length - 1, value + 1))} className="min-h-9 rounded-xl bg-violet-500 px-4 py-2 text-xs font-bold text-white hover:bg-violet-400">Next</button>}</div></div>
+            <p className="mt-2 text-[13px] leading-5 text-slate-300 sm:text-sm sm:leading-6">{step.body}</p>
+            <div className="mt-4 flex items-center justify-between gap-2 border-t border-white/10 pt-3 sm:mt-5 sm:pt-4"><button type="button" onClick={() => closeTour("dismissed")} className="rounded-lg px-2.5 py-2 text-xs font-semibold text-slate-400 hover:bg-white/[0.04] hover:text-slate-200">Skip</button><div className="flex items-center gap-2"><button type="button" disabled={stepIndex === 0} onClick={() => setStepIndex((value) => Math.max(0, value - 1))} className="min-h-9 rounded-xl border border-white/10 px-3 py-2 text-xs font-semibold text-slate-300 disabled:opacity-30">Back</button>{stepIndex === STEPS.length - 1 ? <button type="button" onClick={() => closeTour("completed")} className="min-h-9 rounded-xl bg-violet-500 px-4 py-2 text-xs font-bold text-white hover:bg-violet-400">Finish</button> : <button type="button" onClick={() => setStepIndex((value) => Math.min(STEPS.length - 1, value + 1))} className="min-h-9 rounded-xl bg-violet-500 px-4 py-2 text-xs font-bold text-white hover:bg-violet-400">Next</button>}</div></div>
           </section>
         </div>
       ) : null}
