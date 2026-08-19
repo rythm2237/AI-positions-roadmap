@@ -17,9 +17,10 @@ export async function getJobAgentWorkspace(user: User) {
   if (profile.error) throw profile.error;
   if (agent.error) throw agent.error;
   const now = Date.now();
-  const allJobs = jobs.data ?? [];
-  const jobRows = allJobs.filter((job) => job.decision_status !== "rejected" && job.decision_status !== "approved" && (job.decision_status !== "snoozed" || !job.snoozed_until || Date.parse(job.snoozed_until) <= now));
   const applicationRows = applications.data ?? [];
+  const applicationJobIds = new Set(applicationRows.map((application) => application.job_id));
+  const allJobs = jobs.data ?? [];
+  const jobRows = allJobs.filter((job) => !applicationJobIds.has(job.id) && job.decision_status !== "rejected" && job.decision_status !== "approved" && (job.decision_status !== "snoozed" || !job.snoozed_until || Date.parse(job.snoozed_until) <= now));
   const stats: JobAgentDashboardStats = {
     jobsFound: jobRows.length,
     strongMatches: jobRows.filter((job) => (job.fit_score ?? 0) >= (agent.data?.strong_match_threshold ?? 85)).length,
