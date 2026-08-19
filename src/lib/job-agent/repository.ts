@@ -11,7 +11,7 @@ export async function getJobAgentWorkspace(user: User) {
     supabase.from("resumes").select("id,title,target_career,version,file_type,storage_path,uploaded_at").order("uploaded_at", { ascending: false }).returns<ResumeRecord[]>(),
     supabase.from("saved_careers").select("id,career_slug,created_at").order("created_at", { ascending: false }).returns<SavedCareer[]>(),
     supabase.from("job_agents").select("*").eq("user_id", user.id).maybeSingle<JobAgent>(),
-    supabase.from("job_opportunities").select("id,user_id,agent_id,external_job_id,source,company,role,location,job_url,fit_score,recommendation,strengths,gaps,founder_positioning,status,skip_reason,discovered_at,updated_at").eq("user_id", user.id).order("discovered_at", { ascending: false }).limit(50).returns<JobOpportunity[]>(),
+    supabase.from("job_opportunities").select("id,user_id,agent_id,external_job_id,source,company,role,location,job_url,fit_score,recommendation,strengths,gaps,founder_positioning,status,skip_reason,discovered_at,updated_at").eq("user_id", user.id).neq("status", "skipped").neq("recommendation", "skip").order("discovered_at", { ascending: false }).limit(50).returns<JobOpportunity[]>(),
     supabase.from("applications").select("id,job_id,status,agent_mode,applied_at,recruiter_contact,last_response_at,next_action,continuation_url,notes,created_at,job_opportunities(company,role,location,job_url,fit_score,source,founder_positioning)").eq("user_id", user.id).order("created_at", { ascending: false }).limit(50).returns<ApplicationRecord[]>(),
   ]);
 
