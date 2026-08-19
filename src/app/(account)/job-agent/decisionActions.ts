@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { requireUser } from "@/lib/auth/session";
 import { createClient } from "@/lib/supabase/server";
+import { prepareApplication } from "./applicationActions";
 
 const jobId = (form: FormData) => String(form.get("job_id") ?? "").trim();
 
@@ -46,5 +47,7 @@ export async function approveJob(form: FormData) {
   if (result.error) redirect("/job-agent?error=decision");
   await supabase.from("user_activity").insert({ user_id: user.id, action: "job_agent_job_approved", metadata: { job_id: id } });
   revalidatePath("/job-agent");
-  redirect(`/job-agent/jobs/${id}?approved=1`);
+  const next = new FormData();
+  next.set("job_id", id);
+  await prepareApplication(next);
 }
