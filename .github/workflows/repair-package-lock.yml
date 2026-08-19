@@ -4,9 +4,9 @@ on:
   push:
     branches:
       - feature/job-application-agent-v1
-    paths:
-      - package.json
-      - .github/workflows/repair-package-lock.yml
+  pull_request:
+    branches:
+      - main
 
 permissions:
   contents: read
