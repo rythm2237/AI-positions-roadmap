@@ -40,7 +40,7 @@ export async function prepareApplication(form: FormData) {
 
   try {
     const { pack, facts } = await generateApplicationPack({ profile: profileResult.data, resume, job: jobResult.data });
-    const version = new Date().toISOString().replace(/[-:.TZ]/g, "").slice(0, 14);
+    const version = Date.now().toString();
     const assetRows = [
       { asset_type: "cv", structured_content: { professionalSummary: pack.professionalSummary, selectedSkills: pack.selectedSkills, highlights: pack.cvHighlights } },
       { asset_type: "portfolio", structured_content: { cases: pack.portfolioCases, founderPositioning: pack.founderPositioning } },
