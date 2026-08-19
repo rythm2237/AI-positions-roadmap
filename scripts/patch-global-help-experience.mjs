@@ -52,4 +52,5 @@ if (!tour.includes(helpStepMarker)) {
 }
 
 write(tourPath, tour);
+await import("./patch-cv-analyzer-roadmap-integration.mjs");
 console.log("Global help experience applied: icon-only ? control and final guided-tour help step.");
