@@ -2,6 +2,7 @@ import Link from "next/link";
 import { requireUser } from "@/lib/auth/session";
 import { getJobAgentWorkspace } from "@/lib/job-agent/repository";
 import { saveJobAgent, setJobAgentStatus } from "./actions";
+import { runJobSearch } from "./searchActions";
 
 const modes = [
   ["discovery_only", "Discovery only", "Find and score roles. No application preparation or sending."],
@@ -19,7 +20,7 @@ function csv(values?: string[] | null) { return values?.join(", ") ?? ""; }
 export default async function JobAgentPage({
   searchParams,
 }: {
-  searchParams: Promise<{ career?: string; saved?: string; error?: string; status?: string }>;
+  searchParams: Promise<{ career?: string; saved?: string; error?: string; status?: string; searched?: string }>;
 }) {
   const user = await requireUser("/job-agent");
   const workspace = await getJobAgentWorkspace(user);
@@ -38,15 +39,19 @@ export default async function JobAgentPage({
           <p className="mt-3 max-w-3xl text-sm leading-6 text-slate-400 sm:text-base">Turn your career preparation into job discovery, fit analysis, tailored application packs and a persistent application tracker. Consequential decisions remain under your control.</p>
         </div>
         {agent ? (
-          <form action={setJobAgentStatus}>
-            <input type="hidden" name="status" value={agent.status === "active" ? "paused" : "active"} />
-            <button className={agent.status === "active" ? "btn-secondary min-h-11" : "btn-primary min-h-11"}>{agent.status === "active" ? "Pause Agent" : "Resume Agent"}</button>
-          </form>
+          <div className="flex flex-wrap gap-3">
+            <form action={runJobSearch}><button className="btn-primary min-h-11">Search jobs now</button></form>
+            <form action={setJobAgentStatus}>
+              <input type="hidden" name="status" value={agent.status === "active" ? "paused" : "active"} />
+              <button className={agent.status === "active" ? "btn-secondary min-h-11" : "btn-primary min-h-11"}>{agent.status === "active" ? "Pause Agent" : "Resume Agent"}</button>
+            </form>
+          </div>
         ) : null}
       </div>
 
       {query.saved ? <p role="status" className="mt-6 rounded-xl border border-emerald-300/20 bg-emerald-400/10 p-3 text-sm text-emerald-200">Job Agent settings saved.</p> : null}
-      {query.error ? <p role="alert" className="mt-6 rounded-xl border border-rose-300/20 bg-rose-400/10 p-3 text-sm text-rose-200">Settings could not be saved. Review thresholds, salary values and required fields.</p> : null}
+      {query.searched ? <p role="status" className="mt-6 rounded-xl border border-cyan-300/20 bg-cyan-400/10 p-3 text-sm text-cyan-100">Search completed. {query.searched} matching provider records were evaluated and deduplicated.</p> : null}
+      {query.error ? <p role="alert" className="mt-6 rounded-xl border border-rose-300/20 bg-rose-400/10 p-3 text-sm text-rose-200">The Agent could not complete that action. Check search criteria, provider configuration and threshold values.</p> : null}
 
       <section className="mt-8 grid gap-4 md:grid-cols-3" aria-label="Career identity sources">
         <div className="glass rounded-2xl border border-white/[.07] p-5"><p className="text-xs uppercase tracking-[.16em] text-slate-500">Profile</p><p className="mt-2 font-semibold text-white">{workspace.profile.current_position || "Current role not set"}</p><p className="mt-2 text-sm text-slate-400">{workspace.profile.skills.length} skills · {workspace.profile.certificates.length} certifications · {workspace.profile.languages.length} languages</p><Link href="/profile" className="mt-4 inline-block text-sm font-semibold text-violet-300">Review profile →</Link></div>
@@ -58,6 +63,11 @@ export default async function JobAgentPage({
         <>
           <section className="mt-8 grid gap-3 sm:grid-cols-2 lg:grid-cols-6" aria-label="Job Agent summary">
             {statCards.map(([key, label]) => <div key={key} className="rounded-2xl border border-white/[.07] bg-white/[.025] p-4"><p className="text-2xl font-semibold text-white">{workspace.stats[key]}</p><p className="mt-1 text-xs text-slate-500">{label}</p></div>)}
+          </section>
+
+          <section className="mt-8 glass rounded-2xl border border-white/[.07] p-5 sm:p-6" aria-labelledby="matches-title">
+            <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between"><div><p className="eyebrow">What jobs did you find?</p><h2 id="matches-title" className="mt-1 font-display text-xl font-semibold text-white">Latest recommendations</h2></div><p className="text-xs text-slate-500">Fit is explainable and uses verified profile data; missing requirements remain gaps.</p></div>
+            {workspace.jobs.length ? <div className="mt-5 grid gap-4 lg:grid-cols-2">{workspace.jobs.slice(0, 12).map((job) => <article key={job.id} className="rounded-2xl border border-white/[.07] bg-black/10 p-4"><div className="flex items-start justify-between gap-4"><div><p className="font-semibold text-white">{job.role}</p><p className="mt-1 text-sm text-slate-400">{job.company}{job.location ? ` · ${job.location}` : ""}</p></div><div className="text-right"><p className="text-xl font-semibold text-cyan-200">{job.fit_score ?? "—"}%</p><p className="text-[11px] uppercase tracking-[.12em] text-slate-500">Fit</p></div></div><div className="mt-3 flex flex-wrap gap-2">{job.strengths.slice(0, 3).map((item) => <span key={item} className="rounded-full bg-emerald-400/[.08] px-2.5 py-1 text-xs text-emerald-200">{item}</span>)}</div>{job.gaps.length ? <p className="mt-3 text-xs leading-5 text-amber-200">Gap: {job.gaps.slice(0, 2).join(" · ")}</p> : null}<div className="mt-4 flex items-center justify-between gap-3"><span className="text-xs capitalize text-slate-500">{job.status.replaceAll("_", " ")} · {job.source}</span><a href={job.job_url} target="_blank" rel="noreferrer" className="text-sm font-semibold text-violet-300">View vacancy →</a></div></article>)}</div> : <div className="mt-5 rounded-xl border border-dashed border-white/10 p-6 text-sm leading-6 text-slate-400">No discovered jobs yet. Configure at least one supported search country and target role, then use <strong className="text-slate-200">Search jobs now</strong>. V1 uses Adzuna through its official API; additional providers can be added behind the same provider boundary.</div>}
           </section>
 
           <section className="mt-8 grid gap-6 lg:grid-cols-[1.25fr_.75fr]">
@@ -80,7 +90,6 @@ export default async function JobAgentPage({
       )}
 
       <form action={saveJobAgent} className="mt-8 space-y-6">
-        <input type="hidden" name="profile_languages" value={knownLanguages} />
         <section className="glass rounded-2xl border border-white/[.07] p-5 sm:p-6">
           <h2 className="font-display text-xl font-semibold text-white">1. Target roles</h2>
           <div className="mt-5 grid gap-5 md:grid-cols-2"><label className="text-sm text-slate-400">Primary career<input name="primary_career" defaultValue={primaryCareer} className="input-field mt-2 min-h-11 w-full" /></label><label className="text-sm text-slate-400">Secondary careers<input name="secondary_careers" defaultValue={csv(agent?.secondary_careers)} placeholder="AI Solutions Consultant, Data Analyst" className="input-field mt-2 min-h-11 w-full" /></label><label className="text-sm text-slate-400">Desired job titles<input name="desired_titles" defaultValue={csv(agent?.desired_titles)} className="input-field mt-2 min-h-11 w-full" /></label><label className="text-sm text-slate-400">Adjacent roles<input name="adjacent_roles" defaultValue={csv(agent?.adjacent_roles)} className="input-field mt-2 min-h-11 w-full" /></label><label className="text-sm text-slate-400 md:col-span-2">Roles to exclude<input name="excluded_roles" defaultValue={csv(agent?.excluded_roles)} className="input-field mt-2 min-h-11 w-full" /></label></div>
@@ -109,7 +118,7 @@ export default async function JobAgentPage({
 
         <section className="glass rounded-2xl border border-white/[.07] p-5 sm:p-6">
           <h2 className="font-display text-xl font-semibold text-white">5. LinkedIn & reporting</h2>
-          <div className="mt-5 grid gap-5 md:grid-cols-2"><label className="text-sm text-slate-400">LinkedIn profile URL<input type="url" name="linkedin_url" defaultValue={agent?.linkedin_url ?? ""} className="input-field mt-2 min-h-11 w-full" /></label><label className="text-sm text-slate-400">New LinkedIn information<select name="linkedin_sync_mode" defaultValue={agent?.linkedin_sync_mode ?? "review_first"} className="input-field mt-2 min-h-11 w-full"><option value="review_first">Review first</option><option value="use_automatically">Use automatically after verified import</option><option value="ignore">Ignore</option></select></label><label className="text-sm text-slate-400">Report frequency<select name="report_frequency" defaultValue={agent?.report_frequency ?? "daily"} className="input-field mt-2 min-h-11 w-full"><option value="daily">Daily</option><option value="weekly">Weekly</option><option value="none">No scheduled report</option></select></label><label className="text-sm text-slate-400">Report time<input type="time" name="report_time" defaultValue={agent?.report_time?.slice(0,5) ?? "20:00"} className="input-field mt-2 min-h-11 w-full" /></label><label className="text-sm text-slate-400">Timezone<input name="timezone" defaultValue={agent?.timezone ?? Intl.DateTimeFormat().resolvedOptions().timeZone ?? "UTC"} className="input-field mt-2 min-h-11 w-full" /></label><label className="text-sm text-slate-400">Immediate high-fit alert at ≥<input type="number" min="0" max="100" name="immediate_high_fit_threshold" defaultValue={agent?.immediate_high_fit_threshold ?? 90} className="input-field mt-2 min-h-11 w-full" /></label></div>
+          <div className="mt-5 grid gap-5 md:grid-cols-2"><label className="text-sm text-slate-400">LinkedIn profile URL<input type="url" name="linkedin_url" defaultValue={agent?.linkedin_url ?? ""} className="input-field mt-2 min-h-11 w-full" /></label><label className="text-sm text-slate-400">New LinkedIn information<select name="linkedin_sync_mode" defaultValue={agent?.linkedin_sync_mode ?? "review_first"} className="input-field mt-2 min-h-11 w-full"><option value="review_first">Review first</option><option value="use_automatically">Use automatically after verified import</option><option value="ignore">Ignore</option></select></label><label className="text-sm text-slate-400">Report frequency<select name="report_frequency" defaultValue={agent?.report_frequency ?? "daily"} className="input-field mt-2 min-h-11 w-full"><option value="daily">Daily</option><option value="weekly">Weekly</option><option value="none">No scheduled report</option></select></label><label className="text-sm text-slate-400">Report time<input type="time" name="report_time" defaultValue={agent?.report_time?.slice(0,5) ?? "20:00"} className="input-field mt-2 min-h-11 w-full" /></label><label className="text-sm text-slate-400">Timezone<input name="timezone" defaultValue={agent?.timezone ?? "Europe/Budapest"} className="input-field mt-2 min-h-11 w-full" /></label><label className="text-sm text-slate-400">Immediate high-fit alert at ≥<input type="number" min="0" max="100" name="immediate_high_fit_threshold" defaultValue={agent?.immediate_high_fit_threshold ?? 90} className="input-field mt-2 min-h-11 w-full" /></label></div>
           <div className="mt-5 flex flex-wrap gap-4 text-sm text-slate-300">{[["in_app","In-app"],["email","Email"],["push","Push"]].map(([value,label]) => <label key={value} className="flex items-center gap-2"><input type="checkbox" name="notification_channels" value={value} defaultChecked={agent ? agent.notification_channels.includes(value) : value !== "push"} />{label}</label>)}</div>
         </section>
 
