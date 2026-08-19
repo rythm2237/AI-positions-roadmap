@@ -24,7 +24,8 @@ function replaceSection(startMarker, endMarker, replacement, label) {
   if (start < 0 || end < 0) {
     throw new Error(`Career Universe stable cinematic patch failed: could not locate ${label}.`);
   }
-  source = `${source.slice(0, start)}${replacement.trim()}\n\n${source.slice(end)}`;
+  const endExclusive = end + endMarker.length;
+  source = `${source.slice(0, start)}${replacement.trim()}\n\n${source.slice(endExclusive)}`;
 }
 
 if (!source.includes("const CAREER_NATURAL_CRUISE = true;")) {
