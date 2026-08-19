@@ -21,7 +21,7 @@ const countryAliases: Record<string, AdzunaCountry> = {
   gb: "gb", uk: "gb", "united kingdom": "gb", britain: "gb",
   us: "us", usa: "us", "united states": "us", "united states of america": "us",
   ca: "ca", canada: "ca", au: "au", australia: "au", nz: "nz", "new zealand": "nz",
-  de: "de", germany: "de", deutschland: "de", fr: "fr", france: "fr",
+  de: "de", germany: "de", deutschland: "de", fr: "fr", france: "fr", frence: "fr",
   nl: "nl", netherlands: "nl", holland: "nl", ch: "ch", switzerland: "ch", schweiz: "ch", suisse: "ch",
 };
 
