@@ -32,7 +32,7 @@
     "framer-motion": "^11.18.2",
     "mammoth": "^1.12.0",
     "next": "^16.2.9",
-    "pdfjs-dist": "^6.1.200",
+    "pdf-parse": "2.4.5",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
     "three": "^0.169.0",
