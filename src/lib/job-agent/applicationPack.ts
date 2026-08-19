@@ -2,7 +2,7 @@ import "server-only";
 
 import { generateText, jsonSchema, Output, type JSONSchema7 } from "ai";
 import { createClient } from "@/lib/supabase/server";
-import { extractCVText } from "@/lib/intelligence/localCVAnalysis";
+import { extractStoredCVText } from "@/lib/job-agent/documentText";
 import type { Profile, ResumeRecord } from "@/types/identity";
 import type { JobOpportunity } from "@/types/jobAgent";
 
@@ -79,9 +79,7 @@ function validateEvidence(pack: GeneratedApplicationPack, facts: CanonicalFact[]
   const ids = [...grounded.flatMap((item) => item.evidenceIds), ...pack.screeningAnswers.flatMap((item) => item.evidenceIds)];
   const unknown = ids.filter((id) => !valid.has(id));
   if (unknown.length) throw new Error(`APPLICATION_PACK_UNKNOWN_EVIDENCE:${unknown.slice(0, 5).join(",")}`);
-  for (const item of grounded) {
-    if (item.text.trim() && item.evidenceIds.length === 0) throw new Error("APPLICATION_PACK_UNGROUNDED_TEXT");
-  }
+  for (const item of grounded) if (item.text.trim() && item.evidenceIds.length === 0) throw new Error("APPLICATION_PACK_UNGROUNDED_TEXT");
 }
 
 async function resumeText(resume: ResumeRecord) {
@@ -91,7 +89,7 @@ async function resumeText(resume: ResumeRecord) {
   if (download.error) throw download.error;
   const mime = resume.file_type === "pdf" ? "application/pdf" : "application/vnd.openxmlformats-officedocument.wordprocessingml.document";
   const file = new File([await download.data.arrayBuffer()], `${resume.title}.${resume.file_type}`, { type: mime });
-  return extractCVText(file);
+  return extractStoredCVText(file);
 }
 
 export async function generateApplicationPack(input: { profile: Profile; resume: ResumeRecord; job: JobOpportunity & { job_description?: string | null; required_languages?: string[] } }) {
