@@ -20,6 +20,7 @@ const privateRoutePatterns = [
 ];
 
 const nextConfig: NextConfig = {
+  serverExternalPackages: ["pdf-parse", "@napi-rs/canvas"],
   async redirects() {
     return [
       {

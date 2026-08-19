@@ -42,15 +42,15 @@ write(explainPath, explain);
 let tour = read(tourPath);
 const helpStepMarker = 'id: "contextual-help"';
 if (!tour.includes(helpStepMarker)) {
-  const oldFinish = `  {\n    id: "finish",\n    route: "/careers/ai-engineer",\n    eyebrow: "You’re ready",\n    title: "Explore at your own pace",\n    body: "Choose a role that fits your goals, follow its roadmap, complete the learning and projects, and use your evidence to prepare for real opportunities. You can restart this tour any time from the Tour button.",\n    placement: "center",\n  },\n];`;
+  const helpStep = `  {\n    id: "contextual-help",\n    route: "/careers/ai-engineer",\n    eyebrow: "Help anytime",\n    title: "Need help later? Tap the ? button",\n    body: "The ? button stays available across the public site. Activate it whenever something is unclear, then click or tap the part of the page you want explained. Explain Mode will describe that area without triggering its normal action, so you can learn the interface safely and continue at your own pace.",\n    placement: "center",\n  },\n`;
 
-  const newFinish = `  {\n    id: "ready",\n    route: "/careers/ai-engineer",\n    eyebrow: "06 · You’re ready",\n    title: "Explore at your own pace",\n    body: "Choose a role that fits your goals, follow its roadmap, complete the learning and projects, and use your evidence to prepare for real opportunities.",\n    placement: "center",\n  },\n  {\n    id: "contextual-help",\n    route: "/careers/ai-engineer",\n    eyebrow: "07 · Help anytime",\n    title: "Need help later? Tap the ? button",\n    body: "The ? button stays available across the public site. Activate it whenever something is unclear, then click or tap the part of the page you want explained. Explain Mode will describe that area without triggering its normal action, so you can learn the interface safely and continue at your own pace.",\n    placement: "center",\n  },\n];`;
-
-  if (!tour.includes(oldFinish)) {
-    throw new Error("Guided-tour finish step signature changed; update patch-global-help-experience.mjs.");
+  const listEnd = /\n\];\n\ntype Rect/;
+  if (!listEnd.test(tour)) {
+    throw new Error("Guided-tour steps list signature changed; update patch-global-help-experience.mjs.");
   }
-  tour = tour.replace(oldFinish, newFinish);
+  tour = tour.replace(listEnd, `\n${helpStep}];\n\ntype Rect`);
 }
 
 write(tourPath, tour);
+await import("./patch-cv-analyzer-roadmap-integration.mjs");
 console.log("Global help experience applied: icon-only ? control and final guided-tour help step.");
