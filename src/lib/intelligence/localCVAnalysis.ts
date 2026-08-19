@@ -32,12 +32,9 @@ export async function extractCVText(file: File): Promise<string> {
     return result.value.trim();
   }
   if (file.type === "application/pdf") {
-    // pdfjs 6 references browser geometry globals during module initialization even when
-    // we only use server-side text extraction. Minimal no-rendering shims are sufficient
-    // for getTextContent and avoid requiring a native canvas package in Vercel functions.
     ensurePdfJsNodeGlobals();
     const pdfjs = await import("pdfjs-dist/legacy/build/pdf.mjs");
-    const pdf = await pdfjs.getDocument({ data: new Uint8Array(buffer), disableWorker: true }).promise;
+    const pdf = await pdfjs.getDocument({ data: new Uint8Array(buffer) }).promise;
     const pages: string[] = [];
     for (let index = 1; index <= pdf.numPages; index++) {
       const page = await pdf.getPage(index);
