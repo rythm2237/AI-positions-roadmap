@@ -1,5 +1,6 @@
 export type JobAgentMode = "discovery_only" | "prepare_applications" | "assisted_apply" | "maximum_automation";
 export type JobAgentStatus = "active" | "paused";
+export type JobDecisionStatus = "pending" | "approved" | "rejected" | "snoozed";
 export type JobOpportunityStatus =
   | "discovered" | "recommended" | "preparing" | "ready_for_review" | "ready_for_submit"
   | "applied" | "recruiter_response" | "interview" | "assessment" | "offer"
@@ -77,6 +78,16 @@ export interface JobOpportunity {
   founder_positioning: string | null;
   status: JobOpportunityStatus;
   skip_reason: string | null;
+  decision_status: JobDecisionStatus;
+  decision_at: string | null;
+  snoozed_until: string | null;
+  last_surfaced_at: string | null;
+  surfaced_count: number;
+  salary_min: number | null;
+  salary_max: number | null;
+  salary_currency: string | null;
+  submission_method: string | null;
+  submission_receipt: string | null;
   discovered_at: string;
   updated_at: string;
 }
@@ -93,7 +104,7 @@ export interface ApplicationRecord {
   continuation_url: string | null;
   notes: string | null;
   created_at: string;
-  job_opportunities?: Pick<JobOpportunity, "company" | "role" | "location" | "job_url" | "fit_score" | "source" | "founder_positioning"> | null;
+  job_opportunities?: Pick<JobOpportunity, "company" | "role" | "location" | "job_url" | "fit_score" | "source" | "founder_positioning" | "decision_status" | "snoozed_until"> | null;
 }
 
 export type JobAgentDashboardStats = {
