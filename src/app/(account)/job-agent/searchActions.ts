@@ -22,32 +22,23 @@ function hasLanguage(profile: Profile, language: string) { const target = normal
 function evaluateLanguageCompatibility(text: string, profile: Profile, agent: JobAgent) { const explicit = requiredLanguages(text); const inferred = inferPostingLanguage(text); const effective = explicit.length ? explicit : inferred ? [inferred] : []; const missing = effective.filter((language) => !hasLanguage(profile, language)); if (missing.length) return { compatible: false, languages: effective, gap: `Required or dominant posting language is not in the profile: ${missing.join(", ")}.` }; if (!effective.length && agent.exclude_unknown_languages) return { compatible: false, languages: [], gap: "Language requirement could not be verified and unknown-language jobs are excluded." }; if (agent.english_only_priority && effective.length && !effective.includes("English")) return { compatible: false, languages: effective, gap: `English-only priority excludes this ${effective.join("/")} vacancy.` }; return { compatible: true, languages: effective, gap: null as string | null }; }
 
 export async function runJobSearch() {
-  const user = await requireUser("/job-agent");
-  const supabase = await createClient();
+  const user = await requireUser("/job-agent"); const supabase = await createClient();
   if (!adzunaConfigured()) redirect("/job-agent?error=provider");
-  const [agentResult, profileResult] = await Promise.all([
-    supabase.from("job_agents").select("*").eq("user_id", user.id).single<JobAgent>(),
-    supabase.from("profiles").select("*").eq("id", user.id).single<Profile>(),
-  ]);
+  const [agentResult, profileResult] = await Promise.all([supabase.from("job_agents").select("*").eq("user_id", user.id).single<JobAgent>(), supabase.from("profiles").select("*").eq("id", user.id).single<Profile>()]);
   if (agentResult.error || profileResult.error) redirect("/job-agent?error=profile");
   const agent = agentResult.data; const profile = profileResult.data;
   if (agent.status !== "active") redirect("/job-agent?error=paused");
-  const countries = agent.search_countries.slice(0, 3);
-  const supportedCountries = countries.filter((country) => resolveAdzunaCountry(country));
+  const countries = agent.search_countries.slice(0, 3); const supportedCountries = countries.filter((country) => resolveAdzunaCountry(country));
   const roleQueries = Array.from(new Set([agent.primary_career, ...agent.desired_titles, ...agent.secondary_careers].filter((value): value is string => Boolean(value)))).slice(0, 3);
-  if (!countries.length || !roleQueries.length) redirect("/job-agent?error=criteria");
-  if (!supportedCountries.length) redirect("/job-agent?error=country");
-  const searches = supportedCountries.flatMap((country) => roleQueries.map((query) => searchAdzunaJobs({ country, query, location: agent.cities_regions[0], limit: 20 })));
-  const batches = await Promise.all(searches);
-  const unique = new Map<string, Awaited<ReturnType<typeof searchAdzunaJobs>>[number]>();
-  for (const job of batches.flat()) unique.set(`${job.source}:${job.externalId}`, job);
+  if (!countries.length || !roleQueries.length) redirect("/job-agent?error=criteria"); if (!supportedCountries.length) redirect("/job-agent?error=country");
+  const batches = await Promise.all(supportedCountries.flatMap((country) => roleQueries.map((query) => searchAdzunaJobs({ country, query, location: agent.cities_regions[0], limit: 20 }))));
+  const unique = new Map<string, Awaited<ReturnType<typeof searchAdzunaJobs>>[number]>(); for (const job of batches.flat()) unique.set(`${job.source}:${job.externalId}`, job);
   const rows = [...unique.values()].filter((job) => !agent.excluded_companies.some((company) => job.company.toLowerCase().includes(company.toLowerCase()))).map((job) => {
     const language = evaluateLanguageCompatibility(`${job.title}\n${job.description}`, profile, agent);
     const fit = calculateJobFit({ title: job.title, company: job.company, location: job.location, description: job.description, requiredLanguages: language.languages, salaryMin: job.salaryMin, salaryMax: job.salaryMax, currency: job.currency, workplaceModel: job.workplaceModel }, profile, agent);
-    const languageBlocked = !language.compatible;
-    const recommendation = languageBlocked ? "skip" : fit.recommendation;
+    const languageBlocked = !language.compatible; const recommendation = languageBlocked ? "skip" : fit.recommendation;
     const gaps = language.gap ? [language.gap, ...fit.gaps.filter((gap) => !gap.toLowerCase().includes("language"))] : fit.gaps;
-    return { user_id: user.id, agent_id: agent.id, external_job_id: job.externalId, source: job.source, company: job.company, role: job.title, location: job.location, job_url: job.url, job_description: job.description, required_languages: language.languages, salary_min: job.salaryMin, salary_max: job.salaryMax, salary_currency: job.currency, fit_score: languageBlocked ? Math.min(fit.fitScore, agent.auto_skip_threshold - 1) : fit.fitScore, recommendation, strengths: languageBlocked ? fit.strengths.filter((item) => !item.toLowerCase().includes("language")) : fit.strengths, gaps, founder_positioning: null, status: recommendation === "skip" ? "skipped" : recommendation === "review" ? "discovered" : "recommended", skip_reason: recommendation === "skip" ? gaps.join("; ") : null, updated_at: new Date().toISOString() };
+    return { user_id: user.id, agent_id: agent.id, external_job_id: job.externalId, source: job.source, company: job.company, role: job.title, location: job.location, country: job.country, job_url: job.url, job_description: job.description, required_languages: language.languages, salary_min: job.salaryMin, salary_max: job.salaryMax, salary_currency: job.currency, fit_score: languageBlocked ? Math.min(fit.fitScore, agent.auto_skip_threshold - 1) : fit.fitScore, recommendation, strengths: languageBlocked ? fit.strengths.filter((item) => !item.toLowerCase().includes("language")) : fit.strengths, gaps, founder_positioning: null, status: recommendation === "skip" ? "skipped" : recommendation === "review" ? "discovered" : "recommended", skip_reason: recommendation === "skip" ? gaps.join("; ") : null, updated_at: new Date().toISOString() };
   });
   if (rows.length) { const save = await supabase.from("job_opportunities").upsert(rows, { onConflict: "user_id,job_url", ignoreDuplicates: false }); if (save.error) { console.error("Job Agent opportunity upsert failed", { code: save.error.code, message: save.error.message, userId: user.id }); redirect("/job-agent?error=search-save"); } }
   await supabase.from("user_activity").insert({ user_id: user.id, action: "job_agent_search_run", metadata: { reviewed: rows.length, providers: ["Adzuna"], language_gate: true } });
