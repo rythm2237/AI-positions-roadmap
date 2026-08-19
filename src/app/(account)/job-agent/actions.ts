@@ -6,7 +6,7 @@ import { requireUser } from "@/lib/auth/session";
 import { createClient } from "@/lib/supabase/server";
 import type { JobAgentMode } from "@/types/jobAgent";
 
-const modes = new Set<JobAgentMode>(["discovery_only", "prepare_applications", "assisted_apply", "maximum_automation"]);
+const modes = new Set<JobAgentMode>(["discovery_only", "prepare_applications", "assisted_apply"]);
 const frequencies = new Set(["daily", "weekly", "none"]);
 const linkedinModes = new Set(["use_automatically", "review_first", "ignore"]);
 const text = (form: FormData, key: string) => String(form.get(key) ?? "").trim() || null;
