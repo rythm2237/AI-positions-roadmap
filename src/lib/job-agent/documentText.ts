@@ -1,24 +1,27 @@
 import "server-only";
 
+type ExtractionResponse = { text?: string; error?: string };
+
+function extractionOrigin() {
+  const configured = process.env.NEXT_PUBLIC_SITE_URL?.trim();
+  if (configured) return configured.replace(/\/$/, "");
+  const vercel = process.env.VERCEL_URL?.trim();
+  if (vercel) return `https://${vercel.replace(/^https?:\/\//, "").replace(/\/$/, "")}`;
+  return "http://localhost:3000";
+}
+
 export async function extractStoredCVText(file: File): Promise<string> {
   if (file.size > 8 * 1024 * 1024) throw new Error("CV files must be 8 MB or smaller.");
-  const buffer = Buffer.from(await file.arrayBuffer());
-  if (file.type === "application/vnd.openxmlformats-officedocument.wordprocessingml.document") {
-    const mammoth = await import("mammoth");
-    const result = await mammoth.extractRawText({ buffer });
-    return result.value.trim();
+  const body = new FormData();
+  body.append("file", file);
+  const response = await fetch(`${extractionOrigin()}/api/cv-analyzer/extract`, {
+    method: "POST",
+    body,
+    cache: "no-store",
+  });
+  const data = await response.json() as ExtractionResponse;
+  if (!response.ok || !data.text?.trim()) {
+    throw new Error(data.error || "MASTER_CV_EMPTY");
   }
-  if (file.type === "application/pdf") {
-    const worker = await import("pdf-parse/worker");
-    const { PDFParse } = await import("pdf-parse");
-    PDFParse.setWorker(worker.getData());
-    const parser = new PDFParse({ data: new Uint8Array(buffer) });
-    try {
-      const result = await parser.getText();
-      return result.text.trim();
-    } finally {
-      await parser.destroy();
-    }
-  }
-  throw new Error("Only PDF and DOCX files are supported.");
+  return data.text.trim();
 }
