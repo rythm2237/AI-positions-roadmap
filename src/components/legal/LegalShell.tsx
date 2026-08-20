@@ -14,7 +14,7 @@ export default function LegalShell({ title, intro, children }: { title: string; 
   return (
     <main className="min-h-screen bg-[#03050e] px-5 py-14 text-slate-200 sm:px-8 sm:py-20">
       <div className="mx-auto max-w-4xl">
-        <Link href="/" className="text-sm font-semibold text-violet-300 hover:text-violet-200">← AI Career OS</Link>
+        <Link href="/" className="text-sm font-semibold text-violet-300 hover:text-violet-200">← AI Role Path</Link>
         <div className="mt-8 rounded-3xl border border-white/10 bg-white/[0.025] p-6 sm:p-9">
           <p className="text-xs font-semibold uppercase tracking-[.2em] text-violet-300">Legal & consumer information</p>
           <h1 className="mt-3 font-display text-3xl font-bold tracking-tight text-white sm:text-4xl">{title}</h1>
