@@ -10,6 +10,16 @@ export default function sitemap(): MetadataRoute.Sitemap {
     { url: absoluteUrl("/careers"), changeFrequency: "weekly", priority: 0.9 },
     { url: absoluteUrl("/methodology"), changeFrequency: "monthly", priority: 0.6 },
     { url: absoluteUrl("/sources"), changeFrequency: "monthly", priority: 0.6 },
+    { url: absoluteUrl("/security"), changeFrequency: "monthly", priority: 0.5 },
+    { url: absoluteUrl("/ai-transparency"), changeFrequency: "monthly", priority: 0.5 },
+    { url: absoluteUrl("/support"), changeFrequency: "monthly", priority: 0.5 },
+    { url: absoluteUrl("/contact"), changeFrequency: "monthly", priority: 0.5 },
+    { url: absoluteUrl("/data-requests"), changeFrequency: "monthly", priority: 0.4 },
+    { url: absoluteUrl("/legal"), changeFrequency: "monthly", priority: 0.4 },
+    { url: absoluteUrl("/legal/privacy"), changeFrequency: "monthly", priority: 0.4 },
+    { url: absoluteUrl("/legal/terms"), changeFrequency: "monthly", priority: 0.4 },
+    { url: absoluteUrl("/legal/cookies"), changeFrequency: "monthly", priority: 0.4 },
+    { url: absoluteUrl("/legal/refunds"), changeFrequency: "monthly", priority: 0.4 },
   ];
 
   const careerPages: MetadataRoute.Sitemap = AVAILABLE_CAREERS.map((career) => ({
