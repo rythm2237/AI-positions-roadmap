@@ -5,7 +5,7 @@ import { buildMetadata } from "@/lib/seo";
 
 export const metadata = buildMetadata({
   title: "Refunds & Cancellation",
-  description: "Refund, cancellation, conformity, and statutory withdrawal information for AI Career OS consumers.",
+  description: "Refund, cancellation, conformity, and statutory withdrawal information for AI Role Path consumers.",
   path: "/legal/refunds",
 });
 
