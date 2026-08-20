@@ -5,7 +5,7 @@ import SafeCareerUniverse from "@/components/landing/SafeCareerUniverse";
 import CookieSettingsButton from "@/components/legal/CookieSettingsButton";
 
 export const metadata: Metadata = {
-  title: "AI Career OS — Your Personal AI Career Operating System",
+  title: "AI Role Path — Your Personal AI Career Operating System",
   description:
     "Explore AI career directions through an interactive Career Universe, then open practical roadmaps across AI engineering, product, automation, consulting, data, cloud, cybersecurity, and AI marketing.",
 };
