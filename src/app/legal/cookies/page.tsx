@@ -4,7 +4,7 @@ import { buildMetadata } from "@/lib/seo";
 
 export const metadata = buildMetadata({
   title: "Cookie Notice",
-  description: "Cookie and analytics consent information for AI Career OS.",
+  description: "Cookie and analytics consent information for AI Role Path.",
   path: "/legal/cookies",
 });
 
@@ -12,7 +12,7 @@ export default function CookiesPage() {
   return (
     <LegalShell title="Cookie Notice" intro={`Last updated: ${legalLastUpdated}. Non-essential analytics are disabled until you make an affirmative choice.`}>
       <h2>1. What we use</h2>
-      <p>AI Career OS may use browser storage and cookies that are strictly necessary for authentication, security, session continuity and user-requested settings. These are required for the service to function and are not used for advertising.</p>
+      <p>AI Role Path may use browser storage and cookies that are strictly necessary for authentication, security, session continuity and user-requested settings. These are required for the service to function and are not used for advertising.</p>
 
       <h2>2. Optional analytics</h2>
       <p>Google Analytics or Google Tag Manager may be enabled in Production. They are treated as optional analytics technologies and are not loaded unless you accept analytics in the consent banner. If you reject non-essential technologies, the platform remains usable without those analytics tags.</p>
