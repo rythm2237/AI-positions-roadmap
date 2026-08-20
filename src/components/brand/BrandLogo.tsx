@@ -30,7 +30,7 @@ export function BrandLogoWithDescriptor({ className = "", priority = false, alt 
       src="/brand/ai-role-path/logo-with-descriptor-dark.svg"
       alt={alt}
       width={620}
-      height={150}
+      height={140}
       priority={priority}
       className={className}
     />
@@ -43,7 +43,7 @@ export function BrandMark({ size = 38, className = "" }: BrandMarkProps) {
       src="/brand/ai-role-path/mark-gradient.svg"
       alt=""
       aria-hidden="true"
-      width={size}
+      width={Math.round(size * (106 / 119))}
       height={size}
       className={className}
     />
