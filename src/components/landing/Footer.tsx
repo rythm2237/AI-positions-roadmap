@@ -2,6 +2,7 @@
 // Public Beta footer aligned with the Landing Page's dark neural visual system.
 
 import Link from "next/link";
+import { BrandLogoWithDescriptor } from "@/components/brand/BrandLogo";
 
 const navLinks = [
   { label: "Explore Careers", href: "/#roadmaps" },
@@ -16,10 +17,8 @@ export default function Footer() {
         <div className="flex flex-col items-start justify-between gap-8 sm:flex-row sm:items-center">
           {/* Brand */}
           <div className="max-w-xs">
-            <p className="font-display text-base font-bold text-white">
-              AI Career OS
-            </p>
-            <p className="mt-2 text-sm leading-6 text-slate-500">
+            <BrandLogoWithDescriptor className="h-11 w-auto" />
+            <p className="mt-3 text-sm leading-6 text-slate-500">
               A personal Career Operating System for AI, Automation &amp; Digital Transformation.
             </p>
           </div>
@@ -43,7 +42,7 @@ export default function Footer() {
 
         {/* Bottom bar */}
         <div className="mt-10 border-t border-white/[0.06] pt-6 text-center text-xs text-slate-600">
-          © {new Date().getFullYear()} AI Career OS. Public Beta.
+          © {new Date().getFullYear()} AI Role Path. Public Beta.
         </div>
       </div>
     </footer>
