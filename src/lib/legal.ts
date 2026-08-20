@@ -14,7 +14,7 @@ const VERIFIED_ADR_URL = "https://bekeltet.bkik.hu/elerhetosegek";
 
 export const legalOperator = {
   legalName: (process.env.NEXT_PUBLIC_LEGAL_ENTITY_NAME || VERIFIED_LEGAL_ENTITY_NAME).trim(),
-  tradingName: (process.env.NEXT_PUBLIC_TRADING_NAME || "AI Career OS").trim(),
+  tradingName: (process.env.NEXT_PUBLIC_TRADING_NAME || "AI Role Path").trim(),
   registeredAddress: (process.env.NEXT_PUBLIC_REGISTERED_ADDRESS || VERIFIED_REGISTERED_ADDRESS).trim(),
   registrationNumber: (process.env.NEXT_PUBLIC_COMPANY_REGISTRATION_NUMBER || VERIFIED_REGISTRATION_NUMBER).trim(),
   vatNumber: (process.env.NEXT_PUBLIC_VAT_NUMBER || VERIFIED_TAX_NUMBER).trim(),
