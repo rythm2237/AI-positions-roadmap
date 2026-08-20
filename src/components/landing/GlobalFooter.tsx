@@ -89,12 +89,13 @@ function LandingFooterDrawer() {
   const [open, setOpen] = useState(false);
 
   useEffect(() => {
+    if (!open) return;
     const close = (event: KeyboardEvent) => {
       if (event.key === "Escape") setOpen(false);
     };
     window.addEventListener("keydown", close);
     return () => window.removeEventListener("keydown", close);
-  }, []);
+  }, [open]);
 
   return (
     <>
@@ -109,32 +110,37 @@ function LandingFooterDrawer() {
         <span aria-hidden="true">⌃</span>
       </button>
 
-      <button
-        type="button"
-        aria-label="Close footer"
-        onClick={() => setOpen(false)}
-        className={`fixed inset-0 z-[89] bg-black/65 backdrop-blur-sm transition ${open ? "pointer-events-auto opacity-100" : "pointer-events-none opacity-0"}`}
-      />
-
-      <section
-        role="dialog"
-        aria-modal="true"
-        aria-label="AI Role Path information and footer navigation"
-        className={`fixed inset-x-0 bottom-0 z-[90] max-h-[78dvh] overflow-y-auto overscroll-contain rounded-t-[28px] border-t border-white/10 bg-[#050817]/98 shadow-[0_-22px_70px_rgba(0,0,0,.45)] backdrop-blur-2xl transition-transform duration-300 ${open ? "translate-y-0" : "translate-y-full"}`}
-      >
-        <div className="sticky top-0 z-10 flex items-center justify-between border-b border-white/[0.07] bg-[#050817]/94 px-5 py-3 backdrop-blur-xl sm:px-8">
-          <p className="text-xs font-semibold uppercase tracking-[0.16em] text-violet-300">AI Role Path</p>
+      {open ? (
+        <>
           <button
             type="button"
-            onClick={() => setOpen(false)}
-            className="grid h-9 w-9 place-items-center rounded-xl border border-white/10 text-lg text-slate-300 transition hover:bg-white/[0.05] hover:text-white"
             aria-label="Close footer"
+            onClick={() => setOpen(false)}
+            className="fixed inset-0 z-[89] bg-black/65 backdrop-blur-sm"
+          />
+
+          <section
+            role="dialog"
+            aria-modal="true"
+            aria-label="AI Role Path information and footer navigation"
+            className="fixed inset-x-0 bottom-0 z-[90] max-h-[78dvh] overflow-y-auto overscroll-contain rounded-t-[28px] border-t border-white/10 bg-[#050817]/98 shadow-[0_-22px_70px_rgba(0,0,0,.45)] backdrop-blur-2xl"
           >
-            ×
-          </button>
-        </div>
-        <FooterContents compact />
-      </section>
+            <div className="sticky top-0 z-10 flex items-center justify-between border-b border-white/[0.07] bg-[#050817]/94 px-5 py-3 backdrop-blur-xl sm:px-8">
+              <p className="text-xs font-semibold uppercase tracking-[0.16em] text-violet-300">AI Role Path</p>
+              <button
+                type="button"
+                onClick={() => setOpen(false)}
+                className="grid h-9 w-9 place-items-center rounded-xl border border-white/10 text-lg text-slate-300 transition hover:bg-white/[0.05] hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-400"
+                aria-label="Close footer"
+                autoFocus
+              >
+                ×
+              </button>
+            </div>
+            <FooterContents compact />
+          </section>
+        </>
+      ) : null}
     </>
   );
 }
