@@ -1,0 +1,19 @@
+import Link from "next/link";
+import { legalOperator } from "@/lib/legal";
+import { buildMetadata } from "@/lib/seo";
+
+export const metadata = buildMetadata({ title: "Contact", description: "Contact AI Role Path for product, privacy, legal, billing, or security questions.", path: "/contact" });
+
+export default function ContactPage() {
+  return <main className="min-h-screen bg-[#03050e] px-5 py-14 text-slate-200 sm:px-8 sm:py-20"><div className="mx-auto max-w-4xl">
+    <p className="text-xs font-semibold uppercase tracking-[0.2em] text-violet-300">Help</p><h1 className="mt-3 font-display text-4xl font-bold tracking-tight text-white sm:text-5xl">Contact AI Role Path</h1>
+    <p className="mt-5 max-w-3xl text-base leading-8 text-slate-400">Use the contact below that best matches your request. Include a short subject, the relevant page or feature, and the outcome you need.</p>
+    <div className="mt-10 grid gap-4 sm:grid-cols-2">
+      <section className="rounded-2xl border border-white/10 bg-white/[0.025] p-6"><p className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-500">Product support</p><a href={`mailto:${legalOperator.supportEmail}`} className="mt-3 block break-all font-display text-lg font-semibold text-violet-300 hover:text-violet-200">{legalOperator.supportEmail}</a><p className="mt-3 text-sm leading-7 text-slate-400">Account access, product behavior, career tools, and technical issues.</p></section>
+      <section className="rounded-2xl border border-white/10 bg-white/[0.025] p-6"><p className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-500">Legal & privacy</p><a href={`mailto:${legalOperator.contactEmail}`} className="mt-3 block break-all font-display text-lg font-semibold text-violet-300 hover:text-violet-200">{legalOperator.contactEmail}</a><p className="mt-3 text-sm leading-7 text-slate-400">Privacy, legal notices, consumer requests, and formal correspondence.</p></section>
+      <section className="rounded-2xl border border-white/10 bg-white/[0.025] p-6"><p className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-500">Billing</p><a href={`mailto:${legalOperator.billingEmail}`} className="mt-3 block break-all font-display text-lg font-semibold text-violet-300 hover:text-violet-200">{legalOperator.billingEmail}</a><p className="mt-3 text-sm leading-7 text-slate-400">Payment, invoice, refund, cancellation, and billing questions when paid services are available.</p></section>
+      <section className="rounded-2xl border border-white/10 bg-white/[0.025] p-6"><p className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-500">Security</p><p className="mt-3 font-display text-lg font-semibold text-white">Responsible disclosure</p><p className="mt-3 text-sm leading-7 text-slate-400">For suspected security issues, use the legal/privacy contact and avoid publishing sensitive details before the issue can be reviewed.</p></section>
+    </div>
+    <div className="mt-8 flex flex-wrap gap-4 text-sm"><Link href="/support" className="font-semibold text-violet-300 hover:text-violet-200">Support →</Link><Link href="/security" className="font-semibold text-violet-300 hover:text-violet-200">Security →</Link><Link href="/legal/privacy" className="font-semibold text-violet-300 hover:text-violet-200">Privacy →</Link></div>
+  </div></main>;
+}
