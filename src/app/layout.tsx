@@ -5,6 +5,7 @@ import GlobalExplainMode from "@/components/help/GlobalExplainMode";
 import AuthDock from "@/components/identity/AuthDock";
 import AuthenticatedWaitlistEnhancer from "@/components/identity/AuthenticatedWaitlistEnhancer";
 import CookieConsent from "@/components/legal/CookieConsent";
+import GlobalFooter from "@/components/landing/GlobalFooter";
 import CareerSwitcherDock from "@/components/navigation/CareerSwitcherDock";
 import FirstVisitGuidedTour from "@/components/onboarding/FirstVisitGuidedTour";
 import { absoluteUrl, isIndexableDeployment, seoConfig } from "@/lib/seo";
@@ -23,7 +24,7 @@ export const metadata: Metadata = {
   metadataBase: new URL(seoConfig.siteUrl),
   title: { default: seoConfig.defaultTitle, template: seoConfig.titleTemplate },
   description: seoConfig.defaultDescription,
-  keywords: ["AI career", "AI career roadmap", "AI automation career", "data career", "cybersecurity career", "digital transformation career", "AI Career OS"],
+  keywords: ["AI career", "AI career roadmap", "AI automation career", "data career", "cybersecurity career", "digital transformation career", "AI Role Path"],
   authors: [{ name: seoConfig.productName }],
   creator: seoConfig.productName,
   publisher: seoConfig.productName,
@@ -91,6 +92,7 @@ export default function RootLayout({ children }: { children: ReactNode }) {
       <body className="antialiased">
         <AnalyticsScripts />
         {children}
+        <GlobalFooter />
         <CareerSwitcherDock />
         <AuthDock />
         <AuthenticatedWaitlistEnhancer />
