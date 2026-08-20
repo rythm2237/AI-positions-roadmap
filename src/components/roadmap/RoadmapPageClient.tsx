@@ -19,7 +19,6 @@ import RoadmapResetButton from "./RoadmapResetButton";
 import RoadmapCertificatePreview from "./RoadmapCertificatePreview";
 import RecommendedCoursesSection from "./RecommendedCoursesSection";
 import CareerReadinessSection from "./CareerReadinessSection";
-import Footer from "@/components/landing/Footer";
 
 interface RoadmapPageClientProps {
   roadmap: Roadmap;
@@ -57,7 +56,6 @@ export default function RoadmapPageClient({ roadmap }: RoadmapPageClientProps) {
             <p className="text-sm text-gray-500">Loading your roadmap…</p>
           </div>
         </div>
-        <Footer />
       </>
     );
   }
@@ -142,8 +140,6 @@ export default function RoadmapPageClient({ roadmap }: RoadmapPageClientProps) {
 
       {/* 10. Floating progress dashboard (sticky bottom-right) */}
       <RoadmapProgressDashboard roadmap={roadmap} progress={progress} />
-
-      <Footer />
     </>
   );
 }
