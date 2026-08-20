@@ -34,14 +34,14 @@ export default function CareersPage() {
       "@context": "https://schema.org",
       "@type": "BreadcrumbList",
       itemListElement: [
-        { "@type": "ListItem", position: 1, name: "AI Career OS", item: absoluteUrl("/") },
+        { "@type": "ListItem", position: 1, name: "AI Role Path", item: absoluteUrl("/") },
         { "@type": "ListItem", position: 2, name: "Careers", item: pageUrl },
       ],
     },
     {
       "@context": "https://schema.org",
       "@type": "ItemList",
-      name: "Available AI Career OS career roadmaps",
+      name: "Available AI Role Path career roadmaps",
       numberOfItems: AVAILABLE_CAREERS.length,
       itemListElement: AVAILABLE_CAREERS.map((career, index) => ({
         "@type": "ListItem",
@@ -65,7 +65,7 @@ export default function CareersPage() {
       <header className="sticky top-0 z-40 border-b border-white/[0.06] bg-[#03050e]/88 backdrop-blur-xl">
         <div className="mx-auto flex max-w-7xl items-center justify-between gap-4 px-5 py-4 sm:px-8">
           <Link href="/" className="font-display text-sm font-semibold tracking-tight text-white sm:text-base">
-            AI Career <span className="text-violet-300">OS</span>
+            AI Role <span className="text-violet-300">Path</span>
           </Link>
           <nav className="flex items-center gap-4 text-xs font-medium text-slate-400 sm:text-sm" aria-label="Career hub navigation">
             <Link href="/methodology" className="transition hover:text-white">Methodology</Link>
@@ -138,17 +138,6 @@ export default function CareersPage() {
           })}
         </div>
       </main>
-
-      <footer className="border-t border-white/[0.06] px-5 py-8 text-sm text-slate-500 sm:px-8">
-        <div className="mx-auto flex max-w-7xl flex-wrap items-center justify-between gap-4">
-          <p>AI Career OS</p>
-          <nav className="flex flex-wrap gap-4" aria-label="Footer navigation">
-            <Link href="/legal" className="transition hover:text-slate-300">Legal</Link>
-            <Link href="/legal/privacy" className="transition hover:text-slate-300">Privacy</Link>
-            <Link href="/sources" className="transition hover:text-slate-300">Sources</Link>
-          </nav>
-        </div>
-      </footer>
     </div>
   );
 }
