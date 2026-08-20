@@ -1,6 +1,5 @@
 "use client";
 
-// Production redeploy marker: global footer rollout finalized.
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
@@ -57,6 +56,9 @@ function FooterContents({ compact = false }: { compact?: boolean }) {
           <p className="mt-4 text-sm leading-6 text-slate-400">
             Practical role paths, learning roadmaps, career intelligence, and AI-assisted tools for building evidence toward your next role.
           </p>
+          <p className="mt-4 max-w-xs text-xs leading-5 text-slate-600">
+            Career guidance is informational and should be validated against current market requirements.
+          </p>
         </div>
 
         {footerGroups.map((group) => (
@@ -72,15 +74,19 @@ function FooterContents({ compact = false }: { compact?: boolean }) {
                   {label}
                 </Link>
               ))}
-              {group.title === "Legal" ? <CookieSettingsButton /> : null}
             </div>
           </nav>
         ))}
       </div>
 
-      <div className="mt-9 flex flex-col gap-3 border-t border-white/[0.07] pt-5 text-xs text-slate-600 sm:flex-row sm:items-center sm:justify-between">
-        <span>© {new Date().getFullYear()} AI Role Path. Public Beta.</span>
-        <span>Career guidance is informational and should be validated against current market requirements.</span>
+      <div className="mt-9 border-t border-white/[0.07] pt-5">
+        <div className="flex flex-col gap-4 text-xs text-slate-600 sm:flex-row sm:items-center sm:justify-between">
+          <span>© {new Date().getFullYear()} AI Role Path. Public Beta.</span>
+          <div className="flex flex-wrap items-center gap-x-5 gap-y-2">
+            <CookieSettingsButton />
+            <span className="text-slate-500">Designed by <span className="font-semibold tracking-[0.12em] text-slate-400">RYTHM</span></span>
+          </div>
+        </div>
       </div>
     </div>
   );
