@@ -4,25 +4,25 @@ import { buildMetadata } from "@/lib/seo";
 
 export const metadata = buildMetadata({
   title: "Terms of Service",
-  description: "Terms governing consumer use of AI Career OS and its paid digital services.",
+  description: "Terms governing consumer use of AI Role Path and its paid digital services.",
   path: "/legal/terms",
 });
 
 export default function TermsPage() {
   return (
-    <LegalShell title="Terms of Service" intro={`Last updated: ${legalLastUpdated}. These terms govern consumer use of AI Career OS and any paid digital service offered through the platform.`}>
+    <LegalShell title="Terms of Service" intro={`Last updated: ${legalLastUpdated}. These terms govern consumer use of AI Role Path and any paid digital service offered through the platform.`}>
       <h2>1. Provider</h2>
       <p>The service is provided under the trading name <strong>{legalOperator.tradingName}</strong> by {legalValue(legalOperator.legalName)}. Registered address: {legalValue(legalOperator.registeredAddress)}. EVNY registration number: {legalValue(legalOperator.registrationNumber)}. Hungarian tax number: {legalValue(legalOperator.vatNumber)}. Legal/privacy contact: {legalOperator.contactEmail}. Customer support: {legalOperator.supportEmail}. Billing: {legalOperator.billingEmail}.</p>
 
       <h2>2. Service</h2>
-      <p>AI Career OS provides career-planning software, structured learning roadmaps, projects, career intelligence, readiness tools and related digital functionality. Content is informational and educational; it is not a guarantee of employment, salary, promotion, immigration status, certification, admission, or any other outcome.</p>
+      <p>AI Role Path provides career-planning software, structured learning roadmaps, projects, career intelligence, readiness tools and related digital functionality. Content is informational and educational; it is not a guarantee of employment, salary, promotion, immigration status, certification, admission, or any other outcome.</p>
 
       <h2>3. Accounts</h2>
       <p>You must provide accurate account information, keep credentials secure, and notify us if you reasonably believe your account has been compromised. You may not misuse the platform, interfere with its security, scrape protected content at scale, or use the service unlawfully.</p>
 
       <h2>4. Paid plans, progressive pricing and order formation</h2>
       <p>Where paid plans are offered, checkout will identify the service, the amount payable at that checkout, applicable taxes and mandatory charges, payment timing, billing frequency where relevant, renewal and termination terms, accepted payment methods, and any minimum commitment before you submit an order. A contract is formed only when your order is accepted and a confirmation is provided in a durable format such as email or your account.</p>
-      <p>AI Career OS may use a progress-based commercial model in which an initial stage is purchased first and a later Application-Ready or comparable stage is offered separately after objective progress criteria are met. Unless the checkout expressly states otherwise, a later-stage price is not a debt created by the initial purchase: the consumer chooses whether to buy and unlock that later stage. Any displayed full-journey figure must not obscure the amount currently payable or imply a discount that does not exist.</p>
+      <p>AI Role Path may use a progress-based commercial model in which an initial stage is purchased first and a later Application-Ready or comparable stage is offered separately after objective progress criteria are met. Unless the checkout expressly states otherwise, a later-stage price is not a debt created by the initial purchase: the consumer chooses whether to buy and unlock that later stage. Any displayed full-journey figure must not obscure the amount currently payable or imply a discount that does not exist.</p>
       <p>We will not rely on pre-ticked boxes to obtain consent for optional paid extras. Any order button that creates a payment obligation must make that obligation unambiguous.</p>
 
       <h2>5. Progress and readiness criteria</h2>

@@ -5,6 +5,7 @@ import GlobalExplainMode from "@/components/help/GlobalExplainMode";
 import AuthDock from "@/components/identity/AuthDock";
 import AuthenticatedWaitlistEnhancer from "@/components/identity/AuthenticatedWaitlistEnhancer";
 import CookieConsent from "@/components/legal/CookieConsent";
+import GlobalFooter from "@/components/landing/GlobalFooter";
 import CareerSwitcherDock from "@/components/navigation/CareerSwitcherDock";
 import FirstVisitGuidedTour from "@/components/onboarding/FirstVisitGuidedTour";
 import { absoluteUrl, isIndexableDeployment, seoConfig } from "@/lib/seo";
@@ -96,6 +97,7 @@ export default function RootLayout({ children }: { children: ReactNode }) {
       <body className="antialiased">
         <AnalyticsScripts />
         {children}
+        <GlobalFooter />
         <CareerSwitcherDock />
         <AuthDock />
         <AuthenticatedWaitlistEnhancer />

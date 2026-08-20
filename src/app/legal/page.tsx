@@ -13,7 +13,7 @@ import { buildMetadata } from "@/lib/seo";
 
 export const metadata = buildMetadata({
   title: "Legal & Consumer Information",
-  description: "Legal, privacy, cookie, cancellation, refund, and consumer-rights information for AI Career OS.",
+  description: "Legal, privacy, cookie, cancellation, refund, and consumer-rights information for AI Role Path.",
   path: "/legal",
 });
 
@@ -66,6 +66,7 @@ export default function LegalHubPage() {
         <li><Link href="/legal/privacy">Privacy Notice</Link></li>
         <li><Link href="/legal/cookies">Cookie Notice and consent choices</Link></li>
         <li><Link href="/legal/refunds">Refund, cancellation and 14-day withdrawal information</Link></li>
+        <li><Link href="/data-requests">Personal-data request guidance</Link></li>
         <li><Link href="/legal/withdraw">Online contract-withdrawal function</Link></li>
       </ul>
 

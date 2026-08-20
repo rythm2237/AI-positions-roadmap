@@ -4,13 +4,13 @@ import { buildMetadata } from "@/lib/seo";
 
 export const metadata = buildMetadata({
   title: "Privacy Notice",
-  description: "Privacy notice explaining how AI Career OS processes personal data.",
+  description: "Privacy notice explaining how AI Role Path processes personal data.",
   path: "/legal/privacy",
 });
 
 export default function PrivacyPage() {
   return (
-    <LegalShell title="Privacy Notice" intro={`Last updated: ${legalLastUpdated}. This notice explains how personal data may be processed when you use AI Career OS.`}>
+    <LegalShell title="Privacy Notice" intro={`Last updated: ${legalLastUpdated}. This notice explains how personal data may be processed when you use AI Role Path.`}>
       <h2>1. Controller</h2>
       <p>Data controller: {legalOperator.legalName}, trading as {legalOperator.tradingName}. Registered address: {legalOperator.registeredAddress}. EVNY registration number: {legalOperator.registrationNumber}. Hungarian tax number: {legalOperator.vatNumber}. Privacy contact: <a href={`mailto:${legalOperator.contactEmail}`}>{legalOperator.contactEmail}</a>.</p>
 
@@ -18,7 +18,7 @@ export default function PrivacyPage() {
       <ul>
         <li>Account and identity data, such as name, email address, authentication identifiers and account settings.</li>
         <li>Career-profile and product-use data, including selected careers, progress, projects, preferences and saved activity.</li>
-        <li>Transaction and billing metadata when paid services are activated. Full payment-card details should be handled by the payment provider rather than stored by AI Career OS.</li>
+        <li>Transaction and billing metadata when paid services are activated. Full payment-card details should be handled by the payment provider rather than stored by AI Role Path.</li>
         <li>Support, complaint and withdrawal-request communications.</li>
         <li>Security and technical data such as IP address, device/browser information, logs and fraud-prevention signals.</li>
         <li>Optional analytics data only where the required consent has been given.</li>
@@ -48,7 +48,7 @@ export default function PrivacyPage() {
       <p>You may lodge a complaint with the Hungarian supervisory authority: Nemzeti Adatvédelmi és Információszabadság Hatóság (NAIH), 1055 Budapest, Falk Miksa utca 9-11; postal address 1363 Budapest, Pf. 9; email ugyfelszolgalat@naih.hu; telephone +36 1 391 1400.</p>
 
       <h2>9. Automated processing and AI</h2>
-      <p>AI Career OS may use automation to generate recommendations, summaries or career guidance. Unless explicitly stated otherwise for a specific feature, the service is not intended to make solely automated decisions producing legal or similarly significant effects about a user.</p>
+      <p>AI Role Path may use automation to generate recommendations, summaries or career guidance. Unless explicitly stated otherwise for a specific feature, the service is not intended to make solely automated decisions producing legal or similarly significant effects about a user.</p>
 
       <h2>10. Children</h2>
       <p>The paid consumer service is not intended to be marketed to children without an appropriate age and consent framework. Before intentionally offering services to minors, age-assurance, parental-consent and child-privacy requirements must be separately implemented.</p>
