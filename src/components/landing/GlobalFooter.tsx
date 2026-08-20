@@ -1,5 +1,6 @@
 "use client";
 
+// Production redeploy marker: global footer rollout finalized.
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
