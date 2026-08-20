@@ -17,7 +17,7 @@ export const seoConfig = {
   titleTemplate: "%s · AI Role Path",
   defaultDescription:
     "Explore AI, automation, data, cybersecurity, and digital transformation careers through practical roadmaps, skills, projects, salary context, and learning paths.",
-  defaultOgImage: "/og-image.png",
+  defaultOgImage: "/api/brand/og",
   locale: "en_US",
   language: "en",
   entityDescription:
