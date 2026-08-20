@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
+import { BrandLogoWithDescriptor } from "@/components/brand/BrandLogo";
 import { getCurrentUser } from "@/lib/auth/session";
 import { safeInternalRedirect } from "@/lib/auth/redirects";
 import { privateRouteMetadata } from "@/lib/seo";
@@ -12,7 +13,7 @@ export default async function LoginPage({ searchParams }: { searchParams: Promis
   const query = await searchParams;
   const next = safeInternalRedirect(query.next);
   return <main className="grid min-h-dvh place-items-center px-5 py-16"><section className="glass w-full max-w-md rounded-3xl border border-white/10 p-8 shadow-premium">
-    <Link href="/" className="text-sm text-indigo-300">← AI Career OS</Link>
+    <Link href="/" className="inline-flex rounded-xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-400" aria-label="Back to AI Role Path"><BrandLogoWithDescriptor className="h-12 w-auto" /></Link>
     <p className="eyebrow mt-8">Your private workspace</p><h1 className="mt-3 font-display text-3xl font-semibold text-white">Build your career identity</h1>
     <p className="mt-3 text-sm leading-6 text-slate-400">Save careers, manage resume versions, and track your readiness. No username required.</p>
     {query.error ? <p role="alert" className="mt-5 rounded-xl border border-rose-300/20 bg-rose-500/10 p-3 text-sm text-rose-200">Sign-in could not be completed. Please try again.</p> : null}

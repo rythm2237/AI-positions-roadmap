@@ -7,21 +7,21 @@ function normalizeSiteUrl(value: string): string {
 }
 
 export const seoConfig = {
-  productName: "AI Career OS",
-  siteName: "AI Career OS",
+  productName: "AI Role Path",
+  siteName: "AI Role Path",
   // Canonical SEO URLs must not depend on a stale deployment environment value
   // during a domain migration. Preview deployments intentionally canonicalize to
   // the production origin as well.
   siteUrl: normalizeSiteUrl(CANONICAL_SITE_URL),
-  defaultTitle: "AI Career OS — Your Personal AI Career Operating System",
-  titleTemplate: "%s · AI Career OS",
+  defaultTitle: "AI Role Path — Your Personal AI Career Operating System",
+  titleTemplate: "%s · AI Role Path",
   defaultDescription:
     "Explore AI, automation, data, cybersecurity, and digital transformation careers through practical roadmaps, skills, projects, salary context, and learning paths.",
-  defaultOgImage: "/og-image.png",
+  defaultOgImage: "/api/brand/og",
   locale: "en_US",
   language: "en",
   entityDescription:
-    "AI Career OS is a career planning platform for exploring role-specific roadmaps, skills, projects, learning paths, and source-backed career intelligence.",
+    "AI Role Path is a career planning platform and Career Operating System for exploring role-specific roadmaps, skills, projects, learning paths, and source-backed career intelligence.",
   categories: [
     "AI Engineering",
     "AI Automation",

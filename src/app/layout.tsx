@@ -13,7 +13,7 @@ import "./experience-fixes.css";
 import "./guided-tour-mobile.css";
 
 export const viewport: Viewport = {
-  themeColor: "#03050e",
+  themeColor: "#0E1422",
   colorScheme: "dark",
   width: "device-width",
   initialScale: 1,
@@ -23,11 +23,12 @@ export const metadata: Metadata = {
   metadataBase: new URL(seoConfig.siteUrl),
   title: { default: seoConfig.defaultTitle, template: seoConfig.titleTemplate },
   description: seoConfig.defaultDescription,
-  keywords: ["AI career", "AI career roadmap", "AI automation career", "data career", "cybersecurity career", "digital transformation career", "AI Career OS"],
+  keywords: ["AI career", "AI career roadmap", "AI automation career", "data career", "cybersecurity career", "digital transformation career", "AI Role Path", "Career Operating System"],
   authors: [{ name: seoConfig.productName }],
   creator: seoConfig.productName,
   publisher: seoConfig.productName,
   alternates: { canonical: absoluteUrl("/") },
+  manifest: "/manifest.webmanifest",
   openGraph: {
     type: "website",
     locale: seoConfig.locale,
@@ -43,7 +44,11 @@ export const metadata: Metadata = {
     google: process.env.NEXT_PUBLIC_GOOGLE_SITE_VERIFICATION,
     other: process.env.NEXT_PUBLIC_BING_SITE_VERIFICATION ? { "msvalidate.01": process.env.NEXT_PUBLIC_BING_SITE_VERIFICATION } : undefined,
   },
-  icons: { icon: "/icon.svg", shortcut: "/icon.svg", apple: "/icon.svg" },
+  icons: {
+    icon: [{ url: "/icon.svg", type: "image/svg+xml" }],
+    shortcut: "/icon.svg",
+    apple: "/brand/ai-role-path/app-icon.svg",
+  },
 };
 
 const organizationSchema = {
@@ -53,7 +58,7 @@ const organizationSchema = {
   name: seoConfig.productName,
   url: absoluteUrl("/"),
   description: seoConfig.entityDescription,
-  logo: absoluteUrl("/icon.svg"),
+  logo: absoluteUrl("/brand/ai-role-path/app-icon.svg"),
 };
 
 const websiteSchema = {

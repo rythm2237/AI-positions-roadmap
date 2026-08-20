@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useEffect, useState } from "react";
+import { BrandLogo, BrandLogoWithDescriptor, BrandMark } from "@/components/brand/BrandLogo";
 
 type PublicOverlay = "how" | "why";
 type NavItem =
@@ -12,7 +13,7 @@ const NAV_ITEMS: NavItem[] = [
   { kind: "link", label: "Explore Careers", href: "/careers" },
   { kind: "link", label: "CV Analyzer", href: "/cv-analyzer" },
   { kind: "overlay", label: "How It Works", overlay: "how" },
-  { kind: "overlay", label: "Why Career OS", overlay: "why" },
+  { kind: "overlay", label: "Why AI Role Path", overlay: "why" },
 ];
 
 const STEPS = [
@@ -22,15 +23,6 @@ const STEPS = [
   ["Learn", "Follow one connected roadmap and learning journey."],
   ["Prove", "Build projects, portfolio evidence, and job readiness."],
 ] as const;
-
-export function BrandMark({ size = 38 }: { size?: number }) {
-  return (
-    <span className="relative grid shrink-0 place-items-center overflow-hidden rounded-[13px] border border-violet-200/20 bg-[radial-gradient(circle_at_35%_28%,#a5b4fc_0%,#7c3aed_38%,#4c1d95_72%,#120b2f_100%)] shadow-[0_0_28px_rgba(124,58,237,.45)]" style={{ width: size, height: size }} aria-hidden="true">
-      <svg viewBox="0 0 32 32" className="h-[68%] w-[68%]" fill="none"><circle cx="16" cy="16" r="4" fill="white" /><circle cx="7" cy="10" r="2.2" fill="#c4b5fd" /><circle cx="25" cy="8" r="2.2" fill="#67e8f9" /><circle cx="24" cy="24" r="2.2" fill="#f0abfc" /><path d="M10 11.5 13.2 14M19 13.5l4-4M19 19l3.5 3.5" stroke="white" strokeWidth="1.6" strokeLinecap="round" opacity=".9" /><circle cx="16" cy="16" r="11.5" stroke="white" strokeOpacity=".2" /></svg>
-      <span className="absolute inset-0 bg-gradient-to-br from-white/20 to-transparent" />
-    </span>
-  );
-}
 
 export default function Header() {
   const [mobileOpen, setMobileOpen] = useState(false);
@@ -53,7 +45,10 @@ export default function Header() {
     <>
       <header className="fixed inset-x-0 top-0 z-50 border-b border-white/[0.045] bg-[#03050e]/78 backdrop-blur-xl" role="banner">
         <div className="mx-auto flex h-[68px] max-w-7xl items-center gap-4 px-5 pr-[7.25rem] sm:px-8 sm:pr-[7.75rem] 2xl:pr-[17.5rem]">
-          <Link href="/" className="group flex shrink-0 items-center gap-3 rounded-xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-400" aria-label="AI Career OS home"><BrandMark /><span className="hidden min-[430px]:block"><span className="block font-display text-[15px] font-bold tracking-tight text-white">AI Career <span className="text-violet-300">OS</span></span><span className="mt-0.5 block text-[9px] font-semibold uppercase tracking-[0.18em] text-slate-600">Career Operating System</span></span></Link>
+          <Link href="/" className="group flex shrink-0 items-center rounded-xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-400" aria-label="AI Role Path home">
+            <BrandMark size={38} className="h-[38px] w-auto min-[430px]:hidden" />
+            <BrandLogoWithDescriptor priority className="hidden h-10 w-auto min-[430px]:block" />
+          </Link>
           <nav className="ml-auto hidden min-w-0 items-center gap-1 2xl:flex" aria-label="Primary navigation">
             {NAV_ITEMS.map((item) => item.kind === "link" ? <Link key={item.label} href={item.href} className="whitespace-nowrap rounded-xl px-4 py-2 text-sm font-medium text-slate-400 transition hover:bg-white/[0.045] hover:text-white">{item.label}</Link> : <button key={item.label} type="button" onClick={() => setOverlay(item.overlay)} className="whitespace-nowrap rounded-xl px-4 py-2 text-sm font-medium text-slate-400 transition hover:bg-white/[0.045] hover:text-white">{item.label}</button>)}
           </nav>
@@ -63,7 +58,7 @@ export default function Header() {
 
       <button type="button" onClick={() => setMobileOpen(false)} aria-label="Close navigation" className={`fixed inset-0 z-[70] bg-black/65 backdrop-blur-sm transition ${mobileOpen ? "pointer-events-auto opacity-100" : "pointer-events-none opacity-0"}`} />
       <aside className={`fixed inset-y-0 right-0 z-[71] flex w-[min(340px,88vw)] flex-col overflow-y-auto overscroll-contain border-l border-white/10 bg-[#070919]/98 p-5 pb-[max(1.25rem,env(safe-area-inset-bottom))] shadow-2xl transition-transform duration-300 ${mobileOpen ? "translate-x-0" : "translate-x-full"}`} aria-hidden={!mobileOpen}>
-        <div className="flex items-center justify-between border-b border-white/10 pb-5"><div className="flex items-center gap-3"><BrandMark size={34} /><span className="font-display font-semibold text-white">AI Career OS</span></div><button type="button" onClick={() => setMobileOpen(false)} className="grid h-10 w-10 place-items-center rounded-xl border border-white/10 text-slate-300" aria-label="Close navigation">×</button></div>
+        <div className="flex items-center justify-between border-b border-white/10 pb-5"><BrandLogo className="h-8 w-auto" /><button type="button" onClick={() => setMobileOpen(false)} className="grid h-10 w-10 place-items-center rounded-xl border border-white/10 text-slate-300" aria-label="Close navigation">×</button></div>
         <nav className="mt-5 grid gap-2" aria-label="Mobile primary navigation">
           {NAV_ITEMS.map((item) => item.kind === "link" ? (
             <Link key={item.label} href={item.href} onClick={() => setMobileOpen(false)} className="rounded-xl border border-violet-300/15 bg-violet-500/[0.09] px-4 py-3 text-sm font-semibold text-violet-100 hover:bg-violet-500/[0.15]">{item.label}<span className="float-right" aria-hidden="true">→</span></Link>
@@ -84,8 +79,8 @@ export default function Header() {
 
       <button type="button" onClick={() => setOverlay(null)} aria-label="Close information" className={`fixed inset-0 z-[80] bg-black/70 backdrop-blur-md transition ${overlay ? "pointer-events-auto opacity-100" : "pointer-events-none opacity-0"}`} />
       <div role="dialog" aria-modal="true" aria-hidden={!overlay} className={`fixed left-1/2 top-1/2 z-[81] max-h-[calc(100dvh-2rem)] w-[min(680px,calc(100vw-2rem))] -translate-x-1/2 -translate-y-1/2 overflow-y-auto rounded-3xl border border-white/10 bg-[#080b1c]/98 p-5 shadow-2xl transition sm:p-6 ${overlay ? "scale-100 opacity-100" : "pointer-events-none scale-95 opacity-0"}`}>
-        <div className="flex items-start justify-between gap-4"><div><p className="text-[10px] font-semibold uppercase tracking-[.18em] text-violet-300 sm:text-xs">{overlay === "why" ? "Connected by design" : "A clear path forward"}</p><h2 className="mt-2 font-display text-2xl font-bold text-white sm:text-3xl">{overlay === "why" ? "Why Career OS" : "How It Works"}</h2></div><button type="button" onClick={() => setOverlay(null)} className="grid h-10 w-10 shrink-0 place-items-center rounded-xl border border-white/10 text-slate-300">×</button></div>
-        {overlay === "why" ? <div className="mt-5 space-y-4 text-sm leading-6 text-slate-300 sm:mt-6 sm:leading-7"><p className="font-display text-lg font-semibold text-white sm:text-xl">Not another list of courses.</p><p>Career OS connects discovery, CV analysis, Roadmap, Learning, projects, portfolio evidence, and job preparation in one coherent journey.</p><p className="rounded-2xl border border-violet-300/15 bg-violet-500/[0.07] px-4 py-3 text-center text-xs font-semibold tracking-[.06em] text-violet-100 sm:text-sm sm:tracking-[.08em]">ANALYZE → CHOOSE → LEARN → BUILD → PROVE → APPLY</p></div> : <ol className="mt-5 grid gap-3 sm:mt-6 sm:grid-cols-2">{STEPS.map(([title, description], index) => <li key={title} className="rounded-2xl border border-white/10 bg-white/[0.025] p-4"><span className="text-xs font-bold text-violet-300">0{index + 1}</span><h3 className="mt-2 font-display text-lg font-semibold text-white">{title}</h3><p className="mt-1 text-sm leading-6 text-slate-400">{description}</p></li>)}</ol>}
+        <div className="flex items-start justify-between gap-4"><div><p className="text-[10px] font-semibold uppercase tracking-[.18em] text-violet-300 sm:text-xs">{overlay === "why" ? "Connected by design" : "A clear path forward"}</p><h2 className="mt-2 font-display text-2xl font-bold text-white sm:text-3xl">{overlay === "why" ? "Why AI Role Path" : "How It Works"}</h2></div><button type="button" onClick={() => setOverlay(null)} className="grid h-10 w-10 shrink-0 place-items-center rounded-xl border border-white/10 text-slate-300">×</button></div>
+        {overlay === "why" ? <div className="mt-5 space-y-4 text-sm leading-6 text-slate-300 sm:mt-6 sm:leading-7"><p className="font-display text-lg font-semibold text-white sm:text-xl">Not another list of courses.</p><p>AI Role Path connects discovery, CV analysis, Roadmap, Learning, projects, portfolio evidence, and job preparation in one coherent journey.</p><p className="rounded-2xl border border-violet-300/15 bg-violet-500/[0.07] px-4 py-3 text-center text-xs font-semibold tracking-[.06em] text-violet-100 sm:text-sm sm:tracking-[.08em]">ANALYZE → CHOOSE → LEARN → BUILD → PROVE → APPLY</p></div> : <ol className="mt-5 grid gap-3 sm:mt-6 sm:grid-cols-2">{STEPS.map(([title, description], index) => <li key={title} className="rounded-2xl border border-white/10 bg-white/[0.025] p-4"><span className="text-xs font-bold text-violet-300">0{index + 1}</span><h3 className="mt-2 font-display text-lg font-semibold text-white">{title}</h3><p className="mt-1 text-sm leading-6 text-slate-400">{description}</p></li>)}</ol>}
       </div>
     </>
   );
