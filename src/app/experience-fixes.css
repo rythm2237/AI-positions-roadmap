@@ -7,35 +7,65 @@ section > div[class*="sticky top-0 z-30"] {
   top: auto;
 }
 
-/* Career Journey briefing: replace the small centered caption with a proper
-   readable briefing panel that does not compete with the map landmarks. */
-section.touch-none.select-none.overflow-hidden > div.pointer-events-none.absolute.left-1\/2 {
-  left: clamp(5.5rem, 9vw, 8.5rem) !important;
-  top: clamp(1.25rem, 3.5vh, 2.5rem) !important;
-  width: min(44rem, calc(100% - 12rem)) !important;
-  transform: none !important;
-  border-radius: 1.25rem !important;
-  border-color: rgba(148, 163, 184, 0.18) !important;
-  background: linear-gradient(135deg, rgba(3, 7, 18, 0.94), rgba(15, 23, 42, 0.86)) !important;
-  padding: 1.15rem 1.35rem !important;
+/* Career Journey briefing: keep the current-stage explanation on the left,
+   vertically centered over the map. The translucent surface preserves enough
+   map context to see landmarks travelling underneath without reducing text
+   contrast. */
+section.touch-none.select-none.overflow-hidden > .journey-stage-briefing {
+  left: clamp(1.1rem, 2.2vw, 2.25rem) !important;
+  top: 50% !important;
+  width: clamp(19rem, 28vw, 27rem) !important;
+  max-height: calc(100% - 9rem) !important;
+  transform: translateY(-50%) !important;
+  overflow-y: auto !important;
+  border-radius: 1.35rem !important;
+  border-color: rgba(148, 163, 184, 0.2) !important;
+  background: linear-gradient(145deg, rgba(3, 7, 18, 0.8), rgba(15, 23, 42, 0.72)) !important;
+  padding: 1.15rem 1.25rem !important;
   text-align: left !important;
-  box-shadow: 0 20px 55px rgba(2, 6, 23, 0.34) !important;
+  box-shadow: 0 20px 55px rgba(2, 6, 23, 0.3), inset 0 1px rgba(255, 255, 255, 0.035) !important;
+  backdrop-filter: blur(9px) saturate(118%) !important;
+  scrollbar-width: thin;
 }
 
-section.touch-none.select-none.overflow-hidden > div.pointer-events-none.absolute.left-1\/2 > div {
+section.touch-none.select-none.overflow-hidden > .journey-stage-briefing > div:first-child {
   justify-content: flex-start !important;
   gap: 0.55rem 1rem !important;
-  font-size: 0.68rem !important;
+  font-size: 0.66rem !important;
   letter-spacing: 0.14em !important;
 }
 
-section.touch-none.select-none.overflow-hidden > div.pointer-events-none.absolute.left-1\/2 > p {
-  max-width: 60ch !important;
-  margin-top: 0.65rem !important;
-  font-size: 0.95rem !important;
+section.touch-none.select-none.overflow-hidden > .journey-stage-briefing > .journey-stage-explanation {
+  display: block !important;
+  max-width: 42ch !important;
+  margin-top: 0.75rem !important;
+  overflow: visible !important;
+  font-size: 0.93rem !important;
   line-height: 1.65 !important;
-  color: #cbd5e1 !important;
-  -webkit-line-clamp: 3 !important;
+  color: #d5deeb !important;
+  -webkit-box-orient: initial !important;
+  -webkit-line-clamp: unset !important;
+}
+
+section.touch-none.select-none.overflow-hidden > .journey-stage-briefing .journey-final-tools {
+  position: relative;
+  z-index: 1;
+}
+
+/* Station details: use the modal itself as the single scroll surface. This
+   removes the large fixed header + small nested lower scroller pattern. */
+div.fixed[class~="z-[65]"] > div {
+  display: block !important;
+  overflow-y: auto !important;
+  overscroll-behavior: contain;
+  scrollbar-gutter: stable;
+  -webkit-overflow-scrolling: touch;
+}
+
+div.fixed[class~="z-[65]"] > div > div[class*="min-h-0"][class*="overflow-y-auto"] {
+  min-height: auto !important;
+  flex: none !important;
+  overflow: visible !important;
 }
 
 .auth-waitlist-notice {
@@ -79,17 +109,23 @@ section.touch-none.select-none.overflow-hidden > div.pointer-events-none.absolut
 }
 
 @media (max-width: 767px) {
-  section.touch-none.select-none.overflow-hidden > div.pointer-events-none.absolute.left-1\/2 {
+  section.touch-none.select-none.overflow-hidden > .journey-stage-briefing {
     left: 0.75rem !important;
     top: 0.75rem !important;
     width: calc(100% - 1.5rem) !important;
+    max-height: min(48dvh, 24rem) !important;
+    transform: none !important;
     padding: 0.85rem 1rem !important;
   }
 
-  section.touch-none.select-none.overflow-hidden > div.pointer-events-none.absolute.left-1\/2 > p {
+  section.touch-none.select-none.overflow-hidden > .journey-stage-briefing > .journey-stage-explanation {
+    margin-top: 0.5rem !important;
     font-size: 0.78rem !important;
-    line-height: 1.45 !important;
-    -webkit-line-clamp: 2 !important;
+    line-height: 1.5 !important;
+  }
+
+  section.touch-none.select-none.overflow-hidden > .journey-stage-briefing .journey-final-tools {
+    grid-template-columns: 1fr !important;
   }
 }
 

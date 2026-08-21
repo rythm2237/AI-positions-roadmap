@@ -14,6 +14,21 @@ function WritingText({ text, className = "" }: { text: string; className?: strin
   return <motion.p key={text} className={className} initial={reduceMotion ? false : { clipPath: "inset(0 100% 0 0)", opacity: .35 }} animate={{ clipPath: "inset(0 0% 0 0)", opacity: 1 }} transition={{ duration: reduceMotion ? .12 : .9, delay: reduceMotion ? 0 : .12, ease: [0.22, 1, 0.36, 1] }}>{text}</motion.p>;
 }
 
+function normalizedStageTitle(stage: CareerJourneyStage) {
+  return stage.title.trim().replace(/\s+/g, " ").toLowerCase();
+}
+
+function trimTrailingDuplicateStages(stages: CareerJourneyStage[]) {
+  let end = stages.length;
+  while (end > 1) {
+    const current = normalizedStageTitle(stages[end - 1]);
+    const previous = normalizedStageTitle(stages[end - 2]);
+    if (!current || current !== previous) break;
+    end -= 1;
+  }
+  return end === stages.length ? stages : stages.slice(0, end);
+}
+
 function StationLandmark({ stage, active, unlocked, passed, progress, technologyLevel, guidedMode, transitioning, onSelect }: {
   stage: CareerJourneyStage; active: boolean; unlocked: boolean; passed: boolean; progress: number; technologyLevel: number; guidedMode: boolean; transitioning: boolean; onSelect: () => void;
 }) {
@@ -52,18 +67,34 @@ function StationLandmark({ stage, active, unlocked, passed, progress, technology
   );
 }
 
-function GuidedOverlay({ stage, index, total, travelling, navigationOpen, isMobile, onChange, onExit }: {
+function GuidedOverlay({ stage, index, total, travelling, navigationOpen, isMobile, cvAnalyzerHref, jobAgentHref, onChange, onExit }: {
   stage: CareerJourneyStage; index: number; total: number; travelling: boolean; navigationOpen: boolean; isMobile: boolean;
-  onChange: (index: number) => void; onExit: () => void;
+  cvAnalyzerHref: string; jobAgentHref: string; onChange: (index: number) => void; onExit: () => void;
 }) {
   const button = "min-h-11 rounded-full border border-white/10 bg-slate-950/75 px-4 py-2 text-xs font-semibold text-slate-300 transition hover:border-cyan-300/40 hover:bg-slate-900 hover:text-cyan-100 active:translate-y-px focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-cyan-300 disabled:cursor-not-allowed disabled:opacity-30 disabled:active:translate-y-0";
+  const isFinalStage = index === total - 1;
+
   return <>
-    <motion.div className="pointer-events-none absolute left-1/2 top-[max(0.5rem,env(safe-area-inset-top))] z-40 w-[min(32rem,calc(100%-1rem))] -translate-x-1/2 rounded-2xl border border-white/10 bg-slate-950/78 px-3 py-2.5 text-center text-slate-100 shadow-[0_12px_36px_rgba(1,4,12,.32)] backdrop-blur-md transition-opacity duration-200 sm:px-4" style={{ opacity: navigationOpen && isMobile ? 0 : 1 }} initial={{opacity:0,y:-5}} animate={{opacity:1,y:0}}>
+    <motion.div className="journey-stage-briefing pointer-events-auto absolute left-1/2 top-[max(0.5rem,env(safe-area-inset-top))] z-40 w-[min(32rem,calc(100%-1rem))] -translate-x-1/2 rounded-2xl border border-white/10 bg-slate-950/78 px-3 py-2.5 text-center text-slate-100 shadow-[0_12px_36px_rgba(1,4,12,.32)] backdrop-blur-md transition-opacity duration-200 sm:px-4" style={{ opacity: navigationOpen && isMobile ? 0 : 1 }} initial={{opacity:0,y:-5}} animate={{opacity:1,y:0}}>
       <div className="flex flex-wrap items-center justify-center gap-x-3 gap-y-0.5 text-[9px] font-semibold uppercase tracking-[.15em]">
         <span className="text-cyan-200/80">Stage {index + 1} of {total}</span>
         <span className="text-slate-400">Current checkpoint: {stage.label ?? stage.title}</span>
       </div>
-      <WritingText text={stage.explanation} className="text-clamp-2 mt-1.5 text-xs leading-4 text-slate-300 sm:leading-5"/>
+      <WritingText text={stage.explanation} className="journey-stage-explanation mt-1.5 text-xs leading-4 text-slate-300 sm:leading-5"/>
+      {isFinalStage ? (
+        <div className="journey-final-tools mt-4 grid gap-2 border-t border-white/10 pt-3 sm:grid-cols-2">
+          <a href={cvAnalyzerHref} className="group rounded-xl border border-cyan-200/15 bg-cyan-300/[0.045] p-3 text-left transition hover:border-cyan-200/35 hover:bg-cyan-300/[0.08] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-cyan-300">
+            <span className="block text-[9px] font-semibold uppercase tracking-[.14em] text-cyan-200/70">Career tool</span>
+            <span className="mt-1 block text-sm font-semibold text-white">CV Analyzer</span>
+            <span className="mt-1 block text-[11px] leading-4 text-slate-400">Review and strengthen your CV for this career path.</span>
+          </a>
+          <a href={jobAgentHref} className="group rounded-xl border border-teal-200/15 bg-teal-300/[0.045] p-3 text-left transition hover:border-teal-200/35 hover:bg-teal-300/[0.08] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-teal-300">
+            <span className="block text-[9px] font-semibold uppercase tracking-[.14em] text-teal-200/70">Career tool</span>
+            <span className="mt-1 block text-sm font-semibold text-white">Agent Job Finder</span>
+            <span className="mt-1 block text-[11px] leading-4 text-slate-400">Find and organize relevant openings for this career.</span>
+          </a>
+        </div>
+      ) : null}
     </motion.div>
     <motion.div className="scrollbar-hide absolute bottom-[calc(4.75rem_+_env(safe-area-inset-bottom))] left-1/2 z-40 flex w-[min(34rem,calc(100%-1rem))] -translate-x-1/2 items-center justify-center gap-3 overflow-x-auto rounded-full border border-white/10 bg-slate-950/78 px-3 py-2 shadow-[0_16px_44px_rgba(1,4,12,.38)] backdrop-blur-md lg:bottom-4" initial={false} animate={{opacity: travelling ? .35 : 1}} transition={{duration:.18}}>
       {index > 0 ? <button aria-label="Previous station" className={button} disabled={travelling} onClick={() => onChange(index - 1)}>← Back</button> : <span className="w-11" aria-hidden="true"/>}
@@ -75,23 +106,27 @@ function GuidedOverlay({ stage, index, total, travelling, navigationOpen, isMobi
 
 export default function CareerJourneyEngine(props: JourneyEngineProps) {
   const { map, stages, progress, viewport, focusedStage, selectedStage, guidedMode, navigationOpen, guidedIndex, cameraPhase, learningMode, reduceMotion, dataWarnings, isStageUnlocked, getStageProgress, onSelectStage, onStartJourney, onExitJourney, onGuidedIndexChange } = props;
+  const displayStages = React.useMemo(() => trimTrailingDuplicateStages(stages), [stages]);
   const geometry = React.useMemo(
-    () => normalizeJourneyGeometry(stages, map.width, map.height),
-    [map.height, map.width, stages],
+    () => normalizeJourneyGeometry(displayStages, map.width, map.height),
+    [displayStages, map.height, map.width],
   );
   const positionedStages = geometry.stages;
-  const positionedFocusedStage = positionedStages.find((stage) => stage.id === focusedStage.id) ?? positionedStages[0];
-  const positionedSelectedStage = positionedStages.find((stage) => stage.id === selectedStage.id) ?? positionedStages[0];
+  const effectiveGuidedIndex = Math.min(guidedIndex, Math.max(0, positionedStages.length - 1));
+  const positionedFocusedStage = positionedStages.find((stage) => stage.id === focusedStage.id) ?? positionedStages[effectiveGuidedIndex] ?? positionedStages[0];
+  const positionedSelectedStage = positionedStages.find((stage) => stage.id === selectedStage.id) ?? positionedStages[Math.min(effectiveGuidedIndex, Math.max(0, positionedStages.length - 1))] ?? positionedStages[0];
   const [presentedStage, setPresentedStage] = React.useState(positionedFocusedStage);
-  const [presentedIndex, setPresentedIndex] = React.useState(guidedIndex);
+  const [presentedIndex, setPresentedIndex] = React.useState(effectiveGuidedIndex);
   const [travelling, setTravelling] = React.useState(false);
   const [showStartPopup, setShowStartPopup] = React.useState(true);
+  const [careerSlug, setCareerSlug] = React.useState("");
   const guidedModeRef = React.useRef(guidedMode);
   const world = getWorldSize(positionedStages, geometry.width, geometry.height, map.worldPadding);
   const camera = useJourneyCamera({ stages: positionedStages, focusedStage: positionedFocusedStage, viewport, mapWidth: world.width, mapHeight: world.height, guidedMode, cameraPhase, learningMode });
   const [pan, setPan] = React.useState({ x: 0, y: 0 });
   const [dragging, setDragging] = React.useState(false);
   const drag = React.useRef<{ id: number; x: number; y: number; panX: number; panY: number } | null>(null);
+  const toolQuery = careerSlug ? `?career=${encodeURIComponent(careerSlug)}&source=roadmap` : "?source=roadmap";
   const constrainPan = React.useCallback((x: number, y: number) => {
     const visibleX = Math.min(viewport.width * .22, 180);
     const visibleY = Math.min(viewport.height * .22, 140);
@@ -104,6 +139,16 @@ export default function CareerJourneyEngine(props: JourneyEngineProps) {
   const movePan = (x: number, y: number) => setPan(constrainPan(x, y));
 
   React.useEffect(() => {
+    const match = window.location.pathname.match(/^\/careers\/([^/?#]+)/);
+    if (!match?.[1]) return;
+    try {
+      setCareerSlug(decodeURIComponent(match[1]));
+    } catch {
+      setCareerSlug(match[1]);
+    }
+  }, []);
+
+  React.useEffect(() => {
     setPan((current) => constrainPan(current.x, current.y));
   }, [constrainPan]);
 
@@ -111,26 +156,26 @@ export default function CareerJourneyEngine(props: JourneyEngineProps) {
     const enteringGuidedMode = guidedMode && !guidedModeRef.current;
     guidedModeRef.current = guidedMode;
     if (!guidedMode || reduceMotion) {
-      setPresentedStage(positionedFocusedStage); setPresentedIndex(guidedIndex); setTravelling(false); return;
+      setPresentedStage(positionedFocusedStage); setPresentedIndex(effectiveGuidedIndex); setTravelling(false); return;
     }
     if (presentedStage.id === positionedFocusedStage.id && !enteringGuidedMode) return;
     setTravelling(true);
     const mobile = viewport.width < 640;
-    const presentTimer = window.setTimeout(() => { setPresentedStage(positionedFocusedStage); setPresentedIndex(guidedIndex); }, mobile ? 500 : 650);
+    const presentTimer = window.setTimeout(() => { setPresentedStage(positionedFocusedStage); setPresentedIndex(effectiveGuidedIndex); }, mobile ? 500 : 650);
     const endTimer = window.setTimeout(() => setTravelling(false), mobile ? 950 : 1200);
     return () => { window.clearTimeout(presentTimer); window.clearTimeout(endTimer); };
   // Presented copy follows near arrival so the camera destination can change immediately.
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [positionedFocusedStage.id, guidedIndex, guidedMode, reduceMotion, viewport.width]);
+  }, [positionedFocusedStage.id, effectiveGuidedIndex, guidedMode, reduceMotion, viewport.width]);
 
   if (!positionedStages.length) return <section className="grid h-full place-items-center bg-[#030712] p-6 text-center text-slate-100"><div><h2 className="font-display text-2xl font-bold">Journey unavailable</h2><p className="mt-2 text-slate-400">This career map has no stations yet.</p></div></section>;
 
   return (
     <motion.section className={`relative h-full touch-none select-none overflow-hidden bg-[#030712] ${dragging ? "cursor-grabbing" : "cursor-grab"}`} initial={false} animate={{opacity:1}} exit={{opacity:0}} tabIndex={-1}
-      onPointerDown={(event) => { if ((event.target as HTMLElement).closest("button")) return; event.currentTarget.setPointerCapture(event.pointerId); drag.current = { id:event.pointerId, x:event.clientX, y:event.clientY, panX:pan.x, panY:pan.y }; setDragging(true); }}
+      onPointerDown={(event) => { if ((event.target as HTMLElement).closest("button, a")) return; event.currentTarget.setPointerCapture(event.pointerId); drag.current = { id:event.pointerId, x:event.clientX, y:event.clientY, panX:pan.x, panY:pan.y }; setDragging(true); }}
       onPointerMove={(event) => { const start=drag.current; if (!start || start.id!==event.pointerId) return; movePan(start.panX+event.clientX-start.x,start.panY+event.clientY-start.y); }}
       onPointerUp={(event) => { if (drag.current?.id===event.pointerId) { drag.current=null; setDragging(false); event.currentTarget.releasePointerCapture(event.pointerId); } }} onPointerCancel={() => { drag.current=null; setDragging(false); }}
-      onKeyDown={(event) => { if (!guidedMode || travelling) return; if (event.key === "ArrowRight" && guidedIndex < positionedStages.length - 1) { event.preventDefault(); setPan({x:0,y:0}); onGuidedIndexChange(guidedIndex + 1); } if (event.key === "ArrowLeft" && guidedIndex > 0) { event.preventDefault(); setPan({x:0,y:0}); onGuidedIndexChange(guidedIndex - 1); } }}>
+      onKeyDown={(event) => { if (!guidedMode || travelling) return; if (event.key === "ArrowRight" && effectiveGuidedIndex < positionedStages.length - 1) { event.preventDefault(); setPan({x:0,y:0}); onGuidedIndexChange(effectiveGuidedIndex + 1); } if (event.key === "ArrowLeft" && effectiveGuidedIndex > 0) { event.preventDefault(); setPan({x:0,y:0}); onGuidedIndexChange(effectiveGuidedIndex - 1); } }}>
       <InfiniteLeatherBackground />
       <div className="absolute inset-0">
         <div className="absolute left-0 top-0 origin-top-left will-change-transform" style={{ width: world.width, height: world.height, transform: `translate3d(${camera.x + pan.x}px,${camera.y + pan.y}px,0) scale(${camera.scale})`, transition: reduceMotion || dragging ? "none" : `transform ${camera.transitionMs}ms cubic-bezier(.22,1,.36,1)` }}>
@@ -149,7 +194,7 @@ export default function CareerJourneyEngine(props: JourneyEngineProps) {
               <path d={camera.path} stroke="url(#expedition-route)" strokeOpacity=".48" strokeWidth="3.4" strokeLinecap="round"/>
               <path d={camera.path} stroke="url(#expedition-route)" strokeOpacity=".92" strokeWidth="1.3" strokeLinecap="round" strokeDasharray="3 12"/>
             </svg>
-            {positionedStages.map((stage, index) => { const passed = Boolean(stage.phaseExam && isAssessmentQualified(stage.phaseExam, progress.assessmentResults[stage.phaseExam.id])); return <StationLandmark key={stage.id} stage={stage} active={(guidedMode ? positionedFocusedStage : positionedSelectedStage).id === stage.id} unlocked={isStageUnlocked(stage.id)} passed={passed} progress={getStageProgress(stage.id)} technologyLevel={index / Math.max(1, positionedStages.length - 1)} guidedMode={guidedMode} transitioning={travelling} onSelect={() => onSelectStage(stages.find((sourceStage) => sourceStage.id === stage.id) ?? stage)}/>; })}
+            {positionedStages.map((stage, index) => { const passed = Boolean(stage.phaseExam && isAssessmentQualified(stage.phaseExam, progress.assessmentResults[stage.phaseExam.id])); return <StationLandmark key={stage.id} stage={stage} active={(guidedMode ? positionedFocusedStage : positionedSelectedStage).id === stage.id} unlocked={isStageUnlocked(stage.id)} passed={passed} progress={getStageProgress(stage.id)} technologyLevel={index / Math.max(1, positionedStages.length - 1)} guidedMode={guidedMode} transitioning={travelling} onSelect={() => onSelectStage(displayStages.find((sourceStage) => sourceStage.id === stage.id) ?? stage)}/>; })}
           </TreasureMapSurface>
         </div>
       </div>
@@ -163,7 +208,7 @@ export default function CareerJourneyEngine(props: JourneyEngineProps) {
           <button autoFocus type="button" className="mt-6 min-h-11 rounded-full border border-cyan-200/30 bg-gradient-to-r from-cyan-500 via-teal-400 to-cyan-500 px-7 py-3 text-sm font-bold text-slate-950 shadow-[0_8px_28px_rgba(34,211,238,.22)] transition hover:brightness-110 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-cyan-200" onClick={() => { setShowStartPopup(false); onStartJourney(); }}>Begin Journey →</button>
         </section>
       </motion.div> : !guidedMode ? null : (
-        <GuidedOverlay stage={presentedStage} index={presentedIndex} total={positionedStages.length} travelling={travelling} navigationOpen={navigationOpen} isMobile={viewport.width < 640} onChange={(index) => onGuidedIndexChange(index)} onExit={onExitJourney}/>
+        <GuidedOverlay stage={presentedStage} index={presentedIndex} total={positionedStages.length} travelling={travelling} navigationOpen={navigationOpen} isMobile={viewport.width < 640} cvAnalyzerHref={`/cv-analyzer${toolQuery}`} jobAgentHref={`/job-agent${toolQuery}`} onChange={(index) => onGuidedIndexChange(index)} onExit={onExitJourney}/>
       )}
       {pan.x || pan.y ? <button type="button" onClick={() => setPan({x:0,y:0})} className="absolute bottom-[max(1rem,env(safe-area-inset-bottom))] right-3 z-40 min-h-11 rounded-full border border-white/10 bg-slate-950/80 px-4 text-xs font-semibold text-slate-300 shadow-lg backdrop-blur-md transition hover:border-cyan-300/40 hover:text-cyan-100 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-cyan-300">Recenter</button> : null}
       <div className="sr-only" aria-live="polite">{guidedMode && !travelling ? `Arrived at ${presentedStage.title}, station ${presentedIndex + 1} of ${positionedStages.length}.` : ""}</div>
