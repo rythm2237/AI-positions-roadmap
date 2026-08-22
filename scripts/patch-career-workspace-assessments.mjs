@@ -217,3 +217,6 @@ for (const requiredSymbol of [
 console.log(
   "Applied canonical assessment contract, imports, and validation; no stage.test consumers remain."
 );
+
+await import("./patch-zero-to-hired-phase-one.mjs");
+await import("./test-zero-to-hired-phase-one.mjs");
