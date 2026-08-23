@@ -18,6 +18,14 @@ export const analyticsEvents = {
   outboundSourceClicked: "outbound_source_clicked",
   searchUsed: "search_used",
   careerComparisonOpened: "career_comparison_opened",
+  baselineDiagnosticStarted: "baseline_diagnostic_started",
+  baselineDiagnosticCompleted: "baseline_diagnostic_completed",
+  upgradePromptViewed: "upgrade_prompt_viewed",
+  checkoutStarted: "checkout_started",
+  proEntitlementDetected: "pro_entitlement_detected",
+  activationStepChanged: "activation_step_changed",
+  activationCompleted: "activation_completed",
+  weeklyProgressViewed: "weekly_progress_viewed",
 } as const;
 
 export type AnalyticsEventName = (typeof analyticsEvents)[keyof typeof analyticsEvents];

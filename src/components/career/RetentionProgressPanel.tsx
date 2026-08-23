@@ -1,7 +1,8 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { analyticsEvents, trackEvent } from "@/lib/analytics";
 import { applicationTrackerStorageKey, type TrackedApplication } from "@/lib/applicationTracker";
 import {
   buildRetentionSnapshot,
@@ -22,6 +23,7 @@ export default function RetentionProgressPanel({
   const [applications, setApplications] = useState<TrackedApplication[]>([]);
   const [snapshots, setSnapshots] = useState<RetentionSnapshot[]>([]);
   const [loaded, setLoaded] = useState(false);
+  const trackedView = useRef(false);
 
   useEffect(() => {
     try {
@@ -50,6 +52,18 @@ export default function RetentionProgressPanel({
     () => buildWeeklyProgressReport(career, progress, applications, snapshots),
     [applications, career, progress, snapshots]
   );
+
+  useEffect(() => {
+    if (!loaded || trackedView.current) return;
+    trackedView.current = true;
+    trackEvent(analyticsEvents.weeklyProgressViewed, {
+      career_slug: career.slug,
+      readiness_score: report.current.readinessScore,
+      readiness_delta: report.readinessDelta,
+      snapshot_count: snapshots.length,
+      application_count: applications.length,
+    });
+  }, [applications.length, career.slug, loaded, report.current.readinessScore, report.readinessDelta, snapshots.length]);
 
   const trendLabel = report.readinessDelta > 0 ? `+${report.readinessDelta}` : `${report.readinessDelta}`;
 

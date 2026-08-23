@@ -7,6 +7,7 @@ import {
   scoreBaselineDiagnostic,
   type BaselineDiagnosticResult,
 } from "@/lib/adaptiveDiagnostic";
+import { analyticsEvents, trackEvent } from "@/lib/analytics";
 import type { CareerWorkspaceData } from "@/types/careerWorkspace";
 
 export default function BaselineDiagnosticWorkspace({ career }: { career: CareerWorkspaceData }) {
@@ -24,6 +25,20 @@ export default function BaselineDiagnosticWorkspace({ career }: { career: Career
     }
   }, [career.slug]);
 
+  function toggleDiagnostic() {
+    setOpen((value) => {
+      const next = !value;
+      if (next) {
+        trackEvent(analyticsEvents.baselineDiagnosticStarted, {
+          career_slug: career.slug,
+          question_count: questions.length,
+          is_retake: Boolean(result),
+        });
+      }
+      return next;
+    });
+  }
+
   function submit() {
     if (!questions.length) return;
     const next = scoreBaselineDiagnostic(career, questions, answers);
@@ -31,6 +46,12 @@ export default function BaselineDiagnosticWorkspace({ career }: { career: Career
     try {
       localStorage.setItem(adaptiveDiagnosticStorageKey(career.slug), JSON.stringify(next));
     } catch {}
+    trackEvent(analyticsEvents.baselineDiagnosticCompleted, {
+      career_slug: career.slug,
+      score: next.overallScore,
+      question_count: next.totalQuestions,
+      recommended_stage: next.recommendedStartStageId,
+    });
     setOpen(false);
   }
 
@@ -45,7 +66,7 @@ export default function BaselineDiagnosticWorkspace({ career }: { career: Career
           <h3 className="mt-1 text-lg font-semibold text-white">Start from demonstrated knowledge, not self-report alone.</h3>
           <p className="mt-1 max-w-2xl text-sm leading-6 text-slate-400">A short placement test samples existing career assessments and adapts the roadmap. It never auto-passes formal assessments or creates proof-of-skill.</p>
         </div>
-        <button type="button" onClick={() => setOpen((value) => !value)} className="min-h-10 rounded-lg border border-violet-300/20 px-3 py-2 text-xs font-semibold text-violet-100 hover:bg-violet-400/10">
+        <button type="button" onClick={toggleDiagnostic} className="min-h-10 rounded-lg border border-violet-300/20 px-3 py-2 text-xs font-semibold text-violet-100 hover:bg-violet-400/10">
           {open ? "Close diagnostic" : result ? "Retake diagnostic" : "Start diagnostic"}
         </button>
       </div>
