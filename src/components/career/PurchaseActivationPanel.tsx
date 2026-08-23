@@ -13,6 +13,7 @@ import {
   resolveRolePathPlan,
   type RolePathPlan,
 } from "@/lib/productAccess";
+import { ROLE_PATH_PRICING, type BillingInterval } from "@/lib/billing/stripe";
 
 export default function PurchaseActivationPanel({ careerSlug }: { careerSlug: string }) {
   const [plan, setPlan] = useState<RolePathPlan>("free");
@@ -74,7 +75,7 @@ export default function PurchaseActivationPanel({ careerSlug }: { careerSlug: st
     }
   }
 
-  async function openBillingEndpoint(endpoint: "checkout" | "portal") {
+  async function openBillingEndpoint(endpoint: "checkout" | "portal", interval: BillingInterval = "monthly") {
     setBillingError(null);
     if (!userId) {
       window.location.href = `/login?next=${encodeURIComponent(`/careers/${careerSlug}`)}`;
@@ -85,11 +86,11 @@ export default function PurchaseActivationPanel({ careerSlug }: { careerSlug: st
       const response = await fetch(`/api/billing/${endpoint}`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: endpoint === "checkout" ? JSON.stringify({ careerSlug }) : undefined,
+        body: endpoint === "checkout" ? JSON.stringify({ careerSlug, interval }) : undefined,
       });
       const body = await response.json();
       if (!response.ok || typeof body.url !== "string") throw new Error(body.error || "Billing could not be opened.");
-      if (endpoint === "checkout") trackEvent(analyticsEvents.checkoutStarted, { career_slug: careerSlug, plan: "pro" });
+      if (endpoint === "checkout") trackEvent(analyticsEvents.checkoutStarted, { career_slug: careerSlug, plan: "pro", billing_interval: interval });
       window.location.href = body.url;
     } catch (error) {
       setBillingError(error instanceof Error ? error.message : "Billing could not be opened.");
@@ -112,6 +113,6 @@ export default function PurchaseActivationPanel({ careerSlug }: { careerSlug: st
     <h3 className="mt-2 text-xl font-semibold text-white">See your gap before deciding to upgrade</h3>
     <p className="mt-1 text-sm leading-6 text-slate-400">Career discovery, the baseline diagnostic and roadmap preview stay free. Upgrade prompts appear only after the product has shown personalized value.</p>
     <div className="mt-4 grid gap-4 md:grid-cols-2"><div className="rounded-xl border border-white/10 p-4"><p className="font-semibold text-white">Free</p><ul className="mt-3 space-y-2 text-xs leading-5 text-slate-400">{FREE_OUTCOMES.map((item) => <li key={item}>• {item}</li>)}</ul></div><div className="rounded-xl border border-violet-300/20 bg-violet-300/[0.04] p-4"><p className="font-semibold text-white">Pro execution</p><ul className="mt-3 space-y-2 text-xs leading-5 text-slate-300">{PRO_OUTCOMES.map((item) => <li key={item}>• {item}</li>)}</ul></div></div>
-    {hasDiagnostic ? <div className="mt-4 rounded-xl border border-cyan-300/15 bg-cyan-300/[0.04] p-4"><p className="text-sm font-semibold text-cyan-100">Your personalized gap is now visible.</p><p className="mt-1 text-xs leading-5 text-slate-400">Upgrade only if you want the execution layer: reviewed projects, proof profile, job targeting, interview scoring and application management.</p><button type="button" disabled={billingBusy} onClick={() => void openBillingEndpoint("checkout")} className="mt-3 rounded-xl bg-cyan-300 px-4 py-2.5 text-sm font-semibold text-slate-950 disabled:cursor-wait disabled:opacity-60">{billingBusy ? "Opening secure checkout…" : userId ? "Upgrade to Pro" : "Sign in to upgrade"}</button>{billingError ? <p className="mt-3 text-xs text-rose-300">{billingError}</p> : null}</div> : <p className="mt-4 text-xs text-slate-500">Complete the free baseline diagnostic first. No upgrade prompt is needed before personalized value is demonstrated.</p>}
+    {hasDiagnostic ? <div className="mt-4 rounded-xl border border-cyan-300/15 bg-cyan-300/[0.04] p-4"><p className="text-sm font-semibold text-cyan-100">Your personalized gap is now visible.</p><p className="mt-1 text-xs leading-5 text-slate-400">Upgrade only if you want the execution layer: reviewed projects, proof profile, job targeting, interview scoring and application management.</p><div className="mt-4 grid gap-3 sm:grid-cols-2"><button type="button" disabled={billingBusy} onClick={() => void openBillingEndpoint("checkout", "monthly")} className="rounded-xl bg-cyan-300 px-4 py-3 text-left text-slate-950 disabled:cursor-wait disabled:opacity-60"><span className="block text-sm font-semibold">Pro Monthly</span><span className="mt-1 block text-xs">{ROLE_PATH_PRICING.monthly.label}</span></button><button type="button" disabled={billingBusy} onClick={() => void openBillingEndpoint("checkout", "annual")} className="rounded-xl border border-cyan-200/40 bg-cyan-200/[0.08] px-4 py-3 text-left text-cyan-50 disabled:cursor-wait disabled:opacity-60"><span className="block text-sm font-semibold">Pro Annual</span><span className="mt-1 block text-xs">{ROLE_PATH_PRICING.annual.label} · save €39.80/year</span></button></div>{!userId ? <p className="mt-2 text-xs text-slate-500">Sign in first; your selected plan will open in secure Stripe Checkout.</p> : null}{billingBusy ? <p className="mt-2 text-xs text-cyan-100">Opening secure checkout…</p> : null}{billingError ? <p className="mt-3 text-xs text-rose-300">{billingError}</p> : null}</div> : <p className="mt-4 text-xs text-slate-500">Complete the free baseline diagnostic first. No upgrade prompt is needed before personalized value is demonstrated.</p>}
   </section>;
 }
