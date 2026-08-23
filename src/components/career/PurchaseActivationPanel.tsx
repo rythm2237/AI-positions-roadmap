@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import type { User } from "@supabase/supabase-js";
 import { createClient as createSupabaseClient } from "@/lib/supabase/client";
 import { adaptiveDiagnosticStorageKey } from "@/lib/adaptiveDiagnostic";
 import {
@@ -23,7 +24,7 @@ export default function PurchaseActivationPanel({ careerSlug }: { careerSlug: st
   useEffect(() => {
     let active = true;
     const supabase = createSupabaseClient();
-    void supabase.auth.getUser().then(({ data }) => {
+    void supabase.auth.getUser().then(({ data }: { data: { user: User | null } }) => {
       if (!active) return;
       setUserId(data.user?.id ?? null);
       setPlan(resolveRolePathPlan(data.user));
