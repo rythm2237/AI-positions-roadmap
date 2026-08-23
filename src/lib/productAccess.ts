@@ -29,11 +29,6 @@ export function resolveRolePathPlan(user: User | null | undefined): RolePathPlan
   return raw === "pro" || raw === "paid" ? "pro" : "free";
 }
 
-export function checkoutUrl(): string | null {
-  const url = process.env.NEXT_PUBLIC_ROLE_PATH_CHECKOUT_URL?.trim();
-  return url || null;
-}
-
 export function activationStorageKey(userId: string, careerSlug: string): string {
   return `career_activation__${userId}__${careerSlug}`;
 }
