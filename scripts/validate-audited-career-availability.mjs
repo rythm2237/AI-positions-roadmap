@@ -3,6 +3,7 @@ import "./patch-guided-project-reviewer.mjs";
 import "./patch-portfolio-proof.mjs";
 import "./patch-job-launch-workspace.mjs";
 import "./patch-application-assets-workspace.mjs";
+import "./patch-mock-interview-workspace.mjs";
 
 const catalog = fs.readFileSync("src/data/careerCatalog.ts", "utf8");
 
@@ -25,11 +26,15 @@ const files = [
   "src/lib/jobMatch.ts",
   "src/components/career/jobs/ApplicationAssetsWorkspace.tsx",
   "src/lib/applicationAssets.ts",
+  "src/components/career/interview/MockInterviewWorkspace.tsx",
+  "src/app/api/interview-review/route.ts",
+  "src/lib/interviewEvidence.ts",
 ];
 const sources = files.map((file) => fs.readFileSync(file, "utf8"));
 for (const token of [
-  "GuidedProjectsWorkspace career={career}", "Submit for AI review", "PROJECT_PASSING_SCORE = 70", "PortfolioProofWorkspace career={career}", "Copy recruiter proof link", "JobLaunchWorkspace career={career}", "Analyze job fit", "Build gap first", "ApplicationAssetsWorkspace career={career}", "Tailor evidence for", "ATS keywords", "Unsupported gaps — do not claim", "buildApplicationAssetPack",
+  "GuidedProjectsWorkspace career={career}", "Submit for AI review", "PROJECT_PASSING_SCORE = 70", "PortfolioProofWorkspace career={career}", "Copy recruiter proof link", "JobLaunchWorkspace career={career}", "Analyze job fit", "Build gap first", "ApplicationAssetsWorkspace career={career}", "Tailor evidence for", "ATS keywords", "Unsupported gaps — do not claim", "buildApplicationAssetPack", "MockInterviewWorkspace career={career}", "Role-specific mock interview", "Submit for scoring", "INTERVIEW_PASSING_SCORE = 70", "INTERVIEW_STRONG_SCORE = 85", 'model: process.env.INTERVIEW_REVIEW_MODEL || "openai/gpt-4.1"',
 ]) {
   if (!sources.some((source) => source.includes(token))) throw new Error(`Zero-to-hired validation missing: ${token}`);
 }
-console.log("Career availability validated: 23 active Careers with assessment, reviewed projects, proof profiles, job matching, and evidence-safe application assets.");
+if (sources[0].includes('{section === "interview-brief" ? <InterviewModule /> : null}')) throw new Error("Legacy interview question-only module is still active.");
+console.log("Career availability validated: 23 active Careers with assessment, reviewed projects, proof profiles, job matching, evidence-safe application assets, and scored mock interviews.");
