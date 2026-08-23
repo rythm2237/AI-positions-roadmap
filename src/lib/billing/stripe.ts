@@ -2,15 +2,23 @@ import { createHmac, timingSafeEqual } from "node:crypto";
 
 const STRIPE_API = "https://api.stripe.com/v1";
 
+export type BillingInterval = "monthly" | "annual";
+
+export const ROLE_PATH_PRICING = {
+  monthly: { amountEur: 19.9, label: "€19.90 / month" },
+  annual: { amountEur: 199, label: "€199 / year" },
+} as const;
+
 export function stripeSecretKey(): string {
   const value = process.env.STRIPE_SECRET_KEY?.trim();
   if (!value) throw new Error("STRIPE_SECRET_KEY is not configured.");
   return value;
 }
 
-export function stripePriceId(): string {
-  const value = process.env.STRIPE_ROLE_PATH_PRO_PRICE_ID?.trim();
-  if (!value) throw new Error("STRIPE_ROLE_PATH_PRO_PRICE_ID is not configured.");
+export function stripePriceId(interval: BillingInterval): string {
+  const key = interval === "annual" ? "STRIPE_ROLE_PATH_PRO_ANNUAL_PRICE_ID" : "STRIPE_ROLE_PATH_PRO_MONTHLY_PRICE_ID";
+  const value = process.env[key]?.trim();
+  if (!value) throw new Error(`${key} is not configured.`);
   return value;
 }
 
