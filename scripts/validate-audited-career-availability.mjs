@@ -1,5 +1,6 @@
 import fs from "node:fs";
 import "./patch-guided-project-reviewer.mjs";
+import "./patch-portfolio-proof.mjs";
 
 const catalog = fs.readFileSync("src/data/careerCatalog.ts", "utf8");
 
@@ -30,41 +31,35 @@ const active = [
 ];
 
 for (const slug of active) {
-  if (!catalog.includes(`"${slug}"`) || !catalog.includes(`"/careers/${slug}`)) {
-    throw new Error(`${slug} should be available in Career Universe.`);
-  }
+  if (!catalog.includes(`"${slug}"`) || !catalog.includes(`"/careers/${slug}`)) throw new Error(`${slug} should be available in Career Universe.`);
 }
-
 const availableCount = (catalog.match(/"available",\s*"\/careers\//g) ?? []).length;
-if (availableCount !== active.length) {
-  throw new Error(`Expected ${active.length} available Careers, found ${availableCount}.`);
-}
-
-if (/enterprise-ai-consultant[^\n]+planned/.test(catalog)) {
-  throw new Error("Enterprise AI Consultant must not remain Planned.");
-}
+if (availableCount !== active.length) throw new Error(`Expected ${active.length} available Careers, found ${availableCount}.`);
+if (/enterprise-ai-consultant[^\n]+planned/.test(catalog)) throw new Error("Enterprise AI Consultant must not remain Planned.");
 
 const workspace = fs.readFileSync("src/components/career/CareerWorkspace.tsx", "utf8");
 const reviewer = fs.readFileSync("src/components/career/projects/GuidedProjectsWorkspace.tsx", "utf8");
 const route = fs.readFileSync("src/app/api/project-review/route.ts", "utf8");
 const evidence = fs.readFileSync("src/lib/projectEvidence.ts", "utf8");
+const portfolio = fs.readFileSync("src/components/career/portfolio/PortfolioProofWorkspace.tsx", "utf8");
+const proofModel = fs.readFileSync("src/lib/portfolioProof.ts", "utf8");
+const proofPage = fs.readFileSync("src/app/proof/[careerSlug]/page.tsx", "utf8");
 
 for (const token of [
   "GuidedProjectsWorkspace career={career}",
-  "Projects count toward Job Readiness only after a rubric review",
   "Submit for AI review",
   "PROJECT_PASSING_SCORE = 70",
   "PROJECT_JOB_READY_SCORE = 85",
   'model: process.env.PROJECT_REVIEW_MODEL || "openai/gpt-4.1"',
-  "review.passed",
+  "PortfolioProofWorkspace career={career}",
+  "Recruiter-ready portfolio evidence",
+  "Copy recruiter proof link",
+  "buildProofProfile",
+  "decodeProofProfile",
+  "Verified Proof of Skill",
 ]) {
-  if (![workspace, reviewer, route, evidence].some((source) => source.includes(token))) {
-    throw new Error(`Guided project reviewer validation missing: ${token}`);
-  }
+  if (![workspace, reviewer, route, evidence, portfolio, proofModel, proofPage].some((source) => source.includes(token))) throw new Error(`Zero-to-hired validation missing: ${token}`);
 }
-
-if (workspace.includes('section === "project" ? <ProjectsModule progress={progress}')) {
-  throw new Error("Legacy click-to-complete ProjectsModule is still active.");
-}
-
-console.log("Career availability validated: 23 active Careers and guided project evidence review is active.");
+if (workspace.includes('section === "project" ? <ProjectsModule progress={progress}')) throw new Error("Legacy click-to-complete ProjectsModule is still active.");
+if (workspace.includes('section === "portfolio" ? <PortfolioModule progress={progress}')) throw new Error("Legacy manual PortfolioModule is still active.");
+console.log("Career availability validated: 23 active Careers, guided project review, case studies, and shareable proof profiles are active.");
