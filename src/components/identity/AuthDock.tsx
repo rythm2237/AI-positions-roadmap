@@ -72,10 +72,8 @@ export default function AuthDock() {
 
   return (
     <div ref={rootRef} className="fixed right-4 top-[12px] z-[65]">
-      <button type="button" onClick={() => setOpen((value) => !value)} className="flex h-11 max-w-[13.5rem] items-center gap-2 rounded-full border border-white/10 bg-[#090b1d]/92 p-1.5 pr-3 shadow-xl backdrop-blur-xl transition hover:border-violet-300/25" aria-expanded={open} aria-label="Open account menu">
-        {avatar ? <img src={avatar} alt="" className="h-8 w-8 shrink-0 rounded-full border border-white/10 object-cover" referrerPolicy="no-referrer" /> : <span className="grid h-8 w-8 shrink-0 place-items-center rounded-full bg-violet-500/20 text-xs font-bold text-violet-100">{name.slice(0, 1).toUpperCase()}</span>}
-        <span className="hidden min-w-0 max-w-24 truncate text-sm font-medium text-slate-200 2xl:block">{name}</span>
-        <svg viewBox="0 0 20 20" className={`h-4 w-4 shrink-0 text-slate-500 transition ${open ? "rotate-180" : ""}`} fill="currentColor"><path d="m5.5 7.5 4.5 4 4.5-4" /></svg>
+      <button type="button" onClick={() => setOpen((value) => !value)} className="grid h-11 w-11 place-items-center rounded-full border border-white/10 bg-[#090b1d]/92 p-1.5 shadow-xl backdrop-blur-xl transition hover:border-violet-300/30 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-400" aria-expanded={open} aria-label="Open account menu" title={name}>
+        {avatar ? <img src={avatar} alt="" className="h-8 w-8 rounded-full border border-white/10 object-cover" referrerPolicy="no-referrer" /> : <span className="grid h-8 w-8 place-items-center rounded-full bg-violet-500/20 text-xs font-bold text-violet-100">{name.slice(0, 1).toUpperCase()}</span>}
       </button>
       {open ? (
         <div className="absolute right-0 mt-2 w-56 overflow-hidden rounded-2xl border border-white/10 bg-[#090b1d]/98 p-2 shadow-2xl backdrop-blur-xl">
