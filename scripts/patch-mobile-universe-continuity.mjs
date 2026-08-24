@@ -13,13 +13,6 @@ function replaceRequired(source, search, replacement, label) {
   return source.replace(search, replacement);
 }
 
-function replaceBetween(source, startMarker, endMarker, replacement, label) {
-  const start = source.indexOf(startMarker);
-  const end = source.indexOf(endMarker, start + startMarker.length);
-  if (start < 0 || end < 0) throw new Error(`Mobile/Universe hardening failed: ${label} section not found.`);
-  return `${source.slice(0, start)}${replacement}\n\n${source.slice(end)}`;
-}
-
 let world = await readFile(worldPath, "utf8");
 if (!world.includes("const CAREER_MOBILE_UNIVERSE_CONTINUITY = true;")) {
   world = replaceRequired(
@@ -38,28 +31,6 @@ if (!world.includes("const CAREER_MOBILE_UNIVERSE_CONTINUITY = true;")) {
   world = world.replace(".add(new THREE.Vector3(0, 3.5, 0));", ".add(new THREE.Vector3(0, 2.6, 0));");
   world = world.replace("const holdMs = renderer.domElement.clientWidth < 768 ? 1400 : CAREER_ORBIT_FOCUS_HOLD_MS;", "const holdMs = renderer.domElement.clientWidth < 768 ? 1500 : CAREER_ORBIT_FOCUS_HOLD_MS;");
   world = world.replace("nextCruiseFocusAt = now + 420;", "nextCruiseFocusAt = now + 240;");
-
-  const activeOnlyPointerUp = `    function onPointerUp(e: PointerEvent) {
-      const o = orbitRef.current;
-      o.isDragging = false;
-      // A Career planet becomes navigable only while it owns the automatic label.
-      // Other planets remain discoverable through hover/tap labels without changing
-      // course, destination, or application state.
-      if (o.dragDist < 5 && phaseRef.current === "exploring") {
-        const idx = doRaycast(e.clientX, e.clientY);
-        if (idx >= 0) {
-          const node = allNodesRef.current[idx];
-          const isActiveCareerPlanet = cruiseFocusNode?.id === node.id;
-          if (!isActiveCareerPlanet) {
-            setHoveredNodeState(node, e.clientX, e.clientY);
-            return;
-          }
-          const entry = UNIVERSE_REGISTRY.find((career) => career.id === node.id);
-          if (entry?.careerPath) scheduleCareerEntry(node, entry.careerPath, 120);
-        }
-      }
-    }`;
-  world = replaceBetween(world, "    function onPointerUp(e: PointerEvent) {", "    function onPointerLeave() {", activeOnlyPointerUp, "active-planet click contract");
 
   const hoverReturn = `          setHoveredNodeState(node, sx, sy);\n          return idx;`;
   world = replaceRequired(
