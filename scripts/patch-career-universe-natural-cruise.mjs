@@ -8,6 +8,7 @@ let source = await readFile(worldPath, "utf8");
 
 if (source.includes("const CAREER_NATURAL_CRUISE = true;")) {
   console.log("Career Universe natural cruise patch already applied.");
+  await import("./patch-mobile-universe-continuity.mjs");
   process.exit(0);
 }
 
@@ -121,4 +122,5 @@ if (!source.includes("distance > CAREER_NATURAL_FOCUS_MAX_DISTANCE")) {
 }
 
 await writeFile(worldPath, source, "utf8");
-console.log("Career Universe natural cruise applied: uninterrupted camera path, no auto-reframe cuts, forward-field Career labels, and gentle continuous motion.");
+await import("./patch-mobile-universe-continuity.mjs");
+console.log("Career Universe natural cruise applied: uninterrupted camera path, no auto-reframe cuts, forward-field Career labels, gentle continuous motion, and mobile continuity hardening.");
