@@ -14,7 +14,7 @@ export type JobProviderResult = {
   salaryMax: number | null;
   currency: string | null;
   workplaceModel: "remote" | "hybrid" | "on_site" | "unknown";
-  employmentType: string | null;
+  employmentTypes: string[];
   createdAt: string | null;
 };
 
@@ -51,17 +51,18 @@ function workModel(job: RawJob): JobProviderResult["workplaceModel"] {
   return "unknown";
 }
 
-function employmentType(job: RawJob): string | null {
+function employmentTypes(job: RawJob): string[] {
+  const found = new Set<string>();
   const contractTime = (job.contract_time ?? "").toLowerCase();
   const contractType = (job.contract_type ?? "").toLowerCase();
   const text = `${job.title ?? ""} ${job.description ?? ""}`.toLowerCase();
-  if (contractTime === "full_time" || /\bfull[- ]?time\b/.test(text)) return "full_time";
-  if (contractTime === "part_time" || /\bpart[- ]?time\b/.test(text)) return "part_time";
-  if (/\bintern(ship)?\b/.test(text)) return "internship";
-  if (/\bfreelance\b/.test(text)) return "freelance";
-  if (contractType === "permanent" || /\bpermanent\b/.test(text)) return "permanent";
-  if (contractType === "contract" || /\b(contract|fixed[- ]term|temporary)\b/.test(text)) return "contract";
-  return null;
+  if (contractTime === "full_time" || /\bfull[- ]?time\b/.test(text)) found.add("full_time");
+  if (contractTime === "part_time" || /\bpart[- ]?time\b/.test(text)) found.add("part_time");
+  if (/\bintern(ship)?\b/.test(text)) found.add("internship");
+  if (/\bfreelance\b/.test(text)) found.add("freelance");
+  if (contractType === "permanent" || /\bpermanent\b/.test(text)) found.add("permanent");
+  if (contractType === "contract" || /\b(contract|fixed[- ]term|temporary)\b/.test(text)) found.add("contract");
+  return [...found];
 }
 
 export function resolveAdzunaCountry(value: string): AdzunaCountry | null { return countryAliases[value.trim().toLowerCase()] ?? null; }
@@ -97,7 +98,7 @@ export async function searchAdzunaJobs(input: { country: string; query: string; 
       salaryMax: typeof job.salary_max === "number" ? job.salary_max : null,
       currency: currencies[code],
       workplaceModel: workModel(job),
-      employmentType: employmentType(job),
+      employmentTypes: employmentTypes(job),
       createdAt: job.created ?? null,
     }];
   });
