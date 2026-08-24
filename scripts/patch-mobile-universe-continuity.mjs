@@ -32,13 +32,6 @@ if (!world.includes("const CAREER_MOBILE_UNIVERSE_CONTINUITY = true;")) {
   world = world.replace("const holdMs = renderer.domElement.clientWidth < 768 ? 1400 : CAREER_ORBIT_FOCUS_HOLD_MS;", "const holdMs = renderer.domElement.clientWidth < 768 ? 1500 : CAREER_ORBIT_FOCUS_HOLD_MS;");
   world = world.replace("nextCruiseFocusAt = now + 420;", "nextCruiseFocusAt = now + 240;");
 
-  world = replaceRequired(
-    world,
-    `      doRaycast(e.clientX, e.clientY);\n    }\n\n    function onPointerUp`,
-    `      const hoverIndex = doRaycast(e.clientX, e.clientY);\n      const hoverNode = hoverIndex >= 0 ? allNodesRef.current[hoverIndex] : null;\n      renderer.domElement.style.cursor = hoverNode && cruiseFocusNode?.id === hoverNode.id ? "pointer" : "default";\n    }\n\n    function onPointerUp`,
-    "pointer-layer active cursor",
-  );
-
   await writeFile(worldPath, world, "utf8");
 }
 
