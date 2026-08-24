@@ -6,7 +6,7 @@ export async function getIdentityWorkspace(user: User) {
   const supabase = await createClient();
   const [profile, preferences, resumes, savedCareers, subscription, activity] = await Promise.all([
     supabase.from("profiles").select("*").eq("id", user.id).single<Profile>(),
-    supabase.from("user_preferences").select("job_search_region,job_search_country").eq("user_id", user.id).maybeSingle(),
+    supabase.from("user_preferences").select("job_search_region,job_search_country,journey_mode").eq("user_id", user.id).maybeSingle(),
     supabase.from("resumes").select("id,title,target_career,version,file_type,storage_path,uploaded_at").order("uploaded_at", { ascending: false }).returns<ResumeRecord[]>(),
     supabase.from("saved_careers").select("id,career_slug,created_at").order("created_at", { ascending: false }).returns<SavedCareer[]>(),
     supabase.from("subscriptions").select("plan,status").eq("user_id", user.id).maybeSingle(),
