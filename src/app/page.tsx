@@ -1,7 +1,6 @@
 import type { Metadata } from "next";
 import Header from "@/components/landing/Header";
 import SafeCareerUniverse from "@/components/landing/SafeCareerUniverse";
-import AcquisitionTrustPanel from "@/components/landing/AcquisitionTrustPanel";
 
 export const metadata: Metadata = {
   title: "AI Role Path — Your Personal AI Career Operating System",
@@ -15,7 +14,6 @@ export default function LandingPage() {
       <Header />
       <main className="absolute inset-0 overflow-hidden">
         <SafeCareerUniverse />
-        <AcquisitionTrustPanel />
       </main>
     </div>
   );
