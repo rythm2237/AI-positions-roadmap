@@ -1,4 +1,6 @@
 import { generateText } from "ai";
+import { createClient } from "@/lib/supabase/server";
+import { consumeBetaAiQuota } from "@/lib/betaAiQuota";
 import { INTERVIEW_PASSING_SCORE, INTERVIEW_RUBRIC, type InterviewAnswerReview, type InterviewCriterionId } from "@/lib/interviewEvidence";
 
 function clampScore(value: unknown): number {
@@ -33,6 +35,12 @@ function fallbackReview(questionId: string, answer: string): InterviewAnswerRevi
 
 export async function POST(request: Request) {
   try {
+    const supabase = await createClient();
+    const { data: authData, error: authError } = await supabase.auth.getUser();
+    if (authError || !authData.user) {
+      return Response.json({ error: "Sign in to use AI interview review during Public Beta." }, { status: 401 });
+    }
+
     const body = await request.json();
     const careerTitle = String(body.careerTitle || "").trim();
     const questionId = String(body.questionId || "").trim();
@@ -41,6 +49,19 @@ export async function POST(request: Request) {
     const evidenceContext = String(body.evidenceContext || "").trim();
     if (!careerTitle || !questionId || !question || answer.length < 120) {
       return Response.json({ error: "Invalid interview review request." }, { status: 400 });
+    }
+
+    try {
+      const quota = await consumeBetaAiQuota(authData.user.id, "interview_review");
+      if (!quota.allowed) {
+        return Response.json(
+          { error: `Daily Public Beta interview-review limit reached (${quota.limit}). Try again tomorrow UTC.`, quota },
+          { status: 429 },
+        );
+      }
+    } catch (error) {
+      console.error("Interview review quota check failed", error);
+      return Response.json({ error: "AI interview review is temporarily unavailable while usage limits are checked." }, { status: 503 });
     }
 
     try {

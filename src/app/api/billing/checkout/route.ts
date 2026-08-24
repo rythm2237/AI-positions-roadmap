@@ -7,6 +7,13 @@ type StripeCustomer = { id: string };
 type StripeCheckoutSession = { id: string; url: string | null };
 
 export async function POST(request: Request) {
+  if (process.env.NEXT_PUBLIC_ROLE_PATH_BILLING_ENABLED !== "true") {
+    return NextResponse.json(
+      { error: "AI Role Path is currently in Free Public Beta. Paid checkout is not active." },
+      { status: 503 },
+    );
+  }
+
   try {
     const supabase = await createClient();
     const { data, error } = await supabase.auth.getUser();
