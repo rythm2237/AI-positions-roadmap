@@ -34,7 +34,7 @@ const productAccess = read("src/lib/productAccess.ts");
 
 const contracts = [
   [purchase, "Free Public Beta"],
-  [purchase, "No card required"],
+  [purchase, "No card is required"],
   [productAccess, "NEXT_PUBLIC_ROLE_PATH_BILLING_ENABLED"],
   [checkout, "isRolePathBillingEnabled"],
   [checkout, "Paid checkout is disabled during the Free Public Beta"],
