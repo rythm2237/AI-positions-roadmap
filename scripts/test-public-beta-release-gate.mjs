@@ -4,6 +4,7 @@ const requiredFiles = [
   "src/app/page.tsx",
   "src/app/(account)/dashboard/page.tsx",
   "src/components/career/CareerReadinessPanel.tsx",
+  "src/components/career/CareerCloudSyncBridge.tsx",
   "src/components/career/diagnostic/BaselineDiagnosticWorkspace.tsx",
   "src/components/career/projects/GuidedProjectsWorkspace.tsx",
   "src/components/career/portfolio/PortfolioProofWorkspace.tsx",
@@ -16,7 +17,10 @@ const requiredFiles = [
   "src/app/api/billing/checkout/route.ts",
   "src/lib/betaAiQuota.ts",
   "src/lib/productAccess.ts",
+  "scripts/test-public-beta-authenticated-state.mjs",
+  "docs/PUBLIC_BETA_AUTHENTICATED_GATE.md",
   "supabase/migrations/20260824100346_beta_ai_usage_limits.sql",
+  "supabase/migrations/202608240001_career_user_state_sync.sql",
 ];
 
 for (const file of requiredFiles) {
@@ -29,7 +33,9 @@ const checkout = read("src/app/api/billing/checkout/route.ts");
 const projectReview = read("src/app/api/project-review/route.ts");
 const interviewReview = read("src/app/api/interview-review/route.ts");
 const quota = read("src/lib/betaAiQuota.ts");
-const migration = read("supabase/migrations/20260824100346_beta_ai_usage_limits.sql");
+const quotaMigration = read("supabase/migrations/20260824100346_beta_ai_usage_limits.sql");
+const cloudMigration = read("supabase/migrations/202608240001_career_user_state_sync.sql");
+const authGate = read("scripts/test-public-beta-authenticated-state.mjs");
 
 const contracts = [
   [purchase, "Free Public Beta"],
@@ -45,8 +51,15 @@ const contracts = [
   [quota, "BETA_PROJECT_REVIEW_DAILY_LIMIT"],
   [quota, "BETA_INTERVIEW_REVIEW_DAILY_LIMIT"],
   [quota, "consume_beta_ai_quota"],
-  [migration, "revoke all on function public.consume_beta_ai_quota(uuid, text, integer) from public, anon, authenticated"],
-  [migration, "grant execute on function public.consume_beta_ai_quota(uuid, text, integer) to service_role"],
+  [quotaMigration, "revoke all on function public.consume_beta_ai_quota(uuid, text, integer) from public, anon, authenticated"],
+  [quotaMigration, "grant execute on function public.consume_beta_ai_quota(uuid, text, integer) to service_role"],
+  [cloudMigration, 'create table if not exists public.career_user_state'],
+  [cloudMigration, 'career_user_state_select_own'],
+  [cloudMigration, 'revoke all on table public.career_user_state from anon'],
+  [authGate, 'E2E_TEST_EMAIL'],
+  [authGate, 'signInWithPassword'],
+  [authGate, 'RLS failure: signed-in test account could write state for another user id.'],
+  [authGate, 'Test-state cleanup failed'],
 ];
 
 for (const [source, token] of contracts) {
@@ -62,4 +75,4 @@ for (const route of [
   if (!fs.existsSync(route)) throw new Error(`Public Beta user journey route missing: ${route}`);
 }
 
-console.log("Public Beta release gate passed: acquisition, auth entry, career journey, diagnostic, project evidence, portfolio, job launch, interview, application tracking, billing kill switch, and authenticated AI quotas are present.");
+console.log("Public Beta release gate passed: acquisition, auth entry, career journey, cloud state contract, authenticated test harness, diagnostic, project evidence, portfolio, job launch, interview, application tracking, billing kill switch, and authenticated AI quotas are present.");
