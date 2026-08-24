@@ -1,5 +1,7 @@
 import { generateText } from "ai";
 import { NextResponse } from "next/server";
+import { createClient } from "@/lib/supabase/server";
+import { consumeBetaAiQuota } from "@/lib/betaAiQuota";
 import { PROJECT_PASSING_SCORE, PROJECT_RUBRIC, projectReviewLevel, type ProjectReview, type ProjectSubmission } from "@/lib/projectEvidence";
 
 export const runtime = "nodejs";
@@ -45,6 +47,12 @@ function fallbackReview(projectId: string, submission: ProjectSubmission): Proje
 }
 
 export async function POST(request: Request) {
+  const supabase = await createClient();
+  const { data: authData, error: authError } = await supabase.auth.getUser();
+  if (authError || !authData.user) {
+    return NextResponse.json({ error: "Sign in to use AI project review during Public Beta." }, { status: 401 });
+  }
+
   const body = await request.json().catch(() => null) as null | {
     careerTitle?: string;
     project?: { id?: string; title?: string; description?: string; deliverables?: string[]; skills?: string[] };
@@ -53,6 +61,19 @@ export async function POST(request: Request) {
 
   if (!body?.project?.id || !body.project.title || !body.submission || body.submission.projectId !== body.project.id) {
     return NextResponse.json({ error: "Invalid project review request." }, { status: 400 });
+  }
+
+  try {
+    const quota = await consumeBetaAiQuota(authData.user.id, "project_review");
+    if (!quota.allowed) {
+      return NextResponse.json(
+        { error: `Daily Public Beta project-review limit reached (${quota.limit}). Try again tomorrow UTC.`, quota },
+        { status: 429 },
+      );
+    }
+  } catch (error) {
+    console.error("Project review quota check failed", error);
+    return NextResponse.json({ error: "AI review is temporarily unavailable while usage limits are checked." }, { status: 503 });
   }
 
   const rubric = PROJECT_RUBRIC.map((item) => `${item.id}: ${item.label} (${item.weight}%) — ${item.description}`).join("\n");
