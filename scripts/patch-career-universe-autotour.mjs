@@ -95,7 +95,7 @@ function scheduleCareerEntry(node: CareerNode, path: string, originX: number, or
 
 source = source.replace(
   "Drag to look around · Click any node to travel",
-  "Auto tour · Click or tap any node to enter",
+  "Auto tour · Active labelled planet opens its Career",
 );
 
 source = source.replace(
@@ -113,26 +113,19 @@ replaceSection(
   `    function onPointerUp(e: PointerEvent) {
       const o = orbitRef.current;
       o.isDragging = false;
-      const canSelectNode = phaseRef.current === "travelling" || phaseRef.current === "arrived" || phaseRef.current === "exploring";
-      if (o.dragDist < 5 && canSelectNode) {
+      if (o.dragDist < 5 && phaseRef.current === "exploring") {
         const idx = doRaycast(e.clientX, e.clientY);
         if (idx >= 0) {
           const node = allNodesRef.current[idx];
-          const entry = UNIVERSE_REGISTRY.find((career) => career.id === node.id);
-          if (entry?.careerPath) {
-            scheduleCareerEntry(node, entry.careerPath, e.clientX, e.clientY);
+          // Only the automatically labelled Career planet is a navigation target.
+          // Every other planet is discovery-only and keeps the camera on its current path.
+          const isActiveCareerPlanet = cruiseFocusNode?.id === node.id;
+          if (!isActiveCareerPlanet) {
+            setHoveredNodeState(node, e.clientX, e.clientY);
             return;
           }
-
-          destNodeRef.current = node;
-          destPosRef.current.set(...node.position);
-          destCamPosRef.current.set(node.position[0], node.position[1] + 4, node.position[2] + 14);
-          startCamPosRef.current.copy(camPosSmoothed);
-          startCamTargetRef.current.copy(camTargetSmoothed);
-          rebuildConnections(node);
-          o.yaw = 0;
-          o.pitch = 0;
-          travelToRef.current(node);
+          const entry = UNIVERSE_REGISTRY.find((career) => career.id === node.id);
+          if (entry?.careerPath) scheduleCareerEntry(node, entry.careerPath, e.clientX, e.clientY);
         }
       }
     }
@@ -229,4 +222,4 @@ if (!source.includes("FocusedCareerLabel") || !source.includes("const CAREER_ENT
 }
 
 await writeFile(worldPath, source, "utf8");
-console.log("Career Universe auto-tour and single-tap node entry patch applied.");
+console.log("Career Universe auto-tour and active-labelled-planet entry patch applied.");
