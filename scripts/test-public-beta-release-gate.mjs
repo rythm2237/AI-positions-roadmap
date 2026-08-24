@@ -30,14 +30,14 @@ const projectReview = read("src/app/api/project-review/route.ts");
 const interviewReview = read("src/app/api/interview-review/route.ts");
 const quota = read("src/lib/betaAiQuota.ts");
 const migration = read("supabase/migrations/20260824100346_beta_ai_usage_limits.sql");
-const productAccess = read("src/lib/productAccess.ts");
 
 const contracts = [
   [purchase, "Free Public Beta"],
   [purchase, "No card is required"],
-  [productAccess, "NEXT_PUBLIC_ROLE_PATH_BILLING_ENABLED"],
-  [checkout, "isRolePathBillingEnabled"],
-  [checkout, "Paid checkout is disabled during the Free Public Beta"],
+  [purchase, "NEXT_PUBLIC_ROLE_PATH_BILLING_ENABLED"],
+  [checkout, "NEXT_PUBLIC_ROLE_PATH_BILLING_ENABLED"],
+  [checkout, "AI Role Path is currently in Free Public Beta"],
+  [checkout, "Paid checkout is not active"],
   [projectReview, "supabase.auth.getUser()"],
   [projectReview, 'consumeBetaAiQuota(user.id, "project_review")'],
   [interviewReview, "supabase.auth.getUser()"],
