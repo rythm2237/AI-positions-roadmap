@@ -56,7 +56,7 @@ export async function runJobSearch() {
       description: job.description,
       descriptionComplete: job.descriptionComplete,
       workplaceModel: job.workplaceModel,
-      employmentType: job.employmentType,
+      employmentTypes: job.employmentTypes,
       salaryMin: job.salaryMin,
       salaryMax: job.salaryMax,
       currency: job.currency,
