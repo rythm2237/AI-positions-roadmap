@@ -40,6 +40,44 @@ explain = explain.replace(
 write(explainPath, explain);
 
 let tour = read(tourPath);
+
+if (!tour.includes('consentEventName, readConsent')) {
+  tour = tour.replace(
+    'import { useCallback, useEffect, useMemo, useRef, useState } from "react";',
+    'import { useCallback, useEffect, useMemo, useRef, useState } from "react";\nimport { consentEventName, readConsent } from "@/components/legal/CookieConsent";',
+  );
+}
+
+tour = tour.replace('const INVITE_DELAY_MS = 3000;', 'const INVITE_DELAY_MS = 5000;');
+tour = tour.replace('const INVITE_DELAY_MS = 5000;\n', 'const INVITE_DELAY_MS = 5000;\nconst COOKIE_SETTINGS_OPEN_EVENT = "career-os:open-cookie-settings";\n');
+// Keep this patch idempotent when predev/prebuild are run repeatedly.
+tour = tour.replace(
+  'const COOKIE_SETTINGS_OPEN_EVENT = "career-os:open-cookie-settings";\nconst COOKIE_SETTINGS_OPEN_EVENT = "career-os:open-cookie-settings";\n',
+  'const COOKIE_SETTINGS_OPEN_EVENT = "career-os:open-cookie-settings";\n',
+);
+
+const oldInviteEffect = `  useEffect(() => {\n    if (active) return;\n    if (pathname === "/" && readTourStatus() === null) {\n      const timer = window.setTimeout(() => setInviteOpen(true), INVITE_DELAY_MS);\n      return () => window.clearTimeout(timer);\n    }\n  }, [active, pathname]);`;
+
+const consentAwareInviteEffect = `  useEffect(() => {\n    if (active || pathname !== "/" || readTourStatus() !== null) return;\n\n    let timer: number | null = null;\n    const cancelInvite = () => {\n      if (timer !== null) window.clearTimeout(timer);\n      timer = null;\n      setInviteOpen(false);\n    };\n    const scheduleInvite = () => {\n      cancelInvite();\n      if (readTourStatus() !== null || readConsent() === null) return;\n      timer = window.setTimeout(() => {\n        if (readConsent() !== null && readTourStatus() === null) setInviteOpen(true);\n      }, INVITE_DELAY_MS);\n    };\n\n    if (readConsent() !== null) scheduleInvite();\n    window.addEventListener(consentEventName, scheduleInvite);\n    window.addEventListener(COOKIE_SETTINGS_OPEN_EVENT, cancelInvite);\n    return () => {\n      cancelInvite();\n      window.removeEventListener(consentEventName, scheduleInvite);\n      window.removeEventListener(COOKIE_SETTINGS_OPEN_EVENT, cancelInvite);\n    };\n  }, [active, pathname]);`;
+
+if (tour.includes(oldInviteEffect)) {
+  tour = tour.replace(oldInviteEffect, consentAwareInviteEffect);
+} else if (!tour.includes('window.addEventListener(consentEventName, scheduleInvite)')) {
+  throw new Error("Guided-tour invite effect signature changed; update consent gating patch.");
+}
+
+// Keep Tour and contextual Help together as one compact lower-right utility cluster.
+tour = tour.replace(
+  'className="fixed bottom-4 left-4 z-[62] inline-flex min-h-10 items-center gap-2 rounded-full border border-white/10 bg-[#070a18]/80 px-3.5 py-2 text-xs font-semibold text-slate-300 shadow-lg backdrop-blur-xl transition hover:border-violet-300/30 hover:bg-[#0a0d20]/95 hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-400" aria-label="Start guided tour"',
+  'className="fixed bottom-4 right-[4.75rem] z-[86] grid h-11 w-11 place-items-center rounded-full border border-white/10 bg-[#070a18]/88 p-0 text-violet-200 shadow-[0_16px_50px_rgba(0,0,0,.45)] backdrop-blur-xl transition hover:border-violet-300/35 hover:bg-[#0c1026] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-400" aria-label="Start guided tour" title="Guided tour" data-guided-tour-launcher="true"',
+);
+tour = tour.replace(
+  '<span className="grid h-5 w-5 place-items-center rounded-full bg-violet-500/15 text-[11px] text-violet-200" aria-hidden="true">?</span>\n          Tour',
+  '<span className="grid h-7 w-7 place-items-center rounded-full border border-violet-300/25 bg-violet-500/10 text-sm leading-none" aria-hidden="true">✦</span>\n          <span className="sr-only">Guided tour</span>',
+);
+
+tour = tour.replaceAll("AI Career OS", "AI Role Path");
+
 const helpStepMarker = 'id: "contextual-help"';
 if (!tour.includes(helpStepMarker)) {
   const helpStep = `  {\n    id: "contextual-help",\n    route: "/careers/ai-engineer",\n    eyebrow: "Help anytime",\n    title: "Need help later? Tap the ? button",\n    body: "The ? button stays available across the public site. Activate it whenever something is unclear, then click or tap the part of the page you want explained. Explain Mode will describe that area without triggering its normal action, so you can learn the interface safely and continue at your own pace.",\n    placement: "center",\n  },\n`;
@@ -53,4 +91,4 @@ if (!tour.includes(helpStepMarker)) {
 
 write(tourPath, tour);
 await import("./patch-cv-analyzer-roadmap-integration.mjs");
-console.log("Global help experience applied: icon-only ? control and final guided-tour help step.");
+console.log("Global help experience applied: privacy-gated 5s tour invite and consolidated utility controls.");
