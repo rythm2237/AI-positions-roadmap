@@ -4,6 +4,7 @@ import path from "node:path";
 const root = process.cwd();
 const explainPath = path.join(root, "src/components/help/GlobalExplainMode.tsx");
 const tourPath = path.join(root, "src/components/onboarding/FirstVisitGuidedTour.tsx");
+const validatorPath = path.join(root, "scripts/validate-audited-career-availability.mjs");
 
 function read(file) {
   return fs.readFileSync(file, "utf8");
@@ -50,7 +51,6 @@ if (!tour.includes('consentEventName, readConsent')) {
 
 tour = tour.replace('const INVITE_DELAY_MS = 3000;', 'const INVITE_DELAY_MS = 5000;');
 tour = tour.replace('const INVITE_DELAY_MS = 5000;\n', 'const INVITE_DELAY_MS = 5000;\nconst COOKIE_SETTINGS_OPEN_EVENT = "career-os:open-cookie-settings";\n');
-// Keep this patch idempotent when predev/prebuild are run repeatedly.
 tour = tour.replace(
   'const COOKIE_SETTINGS_OPEN_EVENT = "career-os:open-cookie-settings";\nconst COOKIE_SETTINGS_OPEN_EVENT = "career-os:open-cookie-settings";\n',
   'const COOKIE_SETTINGS_OPEN_EVENT = "career-os:open-cookie-settings";\n',
@@ -90,5 +90,12 @@ if (!tour.includes(helpStepMarker)) {
 }
 
 write(tourPath, tour);
+
+// The release validator used to require the landing live-job search labels. Keep the gate,
+// but validate the new product contract: internal Career search on Landing, live jobs later.
+let validator = read(validatorPath);
+validator = validator.replace('"Search Jobs", "Semantic role search",', '"Search Careers", "AI Role Path directory",');
+write(validatorPath, validator);
+
 await import("./patch-cv-analyzer-roadmap-integration.mjs");
-console.log("Global help experience applied: privacy-gated 5s tour invite and consolidated utility controls.");
+console.log("Global help experience applied: privacy-gated 5s tour invite, consolidated utilities, and internal Career search contract.");
