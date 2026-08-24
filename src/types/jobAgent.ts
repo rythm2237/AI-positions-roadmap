@@ -1,6 +1,7 @@
 export type JobAgentMode = "discovery_only" | "prepare_applications" | "assisted_apply" | "maximum_automation";
 export type JobAgentStatus = "active" | "paused";
 export type JobDecisionStatus = "pending" | "approved" | "rejected" | "snoozed";
+export type JobEligibilityStatus = "eligible" | "blocked" | "unverified";
 export type JobOpportunityStatus =
   | "discovered" | "recommended" | "preparing" | "ready_for_review" | "ready_for_submit"
   | "applied" | "recruiter_response" | "interview" | "assessment" | "offer"
@@ -29,6 +30,7 @@ export interface JobOpportunity {
   location: string | null; country: string | null; job_url: string; fit_score: number | null; recommendation: string | null; strengths: string[]; gaps: string[];
   founder_positioning: string | null; status: JobOpportunityStatus; skip_reason: string | null; decision_status: JobDecisionStatus; decision_at: string | null;
   snoozed_until: string | null; last_surfaced_at: string | null; surfaced_count: number; salary_min: number | null; salary_max: number | null; salary_currency: string | null;
+  eligibility_status: JobEligibilityStatus; eligibility_reasons: string[]; eligibility_checked_at: string | null; eligibility_version: string;
   submission_method: string | null; submission_receipt: string | null; discovered_at: string; updated_at: string;
 }
 

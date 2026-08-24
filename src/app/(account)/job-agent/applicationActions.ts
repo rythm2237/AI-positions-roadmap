@@ -25,7 +25,9 @@ export async function prepareApplication(form: FormData) {
   const agent = agentResult.data;
   const job = jobResult.data;
   if (agent.automation_mode === "discovery_only") redirect("/job-agent?error=mode");
-  if (job.recommendation === "skip" || job.status === "skipped") redirect(`/job-agent/jobs/${jobId}?error=not-eligible`);
+  if (job.eligibility_status !== "eligible" || job.recommendation === "skip" || job.status === "skipped") {
+    redirect(`/job-agent/jobs/${jobId}?error=not-eligible`);
+  }
 
   const existing = await supabase.from("applications").select("id,status").eq("user_id", user.id).eq("job_id", jobId).maybeSingle();
   let applicationId = existing.data?.id as string | undefined;
@@ -38,7 +40,7 @@ export async function prepareApplication(form: FormData) {
   } else {
     await supabase.from("applications").update({ status: "preparing", next_action: null, updated_at: new Date().toISOString() }).eq("id", applicationId).eq("user_id", user.id);
   }
-  await supabase.from("job_opportunities").update({ status: "preparing", updated_at: new Date().toISOString() }).eq("id", jobId).eq("user_id", user.id);
+  await supabase.from("job_opportunities").update({ status: "preparing", updated_at: new Date().toISOString() }).eq("id", jobId).eq("user_id", user.id).eq("eligibility_status", "eligible");
 
   try {
     const { pack, facts } = await generateApplicationPack({ profile: profileResult.data, resume, job });
@@ -48,7 +50,7 @@ export async function prepareApplication(form: FormData) {
       { asset_type: "portfolio", structured_content: { cases: pack.portfolioCases, founderPositioning: pack.founderPositioning } },
       { asset_type: "cover_note", structured_content: { paragraphs: pack.coverNote } },
       { asset_type: "job_snapshot", structured_content: { company: job.company, role: job.role, location: job.location, url: job.job_url, description: job.job_description ?? null } },
-      { asset_type: "fit_analysis", structured_content: { score: job.fit_score, recommendation: job.recommendation, strengths: job.strengths, gaps: job.gaps, canonicalFactIds: facts.map((fact) => fact.id) } },
+      { asset_type: "fit_analysis", structured_content: { score: job.fit_score, recommendation: job.recommendation, strengths: job.strengths, gaps: job.gaps, eligibilityStatus: job.eligibility_status, eligibilityReasons: job.eligibility_reasons, canonicalFactIds: facts.map((fact) => fact.id) } },
       { asset_type: "screening_answers", structured_content: { answers: pack.screeningAnswers, missingUserDecisions: pack.missingUserDecisions } },
     ].map((asset) => ({
       user_id: user.id, application_id: applicationId, asset_type: asset.asset_type, version, structured_content: asset.structured_content, source_resume_id: resume.id,
@@ -59,8 +61,8 @@ export async function prepareApplication(form: FormData) {
       supabase.from("applications").update({
         status: "ready_for_review", next_action: pack.missingUserDecisions.length ? `Review ${pack.missingUserDecisions.length} unresolved decision(s).` : "Review the tailored application pack before submission.", updated_at: new Date().toISOString(),
       }).eq("id", applicationId).eq("user_id", user.id),
-      supabase.from("job_opportunities").update({ founder_positioning: `${pack.founderPositioning.decision}: ${pack.founderPositioning.explanation}`, status: "ready_for_review", updated_at: new Date().toISOString() }).eq("id", jobId).eq("user_id", user.id),
-      supabase.from("application_events").insert({ user_id: user.id, application_id: applicationId, event_type: "application_pack_generated", metadata: { source_resume_id: resume.id, version, missing_decisions: pack.missingUserDecisions.length } }),
+      supabase.from("job_opportunities").update({ founder_positioning: `${pack.founderPositioning.decision}: ${pack.founderPositioning.explanation}`, status: "ready_for_review", updated_at: new Date().toISOString() }).eq("id", jobId).eq("user_id", user.id).eq("eligibility_status", "eligible"),
+      supabase.from("application_events").insert({ user_id: user.id, application_id: applicationId, event_type: "application_pack_generated", metadata: { source_resume_id: resume.id, version, missing_decisions: pack.missingUserDecisions.length, eligibility_gate: "hard-gate-v1" } }),
     ]);
   } catch (error) {
     const code = error instanceof Error ? error.message.slice(0, 160) : "APPLICATION_PACK_FAILED";
@@ -71,7 +73,7 @@ export async function prepareApplication(form: FormData) {
         : "Application pack generation failed. Retry after reviewing the Master CV and profile.";
     await Promise.all([
       supabase.from("applications").update({ status: "preparing", next_action: action, notes: code, updated_at: new Date().toISOString() }).eq("id", applicationId).eq("user_id", user.id),
-      supabase.from("job_opportunities").update({ status: restoredStatus, updated_at: new Date().toISOString() }).eq("id", jobId).eq("user_id", user.id),
+      supabase.from("job_opportunities").update({ status: restoredStatus, updated_at: new Date().toISOString() }).eq("id", jobId).eq("user_id", user.id).eq("eligibility_status", "eligible"),
     ]);
     redirect(`/job-agent?error=pack&application=${applicationId}`);
   }

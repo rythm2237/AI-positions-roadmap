@@ -43,9 +43,18 @@ export async function approveJob(form: FormData) {
   if (!id) redirect("/job-agent?error=job");
   const supabase = await createClient();
   const now = new Date().toISOString();
-  const result = await supabase.from("job_opportunities").update({ decision_status: "approved", decision_at: now, snoozed_until: null, updated_at: now }).eq("id", id).eq("user_id", user.id).neq("status", "skipped").neq("recommendation", "skip");
+  const result = await supabase.from("job_opportunities")
+    .update({ decision_status: "approved", decision_at: now, snoozed_until: null, updated_at: now })
+    .eq("id", id)
+    .eq("user_id", user.id)
+    .eq("eligibility_status", "eligible")
+    .neq("status", "skipped")
+    .neq("recommendation", "skip")
+    .select("id")
+    .maybeSingle();
   if (result.error) redirect("/job-agent?error=decision");
-  await supabase.from("user_activity").insert({ user_id: user.id, action: "job_agent_job_approved", metadata: { job_id: id } });
+  if (!result.data) redirect(`/job-agent/jobs/${id}?error=not-eligible`);
+  await supabase.from("user_activity").insert({ user_id: user.id, action: "job_agent_job_approved", metadata: { job_id: id, eligibility_gate: "hard-gate-v1" } });
   revalidatePath("/job-agent");
   const next = new FormData();
   next.set("job_id", id);
