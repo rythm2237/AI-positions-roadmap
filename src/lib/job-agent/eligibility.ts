@@ -11,7 +11,7 @@ export type EligibilityJobInput = {
   description?: string | null;
   descriptionComplete?: boolean;
   workplaceModel?: "remote" | "hybrid" | "on_site" | "unknown";
-  employmentType?: string | null;
+  employmentTypes?: string[];
   salaryMin?: number | null;
   salaryMax?: number | null;
   currency?: string | null;
@@ -38,18 +38,14 @@ const languagePatterns: Array<[string, RegExp]> = [
 
 const requirementWords = /\b(required|requirement|must|mandatory|fluent|fluency|professional|proficien(?:t|cy)|b1|b2|c1|c2|native|excellent|very good|written and spoken|written communication|spoken communication|kenntnisse|erforderlich|vorausgesetzt|fließend|fliessend|verhandlungssicher)\b/i;
 const noSponsorship = /\b(no|not)\s+(?:visa\s+)?sponsorship\b|\b(?:must|need to)\s+(?:already\s+)?(?:have|hold)\s+(?:the\s+)?(?:right|authorization)\s+to\s+work\b/i;
-
 const normalize = (value: string) => value.trim().toLowerCase().replace(/[_-]+/g, " ").replace(/\s+/g, " ");
-const includesNormalized = (values: string[], candidate: string) => values.some((value) => normalize(value) === normalize(candidate));
 
 export function extractRequiredLanguages(text: string): string[] {
   const found = new Set<string>();
   const clauses = text.split(/(?<=[.!?;:\n])\s+|\n+/).filter(Boolean);
   for (const clause of clauses) {
     if (!requirementWords.test(clause)) continue;
-    for (const [language, pattern] of languagePatterns) {
-      if (pattern.test(clause)) found.add(language);
-    }
+    for (const [language, pattern] of languagePatterns) if (pattern.test(clause)) found.add(language);
   }
   return [...found];
 }
@@ -104,17 +100,11 @@ export function evaluateJobEligibility(job: EligibilityJobInput, profile: Profil
   const blockers: string[] = [];
   const unverified: string[] = [];
 
-  if (agent.excluded_companies.some((company) => normalize(job.company).includes(normalize(company)))) {
-    blockers.push("Company matches an explicit exclusion.");
-  }
-  if (agent.excluded_roles.some((role) => normalize(job.title).includes(normalize(role)))) {
-    blockers.push("Role matches an explicit exclusion.");
-  }
+  if (agent.excluded_companies.some((company) => normalize(job.company).includes(normalize(company)))) blockers.push("Company matches an explicit exclusion.");
+  if (agent.excluded_roles.some((role) => normalize(job.title).includes(normalize(role)))) blockers.push("Role matches an explicit exclusion.");
 
   const country = job.country?.trim() || null;
-  if (country && agent.excluded_countries.some((value) => normalize(value) === normalize(country))) {
-    blockers.push(`Country is excluded: ${country}.`);
-  }
+  if (country && agent.excluded_countries.some((value) => normalize(value) === normalize(country))) blockers.push(`Country is excluded: ${country}.`);
   if (agent.search_countries.length) {
     if (!country) unverified.push("Job country could not be verified.");
     else if (!agent.search_countries.some((value) => normalize(value) === normalize(country))) blockers.push(`Country is outside the configured search scope: ${country}.`);
@@ -133,16 +123,16 @@ export function evaluateJobEligibility(job: EligibilityJobInput, profile: Profil
   }
 
   if (agent.employment_types.length) {
-    if (!job.employmentType) unverified.push("Employment type could not be verified.");
-    else if (!agent.employment_types.some((value) => normalize(value) === normalize(job.employmentType))) blockers.push(`Employment type is not selected: ${job.employmentType}.`);
+    const detectedEmployment = (job.employmentTypes ?? []).map(normalize);
+    if (!detectedEmployment.length) unverified.push("Employment type could not be verified.");
+    else if (!agent.employment_types.some((value) => detectedEmployment.includes(normalize(value)))) blockers.push(`Employment type is outside the configured filter: ${job.employmentTypes?.join(", ")}.`);
   }
 
   const jobSeniority = detectedSeniority(job.title);
   const minSeniority = configuredSeniority(agent.min_seniority);
   const maxSeniority = configuredSeniority(agent.max_seniority);
-  if ((minSeniority !== null || maxSeniority !== null) && jobSeniority === null) {
-    unverified.push("Seniority could not be verified from the vacancy title.");
-  } else if (jobSeniority !== null) {
+  if ((minSeniority !== null || maxSeniority !== null) && jobSeniority === null) unverified.push("Seniority could not be verified from the vacancy title.");
+  else if (jobSeniority !== null) {
     if (minSeniority !== null && jobSeniority < minSeniority) blockers.push("Role is below the configured minimum seniority.");
     if (maxSeniority !== null && jobSeniority > maxSeniority) blockers.push("Role is above the configured maximum seniority.");
   }
@@ -158,24 +148,16 @@ export function evaluateJobEligibility(job: EligibilityJobInput, profile: Profil
     else if (postingLanguage && postingLanguage !== "English") blockers.push(`English-only priority excludes a ${postingLanguage} vacancy.`);
   }
 
-  // Adzuna's public search API explicitly returns only a description snippet. A posting written
-  // in English is not evidence that English is the only required language. If the user chose
-  // strict language verification, incomplete requirement text must never be promoted as a match.
-  if (!requiredLanguages.length && agent.exclude_unknown_languages && !job.descriptionComplete) {
-    unverified.push("Full language requirements are not available from the job source.");
-  }
+  // Adzuna documents that its public Search API returns only a description snippet. The language
+  // used to write that snippet is not proof that no additional language is required later in the ad.
+  if (!requiredLanguages.length && agent.exclude_unknown_languages && !job.descriptionComplete) unverified.push("Full language requirements are not available from the job source.");
 
   if (agent.minimum_salary !== null) {
-    if (job.salaryMax !== null && job.salaryMax !== undefined && job.salaryMax < agent.minimum_salary) {
-      blockers.push("Published salary range is below the configured minimum.");
-    } else if ((job.salaryMax === null || job.salaryMax === undefined) && agent.salary_negotiable === false) {
-      unverified.push("Salary is undisclosed and the configured minimum cannot be verified.");
-    }
+    if (job.salaryMax !== null && job.salaryMax !== undefined && job.salaryMax < agent.minimum_salary) blockers.push("Published salary range is below the configured minimum.");
+    else if ((job.salaryMax === null || job.salaryMax === undefined) && agent.salary_negotiable === false) unverified.push("Salary is undisclosed and the configured minimum cannot be verified.");
   }
 
-  if (needsSponsorship(agent) && noSponsorship.test(text)) {
-    blockers.push("Vacancy states that sponsorship/right-to-work support is unavailable.");
-  }
+  if (needsSponsorship(agent) && noSponsorship.test(text)) blockers.push("Vacancy states that sponsorship/right-to-work support is unavailable.");
 
   if (blockers.length) return { status: "blocked", reasons: blockers, requiredLanguages, postingLanguage };
   if (unverified.length) return { status: "unverified", reasons: unverified, requiredLanguages, postingLanguage };
