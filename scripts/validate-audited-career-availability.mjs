@@ -1,4 +1,5 @@
 import fs from "node:fs";
+import "./test-public-beta-release-gate.mjs";
 import "./patch-guided-project-reviewer.mjs";
 import "./patch-portfolio-proof.mjs";
 import "./patch-job-launch-workspace.mjs";
