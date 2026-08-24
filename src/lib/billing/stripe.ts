@@ -6,7 +6,7 @@ export type BillingInterval = "monthly" | "annual";
 
 export const ROLE_PATH_PRICING = {
   monthly: { amountEur: 19.9, label: "€19.90 / month" },
-  annual: { amountEur: 199, label: "€199 / year" },
+  annual: { amountEur: 179, label: "€179 / year" },
 } as const;
 
 export function stripeSecretKey(): string {
