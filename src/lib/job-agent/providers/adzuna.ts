@@ -9,10 +9,12 @@ export type JobProviderResult = {
   country: string;
   url: string;
   description: string;
+  descriptionComplete: boolean;
   salaryMin: number | null;
   salaryMax: number | null;
   currency: string | null;
   workplaceModel: "remote" | "hybrid" | "on_site" | "unknown";
+  employmentType: string | null;
   createdAt: string | null;
 };
 
@@ -27,23 +29,76 @@ const countryAliases: Record<string, AdzunaCountry> = {
   nl: "nl", netherlands: "nl", holland: "nl", ch: "ch", switzerland: "ch", schweiz: "ch", suisse: "ch",
 };
 
-type RawJob = { id?: string; title?: string; description?: string; created?: string; redirect_url?: string; salary_min?: number; salary_max?: number; company?: { display_name?: string }; location?: { display_name?: string } };
-function workModel(job: RawJob): JobProviderResult["workplaceModel"] { const text = `${job.title ?? ""} ${job.description ?? ""}`.toLowerCase(); if (/\b(remote|work from home|home-based|home based)\b/.test(text)) return "remote"; if (/\bhybrid\b/.test(text)) return "hybrid"; if (/\b(on[- ]?site|office[- ]based|office based)\b/.test(text)) return "on_site"; return "unknown"; }
+type RawJob = {
+  id?: string;
+  title?: string;
+  description?: string;
+  created?: string;
+  redirect_url?: string;
+  salary_min?: number;
+  salary_max?: number;
+  contract_time?: string;
+  contract_type?: string;
+  company?: { display_name?: string };
+  location?: { display_name?: string };
+};
+
+function workModel(job: RawJob): JobProviderResult["workplaceModel"] {
+  const text = `${job.title ?? ""} ${job.description ?? ""}`.toLowerCase();
+  if (/\b(remote|work from home|home-based|home based)\b/.test(text)) return "remote";
+  if (/\bhybrid\b/.test(text)) return "hybrid";
+  if (/\b(on[- ]?site|office[- ]based|office based)\b/.test(text)) return "on_site";
+  return "unknown";
+}
+
+function employmentType(job: RawJob): string | null {
+  const contractTime = (job.contract_time ?? "").toLowerCase();
+  const contractType = (job.contract_type ?? "").toLowerCase();
+  const text = `${job.title ?? ""} ${job.description ?? ""}`.toLowerCase();
+  if (contractTime === "full_time" || /\bfull[- ]?time\b/.test(text)) return "full_time";
+  if (contractTime === "part_time" || /\bpart[- ]?time\b/.test(text)) return "part_time";
+  if (/\bintern(ship)?\b/.test(text)) return "internship";
+  if (/\bfreelance\b/.test(text)) return "freelance";
+  if (contractType === "permanent" || /\bpermanent\b/.test(text)) return "permanent";
+  if (contractType === "contract" || /\b(contract|fixed[- ]term|temporary)\b/.test(text)) return "contract";
+  return null;
+}
+
 export function resolveAdzunaCountry(value: string): AdzunaCountry | null { return countryAliases[value.trim().toLowerCase()] ?? null; }
 export function adzunaConfigured() { return Boolean(process.env.ADZUNA_APP_ID && process.env.ADZUNA_APP_KEY); }
 
 export async function searchAdzunaJobs(input: { country: string; query: string; location?: string; limit?: number }): Promise<JobProviderResult[]> {
   const code = resolveAdzunaCountry(input.country);
-  const appId = process.env.ADZUNA_APP_ID; const appKey = process.env.ADZUNA_APP_KEY;
+  const appId = process.env.ADZUNA_APP_ID;
+  const appKey = process.env.ADZUNA_APP_KEY;
   if (!code || !appId || !appKey) return [];
   const limit = Math.min(50, Math.max(1, input.limit ?? 20));
   const params = new URLSearchParams({ app_id: appId, app_key: appKey, what: input.query, results_per_page: String(limit), sort_by: "date", "content-type": "application/json" });
   if (input.location) params.set("where", input.location);
   const response = await fetch(`https://api.adzuna.com/v1/api/jobs/${code}/search/1?${params}`, { headers: { Accept: "application/json" }, cache: "no-store" });
-  if (!response.ok) { console.warn("Job Agent Adzuna search failed", { status: response.status, country: code, query: input.query }); return []; }
+  if (!response.ok) {
+    console.warn("Job Agent Adzuna search failed", { status: response.status, country: code, query: input.query });
+    return [];
+  }
   const payload = await response.json() as { results?: RawJob[] };
   return (payload.results ?? []).flatMap((job) => {
     if (!job.id || !job.title || !job.redirect_url) return [];
-    return [{ externalId: job.id, source: "Adzuna" as const, company: job.company?.display_name?.trim() || "Not specified", title: job.title.trim(), location: job.location?.display_name?.trim() || input.location || countryNames[code], country: countryNames[code], url: job.redirect_url, description: job.description?.trim() || "", salaryMin: typeof job.salary_min === "number" ? job.salary_min : null, salaryMax: typeof job.salary_max === "number" ? job.salary_max : null, currency: currencies[code], workplaceModel: workModel(job), createdAt: job.created ?? null }];
+    return [{
+      externalId: job.id,
+      source: "Adzuna" as const,
+      company: job.company?.display_name?.trim() || "Not specified",
+      title: job.title.trim(),
+      location: job.location?.display_name?.trim() || input.location || countryNames[code],
+      country: countryNames[code],
+      url: job.redirect_url,
+      description: job.description?.trim() || "",
+      descriptionComplete: false,
+      salaryMin: typeof job.salary_min === "number" ? job.salary_min : null,
+      salaryMax: typeof job.salary_max === "number" ? job.salary_max : null,
+      currency: currencies[code],
+      workplaceModel: workModel(job),
+      employmentType: employmentType(job),
+      createdAt: job.created ?? null,
+    }];
   });
 }
