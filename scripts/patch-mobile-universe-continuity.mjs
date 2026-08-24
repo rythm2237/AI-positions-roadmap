@@ -32,18 +32,11 @@ if (!world.includes("const CAREER_MOBILE_UNIVERSE_CONTINUITY = true;")) {
   world = world.replace("const holdMs = renderer.domElement.clientWidth < 768 ? 1400 : CAREER_ORBIT_FOCUS_HOLD_MS;", "const holdMs = renderer.domElement.clientWidth < 768 ? 1500 : CAREER_ORBIT_FOCUS_HOLD_MS;");
   world = world.replace("nextCruiseFocusAt = now + 420;", "nextCruiseFocusAt = now + 240;");
 
-  const hoverReturn = `          setHoveredNodeState(node, sx, sy);\n          return idx;`;
   world = replaceRequired(
     world,
-    hoverReturn,
-    `          setHoveredNodeState(node, sx, sy);\n          renderer.domElement.style.cursor = cruiseFocusNode?.id === node.id ? "pointer" : "default";\n          return idx;`,
-    "raycast hover cursor",
-  );
-  world = replaceRequired(
-    world,
-    `      setHoveredNodeState(null, 0, 0);\n      return -1;`,
-    `      setHoveredNodeState(null, 0, 0);\n      renderer.domElement.style.cursor = "default";\n      return -1;`,
-    "raycast empty cursor",
+    `      doRaycast(e.clientX, e.clientY);\n    }\n\n    function onPointerUp`,
+    `      const hoverIndex = doRaycast(e.clientX, e.clientY);\n      const hoverNode = hoverIndex >= 0 ? allNodesRef.current[hoverIndex] : null;\n      renderer.domElement.style.cursor = hoverNode && cruiseFocusNode?.id === hoverNode.id ? "pointer" : "default";\n    }\n\n    function onPointerUp`,
+    "pointer-layer active cursor",
   );
 
   await writeFile(worldPath, world, "utf8");
