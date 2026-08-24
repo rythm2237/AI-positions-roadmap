@@ -13,6 +13,13 @@ function replaceRequired(source, search, replacement, label) {
   return source.replace(search, replacement);
 }
 
+function replaceBetween(source, startMarker, endMarker, replacement, label) {
+  const start = source.indexOf(startMarker);
+  const end = source.indexOf(endMarker, start + startMarker.length);
+  if (start < 0 || end < 0) throw new Error(`Mobile/Universe hardening failed: ${label} section not found.`);
+  return `${source.slice(0, start)}${replacement}\n\n${source.slice(end)}`;
+}
+
 let world = await readFile(worldPath, "utf8");
 if (!world.includes("const CAREER_MOBILE_UNIVERSE_CONTINUITY = true;")) {
   world = replaceRequired(
@@ -32,9 +39,27 @@ if (!world.includes("const CAREER_MOBILE_UNIVERSE_CONTINUITY = true;")) {
   world = world.replace("const holdMs = renderer.domElement.clientWidth < 768 ? 1400 : CAREER_ORBIT_FOCUS_HOLD_MS;", "const holdMs = renderer.domElement.clientWidth < 768 ? 1500 : CAREER_ORBIT_FOCUS_HOLD_MS;");
   world = world.replace("nextCruiseFocusAt = now + 420;", "nextCruiseFocusAt = now + 240;");
 
-  const oldClick = `      if (o.dragDist < 5 && phaseRef.current === "exploring") {\n        const idx = doRaycast(e.clientX, e.clientY);\n        if (idx >= 0) {\n          const node = allNodesRef.current[idx];\n          const wasFocused = destNodeRef.current?.id === node.id;\n          destNodeRef.current = node;\n          destPosRef.current.set(...node.position);\n          destCamPosRef.current.set(node.position[0], node.position[1]+4, node.position[2]+14);\n          startCamPosRef.current.copy(camPosSmoothed);\n          startCamTargetRef.current.copy(camTargetSmoothed);\n          const availableBehaviors = CAMERA_BEHAVIORS.filter((behavior) => !recentCameraBehaviorsRef.current.includes(behavior.name));\n          const pool = availableBehaviors.length > 0 ? availableBehaviors : CAMERA_BEHAVIORS;\n          const behavior = pool[Math.floor(Math.random() * pool.length)];\n          activeCameraBehaviorRef.current = behavior;\n          recentCameraBehaviorsRef.current = [...recentCameraBehaviorsRef.current.slice(-2), behavior.name];\n          console.log("Camera Behavior:", behavior.name);\n          rebuildConnections(node);\n          // Reset orbit offsets so new destination is centered\n          o.yaw = 0; o.pitch = 0;\n          travelToRef.current(node);\n          const entry = UNIVERSE_REGISTRY.find((career) => career.id === node.id);\n          if (wasFocused && entry?.careerPath) scheduleCareerEntry(node, entry.careerPath);\n        }\n      }`;
-  const newClick = `      if (o.dragDist < 5 && phaseRef.current === "exploring") {\n        const idx = doRaycast(e.clientX, e.clientY);\n        if (idx >= 0) {\n          const node = allNodesRef.current[idx];\n          const isActiveCareerPlanet = cruiseFocusNode?.id === node.id;\n          if (!isActiveCareerPlanet) {\n            // Non-active planets are discovery-only: tap/hover reveals the title,\n            // but never changes camera course or navigates away.\n            setHoveredNodeState(node, e.clientX, e.clientY);\n            return;\n          }\n          const entry = UNIVERSE_REGISTRY.find((career) => career.id === node.id);\n          if (entry?.careerPath) scheduleCareerEntry(node, entry.careerPath, 120);\n        }\n      }`;
-  world = replaceRequired(world, oldClick, newClick, "active-planet click contract");
+  const activeOnlyPointerUp = `    function onPointerUp(e: PointerEvent) {
+      const o = orbitRef.current;
+      o.isDragging = false;
+      // A Career planet becomes navigable only while it owns the automatic label.
+      // Other planets remain discoverable through hover/tap labels without changing
+      // course, destination, or application state.
+      if (o.dragDist < 5 && phaseRef.current === "exploring") {
+        const idx = doRaycast(e.clientX, e.clientY);
+        if (idx >= 0) {
+          const node = allNodesRef.current[idx];
+          const isActiveCareerPlanet = cruiseFocusNode?.id === node.id;
+          if (!isActiveCareerPlanet) {
+            setHoveredNodeState(node, e.clientX, e.clientY);
+            return;
+          }
+          const entry = UNIVERSE_REGISTRY.find((career) => career.id === node.id);
+          if (entry?.careerPath) scheduleCareerEntry(node, entry.careerPath, 120);
+        }
+      }
+    }`;
+  world = replaceBetween(world, "    function onPointerUp(e: PointerEvent) {", "    function onPointerLeave() {", activeOnlyPointerUp, "active-planet click contract");
 
   const hoverReturn = `          setHoveredNodeState(node, sx, sy);\n          return idx;`;
   world = replaceRequired(
