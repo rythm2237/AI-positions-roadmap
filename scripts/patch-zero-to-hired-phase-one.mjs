@@ -42,6 +42,12 @@ replaceOnce(
 );
 
 replaceOnce(
+  "hero scroll content sizing",
+  '      <div className="relative z-10 mx-auto flex h-full max-w-7xl flex-col justify-center">',
+  '      <div className="relative z-10 mx-auto flex min-h-full max-w-7xl flex-col justify-center">'
+);
+
+replaceOnce(
   "hero readiness panel",
   '          {hasProgress ? <div className="grid gap-4 sm:grid-cols-[1fr_auto_auto] sm:items-end">\n            <ProgressBar value={stats.overallProgress} label="Journey progress" />\n            <p className="text-sm text-slate-300"><strong className="text-white">{stats.completedProjects}</strong> projects completed</p>\n            <p className="text-sm text-slate-300"><strong className="text-white">{stats.notesCount}</strong> saved notes</p>\n          </div> : <p className="text-sm text-slate-400">No journey progress recorded yet. Start at the first station when you are ready.</p>}\n        </div>\n      </div>\n    </motion.section>',
   '          {hasProgress ? <div className="grid gap-4 sm:grid-cols-[1fr_auto_auto] sm:items-end">\n            <ProgressBar value={stats.overallProgress} label="Journey progress" />\n            <p className="text-sm text-slate-300"><strong className="text-white">{stats.completedProjects}</strong> projects completed</p>\n            <p className="text-sm text-slate-300"><strong className="text-white">{stats.notesCount}</strong> saved notes</p>\n          </div> : <p className="text-sm text-slate-400">No journey progress recorded yet. Start at the first station when you are ready.</p>}\n        </div>\n        <CareerReadinessPanel career={career} progress={progress} />\n      </div>\n    </motion.section>'
