@@ -124,6 +124,8 @@ export default function CareerJourneyEngine(props: JourneyEngineProps) {
   const world = getWorldSize(positionedStages, geometry.width, geometry.height, map.worldPadding);
   const camera = useJourneyCamera({ stages: positionedStages, focusedStage: positionedFocusedStage, viewport, mapWidth: world.width, mapHeight: world.height, guidedMode, cameraPhase, learningMode });
   const [pan, setPan] = React.useState({ x: 0, y: 0 });
+  const panRef = React.useRef(pan);
+  const sectionRef = React.useRef<HTMLElement | null>(null);
   const [dragging, setDragging] = React.useState(false);
   const drag = React.useRef<{ id: number; x: number; y: number; panX: number; panY: number } | null>(null);
   const toolQuery = careerSlug ? `?career=${encodeURIComponent(careerSlug)}&source=roadmap` : "?source=roadmap";
@@ -136,7 +138,11 @@ export default function CareerJourneyEngine(props: JourneyEngineProps) {
     const maxY = viewport.height - visibleY - camera.y;
     return { x: Math.max(minX, Math.min(maxX, x)), y: Math.max(minY, Math.min(maxY, y)) };
   }, [camera.scale, camera.x, camera.y, viewport.height, viewport.width, world.height, world.width]);
-  const movePan = (x: number, y: number) => setPan(constrainPan(x, y));
+  const movePan = (x: number, y: number) => {
+    const next = constrainPan(x, y);
+    panRef.current = next;
+    setPan(next);
+  };
 
   React.useEffect(() => {
     const match = window.location.pathname.match(/^\/careers\/([^/?#]+)/);
@@ -149,8 +155,47 @@ export default function CareerJourneyEngine(props: JourneyEngineProps) {
   }, []);
 
   React.useEffect(() => {
-    setPan((current) => constrainPan(current.x, current.y));
+    panRef.current = pan;
+  }, [pan]);
+
+  React.useEffect(() => {
+    setPan((current) => {
+      const next = constrainPan(current.x, current.y);
+      panRef.current = next;
+      return next;
+    });
   }, [constrainPan]);
+
+  React.useEffect(() => {
+    const reset = { x: 0, y: 0 };
+    panRef.current = reset;
+    setPan(reset);
+  }, [guidedMode, positionedFocusedStage.id]);
+
+  React.useEffect(() => {
+    const section = sectionRef.current;
+    if (!section) return;
+
+    const handleWheel = (event: WheelEvent) => {
+      const target = event.target instanceof Element ? event.target : null;
+      if (target?.closest(".journey-stage-briefing, button, a, [role='dialog']")) return;
+
+      const unit = event.deltaMode === 1 ? 16 : event.deltaMode === 2 ? viewport.height : 1;
+      const current = panRef.current;
+      const next = constrainPan(
+        current.x - event.deltaX * unit,
+        current.y - event.deltaY * unit,
+      );
+
+      if (next.x === current.x && next.y === current.y) return;
+      event.preventDefault();
+      panRef.current = next;
+      setPan(next);
+    };
+
+    section.addEventListener("wheel", handleWheel, { passive: false });
+    return () => section.removeEventListener("wheel", handleWheel);
+  }, [constrainPan, viewport.height]);
 
   React.useEffect(() => {
     const enteringGuidedMode = guidedMode && !guidedModeRef.current;
@@ -171,7 +216,7 @@ export default function CareerJourneyEngine(props: JourneyEngineProps) {
   if (!positionedStages.length) return <section className="grid h-full place-items-center bg-[#030712] p-6 text-center text-slate-100"><div><h2 className="font-display text-2xl font-bold">Journey unavailable</h2><p className="mt-2 text-slate-400">This career map has no stations yet.</p></div></section>;
 
   return (
-    <motion.section className={`relative h-full touch-none select-none overflow-hidden bg-[#030712] ${dragging ? "cursor-grabbing" : "cursor-grab"}`} initial={false} animate={{opacity:1}} exit={{opacity:0}} tabIndex={-1}
+    <motion.section ref={sectionRef} className={`relative h-full touch-none select-none overflow-hidden bg-[#030712] ${dragging ? "cursor-grabbing" : "cursor-grab"}`} initial={false} animate={{opacity:1}} exit={{opacity:0}} tabIndex={-1}
       onPointerDown={(event) => { if ((event.target as HTMLElement).closest("button, a")) return; event.currentTarget.setPointerCapture(event.pointerId); drag.current = { id:event.pointerId, x:event.clientX, y:event.clientY, panX:pan.x, panY:pan.y }; setDragging(true); }}
       onPointerMove={(event) => { const start=drag.current; if (!start || start.id!==event.pointerId) return; movePan(start.panX+event.clientX-start.x,start.panY+event.clientY-start.y); }}
       onPointerUp={(event) => { if (drag.current?.id===event.pointerId) { drag.current=null; setDragging(false); event.currentTarget.releasePointerCapture(event.pointerId); } }} onPointerCancel={() => { drag.current=null; setDragging(false); }}
@@ -208,9 +253,9 @@ export default function CareerJourneyEngine(props: JourneyEngineProps) {
           <button autoFocus type="button" className="mt-6 min-h-11 rounded-full border border-cyan-200/30 bg-gradient-to-r from-cyan-500 via-teal-400 to-cyan-500 px-7 py-3 text-sm font-bold text-slate-950 shadow-[0_8px_28px_rgba(34,211,238,.22)] transition hover:brightness-110 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-cyan-200" onClick={() => { setShowStartPopup(false); onStartJourney(); }}>Begin Journey →</button>
         </section>
       </motion.div> : !guidedMode ? null : (
-        <GuidedOverlay stage={presentedStage} index={presentedIndex} total={positionedStages.length} travelling={travelling} navigationOpen={navigationOpen} isMobile={viewport.width < 640} cvAnalyzerHref={`/cv-analyzer${toolQuery}`} jobAgentHref={`/job-agent${toolQuery}`} onChange={(index) => onGuidedIndexChange(index)} onExit={onExitJourney}/>
+        <GuidedOverlay stage={presentedStage} index={presentedIndex} total={positionedStages.length} travelling={travelling} navigationOpen={navigationOpen} isMobile={viewport.width < 640} cvAnalyzerHref={`/cv-analyzer${toolQuery}`} jobAgentHref={`/job-agent${toolQuery}`} onChange={(index) => { panRef.current = {x:0,y:0}; setPan({x:0,y:0}); onGuidedIndexChange(index); }} onExit={onExitJourney}/>
       )}
-      {pan.x || pan.y ? <button type="button" onClick={() => setPan({x:0,y:0})} className="absolute bottom-[max(1rem,env(safe-area-inset-bottom))] right-3 z-40 min-h-11 rounded-full border border-white/10 bg-slate-950/80 px-4 text-xs font-semibold text-slate-300 shadow-lg backdrop-blur-md transition hover:border-cyan-300/40 hover:text-cyan-100 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-cyan-300">Recenter</button> : null}
+      {pan.x || pan.y ? <button type="button" onClick={() => { panRef.current = {x:0,y:0}; setPan({x:0,y:0}); }} className="absolute bottom-[max(1rem,env(safe-area-inset-bottom))] right-3 z-40 min-h-11 rounded-full border border-white/10 bg-slate-950/80 px-4 text-xs font-semibold text-slate-300 shadow-lg backdrop-blur-md transition hover:border-cyan-300/40 hover:text-cyan-100 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-cyan-300">Recenter</button> : null}
       <div className="sr-only" aria-live="polite">{guidedMode && !travelling ? `Arrived at ${presentedStage.title}, station ${presentedIndex + 1} of ${positionedStages.length}.` : ""}</div>
     </motion.section>
   );
