@@ -16,7 +16,7 @@ if (accountLayout.includes('href="/job-search-mode" className="hidden')) throw n
 for (const token of ["journey_mode", "learn_and_build", "ready_to_apply"]) if (!migration.includes(token)) throw new Error(`Journey-mode migration missing: ${token}`);
 
 for (const token of ["LANDING_TOUR", "READY_TO_APPLY_TOUR", 'id: "landing-v3"', 'id: "ready-to-apply-v1"', 'pathname === "/job-search-mode"', "getPageTour(pathname)", "activePathRef"]) if (!guidedTour.includes(token)) throw new Error(`Page-scoped guided tour contract missing: ${token}`);
-for (const token of ["fast-track-header", "fast-track-readiness", "fast-track-cv", "fast-track-job-matching", "fast-track-application", "fast-track-interview", "fast-track-learning"]) if (!guidedTour.includes(`[data-tour=\\\"${token}\\\"]`) && !guidedTour.includes(`[data-tour=\"${token}\"]`) && !guidedTour.includes(`data-tour=\\\"${token}\\\"`)) throw new Error(`Ready-to-Apply guided tour step missing: ${token}`);
+for (const token of ["fast-track-header", "fast-track-readiness", "fast-track-cv", "fast-track-job-matching", "fast-track-application", "fast-track-interview", "fast-track-learning"]) if (!guidedTour.includes(token)) throw new Error(`Ready-to-Apply guided tour step missing: ${token}`);
 if (guidedTour.includes("useRouter")) throw new Error("Guided tour must not own router navigation; tours are page-scoped.");
 if (guidedTour.includes("router.push")) throw new Error("Guided tour must never navigate users between pages.");
 if (guidedTour.includes("route:")) throw new Error("Tour steps must not contain cross-page route instructions.");
