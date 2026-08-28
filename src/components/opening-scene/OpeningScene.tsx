@@ -9,6 +9,7 @@
 // Dynamic import with ssr:false is REQUIRED — Three.js needs browser APIs.
 
 import dynamic from "next/dynamic";
+import PassiveCareerFlow from "./PassiveCareerFlow";
 
 const World = dynamic(() => import("./World"), {
   ssr: false,
@@ -44,6 +45,7 @@ export default function OpeningScene() {
       </a>
 
       <World />
+      <PassiveCareerFlow />
       <div
         id="universe-utilities"
         className="pointer-events-auto absolute inset-x-0 bottom-0 z-20 hidden items-center justify-end gap-4 px-6 py-4 text-[11px] text-slate-500 sm:flex"
