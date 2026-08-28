@@ -24,29 +24,28 @@ assert.doesNotMatch(world, /<HoverLabel node=/, "Universe must avoid duplicate R
 
 assert.match(world, /CAREER_CINEMATIC_PREVIEW = true/, "Preview must carry an explicit cinematic feature marker.");
 assert.match(world, /CAREER_NATURAL_CRUISE = true/, "Preview must enable uninterrupted natural cruise behavior.");
+assert.match(world, /CAREER_MOBILE_UNIVERSE_CONTINUITY = true/, "Final Universe hardening must be applied.");
 assert.match(world, /CAREER_IMMERSIVE_PILOT_SPEED = 3\.6/, "Cruise must use a slow boat-like cinematic speed.");
-assert.match(world, /CAREER_ORBIT_FOCUS_INTERVAL_MS = 3500/, "Career title opportunities must remain roughly 3.5 seconds apart when a suitable planet is naturally ahead.");
-assert.match(world, /CAREER_ORBIT_FOCUS_HOLD_MS = 1150/, "Desktop title presentation must remain a brief cinematic beat.");
+assert.match(world, /CAREER_ORBIT_FOCUS_INTERVAL_MS = 2400/, "A new readable Career opportunity must arrive roughly every 2.4 seconds.");
+assert.match(world, /CAREER_ORBIT_FOCUS_HOLD_MS = 1700/, "Desktop Career titles must remain readable long enough to overlap the next approach.");
+assert.match(world, /clientWidth < 768 \? 1800 : CAREER_ORBIT_FOCUS_HOLD_MS/, "Mobile Career titles must receive a longer readable hold.");
 assert.match(world, /new THREE\.CatmullRomCurve3\(cruisePoints, true/, "Universe cruise must remain one continuous closed route.");
 assert.match(world, /cruiseDistance = \(cruiseDistance \+ CAREER_IMMERSIVE_PILOT_SPEED \* delta\)/, "Cruise progress must remain frame-rate independent.");
-assert.match(world, /const motionPaused = reduceMotion \|\| interactionPaused/, "Automatic Career labels must never pause or reframe the camera path.");
+assert.match(world, /const motionPaused = reduceMotion \|\| interactionPaused/, "Automatic Career labels must never reframe the camera path.");
 
-assert.match(world, /CAREER_NATURAL_FOCUS_MAX_DISTANCE = 34/, "Automatic Career labels must only consider nearby planets.");
-assert.match(world, /CAREER_NATURAL_FOCUS_MIN_FORWARD_DOT = 0\.2/, "Automatic Career labels must only select planets naturally ahead of the camera.");
+assert.match(world, /CAREER_NATURAL_FOCUS_MAX_DISTANCE = 56/, "The passive cruise must keep enough nearby candidates to avoid empty beats.");
+assert.match(world, /CAREER_NATURAL_FOCUS_MIN_FORWARD_DOT = -0\.08/, "The candidate window must allow near-edge planets without cutting the camera toward them.");
 assert.match(world, /distance > CAREER_NATURAL_FOCUS_MAX_DISTANCE/, "Distant Careers must not cause camera cuts.");
-assert.match(world, /forwardDot < CAREER_NATURAL_FOCUS_MIN_FORWARD_DOT/, "Behind-camera Careers must not trigger presentation.");
+assert.match(world, /forwardDot < CAREER_NATURAL_FOCUS_MIN_FORWARD_DOT/, "Out-of-path Careers must not trigger presentation.");
 assert.doesNotMatch(world, /camPos\.copy\(cruiseFocusCameraPosition\);\n\s*camTarget\.copy\(cruiseFocusPosition\);/, "Automatic Career presentation must never lock camera position and target.");
 assert.doesNotMatch(world, /setDestination\(focusCandidate\)/, "Automatic Career presentation must not mutate navigation destination.");
 assert.doesNotMatch(world, /rebuildConnections\(focusCandidate\)/, "Automatic Career presentation must not rebuild scene state just to show a title.");
 
-assert.match(world, /CAREER_USER_CONTROL_TAKEOVER_MS = 3200/, "Pointer activity must own the camera for a 3.2 second inactivity grace period.");
-assert.match(world, /lastPointerActivityAt = performance\.now\(\)/, "Pointer movement must immediately transfer control to the user.");
-assert.match(world, /userControlActive = now - lastPointerActivityAt < CAREER_USER_CONTROL_TAKEOVER_MS/, "User-control activity must be determined independently of automatic labels.");
-assert.match(world, /interactionPaused = hoveredPlanet !== null \|\| o\.isDragging \|\| userControlActive/, "Cruise translation must freeze during direct mouse takeover, hover, or drag.");
-assert.match(world, /camPos\.copy\(camPosSmoothed\)[\s\S]*camTarget\.copy\(cruiseAhead\)/, "Mouse takeover must freeze camera position while allowing stable gaze steering.");
-assert.match(world, /pointerStabilizesPlanets \? 1 : 1 \+ Math\.sin/, "Planet pulse must stop during pointer control so hover targets cannot oscillate under the cursor.");
-assert.match(world, /nextCruiseFocusAt = Math\.max\(nextCruiseFocusAt, now \+ 500\)/, "Automatic labels must stay dormant while the user is actively looking around.");
-assert.match(world, /focusSuppressesBank = hoveredNodeRef\.current !== null \|\| performance\.now\(\) - lastPointerActivityAt < CAREER_USER_CONTROL_TAKEOVER_MS/, "Only direct user intent should suppress the gentle cinematic bank.");
+assert.doesNotMatch(world, /lastPointerActivityAt = performance\.now\(\)/, "Pointer movement must not transfer control away from the passive cruise.");
+assert.match(world, /const hoveredPlanet: CareerNode \| null = null;/, "Incidental hover must not retarget or pause the cruise camera.");
+assert.match(world, /const interactionPaused = false;/, "Mouse hover and drag state must not pause passive forward motion.");
+assert.match(world, /const steerX = 0;\n\s*const steerY = 0;/, "Pointer position must not steer the passive camera path.");
+assert.match(world, /userControlActive = now - lastPointerActivityAt < CAREER_USER_CONTROL_TAKEOVER_MS/, "Legacy arbitration can remain structurally present but must stay dormant without pointer timestamps.");
 assert.match(world, /camera\.rotateZ\(roll\)/, "Free cruise may retain subtle cinematic banking outside direct user control.");
 
 assert.match(world, /cruiseLabelEl\.append\(cruiseLabelTitle\)/, "Cruise label must render only the Career title.");
@@ -82,4 +81,4 @@ assert.match(controller, /exploring is intentionally timer-free/, "Continuous mo
 assert.match(hero, /Enter Career Universe/, "Homepage must retain an explicit Universe entry action.");
 assert.match(hero, /pointerEvents: exiting \? "none" : "auto"/, "Hidden landing CTAs must not intercept pointer or touch input after entering the Universe.");
 
-console.log("Career Universe natural cruise checks passed: uninterrupted camera path, forward-field title fly-bys, exclusive mouse takeover, stable hover, slower textured entry, compact side browser, and performance-capped planet families.");
+console.log("Career Universe passive cruise checks passed: pointer-independent motion, ~2.4s Career fly-bys, overlapping readable titles, continuous no-cut camera path, dense mobile visibility, and preserved node entry navigation.");

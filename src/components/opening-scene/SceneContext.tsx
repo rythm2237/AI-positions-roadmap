@@ -1,8 +1,11 @@
 
 "use client";
-// src/components/opening-scene/SceneContext.tsx — v6
+// src/components/opening-scene/SceneContext.tsx — v7
 //
 // Single source of truth for the Career Universe state.
+// Landing camera motion is intentionally pointer-independent. Pointer input is
+// still available to the exploration controls inside World, but it no longer
+// changes the shared camera-parallax vector.
 
 import {
   createContext,
@@ -49,14 +52,19 @@ interface SceneContextValue {
 }
 
 const SceneContext = createContext<SceneContextValue | null>(null);
+const STATIC_POINTER_VECTOR = Object.freeze({ x: 0, y: 0 });
 
 export function SceneProvider({ children }: { children: ReactNode }) {
   const [phase, setPhase] = useState<ScenePhase>("idle");
-  const [mouseNorm, setMouseNorm] = useState({ x: 0, y: 0 });
   const [hoveredNodeId, setHoveredNodeId] = useState<string | null>(null);
   const [nodes, setNodes] = useState<CareerNode[]>([]);
   const [destination, setDestination] = useState<CareerNode | null>(null);
   const activationTime = useRef<number>(0);
+
+  // Deliberately ignore pointer-normalization updates. World can keep its
+  // exploration pointer handlers without allowing cursor motion to push the
+  // landing camera or make the universe jump around.
+  const setMouseNorm = useCallback((_value: { x: number; y: number }) => {}, []);
 
   useEffect(() => {
     window.dispatchEvent(
@@ -87,7 +95,7 @@ export function SceneProvider({ children }: { children: ReactNode }) {
         phase,
         activate,
         advance,
-        mouseNorm,
+        mouseNorm: STATIC_POINTER_VECTOR,
         setMouseNorm,
         hoveredNodeId,
         setHoveredNodeId,
