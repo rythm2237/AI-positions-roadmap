@@ -1,16 +1,14 @@
 "use client";
 
-import { usePathname, useRouter } from "next/navigation";
+import { usePathname } from "next/navigation";
 import type { CSSProperties } from "react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
-const STORAGE_KEY = "ai-career-os-guided-tour-v2";
 const TOUR_EVENT = "ai-career-os:start-guided-tour";
 const INVITE_DELAY_MS = 3000;
 
 type TourStep = {
   id: string;
-  route: string;
   selector?: string;
   eyebrow: string;
   title: string;
@@ -18,94 +16,181 @@ type TourStep = {
   placement?: "auto" | "center";
 };
 
-const STEPS: TourStep[] = [
-  {
-    id: "welcome",
-    route: "/",
-    eyebrow: "Welcome to AI Career OS",
-    title: "A quick tour before you explore?",
-    body: "In about a minute, we’ll show you how to discover a career, analyze your CV, understand your roadmap, build evidence, and prepare for opportunities.",
-    placement: "center",
+type PageTour = {
+  id: string;
+  inviteTitle: string;
+  inviteBody: string;
+  steps: TourStep[];
+};
+
+const LANDING_TOUR: PageTour = {
+  id: "landing-v3",
+  inviteTitle: "Want a quick tour of this page?",
+  inviteBody: "We’ll show you how to search, explore Careers, and use the Career Universe without leaving this page.",
+  steps: [
+    {
+      id: "welcome",
+      eyebrow: "Welcome to AI Role Path",
+      title: "Discover your next AI career from here",
+      body: "This page is your discovery hub. The tour stays here and shows only the controls and experiences available on the landing page.",
+      placement: "center",
+    },
+    {
+      id: "navigation",
+      selector: 'header[role="banner"]',
+      eyebrow: "01 · Navigate",
+      title: "Search and explore without losing your place",
+      body: "Use the top navigation to search Careers, browse the directory, understand how AI Role Path works, and return to this landing experience.",
+    },
+    {
+      id: "universe",
+      eyebrow: "02 · Career Universe",
+      title: "Explore Careers visually",
+      body: "Enter the Career Universe, open the Career list, select a role, and click its focused planet to enter that Career. The Universe moves automatically; normal mouse movement does not steer it.",
+      placement: "center",
+    },
+  ],
+};
+
+const READY_TO_APPLY_TOUR: PageTour = {
+  id: "ready-to-apply-v1",
+  inviteTitle: "Tour your Ready to Apply workspace?",
+  inviteBody: "This tour stays in Fast Track and shows the execution tools that take you from job-ready to hired.",
+  steps: [
+    {
+      id: "fast-track-intro",
+      selector: '[data-tour="fast-track-header"]',
+      eyebrow: "Ready to Apply · 01",
+      title: "This is your execution path",
+      body: "Fast Track skips mandatory learning and keeps you focused on CV quality, eligible job matches, applications, and interview preparation.",
+    },
+    {
+      id: "readiness",
+      selector: '[data-tour="fast-track-readiness"]',
+      eyebrow: "Ready to Apply · 02",
+      title: "Check the inputs used for matching",
+      body: "Confirm your target role, languages, search region, and Master CV. Missing matching filters are surfaced here before Job Agent activation.",
+    },
+    {
+      id: "cv",
+      selector: '[data-tour="fast-track-cv"]',
+      eyebrow: "Ready to Apply · 03",
+      title: "Strengthen the CV you will apply with",
+      body: "Open CV Analyzer to check ATS readability, evidence quality, role alignment, and gaps before your profile is matched to vacancies.",
+    },
+    {
+      id: "job-matching",
+      selector: '[data-tour="fast-track-job-matching"]',
+      eyebrow: "Ready to Apply · 04",
+      title: "Configure precise job matching",
+      body: "Job Agent uses your target roles, geography, languages, workplace model, seniority, and exclusions. Hard eligibility is applied before Fit Score.",
+    },
+    {
+      id: "application",
+      selector: '[data-tour="fast-track-application"]',
+      eyebrow: "Ready to Apply · 05",
+      title: "Move selected opportunities into execution",
+      body: "Review eligible jobs, approve the opportunities you want, create grounded application assets, and track progress through the application pipeline.",
+    },
+    {
+      id: "interview",
+      selector: '[data-tour="fast-track-interview"]',
+      eyebrow: "Ready to Apply · 06",
+      title: "Prepare for the exact role",
+      body: "Interview preparation remains available for your target Career without forcing you to complete the learning roadmap first.",
+    },
+    {
+      id: "learning-option",
+      selector: '[data-tour="fast-track-learning"]',
+      eyebrow: "Ready to Apply · 07",
+      title: "Learning remains optional and available",
+      body: "If a real job exposes a skill gap, you can open the relevant Career path or switch back to Learn & Build whenever that becomes useful.",
+    },
+  ],
+};
+
+const CV_TOUR: PageTour = {
+  id: "cv-analyzer-v1",
+  inviteTitle: "Tour the CV Analyzer?",
+  inviteBody: "See how to bring in your CV and turn its evidence and gaps into next actions.",
+  steps: [
+    { id: "overview", selector: '[data-help-title="CV Analyzer overview"]', eyebrow: "CV Analyzer · 01", title: "Understand your current profile", body: "Use this workspace to evaluate CV structure, achievements, evidence, skills, and target-role fit." },
+    { id: "input", selector: '[aria-label="CV input options"]', eyebrow: "CV Analyzer · 02", title: "Choose how to provide your CV", body: "Upload a supported file or use the guided input options available on this page. The tour will not send you anywhere else." },
+  ],
+};
+
+const CAREERS_TOUR: PageTour = {
+  id: "career-directory-v1",
+  inviteTitle: "Tour the Career Directory?",
+  inviteBody: "Learn how this page helps you compare available Career directions.",
+  steps: [
+    { id: "directory", selector: "#careers-title", eyebrow: "Careers · 01", title: "Compare career directions", body: "The directory groups available roles so you can compare paths before opening a Career Workspace." },
+    { id: "card", selector: "main article", eyebrow: "Careers · 02", title: "Open the Career that fits your goal", body: "Each Career card leads to its own workspace. This tour stays on the directory page while explaining the choice." },
+  ],
+};
+
+const CAREER_WORKSPACE_TOUR: PageTour = {
+  id: "career-workspace-v1",
+  inviteTitle: "Tour this Career Workspace?",
+  inviteBody: "See how the sections on this Career page connect your roadmap, evidence, jobs, and interview preparation.",
+  steps: [
+    { id: "workspace", selector: "main", eyebrow: "Career Workspace", title: "Your Career journey lives on this page", body: "Use the sections in this workspace to move between roadmap, learning, projects, portfolio evidence, jobs, and interview preparation. The tour remains inside the Career you opened." },
+  ],
+};
+
+const SIMPLE_PAGE_TOURS: Record<string, PageTour> = {
+  "/profile": {
+    id: "profile-v1",
+    inviteTitle: "Tour your Profile?",
+    inviteBody: "See what information on this page drives personalization and job matching.",
+    steps: [{ id: "profile", selector: "main", eyebrow: "Profile", title: "Keep your career identity and job preferences current", body: "Your target Career, languages, location and job-search preferences influence matching and recommendations. This tour stays on your Profile page." }],
   },
-  {
-    id: "navigation",
-    route: "/",
-    selector: 'header[role="banner"]',
-    eyebrow: "01 · Navigate",
-    title: "Everything starts from here",
-    body: "Use the top navigation to browse Careers, open the CV Analyzer, understand how Career OS works, and return to the Universe whenever you want.",
+  "/job-agent": {
+    id: "job-agent-v1",
+    inviteTitle: "Tour Job Agent?",
+    inviteBody: "See how this page turns your filters into eligible job matches and application actions.",
+    steps: [{ id: "job-agent", selector: "main", eyebrow: "Job Agent", title: "Control the jobs that reach your pipeline", body: "Use this workspace to configure eligibility, review matches, approve opportunities, and follow application activity. This tour stays on Job Agent." }],
   },
-  {
-    id: "universe",
-    route: "/",
-    eyebrow: "02 · Discover",
-    title: "Explore the Career Universe",
-    body: "Use the Career Universe to discover roles visually, or open the standard Career Directory when you want a conventional list.",
-    placement: "center",
+  "/career-dashboard": {
+    id: "career-dashboard-v1",
+    inviteTitle: "Tour your Career Dashboard?",
+    inviteBody: "See how this page summarizes your current Career progress and next actions.",
+    steps: [{ id: "dashboard", selector: "main", eyebrow: "Career Dashboard", title: "Use this page as your progress overview", body: "Review your current Career state, progress signals, and next actions here. The tour does not navigate away from the dashboard." }],
   },
-  {
-    id: "cv-analyzer",
-    route: "/cv-analyzer",
-    selector: '[data-help-title="CV Analyzer overview"]',
-    eyebrow: "03 · Analyze",
-    title: "Start from your current profile",
-    body: "Upload an existing CV or build one with the guided wizard. Career OS evaluates structure, achievements, evidence, skills and role fit, then turns gaps into next actions and career recommendations.",
+  "/career-intelligence": {
+    id: "career-intelligence-v1",
+    inviteTitle: "Tour Career Intelligence?",
+    inviteBody: "See how to use the market and Career information presented on this page.",
+    steps: [{ id: "intelligence", selector: "main", eyebrow: "Career Intelligence", title: "Read the market context for your decisions", body: "Use the evidence and market context on this page to compare Career decisions. This tour remains inside Career Intelligence." }],
   },
-  {
-    id: "cv-input",
-    route: "/cv-analyzer",
-    selector: '[aria-label="CV input options"]',
-    eyebrow: "04 · Choose your input",
-    title: "Upload, build, or bring LinkedIn data",
-    body: "Use PDF, DOCX or TXT, complete the guided CV builder, or add a LinkedIn profile URL. Direct LinkedIn import will use approved access when that integration is enabled.",
-  },
-  {
-    id: "directory",
-    route: "/careers",
-    selector: "#careers-title",
-    eyebrow: "05 · Compare",
-    title: "Compare career directions",
-    body: "The Career Directory groups available roles by domain so you can compare paths and open the workspace that best fits your goals.",
-  },
-  {
-    id: "career-card",
-    route: "/careers",
-    selector: "main article",
-    eyebrow: "06 · Choose",
-    title: "Open any Career Workspace",
-    body: "Each role has a structured workspace. Use it to judge whether a direction is worth pursuing before committing to a learning path.",
-  },
-  {
-    id: "workspace",
-    route: "/careers/ai-engineer",
-    eyebrow: "07 · Build your path",
-    title: "One workspace connects the whole journey",
-    body: "A Career Workspace brings Roadmap, Learning, Projects, Portfolio evidence, Jobs, Interview preparation, and career intelligence into one connected journey.",
-    placement: "center",
-  },
-  {
-    id: "finish",
-    route: "/careers/ai-engineer",
-    eyebrow: "You’re ready",
-    title: "Explore at your own pace",
-    body: "Analyze your starting point, choose a role, close the highest-value gaps, build evidence, and prepare for real opportunities. You can restart this tour any time from the Tour button.",
-    placement: "center",
-  },
-];
+};
+
+function getPageTour(pathname: string): PageTour | null {
+  if (pathname === "/") return LANDING_TOUR;
+  if (pathname === "/job-search-mode") return READY_TO_APPLY_TOUR;
+  if (pathname === "/cv-analyzer") return CV_TOUR;
+  if (pathname === "/careers") return CAREERS_TOUR;
+  if (pathname.startsWith("/careers/")) return CAREER_WORKSPACE_TOUR;
+  return SIMPLE_PAGE_TOURS[pathname] ?? null;
+}
 
 type Rect = { top: number; left: number; width: number; height: number };
 
-function readTourStatus() {
+function storageKey(tourId: string) {
+  return `ai-rolepath-page-tour:${tourId}`;
+}
+
+function readTourStatus(tourId: string) {
   try {
-    return window.localStorage.getItem(STORAGE_KEY);
+    return window.localStorage.getItem(storageKey(tourId));
   } catch {
     return null;
   }
 }
 
-function writeTourStatus(value: "completed" | "dismissed") {
+function writeTourStatus(tourId: string, value: "completed" | "dismissed") {
   try {
-    window.localStorage.setItem(STORAGE_KEY, value);
+    window.localStorage.setItem(storageKey(tourId), value);
   } catch {
     // The tour remains usable for the current session if localStorage is unavailable.
   }
@@ -113,7 +198,8 @@ function writeTourStatus(value: "completed" | "dismissed") {
 
 export default function FirstVisitGuidedTour() {
   const pathname = usePathname();
-  const router = useRouter();
+  const pageTour = useMemo(() => getPageTour(pathname), [pathname]);
+  const steps = pageTour?.steps ?? [];
   const [inviteOpen, setInviteOpen] = useState(false);
   const [active, setActive] = useState(false);
   const [stepIndex, setStepIndex] = useState(0);
@@ -122,7 +208,8 @@ export default function FirstVisitGuidedTour() {
   const [mounted, setMounted] = useState(false);
   const [viewportWidth, setViewportWidth] = useState(1280);
   const targetRef = useRef<HTMLElement | null>(null);
-  const step = STEPS[stepIndex];
+  const activePathRef = useRef(pathname);
+  const step = steps[stepIndex];
   const isMobile = viewportWidth < 640;
 
   const publicRoute = useMemo(
@@ -139,21 +226,38 @@ export default function FirstVisitGuidedTour() {
   }, []);
 
   useEffect(() => {
-    if (active) return;
-    if (pathname === "/" && readTourStatus() === null) {
-      const timer = window.setTimeout(() => setInviteOpen(true), INVITE_DELAY_MS);
-      return () => window.clearTimeout(timer);
+    if (!active) {
+      activePathRef.current = pathname;
+      return;
+    }
+    if (pathname !== activePathRef.current) {
+      setActive(false);
+      setInviteOpen(false);
+      setStepIndex(0);
+      setTargetRect(null);
+      setTargetReady(false);
+      targetRef.current = null;
+      activePathRef.current = pathname;
     }
   }, [active, pathname]);
 
+  useEffect(() => {
+    if (active || pathname !== "/" || !pageTour) return;
+    if (readTourStatus(pageTour.id) === null) {
+      const timer = window.setTimeout(() => setInviteOpen(true), INVITE_DELAY_MS);
+      return () => window.clearTimeout(timer);
+    }
+  }, [active, pageTour, pathname]);
+
   const startTour = useCallback(() => {
+    if (!pageTour || pageTour.steps.length === 0) return;
+    activePathRef.current = pathname;
     setInviteOpen(false);
     setStepIndex(0);
     setTargetRect(null);
     setTargetReady(false);
     setActive(true);
-    if (pathname !== "/") router.push("/");
-  }, [pathname, router]);
+  }, [pageTour, pathname]);
 
   useEffect(() => {
     const restart = () => startTour();
@@ -162,13 +266,13 @@ export default function FirstVisitGuidedTour() {
   }, [startTour]);
 
   const closeTour = useCallback((status: "completed" | "dismissed") => {
-    writeTourStatus(status);
+    if (pageTour) writeTourStatus(pageTour.id, status);
     setInviteOpen(false);
     setActive(false);
     setTargetRect(null);
     setTargetReady(false);
     targetRef.current = null;
-  }, []);
+  }, [pageTour]);
 
   const updateTargetRect = useCallback(() => {
     const element = targetRef.current;
@@ -189,11 +293,6 @@ export default function FirstVisitGuidedTour() {
     setTargetReady(false);
     targetRef.current = null;
     setTargetRect(null);
-
-    if (pathname !== step.route) {
-      router.push(step.route);
-      return;
-    }
 
     if (!step.selector || step.placement === "center") {
       setTargetReady(true);
@@ -221,7 +320,7 @@ export default function FirstVisitGuidedTour() {
     };
     findTarget();
     return () => { cancelled = true; };
-  }, [active, isMobile, pathname, router, step, updateTargetRect]);
+  }, [active, isMobile, step, updateTargetRect]);
 
   useEffect(() => {
     if (!active || !targetRef.current) return;
@@ -238,16 +337,16 @@ export default function FirstVisitGuidedTour() {
     if (!active) return;
     const onKey = (event: KeyboardEvent) => {
       if (event.key === "Escape") closeTour("dismissed");
-      if (event.key === "ArrowRight" && stepIndex < STEPS.length - 1) setStepIndex((value) => value + 1);
+      if (event.key === "ArrowRight" && stepIndex < steps.length - 1) setStepIndex((value) => value + 1);
       if (event.key === "ArrowLeft" && stepIndex > 0) setStepIndex((value) => value - 1);
     };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
-  }, [active, closeTour, stepIndex]);
+  }, [active, closeTour, stepIndex, steps.length]);
 
-  if (!mounted || !publicRoute) return null;
+  if (!mounted || !publicRoute || !pageTour || steps.length === 0) return null;
 
-  const progress = `${stepIndex + 1} / ${STEPS.length}`;
+  const progress = `${stepIndex + 1} / ${steps.length}`;
   const isCentered = step?.placement === "center" || !targetRect;
   const cardStyle: CSSProperties = isMobile
     ? { left: 12, right: 12, bottom: "max(12px, env(safe-area-inset-bottom))", width: "auto" }
@@ -271,7 +370,7 @@ export default function FirstVisitGuidedTour() {
   return (
     <>
       {!active && !inviteOpen ? (
-        <button type="button" onClick={startTour} className="fixed bottom-4 left-4 z-[62] inline-flex min-h-10 items-center gap-2 rounded-full border border-white/10 bg-[#070a18]/80 px-3.5 py-2 text-xs font-semibold text-slate-300 shadow-lg backdrop-blur-xl transition hover:border-violet-300/30 hover:bg-[#0a0d20]/95 hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-400" aria-label="Start guided tour">
+        <button type="button" onClick={startTour} className="fixed bottom-4 left-4 z-[62] inline-flex min-h-10 items-center gap-2 rounded-full border border-white/10 bg-[#070a18]/80 px-3.5 py-2 text-xs font-semibold text-slate-300 shadow-lg backdrop-blur-xl transition hover:border-violet-300/30 hover:bg-[#0a0d20]/95 hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-400" aria-label={`Start ${pageTour.id} guided tour`}>
           <span className="grid h-5 w-5 place-items-center rounded-full bg-violet-500/15 text-[11px] text-violet-200" aria-hidden="true">?</span>
           Tour
         </button>
@@ -282,7 +381,7 @@ export default function FirstVisitGuidedTour() {
           <div className="w-full max-w-md rounded-3xl border border-violet-300/20 bg-[#070a18] p-4 text-white shadow-[0_28px_90px_rgba(0,0,0,.55)] sm:p-6">
             <div className="flex items-start gap-3 sm:gap-4">
               <div className="grid h-10 w-10 shrink-0 place-items-center rounded-2xl border border-violet-300/20 bg-violet-500/10 text-lg text-violet-200 sm:h-11 sm:w-11 sm:text-xl" aria-hidden="true">✦</div>
-              <div><p className="text-[10px] font-semibold uppercase tracking-[.18em] text-violet-300">First visit</p><h2 id="tour-invite-title" className="mt-1 font-display text-lg font-semibold sm:text-xl">Want a 1-minute guided tour?</h2><p className="mt-2 text-[13px] leading-5 text-slate-300 sm:text-sm sm:leading-6">We’ll show you Career discovery, CV analysis, Career Workspaces, and how the system connects gaps to learning and evidence.</p></div>
+              <div><p className="text-[10px] font-semibold uppercase tracking-[.18em] text-violet-300">Page tour</p><h2 id="tour-invite-title" className="mt-1 font-display text-lg font-semibold sm:text-xl">{pageTour.inviteTitle}</h2><p className="mt-2 text-[13px] leading-5 text-slate-300 sm:text-sm sm:leading-6">{pageTour.inviteBody}</p></div>
             </div>
             <div className="mt-4 flex flex-col-reverse gap-2 sm:mt-5 sm:flex-row sm:justify-end"><button type="button" onClick={() => closeTour("dismissed")} className="min-h-10 rounded-xl px-4 py-2 text-sm font-semibold text-slate-300 transition hover:bg-white/[0.05] hover:text-white sm:min-h-11">Maybe later</button><button type="button" onClick={startTour} className="min-h-10 rounded-xl bg-violet-500 px-5 py-2 text-sm font-semibold text-white shadow-[0_10px_35px_rgba(124,58,237,.3)] transition hover:bg-violet-400 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-300 sm:min-h-11">Start tour</button></div>
           </div>
@@ -297,7 +396,7 @@ export default function FirstVisitGuidedTour() {
             <div className="flex items-center justify-between gap-3"><p className="text-[10px] font-bold uppercase tracking-[.18em] text-violet-300">{step.eyebrow}</p><span className="rounded-full border border-white/10 bg-white/[0.04] px-2.5 py-1 text-[10px] font-semibold text-slate-500">{progress}</span></div>
             <h2 className="mt-2.5 font-display text-lg font-semibold leading-tight sm:mt-3 sm:text-2xl">{step.title}</h2>
             <p className="mt-2 text-[13px] leading-5 text-slate-300 sm:text-sm sm:leading-6">{step.body}</p>
-            <div className="mt-4 flex items-center justify-between gap-2 border-t border-white/10 pt-3 sm:mt-5 sm:pt-4"><button type="button" onClick={() => closeTour("dismissed")} className="rounded-lg px-2.5 py-2 text-xs font-semibold text-slate-400 hover:bg-white/[0.04] hover:text-slate-200">Skip</button><div className="flex items-center gap-2"><button type="button" disabled={stepIndex === 0} onClick={() => setStepIndex((value) => Math.max(0, value - 1))} className="min-h-9 rounded-xl border border-white/10 px-3 py-2 text-xs font-semibold text-slate-300 disabled:opacity-30">Back</button>{stepIndex === STEPS.length - 1 ? <button type="button" onClick={() => closeTour("completed")} className="min-h-9 rounded-xl bg-violet-500 px-4 py-2 text-xs font-bold text-white hover:bg-violet-400">Finish</button> : <button type="button" onClick={() => setStepIndex((value) => Math.min(STEPS.length - 1, value + 1))} className="min-h-9 rounded-xl bg-violet-500 px-4 py-2 text-xs font-bold text-white hover:bg-violet-400">Next</button>}</div></div>
+            <div className="mt-4 flex items-center justify-between gap-2 border-t border-white/10 pt-3 sm:mt-5 sm:pt-4"><button type="button" onClick={() => closeTour("dismissed")} className="rounded-lg px-2.5 py-2 text-xs font-semibold text-slate-400 hover:bg-white/[0.04] hover:text-slate-200">Skip</button><div className="flex items-center gap-2"><button type="button" disabled={stepIndex === 0} onClick={() => setStepIndex((value) => Math.max(0, value - 1))} className="min-h-9 rounded-xl border border-white/10 px-3 py-2 text-xs font-semibold text-slate-300 disabled:opacity-30">Back</button>{stepIndex === steps.length - 1 ? <button type="button" onClick={() => closeTour("completed")} className="min-h-9 rounded-xl bg-violet-500 px-4 py-2 text-xs font-bold text-white hover:bg-violet-400">Finish</button> : <button type="button" onClick={() => setStepIndex((value) => Math.min(steps.length - 1, value + 1))} className="min-h-9 rounded-xl bg-violet-500 px-4 py-2 text-xs font-bold text-white hover:bg-violet-400">Next</button>}</div></div>
           </section>
         </div>
       ) : null}
