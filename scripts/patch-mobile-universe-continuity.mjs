@@ -22,15 +22,39 @@ if (!world.includes("const CAREER_MOBILE_UNIVERSE_CONTINUITY = true;")) {
     "natural cruise constants",
   );
 
-  world = world.replace("const CAREER_ORBIT_FOCUS_INTERVAL_MS = 3500;", "const CAREER_ORBIT_FOCUS_INTERVAL_MS = 2800;");
+  // Passive showcase cadence: a readable Career should naturally enter the
+  // foreground every ~2.4s, with enough label hold time to overlap the next
+  // approach instead of creating visually empty beats.
+  world = world.replace("const CAREER_ORBIT_FOCUS_INTERVAL_MS = 3500;", "const CAREER_ORBIT_FOCUS_INTERVAL_MS = 2400;");
+  world = world.replace("const CAREER_ORBIT_FOCUS_HOLD_MS = 1150;", "const CAREER_ORBIT_FOCUS_HOLD_MS = 1700;");
   world = world.replace("const CAREER_IMMERSIVE_PILOT_SPEED = 4.2;", "const CAREER_IMMERSIVE_PILOT_SPEED = 5.4;");
   world = world.replace("const camera = new THREE.PerspectiveCamera(58, w / h, 0.1, 600);", "const camera = new THREE.PerspectiveCamera(w < 768 ? 68 : 60, w / h, 0.1, 600);");
   world = world.replace("const nodeGeo = new THREE.SphereGeometry(0.38, 10, 10);", "const nodeGeo = new THREE.SphereGeometry(w < 768 ? 0.58 : 0.48, 12, 12);");
   world = world.replace("let scale = dist > 120 ? 0 : dist > 80 ? 0.6 : 1;", "let scale = dist > 150 ? 0.28 : dist > 105 ? 0.42 : dist > 72 ? 0.68 : 1;");
   world = world.replace("side.normalize().multiplyScalar(9);", "side.normalize().multiplyScalar(6.25);");
   world = world.replace(".add(new THREE.Vector3(0, 3.5, 0));", ".add(new THREE.Vector3(0, 2.6, 0));");
-  world = world.replace("const holdMs = renderer.domElement.clientWidth < 768 ? 1400 : CAREER_ORBIT_FOCUS_HOLD_MS;", "const holdMs = renderer.domElement.clientWidth < 768 ? 1500 : CAREER_ORBIT_FOCUS_HOLD_MS;");
+  world = world.replace("const holdMs = renderer.domElement.clientWidth < 768 ? 1400 : CAREER_ORBIT_FOCUS_HOLD_MS;", "const holdMs = renderer.domElement.clientWidth < 768 ? 1800 : CAREER_ORBIT_FOCUS_HOLD_MS;");
   world = world.replace("nextCruiseFocusAt = now + 420;", "nextCruiseFocusAt = now + 240;");
+
+  // Landing/Universe is now a passive cinematic display. Normal pointer motion,
+  // hover and incidental cursor crossings must never pause, steer or retarget
+  // the cruise. Node click/tap navigation remains available through raycasting.
+  world = world.replaceAll(
+    "lastPointerActivityAt = performance.now();",
+    "// Passive cruise: pointer activity does not take over the camera.",
+  );
+  world = world.replace(
+    "const hoveredPlanet = hoveredNodeRef.current;",
+    "const hoveredPlanet: CareerNode | null = null;",
+  );
+  world = world.replace(
+    "const interactionPaused = hoveredPlanet !== null || o.isDragging || userControlActive;",
+    "const interactionPaused = false;",
+  );
+  world = world.replace(
+    "const steerX = THREE.MathUtils.clamp(mouse.x + o.yaw * 0.18, -1.15, 1.15);\n          const steerY = THREE.MathUtils.clamp(-mouse.y + o.pitch * 0.22, -1.0, 1.0);",
+    "const steerX = 0;\n          const steerY = 0;",
+  );
 
   await writeFile(worldPath, world, "utf8");
 }
@@ -56,4 +80,4 @@ explain = explain.replace(
 );
 await writeFile(explainPath, explain, "utf8");
 
-console.log("Mobile + Career Universe continuity hardening applied: denser visible planets, sub-2s label cadence, uninterrupted cruise, active-only navigation, and collision-free mobile utilities.");
+console.log("Mobile + Career Universe continuity hardening applied: passive pointer-independent cruise, ~2.4s Career cadence, longer readable title overlap, dense visible planets, and collision-free mobile utilities.");
