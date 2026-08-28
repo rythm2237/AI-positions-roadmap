@@ -42,7 +42,7 @@ assert.doesNotMatch(world, /setDestination\(focusCandidate\)/, "Automatic Career
 assert.doesNotMatch(world, /rebuildConnections\(focusCandidate\)/, "Automatic Career presentation must not rebuild scene state just to show a title.");
 
 assert.doesNotMatch(world, /lastPointerActivityAt = performance\.now\(\)/, "Pointer movement must not transfer control away from the passive cruise.");
-assert.match(world, /const hoveredPlanet: CareerNode \| null = null;/, "Incidental hover must not retarget or pause the cruise camera.");
+assert.match(world, /const hoveredPlanet = \(\(\): CareerNode \| null => null\)\(\);/, "Incidental hover must stay runtime-null without collapsing the TypeScript union to never.");
 assert.match(world, /const interactionPaused = false;/, "Mouse hover and drag state must not pause passive forward motion.");
 assert.match(world, /const steerX = 0;\n\s*const steerY = 0;/, "Pointer position must not steer the passive camera path.");
 assert.match(world, /userControlActive = now - lastPointerActivityAt < CAREER_USER_CONTROL_TAKEOVER_MS/, "Legacy arbitration can remain structurally present but must stay dormant without pointer timestamps.");
