@@ -56,6 +56,22 @@ if (!world.includes("const CAREER_MOBILE_UNIVERSE_CONTINUITY = true;")) {
     "const steerX = 0;\n          const steerY = 0;",
   );
 
+  // Selecting a Career from the browser intentionally sets destination. That
+  // selected planet must remain an explicit click/tap target even though hover
+  // and pointer motion no longer control the passive camera.
+  world = replaceRequired(
+    world,
+    'if (o.dragDist < 5 && phaseRef.current === "exploring") {',
+    'if (o.dragDist < 5 && (phaseRef.current === "arrived" || phaseRef.current === "exploring")) {',
+    "selected Career click phase",
+  );
+  world = replaceRequired(
+    world,
+    "const isActiveCareerPlanet = cruiseFocusNode?.id === node.id;",
+    "const isActiveCareerPlanet = cruiseFocusNode?.id === node.id || destNodeRef.current?.id === node.id;",
+    "selected Career click target",
+  );
+
   await writeFile(worldPath, world, "utf8");
 }
 
@@ -80,4 +96,4 @@ explain = explain.replace(
 );
 await writeFile(explainPath, explain, "utf8");
 
-console.log("Mobile + Career Universe continuity hardening applied: passive pointer-independent cruise, ~2.4s Career cadence, longer readable title overlap, dense visible planets, and collision-free mobile utilities.");
+console.log("Mobile + Career Universe continuity hardening applied: passive pointer-independent cruise, selected Career click entry, ~2.4s Career cadence, longer readable title overlap, dense visible planets, and collision-free mobile utilities.");

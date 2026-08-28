@@ -3,11 +3,9 @@ import { readFile } from "node:fs/promises";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 
-// Preview-only final interaction layers. Vercel Preview applies these during
-// prebuild without changing main.
-await import("./patch-career-universe-user-takeover.mjs");
-await import("./patch-career-universe-natural-cruise.mjs");
-
+// All Career Universe patches run earlier in prebuild. This test must inspect
+// the fully patched World.tsx directly; re-importing patch modules here can
+// terminate the test process early through their idempotency guards.
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const read = (relativePath) => readFile(path.join(root, relativePath), "utf8");
 
@@ -67,6 +65,8 @@ assert.match(world, /family: PlanetVisualFamily/, "Career entry transition must 
 assert.match(world, /CAREER_ENTRY_ZOOM_MS = 1950/, "Selected planet entry must be slow enough to read as a deliberate cinematic approach.");
 assert.match(world, /cubic-bezier\(\.28,\.08,\.18,1\)/, "Planet entry must use a gradual cinematic acceleration/ease instead of an abrupt wipe.");
 assert.match(world, /innerWidth < 768 \? 1\.35 : 1\.75/, "WebGL pixel ratio must remain adaptively capped for mobile and desktop performance.");
+assert.match(world, /o\.dragDist < 5 && \(phaseRef\.current === "arrived" \|\| phaseRef\.current === "exploring"\)/, "Selected Career planets must accept click/tap as soon as the focused arrival is visible.");
+assert.match(world, /isActiveCareerPlanet = cruiseFocusNode\?\.id === node\.id \|\| destNodeRef\.current\?\.id === node\.id/, "A Career selected from the browser must remain an explicit navigation target even in passive cruise mode.");
 assert.match(world, /scheduleCareerEntry\(node, entry\.careerPath, e\.clientX, e\.clientY\)/, "A single node click or tap must start Career entry from the selected screen position.");
 assert.doesNotMatch(world, /wasFocused/, "Node entry must not require a second click.");
 assert.match(world, /zooming \? 190 : 1/, "Selected planet must expand monotonically to cover the viewport.");
@@ -81,4 +81,4 @@ assert.match(controller, /exploring is intentionally timer-free/, "Continuous mo
 assert.match(hero, /Enter Career Universe/, "Homepage must retain an explicit Universe entry action.");
 assert.match(hero, /pointerEvents: exiting \? "none" : "auto"/, "Hidden landing CTAs must not intercept pointer or touch input after entering the Universe.");
 
-console.log("Career Universe passive cruise checks passed: pointer-independent motion, ~2.4s Career fly-bys, overlapping readable titles, continuous no-cut camera path, dense mobile visibility, and preserved node entry navigation.");
+console.log("Career Universe passive cruise checks passed: pointer-independent motion, selected Career click entry, ~2.4s Career fly-bys, overlapping readable titles, continuous no-cut camera path, dense mobile visibility, and preserved node entry navigation.");
