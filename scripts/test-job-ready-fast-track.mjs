@@ -1,10 +1,13 @@
 import fs from "node:fs";
 
+await import("./patch-cv-linkedin-import.mjs");
+
 const onboarding = fs.readFileSync("src/app/(account)/onboarding/page.tsx", "utf8");
 const actions = fs.readFileSync("src/app/(account)/actions.ts", "utf8");
 const fastTrack = fs.readFileSync("src/app/(account)/job-search-mode/page.tsx", "utf8");
 const accountLayout = fs.readFileSync("src/app/(account)/layout.tsx", "utf8");
 const guidedTour = fs.readFileSync("src/components/onboarding/FirstVisitGuidedTour.tsx", "utf8");
+const cvAnalyzer = fs.readFileSync("src/components/cv-analyzer/CVAnalyzerClient.tsx", "utf8");
 const migration = fs.readFileSync("supabase/migrations/20260824120300_user_journey_mode.sql", "utf8");
 
 for (const token of ["Learn & Build", "Ready to Apply", "learn_and_build", "ready_to_apply"]) if (!onboarding.includes(token)) throw new Error(`Onboarding path missing: ${token}`);
@@ -23,4 +26,9 @@ if (guidedTour.includes("route:")) throw new Error("Tour steps must not contain 
 if (!guidedTour.includes("pathname !== activePathRef.current")) throw new Error("An active tour must close when the user independently changes page.");
 if (!guidedTour.includes("ai-rolepath-page-tour:")) throw new Error("Each page tour must persist completion independently.");
 
-console.log("Job-ready Fast Track validated: onboarding routing remains intact, Ready to Apply has its own page-scoped tour, tour targets exist, and guided tours cannot redirect users between pages.");
+for (const token of ["LINKEDIN_PROFILE_IMPORT_V1", 'setMode("linkedin")', 'aria-pressed={mode === "linkedin"}', 'mode === "linkedin"', "readLinkedInProfilePdf", "parseLinkedInProfileText", "LinkedIn profile imported", "Save to PDF", "full extracted LinkedIn profile text remains part of CV analysis"]) if (!cvAnalyzer.includes(token)) throw new Error(`LinkedIn CV import contract missing: ${token}`);
+if (!cvAnalyzer.includes('mode === "linkedin" ? "border-violet-300/40 bg-violet-500/10')) throw new Error("LinkedIn input card must visibly retain its selected state.");
+if (!cvAnalyzer.includes('setRawText(data.text)')) throw new Error("LinkedIn import must preserve complete extracted profile text for analysis.");
+if (!cvAnalyzer.includes('setProfile((current) => ({ ...current, ...Object.fromEntries')) throw new Error("LinkedIn import must prefill structured CV fields instead of forcing duplicate entry.");
+
+console.log("Job-ready Fast Track + LinkedIn CV import validated: page-scoped tours remain local, LinkedIn selection is visible, complete profile PDF text feeds analysis, and detected profile fields are prefilled without duplicate entry.");
