@@ -3,11 +3,9 @@ import { readFile } from "node:fs/promises";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 
-// Preview-only final interaction layers. Vercel Preview applies these during
-// prebuild without changing main.
-await import("./patch-career-universe-user-takeover.mjs");
-await import("./patch-career-universe-natural-cruise.mjs");
-
+// All Career Universe patches run earlier in prebuild. This test must inspect
+// the fully patched World.tsx directly; re-importing patch modules here can
+// terminate the test process early through their idempotency guards.
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const read = (relativePath) => readFile(path.join(root, relativePath), "utf8");
 
