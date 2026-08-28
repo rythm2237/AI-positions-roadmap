@@ -45,7 +45,7 @@ if (!world.includes("const CAREER_MOBILE_UNIVERSE_CONTINUITY = true;")) {
   );
   world = world.replace(
     "const hoveredPlanet = hoveredNodeRef.current;",
-    "const hoveredPlanet: CareerNode | null = null;",
+    "const hoveredPlanet = ((): CareerNode | null => null)();",
   );
   world = world.replace(
     "const interactionPaused = hoveredPlanet !== null || o.isDragging || userControlActive;",
