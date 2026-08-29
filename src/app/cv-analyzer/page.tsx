@@ -16,6 +16,7 @@ export default async function CVAnalyzerPage({
   searchParams: Promise<{ target?: string; career?: string; source?: string }>;
 }) {
   const query = await searchParams;
+  const initialTargetPosition = query.target?.trim() ?? "";
   const careerSlug = query.career?.trim() ?? "";
   const fromRoadmap = query.source === "roadmap" && Boolean(careerSlug);
   const returnHref = fromRoadmap ? `/careers/${encodeURIComponent(careerSlug)}?section=jobs` : "/";
@@ -32,7 +33,7 @@ export default async function CVAnalyzerPage({
           {fromRoadmap ? "Job Preparation" : "Career OS"}
         </Link>
       </div>
-      <CVAnalyzerClient />
+      <CVAnalyzerClient initialTargetPosition={initialTargetPosition} />
     </div>
   );
 }

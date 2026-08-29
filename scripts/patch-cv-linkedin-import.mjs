@@ -1,48 +1,32 @@
 import fs from "node:fs";
 
-const file = "src/components/cv-analyzer/CVAnalyzerClient.tsx";
-let source = fs.readFileSync(file, "utf8");
+const client = fs.readFileSync("src/components/cv-analyzer/CVAnalyzerClient.tsx", "utf8");
+const parser = fs.readFileSync("src/lib/cvAnalyzer/linkedinProfile.ts", "utf8");
 
-const marker = "LINKEDIN_PROFILE_IMPORT_V1";
-if (source.includes(marker)) {
-  console.log("LinkedIn CV import patch already applied.");
-  process.exit(0);
+for (const token of [
+  "LINKEDIN_PROFILE_IMPORT_V2",
+  'setMode("linkedin")',
+  'aria-pressed={mode === "linkedin"}',
+  "readLinkedInProfilePdf",
+  "parseLinkedInProfileText",
+  "setRawText(parsed.rawText)",
+  "Review imported fields (optional)",
+  "full extracted LinkedIn profile text remains part of CV analysis",
+]) {
+  if (!client.includes(token)) throw new Error(`Canonical LinkedIn import is missing: ${token}`);
 }
 
-source = source.replace(
-  'const [mode, setMode] = useState<"choose" | "upload" | "builder">("choose");',
-  'const [mode, setMode] = useState<"choose" | "upload" | "builder" | "linkedin">("choose");',
-);
+for (const token of [
+  '"top skills"',
+  '"featured skills"',
+  '"certifications"',
+  '"licenses and certifications"',
+  'source: "linkedin_pdf"',
+  "confidenceForSection",
+  "logicalLines",
+  "findIdentity",
+]) {
+  if (!parser.includes(token)) throw new Error(`LinkedIn parser contract is missing: ${token}`);
+}
 
-const parser = `\n// LINKEDIN_PROFILE_IMPORT_V1\nconst LINKEDIN_HEADINGS = ["About", "Experience", "Education", "Licenses & Certifications", "Skills", "Languages", "Projects"] as const;\n\nfunction linkedinSection(text: string, heading: string) {\n  const lines = text.split(/\\r?\\n/).map((line) => line.trim());\n  const start = lines.findIndex((line) => line.toLowerCase() === heading.toLowerCase());\n  if (start < 0) return "";\n  let end = lines.length;\n  for (let index = start + 1; index < lines.length; index += 1) {\n    if (LINKEDIN_HEADINGS.some((candidate) => candidate.toLowerCase() === lines[index].toLowerCase())) {\n      end = index;\n      break;\n    }\n  }\n  return lines.slice(start + 1, end).filter(Boolean).join("\\n").trim();\n}\n\nfunction parseLinkedInProfileText(text: string): Partial<Profile> {\n  const lines = text.split(/\\r?\\n/).map((line) => line.trim()).filter(Boolean);\n  const firstSection = lines.findIndex((line) => LINKEDIN_HEADINGS.some((heading) => heading.toLowerCase() === line.toLowerCase()));\n  const header = lines.slice(0, firstSection > 0 ? firstSection : Math.min(lines.length, 12));\n  const ignored = /^(contact|www\\.linkedin\\.com|https?:\\/\\/|linkedin|page \\d+)/i;\n  const identityLines = header.filter((line) => !ignored.test(line) && !line.includes("@"));\n  const fullName = identityLines[0] ?? "";\n  const headline = identityLines.slice(1).find((line) => line.length > 3 && !/^[A-Z]{2,}(?:,|$)/.test(line)) ?? "";\n  const skills = linkedinSection(text, "Skills").split("\\n").map((item) => item.trim()).filter(Boolean).join(", ");\n  return {\n    fullName,\n    headline,\n    summary: linkedinSection(text, "About"),\n    experience: linkedinSection(text, "Experience"),\n    education: linkedinSection(text, "Education"),\n    certifications: linkedinSection(text, "Licenses & Certifications"),\n    skills,\n    languages: linkedinSection(text, "Languages"),\n    projects: linkedinSection(text, "Projects"),\n  };\n}\n`;
-
-source = source.replace(
-  'const areaClass = `${inputClass} min-h-32 resize-y py-3 leading-6`;\n',
-  'const areaClass = `${inputClass} min-h-32 resize-y py-3 leading-6`;\n' + parser,
-);
-
-source = source.replace(
-  '  const [analysis, setAnalysis] = useState<Analysis | null>(null);',
-  '  const [analysis, setAnalysis] = useState<Analysis | null>(null);\n  const [linkedinImportState, setLinkedinImportState] = useState<"idle" | "reading" | "ready" | "error">("idle");\n  const [linkedinImportMessage, setLinkedinImportMessage] = useState("");',
-);
-
-const readLinkedIn = `\n  async function readLinkedInProfilePdf(file: File) {\n    setLinkedinImportState("reading");\n    setLinkedinImportMessage("");\n    setAnalysis(null);\n    const body = new FormData();\n    body.append("file", file);\n    try {\n      const response = await fetch("/api/cv-analyzer/extract", { method: "POST", body });\n      const data = await response.json() as { error?: string; text?: string; fileName?: string };\n      if (!response.ok || !data.text) throw new Error(data.error || "LinkedIn profile extraction failed.");\n      const parsed = parseLinkedInProfileText(data.text);\n      setRawText(data.text);\n      setFileName(data.fileName || file.name);\n      setProfile((current) => ({ ...current, ...Object.fromEntries(Object.entries(parsed).filter(([, value]) => Boolean(value))) } as Profile));\n      setLinkedinImportState("ready");\n      setLinkedinImportMessage("LinkedIn profile imported. We kept the complete extracted profile text for analysis and prefilled every section we could identify.");\n    } catch (error) {\n      setLinkedinImportState("error");\n      setLinkedinImportMessage(error instanceof Error ? error.message : "LinkedIn profile extraction failed.");\n    }\n  }\n`;
-
-source = source.replace(
-  '  function runAnalysis() {',
-  readLinkedIn + '\n  function runAnalysis() {',
-);
-
-const oldButton = '          <button type="button" onClick={() => setMode("builder")} className="rounded-3xl border border-white/10 bg-white/[0.025] p-5 text-left transition hover:border-violet-300/25" data-help-title="LinkedIn import" data-help-description="Official LinkedIn direct import requires approved API access. For V1, save your LinkedIn URL or export your LinkedIn profile as PDF and upload it here.">\n            <span className="text-2xl" aria-hidden="true">in</span><h2 className="mt-4 font-display text-xl font-semibold">LinkedIn</h2><p className="mt-2 text-sm leading-6 text-slate-500">Add your profile URL now, or upload a LinkedIn profile PDF. Direct authorized import follows official API approval.</p>\n          </button>';
-const newButton = '          <button type="button" onClick={() => setMode("linkedin")} aria-pressed={mode === "linkedin"} className={`rounded-3xl border p-5 text-left transition ${mode === "linkedin" ? "border-violet-300/40 bg-violet-500/10 ring-1 ring-violet-300/10" : "border-white/10 bg-white/[0.025] hover:border-violet-300/25"}`} data-help-title="LinkedIn import" data-help-description="Import a complete LinkedIn profile export into CV Analyzer without retyping the same career history.">\n            <span className="text-2xl" aria-hidden="true">in</span><h2 className="mt-4 font-display text-xl font-semibold">LinkedIn</h2><p className="mt-2 text-sm leading-6 text-slate-500">Import your LinkedIn profile once, prefill your career history, then go straight to analysis.</p>\n          </button>';
-if (!source.includes(oldButton)) throw new Error("LinkedIn card signature changed; update patch-cv-linkedin-import.mjs.");
-source = source.replace(oldButton, newButton);
-
-const linkedinPanel = `\n        {mode === "linkedin" ? (\n          <section className="mt-6 rounded-3xl border border-violet-300/20 bg-[#080b1c]/80 p-5 sm:p-7" data-help-title="LinkedIn profile import">\n            <div className="grid gap-6 lg:grid-cols-[1.1fr_.9fr] lg:items-start">\n              <div>\n                <p className="text-xs font-bold uppercase tracking-[.18em] text-violet-300">LinkedIn profile import</p>\n                <h2 className="mt-2 font-display text-2xl font-semibold">Bring your career history in once</h2>\n                <p className="mt-2 max-w-2xl text-sm leading-6 text-slate-400">Paste your LinkedIn URL so this analysis stays connected to the right profile. For a complete import today, upload LinkedIn’s own <strong className="font-semibold text-slate-200">Save to PDF</strong> profile export. We analyze the complete extracted text and prefill name, headline, About, Experience, Education, Skills, Certifications, Languages and Projects when those sections are present.</p>\n                <div className="mt-5 grid gap-4">\n                  <Field label="LinkedIn profile URL" hint="A public profile URL alone is not scraped. Complete direct API import requires member authorization and approved LinkedIn access."><input className={inputClass} value={profile.linkedinUrl} onChange={(event) => update("linkedinUrl", event.target.value)} placeholder="https://www.linkedin.com/in/..." inputMode="url" /></Field>\n                  <label className="cursor-pointer rounded-2xl border border-dashed border-violet-300/30 bg-violet-500/[0.06] px-5 py-4 text-center text-sm font-semibold text-violet-100 transition hover:bg-violet-500/[0.1]">\n                    {linkedinImportState === "reading" ? "Importing LinkedIn profile…" : fileName && linkedinImportState === "ready" ? \`Imported: \${fileName}\` : "Upload LinkedIn profile PDF"}\n                    <input type="file" accept=".pdf,application/pdf" className="sr-only" disabled={linkedinImportState === "reading"} onChange={(event) => { const file = event.target.files?.[0]; if (file) void readLinkedInProfilePdf(file); }} />\n                  </label>\n                </div>\n                {linkedinImportMessage ? <p className={\`mt-4 rounded-xl border px-4 py-3 text-sm \${linkedinImportState === "error" ? "border-rose-300/15 bg-rose-500/[0.07] text-rose-200" : "border-emerald-300/15 bg-emerald-500/[0.06] text-emerald-200"}\`}>{linkedinImportMessage}</p> : null}\n              </div>\n              <aside className="rounded-2xl border border-white/10 bg-white/[0.025] p-5">\n                <p className="text-xs font-bold uppercase tracking-[.16em] text-slate-500">Import coverage</p>\n                <div className="mt-4 grid grid-cols-2 gap-2 text-xs">{[["Name", profile.fullName],["Headline", profile.headline],["Experience", profile.experience],["Education", profile.education],["Skills", profile.skills],["Certifications", profile.certifications]].map(([label, value]) => <div key={label} className={\`rounded-xl border px-3 py-2 \${value ? "border-emerald-300/15 bg-emerald-500/[0.05] text-emerald-200" : "border-white/8 text-slate-600"}\`}>{value ? "✓" : "·"} {label}</div>)}</div>\n                <p className="mt-4 text-xs leading-5 text-slate-500">Nothing is discarded: even if a section is not recognized structurally, the full extracted LinkedIn profile text remains part of CV analysis.</p>\n                {linkedinImportState === "ready" ? <button type="button" onClick={() => setMode("builder")} className="mt-5 w-full rounded-xl border border-violet-300/20 bg-violet-500/[0.08] px-4 py-2.5 text-sm font-semibold text-violet-100 hover:bg-violet-500/[0.14]">Review imported fields</button> : null}\n              </aside>\n            </div>\n          </section>\n        ) : null}\n`;
-
-const insertionPoint = '        {mode === "builder" ? (';
-if (!source.includes(insertionPoint)) throw new Error("CV builder insertion point changed.");
-source = source.replace(insertionPoint, linkedinPanel + '\n' + insertionPoint);
-
-fs.writeFileSync(file, source);
-console.log("LinkedIn CV import applied: selected-card state, complete PDF ingestion, structured prefilling, and no-reentry analysis flow.");
+console.log("LinkedIn CV import canonical source verified: aliases, resilient identity parsing, provenance, raw-text preservation and optional review flow.");

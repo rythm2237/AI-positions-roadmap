@@ -26,9 +26,9 @@ if (guidedTour.includes("route:")) throw new Error("Tour steps must not contain 
 if (!guidedTour.includes("pathname !== activePathRef.current")) throw new Error("An active tour must close when the user independently changes page.");
 if (!guidedTour.includes("ai-rolepath-page-tour:")) throw new Error("Each page tour must persist completion independently.");
 
-for (const token of ["LINKEDIN_PROFILE_IMPORT_V1", 'setMode("linkedin")', 'aria-pressed={mode === "linkedin"}', 'mode === "linkedin"', "readLinkedInProfilePdf", "parseLinkedInProfileText", "LinkedIn profile imported", "Save to PDF", "full extracted LinkedIn profile text remains part of CV analysis"]) if (!cvAnalyzer.includes(token)) throw new Error(`LinkedIn CV import contract missing: ${token}`);
+for (const token of ["LINKEDIN_PROFILE_IMPORT_V2", 'setMode("linkedin")', 'aria-pressed={mode === "linkedin"}', 'mode === "linkedin"', "readLinkedInProfilePdf", "parseLinkedInProfileText", "need review", "Save to PDF", "full extracted LinkedIn profile text remains part of CV analysis"]) if (!cvAnalyzer.includes(token)) throw new Error(`LinkedIn CV import contract missing: ${token}`);
 if (!cvAnalyzer.includes('mode === "linkedin" ? "border-violet-300/40 bg-violet-500/10')) throw new Error("LinkedIn input card must visibly retain its selected state.");
-if (!cvAnalyzer.includes('setRawText(data.text)')) throw new Error("LinkedIn import must preserve complete extracted profile text for analysis.");
-if (!cvAnalyzer.includes('setProfile((current) => ({ ...current, ...Object.fromEntries')) throw new Error("LinkedIn import must prefill structured CV fields instead of forcing duplicate entry.");
+if (!cvAnalyzer.includes('setRawText(parsed.rawText)')) throw new Error("LinkedIn import must preserve complete extracted profile text for analysis.");
+if (!cvAnalyzer.includes('Object.entries(parsed.profile)')) throw new Error("LinkedIn import must prefill structured CV fields instead of forcing duplicate entry.");
 
 console.log("Job-ready Fast Track + LinkedIn CV import validated: page-scoped tours remain local, LinkedIn selection is visible, complete profile PDF text feeds analysis, and detected profile fields are prefilled without duplicate entry.");
