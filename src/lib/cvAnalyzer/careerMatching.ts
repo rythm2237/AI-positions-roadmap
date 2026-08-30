@@ -1,10 +1,42 @@
+import {
+  buildRecruiterEvidence,
+  evidenceFor,
+  type CapabilityEvidence,
+  type CareerEvidenceSource,
+  type EvidenceContext,
+  type ExperienceDurationBucket,
+  type RecruiterEvidenceProfile,
+} from "./careerEvidence.ts";
+import {
+  capabilityLabel,
+  normalizeEvidenceText,
+  resolveCareerRequirements,
+  type CapabilityId,
+  type CareerRequirementGroup,
+} from "./careerRequirements.ts";
 import type { ProjectEvidenceAssessment } from "./projectEvidence.ts";
 
-export type CareerReference = {
-  slug: string;
-  title: string;
-  domain: string;
-  description: string;
+export type CareerReference = { slug: string; title: string; domain: string; description: string };
+
+export type CareerMatchDimensions = {
+  roleRelevance: number;
+  professionalEvidence: number;
+  coreRequirements: number;
+  trajectory: number;
+  transferability: number;
+};
+
+export type CareerEvidenceSummary = {
+  strongestEvidence: string[];
+  transferableEvidence: string[];
+  limitingFactors: string[];
+};
+
+export type CareerProfessionalEvidence = {
+  relevantDurationMonths: number;
+  durationBucket: ExperienceDurationBucket;
+  contexts: EvidenceContext[];
+  implementationCount: number;
 };
 
 export type CareerEvidenceMatch = {
@@ -12,114 +44,45 @@ export type CareerEvidenceMatch = {
   title: string;
   score: number;
   match: number;
+  dimensions: CareerMatchDimensions;
   evidenceSignals: string[];
   missingSignals: string[];
+  evidenceSummary: CareerEvidenceSummary;
+  professionalEvidence: CareerProfessionalEvidence;
   confidence: "high" | "medium" | "low";
 };
 
-export type CareerEvidenceInput = {
-  headline: string;
-  summary: string;
-  skills: string;
-  experience: string;
-  projects: string;
-  source: string;
-  projectEvidence: ProjectEvidenceAssessment;
+export type CareerEvidenceInput = CareerEvidenceSource & { projectEvidence: ProjectEvidenceAssessment };
+
+type GroupEvaluation = {
+  group: CareerRequirementGroup;
+  evidence: CapabilityEvidence | null;
+  capabilityId: CapabilityId | null;
+  quality: number;
 };
 
-type EvidenceConcept = {
-  id: string;
-  label: string;
-  aliases: string[];
-  careerTerms: string[];
+// Core coverage also applies a score ceiling, so transferable or generic
+// semantic evidence cannot replace essential Career requirements.
+export const CAREER_MATCH_WEIGHTS: Readonly<CareerMatchDimensions> = {
+  roleRelevance: 0.3,
+  professionalEvidence: 0.25,
+  coreRequirements: 0.25,
+  trajectory: 0.1,
+  transferability: 0.1,
 };
 
-// Concepts are role-agnostic. A Career's own canonical title, domain and description
-// select the relevant concepts; no user or Career slug receives a fixed ranking.
-const EVIDENCE_CONCEPTS: EvidenceConcept[] = [
-  { id: "ai-automation", label: "AI automation", aliases: ["ai automation", "intelligent automation", "workflow automation", "process automation", "automation"], careerTerms: ["ai automation", "automation", "workflow"] },
-  { id: "ai-agents", label: "AI agents", aliases: ["ai agents", "ai agent", "agentic ai", "multi-agent", "human-in-the-loop ai"], careerTerms: ["agent", "agents", "human-and-ai"] },
-  { id: "business-ai", label: "business AI solutions", aliases: ["business ai", "business ai solutions", "ai solutions", "ai solution", "business problem definition"], careerTerms: ["business ai", "ai solution", "business needs", "business operations"] },
-  { id: "workflow", label: "workflow and process design", aliases: ["workflow design", "workflow", "process design", "process mapping", "business process design", "process improvement"], careerTerms: ["workflow", "process redesign", "process"] },
-  { id: "architecture", label: "solution and product architecture", aliases: ["product architecture", "solution architecture", "system architecture", "architecture", "solution design"], careerTerms: ["architecture", "solution framing", "design"] },
-  { id: "integration", label: "AI and system integration", aliases: ["ai integration", "system integration", "api integration", "integration", "apis", "api", "webhooks", "webhook"], careerTerms: ["integration", "connect", "apis", "api", "systems"] },
-  { id: "power-platform", label: "Microsoft Power Platform", aliases: ["power platform", "power automate", "power apps", "copilot studio", "dataverse", "microsoft 365 copilot"], careerTerms: ["microsoft 365", "copilot studio", "power platform", "workflow platforms"] },
-  { id: "analytics", label: "operational analytics and BI", aliases: ["operational analytics", "power bi", "business intelligence", "dashboard", "decision-support", "decision support", "kpi", "analytics"], careerTerms: ["analytics", "dashboards", "insights", "data"] },
-  { id: "data-analysis", label: "data analysis", aliases: ["data analysis", "data analytics", "forecasting", "data model", "data models", "reporting", "power bi", "sql"], careerTerms: ["analysis", "datasets", "data", "experiments", "reporting"] },
-  { id: "product-building", label: "AI product delivery", aliases: ["ai product builder", "ai product", "product design", "product development", "production deployment", "launched", "deployed"], careerTerms: ["ai product", "products", "delivery", "launch"] },
-  { id: "consulting", label: "consulting and discovery", aliases: ["consulting", "discovery", "requirements", "business analysis", "stakeholder", "workshop", "problem framing"], careerTerms: ["consult", "discovery", "requirements", "stakeholder", "advise"] },
-  { id: "transformation", label: "digital and AI transformation", aliases: ["digital transformation", "ai transformation", "transformation", "change management", "adoption"], careerTerms: ["transformation", "change management", "adoption", "operating models"] },
-  { id: "governance", label: "AI governance", aliases: ["ai governance", "responsible ai", "governance", "human-in-the-loop", "risk controls"], careerTerms: ["governance", "responsible", "risk"] },
-  { id: "enterprise-strategy", label: "enterprise strategy", aliases: ["enterprise strategy", "operating model", "portfolio investment", "executive stakeholders", "enterprise architecture"], careerTerms: ["enterprise", "strategy", "operating model", "portfolio investment", "executive"] },
-  { id: "operations", label: "business operations", aliases: ["business operations", "operational planning", "operations", "capacity planning", "warehouse movement", "process improvement"], careerTerms: ["operations", "operational"] },
-  { id: "engineering", label: "production engineering", aliases: ["typescript", "javascript", "next.js", "python", "ci/cd", "testing", "production deployment"], careerTerms: ["engineering", "build", "deploy", "production", "applications"] },
-  { id: "cloud", label: "cloud infrastructure", aliases: ["azure", "aws", "gcp", "cloud infrastructure", "terraform", "kubernetes", "docker"], careerTerms: ["cloud", "infrastructure"] },
-  { id: "security", label: "security operations", aliases: ["cybersecurity", "security", "siem", "incident response", "vulnerability", "iam"], careerTerms: ["security", "cyber", "incident", "risk"] },
-  { id: "marketing", label: "AI marketing", aliases: ["digital marketing", "marketing automation", "campaign", "content strategy", "seo", "audience"], careerTerms: ["marketing", "campaign", "content", "growth", "audience"] },
-];
+const STOP_WORDS = new Set(["a", "an", "and", "ai", "as", "at", "for", "from", "in", "of", "on", "or", "the", "to", "with", "role", "specialist", "engineer", "consultant"]);
 
-const ACTION_VERBS = /\b(?:built|building|created|developed|designed|implemented|launched|deployed|architected|integrated|automated|analyzed|analysed|improved|validated|led|managed|delivered|defined)\b/i;
-const STOP_WORDS = new Set(["a", "an", "and", "ai", "as", "at", "be", "for", "from", "in", "of", "on", "or", "the", "to", "with", "role", "systems", "solutions"]);
-
-function normalize(value: string) {
-  return value
-    .normalize("NFKC")
-    .toLowerCase()
-    .replace(/&/g, " and ")
-    .replace(/[–—]/g, "-")
-    .replace(/[^a-z0-9+#.%/ -]+/g, " ")
-    .replace(/\s+/g, " ")
-    .trim();
+function clamp(value: number, maximum = 100) {
+  return Math.max(0, Math.min(maximum, Math.round(value)));
 }
 
-function containsPhrase(text: string, phrase: string) {
-  const normalizedText = ` ${normalize(text)} `;
-  const normalizedPhrase = normalize(phrase);
-  return Boolean(normalizedPhrase) && normalizedText.includes(` ${normalizedPhrase} `);
-}
-
-function containsAny(text: string, phrases: string[]) {
-  return phrases.some((phrase) => containsPhrase(text, phrase));
-}
-
-function unique<T>(values: T[]) {
+function unique<T>(values: readonly T[]) {
   return [...new Set(values)];
 }
 
 function words(value: string) {
-  return normalize(value).split(" ").filter((word) => word.length >= 3 && !STOP_WORDS.has(word));
-}
-
-function recentExperience(experience: string) {
-  const lines = experience.split("\n").filter(Boolean);
-  const presentIndex = lines.findIndex((line) => /\b(?:present|current|now)\b/i.test(line));
-  if (presentIndex >= 0) return lines.slice(Math.max(0, presentIndex - 1), presentIndex + 8).join("\n");
-  return lines.slice(0, Math.max(6, Math.ceil(lines.length * 0.35))).join("\n");
-}
-
-function conceptDepth(text: string, concept: EvidenceConcept) {
-  return text
-    .split(/[\n.!?]+/)
-    .some((sentence) => containsAny(sentence, concept.aliases) && ACTION_VERBS.test(sentence));
-}
-
-function careerConcepts(career: CareerReference) {
-  const title = `${career.title} ${career.domain}`;
-  const description = career.description;
-  const selected = EVIDENCE_CONCEPTS
-    .map((concept) => {
-      const titleMatch = containsAny(title, concept.careerTerms);
-      const descriptionMatch = containsAny(description, concept.careerTerms);
-      return { concept, importance: titleMatch ? 1.45 : descriptionMatch ? 1 : 0 };
-    })
-    .filter((item) => item.importance > 0);
-
-  if (selected.length >= 3) return selected;
-  const fallback = EVIDENCE_CONCEPTS.filter((concept) => containsAny(`${title} ${description}`, concept.aliases))
-    .map((concept) => ({ concept, importance: 0.85 }));
-  return unique([...selected, ...fallback].map((item) => item.concept.id))
-    .map((id) => [...selected, ...fallback].find((item) => item.concept.id === id)!)
-    .slice(0, 8);
+  return normalizeEvidenceText(value).split(" ").filter((word) => word.length >= 3 && !STOP_WORDS.has(word));
 }
 
 function titleSimilarity(target: string, career: CareerReference) {
@@ -130,83 +93,172 @@ function titleSimilarity(target: string, career: CareerReference) {
   return overlap / Math.max(targetWords.length, careerWords.length);
 }
 
-function matchConcept(concept: EvidenceConcept, input: CareerEvidenceInput) {
-  const identityText = `${input.headline}\n${input.summary}`;
-  const recent = recentExperience(input.experience);
-  const channels = {
-    identity: containsAny(identityText, concept.aliases),
-    skills: containsAny(input.skills, concept.aliases),
-    experience: containsAny(input.experience, concept.aliases),
-    project: containsAny(`${input.projects}\n${input.summary}`, concept.aliases),
-    recent: containsAny(recent, concept.aliases),
-    depth: conceptDepth(`${input.experience}\n${input.projects}\n${input.summary}`, concept),
-  };
-  const score = Math.min(
-    1,
-    (channels.identity ? 0.24 : 0) +
-      (channels.skills ? 0.16 : 0) +
-      (channels.experience ? 0.24 : 0) +
-      (channels.project ? 0.18 : 0) +
-      (channels.recent ? 0.08 : 0) +
-      (channels.depth ? 0.1 : 0),
-  );
-  return { channels, score };
+function roleIdentityEvidence(career: CareerReference, input: CareerEvidenceInput) {
+  const identityWords = new Set(words(`${input.headline} ${input.summary}`));
+  const careerWords = unique(words(career.title));
+  if (!careerWords.length) return 0;
+  return careerWords.filter((word) => identityWords.has(word)).length / careerWords.length;
 }
 
-function evidenceSummary(concept: EvidenceConcept, channels: ReturnType<typeof matchConcept>["channels"]) {
-  if (channels.identity) return `Role identity: ${concept.label}`;
-  if (channels.project && channels.depth) return `Product/project implementation: ${concept.label}`;
-  if (channels.experience && channels.depth) return `Work implementation: ${concept.label}`;
-  if (channels.experience) return `Experience evidence: ${concept.label}`;
-  if (channels.skills) return `Direct skill evidence: ${concept.label}`;
-  return `Supporting evidence: ${concept.label}`;
+function evaluateGroup(group: CareerRequirementGroup, profile: RecruiterEvidenceProfile): GroupEvaluation {
+  const candidates = group.capabilities
+    .map((capabilityId) => ({ capabilityId, evidence: evidenceFor(profile, capabilityId) }))
+    .filter((item): item is { capabilityId: CapabilityId; evidence: CapabilityEvidence } => Boolean(item.evidence))
+    .sort((left, right) => right.evidence.quality - left.evidence.quality || right.evidence.implementationCount - left.evidence.implementationCount);
+  const best = candidates[0];
+  return { group, evidence: best?.evidence ?? null, capabilityId: best?.capabilityId ?? null, quality: best?.evidence.quality ?? 0 };
+}
+
+function average(values: readonly number[]) {
+  return values.length ? values.reduce((sum, value) => sum + value, 0) / values.length : 0;
+}
+
+function directCapabilityEvidence(capabilities: readonly CapabilityId[], profile: RecruiterEvidenceProfile) {
+  return unique(capabilities).map((capabilityId) => evidenceFor(profile, capabilityId)).filter((item): item is CapabilityEvidence => Boolean(item));
+}
+
+function durationPoints(months: number) {
+  if (!months) return 0;
+  if (months < 6) return 4;
+  if (months < 12) return 8;
+  if (months < 24) return 12;
+  if (months < 48) return 16;
+  return 20;
+}
+
+function professionalDimension(evidence: readonly CapabilityEvidence[]) {
+  if (!evidence.length) return 0;
+  const quality = average(evidence.map((item) => item.quality).sort((left, right) => right - left).slice(0, 6));
+  const months = Math.max(...evidence.map((item) => item.relevantMonths));
+  const implementationCount = evidence.reduce((sum, item) => sum + item.implementationCount, 0);
+  const quantifiedCount = evidence.filter((item) => item.quantified).length;
+  const contexts = new Set(evidence.flatMap((item) => item.contexts));
+  return clamp(5 + quality * 52 + durationPoints(months) + Math.min(12, implementationCount * 2.5) + Math.min(7, quantifiedCount * 2) + Math.min(4, Math.max(0, contexts.size - 1)));
+}
+
+function trajectoryDimension(coreEvidence: readonly CapabilityEvidence[], supporting: readonly CapabilityEvidence[], identity: number) {
+  const recentCore = coreEvidence.filter((item) => item.recent);
+  const recentSupporting = supporting.filter((item) => item.recent);
+  if (!recentCore.length) return clamp(12 + identity * 18 + average(recentSupporting.map((item) => item.quality)) * 20);
+  const quality = average(recentCore.map((item) => item.quality));
+  const recentImplementations = recentCore.reduce((sum, item) => sum + item.implementationCount, 0);
+  const recentCoverage = recentCore.length / Math.max(1, coreEvidence.length);
+  const supportingContribution = average(recentSupporting.map((item) => item.quality)) * 8;
+  return clamp(28 + quality * 35 + recentCoverage * 17 + Math.min(10, recentImplementations * 2.5) + supportingContribution + identity * 5);
+}
+
+function transferabilityDimension(transferable: readonly CapabilityEvidence[]) {
+  if (!transferable.length) return 0;
+  const quality = average(transferable.map((item) => item.quality));
+  const months = Math.max(...transferable.map((item) => item.relevantMonths));
+  const implementations = transferable.reduce((sum, item) => sum + item.implementationCount, 0);
+  return clamp(18 + quality * 52 + durationPoints(months) + Math.min(10, implementations * 2));
+}
+
+function coreScore(groups: readonly GroupEvaluation[]) {
+  if (!groups.length) return { score: 0, coverage: 0 };
+  const coverage = groups.filter((item) => item.evidence).length / groups.length;
+  const quality = average(groups.map((item) => item.quality));
+  return { score: clamp(coverage * 65 + quality * 35), coverage };
+}
+
+function roleRelevance(groups: readonly GroupEvaluation[], supporting: readonly CapabilityEvidence[], identity: number) {
+  return clamp(average(groups.map((item) => item.quality)) * 70 + average(supporting.map((item) => item.quality)) * 20 + identity * 10);
+}
+
+function scoreCeiling(coreCoverage: number, minimumCoreCoverage: number, coreRequirements: number) {
+  if (coreCoverage === 0) return 42;
+  if (coreCoverage < 0.25) return 50;
+  if (coreCoverage < minimumCoreCoverage * 0.75) return 62;
+  if (coreCoverage < minimumCoreCoverage) return 72;
+  if (coreRequirements < 60) return 84;
+  return 96;
+}
+
+function contextLabel(contexts: readonly EvidenceContext[]) {
+  if (contexts.includes("implemented_project")) return contexts.includes("employed_role") ? "Work implementation" : contexts.some((context) => context === "independent_role" || context === "self_employed") ? "Independent implementation" : "Implemented project";
+  if (contexts.includes("employed_role")) return "Professional experience";
+  if (contexts.includes("independent_role") || contexts.includes("self_employed")) return "Independent professional work";
+  if (contexts.includes("project_description")) return "Project evidence";
+  if (contexts.includes("certification")) return "Certification evidence";
+  if (contexts.includes("education")) return "Education evidence";
+  if (contexts.includes("skills_list")) return "Skills-list evidence";
+  return "Summary claim";
+}
+
+function evidenceDescription(evidence: CapabilityEvidence) {
+  const duration = evidence.durationBucket === "unknown" ? "" : ` (${evidence.durationBucket})`;
+  return `${contextLabel(evidence.contexts)}: ${evidence.label}${duration}`;
+}
+
+function professionalMetadata(evidence: readonly CapabilityEvidence[]): CareerProfessionalEvidence {
+  const longest = evidence.length ? evidence.reduce((best, item) => item.relevantMonths > best.relevantMonths ? item : best) : null;
+  return {
+    relevantDurationMonths: longest?.relevantMonths ?? 0,
+    durationBucket: longest?.durationBucket ?? "unknown",
+    contexts: unique(evidence.flatMap((item) => item.contexts)),
+    implementationCount: evidence.reduce((sum, item) => sum + item.implementationCount, 0),
+  };
+}
+
+function confidenceFor(dimensions: CareerMatchDimensions, coreCoverage: number, minimumCoreCoverage: number, channelCount: number, implementationCount: number): CareerEvidenceMatch["confidence"] {
+  if (coreCoverage >= minimumCoreCoverage && dimensions.roleRelevance >= 65 && dimensions.professionalEvidence >= 60 && channelCount >= 3 && implementationCount >= 2) return "high";
+  if (coreCoverage >= minimumCoreCoverage * 0.75 && dimensions.roleRelevance >= 48 && (dimensions.professionalEvidence >= 38 || dimensions.trajectory >= 65) && channelCount >= 2) return "medium";
+  return "low";
 }
 
 export function scoreCareerEvidence(career: CareerReference, input: CareerEvidenceInput): CareerEvidenceMatch {
-  const concepts = careerConcepts(career);
-  const evaluated = concepts.map(({ concept, importance }) => ({ concept, importance, ...matchConcept(concept, input) }));
-  const totalImportance = evaluated.reduce((sum, item) => sum + item.importance, 0) || 1;
-  const conceptCoverage = evaluated.reduce((sum, item) => sum + item.score * item.importance, 0) / totalImportance;
-  const identityTerms = unique(words(career.title));
-  const directIdentity = identityTerms.length
-    ? identityTerms.filter((term) => containsPhrase(`${input.headline} ${input.summary}`, term)).length / identityTerms.length
-    : 0;
-  const catalogTerms = unique(words(`${career.title} ${career.description}`));
-  const catalogCoverage = catalogTerms.length
-    ? catalogTerms.filter((term) => containsPhrase(input.source, term)).length / catalogTerms.length
-    : 0;
-  const projectBonus = input.projectEvidence.confidence === "high" && evaluated.some((item) => item.channels.project) ? 5 : 0;
-  const score = Math.max(0, Math.min(100, Math.round(8 + conceptCoverage * 72 + directIdentity * 10 + Math.min(5, catalogCoverage * 12) + projectBonus)));
-  const matched = evaluated.filter((item) => item.score >= 0.32).sort((left, right) => right.score * right.importance - left.score * left.importance);
-  const missing = evaluated.filter((item) => item.score < 0.28).sort((left, right) => right.importance - left.importance);
-  const evidenceSignals = unique(matched.map((item) => evidenceSummary(item.concept, item.channels))).slice(0, 5);
-  const missingSignals = missing.map((item) => `Limited evidence: ${item.concept.label}`).slice(0, 3);
-  const channelCount = new Set(matched.flatMap((item) => Object.entries(item.channels).filter(([, present]) => present).map(([channel]) => channel))).size;
-  const confidence = score >= 68 && channelCount >= 4 ? "high" : score >= 45 && channelCount >= 2 ? "medium" : "low";
-
+  const requirements = resolveCareerRequirements(career);
+  const recruiterEvidence = buildRecruiterEvidence(input);
+  const groups = requirements.core.map((item) => evaluateGroup(item, recruiterEvidence));
+  const supporting = directCapabilityEvidence(requirements.supporting, recruiterEvidence);
+  const transferable = directCapabilityEvidence(requirements.transferable, recruiterEvidence);
+  const coreEvidence = groups.map((item) => item.evidence).filter((item): item is CapabilityEvidence => Boolean(item));
+  const directEvidence = unique([...coreEvidence, ...supporting]);
+  const identity = roleIdentityEvidence(career, input);
+  const core = coreScore(groups);
+  const dimensions: CareerMatchDimensions = {
+    roleRelevance: roleRelevance(groups, supporting, identity),
+    professionalEvidence: professionalDimension(directEvidence),
+    coreRequirements: core.score,
+    trajectory: trajectoryDimension(coreEvidence, supporting, identity),
+    transferability: transferabilityDimension(transferable),
+  };
+  const weighted = Object.entries(CAREER_MATCH_WEIGHTS).reduce((sum, [dimension, weight]) => sum + dimensions[dimension as keyof CareerMatchDimensions] * weight, 0);
+  const score = clamp(weighted, scoreCeiling(core.coverage, requirements.minimumCoreCoverage, dimensions.coreRequirements));
+  const missingCore = groups.filter((item) => !item.evidence).map((item) => `Limited direct evidence: ${item.group.label}`);
+  const missingSupporting = requirements.supporting.filter((capabilityId) => !evidenceFor(recruiterEvidence, capabilityId)).map((capabilityId) => `Limited supporting evidence: ${capabilityLabel(capabilityId)}`);
+  const missingSignals = unique([...missingCore, ...missingSupporting]).slice(0, 4);
+  const strongestEvidence = directEvidence.toSorted((left, right) => right.quality - left.quality || right.relevantMonths - left.relevantMonths).map(evidenceDescription).slice(0, 4);
+  const transferableEvidence = transferable.toSorted((left, right) => right.quality - left.quality || right.relevantMonths - left.relevantMonths).map((item) => `Transferable: ${item.label}${item.durationBucket === "unknown" ? "" : ` (${item.durationBucket})`}`).slice(0, 3);
+  const metadata = professionalMetadata(directEvidence);
+  const limitingFactors = [...missingSignals];
+  if (dimensions.roleRelevance >= 65 && metadata.relevantDurationMonths > 0 && metadata.relevantDurationMonths < 12) limitingFactors.push(`Direct ${career.title} evidence is recent but shorter than one year.`);
+  if (!limitingFactors.length) limitingFactors.push("No material evidence limitation was detected in the supplied profile.");
+  const evidenceSignals = strongestEvidence.length ? strongestEvidence : transferableEvidence;
+  const confidence = confidenceFor(dimensions, core.coverage, requirements.minimumCoreCoverage, recruiterEvidence.channelCount, metadata.implementationCount);
   return {
     careerSlug: career.slug,
     title: career.title,
     score,
     match: score,
+    dimensions,
     evidenceSignals,
     missingSignals,
+    evidenceSummary: { strongestEvidence, transferableEvidence, limitingFactors: unique(limitingFactors).slice(0, 4) },
+    professionalEvidence: metadata,
     confidence,
   };
 }
 
 export function rankCareerEvidence(careers: readonly CareerReference[], input: CareerEvidenceInput) {
-  return careers
-    .map((career) => scoreCareerEvidence(career, input))
-    .sort((left, right) => right.score - left.score || left.title.localeCompare(right.title));
+  return careers.map((career) => scoreCareerEvidence(career, input)).sort((left, right) => right.score - left.score || right.dimensions.coreRequirements - left.dimensions.coreRequirements || left.title.localeCompare(right.title));
 }
 
 export function resolveTargetCareer(targetPosition: string, careers: readonly CareerReference[]) {
-  const normalizedTarget = normalize(targetPosition);
-  const exact = careers.find((career) => normalize(career.title) === normalizedTarget || normalize(career.slug) === normalizedTarget);
+  const normalizedTarget = normalizeEvidenceText(targetPosition);
+  const exact = careers.find((career) => normalizeEvidenceText(career.title) === normalizedTarget || normalizeEvidenceText(career.slug) === normalizedTarget);
   if (exact) return exact;
-  const closest = careers
-    .map((career) => ({ career, similarity: titleSimilarity(targetPosition, career) }))
-    .sort((left, right) => right.similarity - left.similarity)[0];
+  const closest = careers.map((career) => ({ career, similarity: titleSimilarity(targetPosition, career) })).sort((left, right) => right.similarity - left.similarity)[0];
   return closest && closest.similarity >= 0.5 ? closest.career : null;
 }

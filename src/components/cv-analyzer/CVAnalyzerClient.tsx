@@ -4,6 +4,7 @@ import { useState } from "react";
 import { analyzeSemanticCV, type SemanticCVAnalysis } from "@/lib/cvAnalyzer/semanticAnalysis";
 import { parseLinkedInProfileText, type ImportedProfileField, type LinkedInProfileImport } from "@/lib/cvAnalyzer/linkedinProfile";
 import { AVAILABLE_CAREERS } from "@/data/careerCatalog";
+import { CareerMatchCard } from "./CareerMatchCard";
 
 type Profile = {
   fullName: string;
@@ -291,7 +292,9 @@ export default function CVAnalyzerClient({ initialTargetPosition = "" }: { initi
               <div><p className="text-xs font-bold uppercase tracking-[.18em] text-violet-300">{analysis.alignmentMode === "discovery" ? "Career discovery" : "Targeted analysis"}</p><h2 className="mt-2 font-display text-2xl font-semibold">{analysis.alignmentMode === "discovery" ? "Best-fit directions" : "Selected Career evidence"}</h2></div>
               <p className="text-xs text-slate-600">Gap-closing estimates adapt to {Math.max(1, Number(profile.weeklyHours) || 5)} learning hours/week and are not hiring-time predictions.</p>
             </div>
-            <div className={`mt-5 grid gap-3 ${analysis.alignmentMode === "discovery" ? "md:grid-cols-3" : "md:grid-cols-1"}`}>{analysis.matches.map((match, index) => <div key={match.careerSlug} className="rounded-2xl border border-white/10 bg-white/[0.025] p-4"><div className="flex items-center justify-between gap-3"><span className="text-xs font-bold text-violet-300">{analysis.alignmentMode === "discovery" ? `#${index + 1}` : "Selected target"}</span><span className="text-sm font-bold">{match.score}% evidence alignment</span></div><h3 className="mt-3 font-display text-lg font-semibold">{match.title}</h3>{match.evidenceSignals.length ? <div className="mt-3"><p className="text-[11px] font-bold uppercase tracking-[.14em] text-emerald-300/80">Why</p><ul className="mt-1.5 grid gap-1 text-xs leading-5 text-slate-400">{match.evidenceSignals.slice(0, 4).map((signal) => <li key={signal}>• {signal}</li>)}</ul></div> : null}{match.missingSignals.length ? <p className="mt-3 text-xs leading-5 text-amber-100/65">Missing: {match.missingSignals.slice(0, 2).join("; ")}</p> : null}<p className="mt-3 text-xs leading-5 text-slate-500">Confidence: <span className="capitalize">{match.confidence}</span> · Gap-closing estimate: {match.weeks}</p></div>)}</div>
+            <div className={`mt-5 grid gap-3 ${analysis.alignmentMode === "discovery" ? "md:grid-cols-3" : "md:grid-cols-1"}`}>
+              {analysis.matches.map((match, index) => <CareerMatchCard key={match.careerSlug} match={match} index={index} alignmentMode={analysis.alignmentMode} />)}
+            </div>
           </article>
           <article className="mt-5 rounded-3xl border border-violet-300/15 bg-violet-500/[0.055] p-6"><p className="text-xs font-bold uppercase tracking-[.18em] text-violet-300">Next best actions</p><ol className="mt-4 grid gap-3 text-sm leading-6 text-slate-300">{analysis.nextActions.map((item, index) => <li key={item} className="flex gap-3"><span className="grid h-6 w-6 shrink-0 place-items-center rounded-full bg-violet-500/15 text-xs font-bold text-violet-200">{index + 1}</span><span>{item}</span></li>)}</ol></article>
         </section> : null}

@@ -69,6 +69,8 @@ assert.ok(!analysis.rows.some((row) => row.label === "Target job alignment"), "D
 assert.equal(analysis.alignmentMode, "discovery");
 assert.equal(analysis.freshness.status, "current");
 assert.ok(analysis.matches.every((match) => match.careerSlug && match.evidenceSignals.length > 0 && match.confidence), "Every recommendation must expose structured explainability.");
+assert.ok(analysis.matches.every((match) => Object.values(match.dimensions).every((value) => Number.isInteger(value) && value >= 0 && value <= 100)), "Every Career recommendation must expose five bounded evidence dimensions.");
+assert.ok(analysis.matches.every((match) => match.evidenceSummary.strongestEvidence.length || match.evidenceSummary.transferableEvidence.length), "Every recommendation must separate strongest and transferable evidence.");
 
 const linkedinText = `
 Contact
