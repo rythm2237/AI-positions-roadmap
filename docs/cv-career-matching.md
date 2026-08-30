@@ -80,6 +80,13 @@ Date ranges in relevant experience are converted into approximate months and rep
 
 Duration modifies professional-evidence confidence only for capabilities detected inside that dated role. Unrelated years of experience do not improve a Career score, and years are never used as a direct score multiplier.
 
+The explanation layer reports two duration tracks:
+
+- **Direct Career evidence** uses identity-defining capabilities for the Career. For example, AI products and AI-agent delivery establish direct AI Automation duration, while generic process automation remains relevant without extending the AI-specific timeline.
+- **Transferable evidence** reports the longest dated adjacent capability separately.
+
+This prevents a recent AI transition from inheriting several years of operations or analytics tenure while still giving that earlier work appropriate transferability credit.
+
 ## Trajectory and transferability
 
 Trajectory uses current or recently ended direct core evidence, plus recent implemented projects. Supporting evidence alone can indicate direction but cannot create a strong Career trajectory without direct core evidence.
@@ -92,9 +99,13 @@ Every match exposes:
 
 - strongest direct evidence;
 - transferable evidence;
-- limiting factors;
+- core evidence gaps;
+- evidence-depth limits such as short direct duration;
+- additional evidence opportunities that are useful but not essential;
 - detected professional contexts;
-- relevant duration;
+- direct and transferable duration;
 - confidence based on evidence quality and core coverage.
 
 Missing signals are generated only from requirement capabilities that were not detected. The same capability cannot be both detected and reported as missing.
+
+Only missing core requirements create a learning-time estimate. When core coverage is complete, the UI reports `No core learning gap detected`; optional supporting capabilities cannot create a false gap-closing timeline.

@@ -7,9 +7,10 @@ type CapabilityDefinition = {
 };
 
 export const CAPABILITIES = {
-  "ai-automation": { label: "AI and process automation", aliases: ["ai automation", "intelligent automation", "process automation", "workflow automation", "automation"], careerTerms: ["ai-powered automations", "automation", "automate"] },
-  "ai-agents": { label: "AI-agent systems", aliases: ["ai agents", "ai agent", "agentic ai", "multi-agent", "multi agent"], careerTerms: ["agents", "agent"] },
-  "ai-product": { label: "AI product delivery", aliases: ["ai product", "ai product builder", "ai-powered product", "model-powered application", "llm application"], careerTerms: ["ai products", "model-powered applications", "ai product"] },
+  "ai-automation": { label: "AI automation", aliases: ["ai automation", "intelligent automation", "ai-powered automation", "ai powered automation", "ai-powered workflow", "ai powered workflow"], careerTerms: ["ai-powered automations", "intelligent automation"] },
+  "process-automation": { label: "process automation", aliases: ["process automation", "workflow automation", "business automation", "automated workflow", "automated workflows", "automation"], careerTerms: ["automation", "automate"] },
+  "ai-agents": { label: "AI-agent systems", aliases: ["ai agents", "ai agent", "ai-agents", "ai-agent", "agentic ai", "multi-agent", "multi agent"], careerTerms: ["agents", "agent"] },
+  "ai-product": { label: "AI product delivery", aliases: ["ai product", "ai products", "ai product builder", "ai-powered product", "model-powered application", "llm application"], careerTerms: ["ai products", "model-powered applications", "ai product"] },
   "workflow-design": { label: "workflow design", aliases: ["workflow design", "workflow architecture", "workflow platform", "workflow platforms", "workflows", "workflow"], careerTerms: ["workflows", "workflow"] },
   "process-design": { label: "business-process design", aliases: ["business process design", "process design", "process mapping", "process redesign", "process analysis"], careerTerms: ["process redesign", "business workflows", "process"] },
   "process-improvement": { label: "process improvement", aliases: ["process improvement", "process optimization", "process optimisation", "continuous improvement"], careerTerms: ["process", "operations"] },
@@ -64,11 +65,14 @@ export type ResolvedCareerRequirements = {
   core: readonly CareerRequirementGroup[];
   supporting: readonly CapabilityId[];
   transferable: readonly CapabilityId[];
+  directCapabilities: readonly CapabilityId[];
   minimumCoreCoverage: number;
   source: "explicit" | "catalog-derived";
 };
 
-type RequirementProfile = Omit<ResolvedCareerRequirements, "source">;
+type RequirementProfile = Omit<ResolvedCareerRequirements, "source" | "directCapabilities"> & {
+  directCapabilities?: readonly CapabilityId[];
+};
 
 const group = (id: string, label: string, ...capabilities: CapabilityId[]): CareerRequirementGroup => ({ id, label, capabilities });
 
@@ -82,6 +86,7 @@ const PROFILES: Partial<Record<string, RequirementProfile>> = {
     ],
     supporting: ["python-ml", "data-analysis", "forecasting", "data-modeling"],
     transferable: ["business-analysis", "decision-support", "business-intelligence", "operations"],
+    directCapabilities: ["statistics", "experimentation", "causal-reasoning", "machine-learning", "model-validation"],
     minimumCoreCoverage: 0.6,
   },
   "data-analyst": {
@@ -92,6 +97,7 @@ const PROFILES: Partial<Record<string, RequirementProfile>> = {
     ],
     supporting: ["sql", "forecasting", "statistics", "experimentation"],
     transferable: ["operations", "process-improvement", "stakeholder-management"],
+    directCapabilities: ["data-analysis", "business-intelligence", "reporting", "sql", "data-modeling"],
     minimumCoreCoverage: 0.55,
   },
   "bi-developer": {
@@ -107,13 +113,14 @@ const PROFILES: Partial<Record<string, RequirementProfile>> = {
     minimumCoreCoverage: 0.6,
   },
   "ai-automation-specialist": {
-    core: [group("automation", "AI or process automation", "ai-automation"), group("workflow", "workflow design", "workflow-design", "process-design"), group("integration", "API or system integration", "api-integration"), group("implementation", "implemented and deployed solutions", "deployment", "ai-product")],
+    core: [group("automation", "AI or process automation", "ai-automation", "process-automation"), group("workflow", "workflow design", "workflow-design", "process-design"), group("integration", "API or system integration", "api-integration"), group("implementation", "implemented and deployed solutions", "deployment", "ai-product")],
     supporting: ["ai-agents", "power-platform", "human-in-loop", "solution-architecture"],
     transferable: ["process-improvement", "operations", "business-analysis", "decision-support"],
+    directCapabilities: ["ai-automation", "ai-agents", "ai-product"],
     minimumCoreCoverage: 0.55,
   },
   "intelligent-automation-engineer": {
-    core: [group("automation", "enterprise automation", "ai-automation", "power-platform"), group("integration", "workflow and API integration", "workflow-design", "api-integration"), group("engineering", "production engineering", "software-engineering", "deployment")],
+    core: [group("automation", "enterprise automation", "ai-automation", "process-automation", "power-platform"), group("integration", "workflow and API integration", "workflow-design", "api-integration"), group("engineering", "production engineering", "software-engineering", "deployment")],
     supporting: ["ai-agents", "governance", "process-design"],
     transferable: ["process-improvement", "operations", "business-analysis"],
     minimumCoreCoverage: 0.6,
@@ -128,6 +135,7 @@ const PROFILES: Partial<Record<string, RequirementProfile>> = {
     core: [group("workflow", "workflow architecture", "workflow-design", "process-design"), group("systems", "system and API integration", "api-integration", "solution-architecture"), group("governance", "governed human-and-AI operation", "governance", "human-in-loop")],
     supporting: ["ai-agents", "ai-automation", "deployment"],
     transferable: ["operations", "process-improvement", "stakeholder-management"],
+    directCapabilities: ["workflow-design", "solution-architecture", "human-in-loop", "governance"],
     minimumCoreCoverage: 0.6,
   },
   "microsoft-copilot-consultant": {
@@ -183,7 +191,7 @@ const PROFILES: Partial<Record<string, RequirementProfile>> = {
 const DOMAIN_DEFAULTS: Record<string, { supporting: CapabilityId[]; transferable: CapabilityId[] }> = {
   "AI Engineering": { supporting: ["software-engineering", "deployment", "api-integration"], transferable: ["data-analysis", "solution-architecture"] },
   "AI Product": { supporting: ["product-strategy", "stakeholder-management", "ai-product"], transferable: ["business-analysis", "operations"] },
-  "AI Automation": { supporting: ["ai-automation", "workflow-design", "api-integration"], transferable: ["process-improvement", "operations"] },
+  "AI Automation": { supporting: ["ai-automation", "process-automation", "workflow-design", "api-integration"], transferable: ["process-improvement", "operations"] },
   "Enterprise AI & Consulting": { supporting: ["consulting-discovery", "stakeholder-management", "transformation"], transferable: ["business-analysis", "operations"] },
   "AI Data & Analytics": { supporting: ["data-analysis", "data-modeling", "reporting"], transferable: ["business-analysis", "decision-support"] },
   "AI Infrastructure & Security": { supporting: ["cloud-infrastructure", "devops", "security-operations"], transferable: ["software-engineering", "governance"] },
@@ -226,6 +234,7 @@ function catalogDerived(career: CareerReference): ResolvedCareerRequirements {
     core: coreIds.map((capabilityId) => group(capabilityId, capabilityLabel(capabilityId), capabilityId)),
     supporting: unique([...selected.slice(4), ...defaults.supporting]).filter((capabilityId) => !coreIds.includes(capabilityId)).slice(0, 5),
     transferable: defaults.transferable,
+    directCapabilities: coreIds,
     minimumCoreCoverage: 0.5,
     source: "catalog-derived",
   };
@@ -233,5 +242,10 @@ function catalogDerived(career: CareerReference): ResolvedCareerRequirements {
 
 export function resolveCareerRequirements(career: CareerReference): ResolvedCareerRequirements {
   const explicit = PROFILES[career.slug];
-  return explicit ? { ...explicit, source: "explicit" } : catalogDerived(career);
+  if (!explicit) return catalogDerived(career);
+  return {
+    ...explicit,
+    directCapabilities: explicit.directCapabilities ?? unique(explicit.core.flatMap((requirement) => requirement.capabilities)),
+    source: "explicit",
+  };
 }

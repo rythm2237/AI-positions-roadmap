@@ -94,6 +94,32 @@ assert.ok(transitionAutomation.dimensions.trajectory > transitionData.dimensions
 assert.ok(transitionScientist.score < transitionData.score && transitionScientist.score < transitionAutomation.score, "Generic analytics transferability must not over-rank Data Scientist.");
 assert.ok(!transitionAutomation.missingSignals.some((signal) => /product architecture|ai integration/i.test(signal)), "Detected product architecture and AI integration must never reappear as missing.");
 
+const realProfileTimeline = `
+AI AUTOMATION AND OPERATIONS ANALYTICS PROFESSIONAL
+SUMMARY
+Independent AI Product Builder focused on AI Automation, AI agents, business solutions and human-in-the-loop systems.
+EXPERIENCE
+Independent AI Product Builder | Independent | Apr 2026 - Present
+Built and deployed RYTHM Company OS and AI Career OS with AI agents, product architecture, API integration, governed workflows and human approval controls.
+Fulfilment Operations Flow Planner | IKEA | Mar 2025 - Present
+Built Power BI decision-support tools for warehouse movement analysis, forecasting and capacity planning. Designed data models, reporting and business process automation.
+PROJECTS
+RYTHM Company OS. Implemented and deployed governed multi-agent workflows with API integrations and approval controls.
+AI Career OS. Built an AI product with workflow design, AI integration, validation and production deployment.
+SKILLS
+AI Automation, AI agents, Power BI, operational analytics, forecasting, data models, process automation, workflow design, API integration
+`;
+const realTimelineAutomation = targeted(realProfileTimeline, "AI Automation Specialist");
+const realTimelineAnalyst = targeted(realProfileTimeline, "Data Analyst");
+assert.equal(realTimelineAutomation.professionalEvidence.directDurationBucket, "<6 months", "Recent AI-specific product evidence must not inherit the longer process-automation duration.");
+assert.equal(realTimelineAutomation.confidence, "medium", "Strong but recent AI-specific evidence must remain medium confidence until it is established over time.");
+assert.ok(realTimelineAutomation.evidenceSummary.limitingFactors.some((signal) => /shorter than one year/i.test(signal)), "Medium confidence from recent direct evidence must expose the matching duration limitation.");
+assert.equal(realTimelineAutomation.evidenceSummary.coreGaps.length, 0, "Implemented AI products must not receive a fabricated core gap.");
+assert.equal(realTimelineAutomation.weeks, "No core learning gap detected", "Supporting opportunities must not create a false core learning estimate.");
+assert.equal(realTimelineAnalyst.professionalEvidence.directDurationBucket, "1–2 years", "Established analytics evidence must retain its own direct duration.");
+assert.ok(realTimelineAnalyst.evidenceSummary.supportingOpportunities.some((signal) => /statistical modeling|experimental design/i.test(signal)), "Optional analytical depth must be reported as supporting opportunity.");
+assert.ok(!realTimelineAnalyst.evidenceSummary.coreGaps.some((signal) => /statistical modeling|experimental design/i.test(signal)), "Optional Data Analyst capabilities must never be presented as core gaps.");
+
 const experiencedBuilder = `
 INDEPENDENT AI AUTOMATION BUILDER
 EXPERIENCE
@@ -155,6 +181,10 @@ const results = {
   experiencedBI: { dataAnalyst: biDataAnalyst.score, dataScientist: biDataScientist.score },
   juniorML: { dataScientist: juniorDataScientist.score, dimensions: juniorDataScientist.dimensions },
   transition: { dataAnalyst: transitionData.score, aiAutomation: transitionAutomation.score, dataScientist: transitionScientist.score },
+  realProfileTimeline: {
+    aiAutomation: { score: realTimelineAutomation.score, confidence: realTimelineAutomation.confidence, directDuration: realTimelineAutomation.professionalEvidence.directDurationBucket },
+    dataAnalyst: { score: realTimelineAnalyst.score, confidence: realTimelineAnalyst.confidence, directDuration: realTimelineAnalyst.professionalEvidence.directDurationBucket },
+  },
   transitionDiscoveryTop: discovery.matches.map(({ careerSlug, score, confidence }) => ({ careerSlug, score, confidence })),
   experiencedBuilder: { aiAutomation: builderAutomation.score, dimensions: builderAutomation.dimensions },
   enterpriseConsultant: { enterpriseAI: enterpriseMatch.score, dataScientist: enterpriseScientist.score },

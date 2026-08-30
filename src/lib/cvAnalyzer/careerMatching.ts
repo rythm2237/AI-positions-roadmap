@@ -29,12 +29,16 @@ export type CareerMatchDimensions = {
 export type CareerEvidenceSummary = {
   strongestEvidence: string[];
   transferableEvidence: string[];
+  coreGaps: string[];
+  supportingOpportunities: string[];
   limitingFactors: string[];
 };
 
 export type CareerProfessionalEvidence = {
-  relevantDurationMonths: number;
-  durationBucket: ExperienceDurationBucket;
+  directDurationMonths: number;
+  directDurationBucket: ExperienceDurationBucket;
+  transferableDurationMonths: number;
+  transferableDurationBucket: ExperienceDurationBucket;
   contexts: EvidenceContext[];
   implementationCount: number;
 };
@@ -191,19 +195,26 @@ function evidenceDescription(evidence: CapabilityEvidence) {
   return `${contextLabel(evidence.contexts)}: ${evidence.label}${duration}`;
 }
 
-function professionalMetadata(evidence: readonly CapabilityEvidence[]): CareerProfessionalEvidence {
-  const longest = evidence.length ? evidence.reduce((best, item) => item.relevantMonths > best.relevantMonths ? item : best) : null;
+function longestDuration(evidence: readonly CapabilityEvidence[]) {
+  return evidence.length ? evidence.reduce((best, item) => item.relevantMonths > best.relevantMonths ? item : best) : null;
+}
+
+function professionalMetadata(direct: readonly CapabilityEvidence[], transferable: readonly CapabilityEvidence[]): CareerProfessionalEvidence {
+  const longestDirect = longestDuration(direct);
+  const longestTransferable = longestDuration(transferable);
   return {
-    relevantDurationMonths: longest?.relevantMonths ?? 0,
-    durationBucket: longest?.durationBucket ?? "unknown",
-    contexts: unique(evidence.flatMap((item) => item.contexts)),
-    implementationCount: evidence.reduce((sum, item) => sum + item.implementationCount, 0),
+    directDurationMonths: longestDirect?.relevantMonths ?? 0,
+    directDurationBucket: longestDirect?.durationBucket ?? "unknown",
+    transferableDurationMonths: longestTransferable?.relevantMonths ?? 0,
+    transferableDurationBucket: longestTransferable?.durationBucket ?? "unknown",
+    contexts: unique(direct.flatMap((item) => item.contexts)),
+    implementationCount: direct.reduce((sum, item) => sum + item.implementationCount, 0),
   };
 }
 
-function confidenceFor(dimensions: CareerMatchDimensions, coreCoverage: number, minimumCoreCoverage: number, channelCount: number, implementationCount: number): CareerEvidenceMatch["confidence"] {
-  if (coreCoverage >= minimumCoreCoverage && dimensions.roleRelevance >= 65 && dimensions.professionalEvidence >= 60 && channelCount >= 3 && implementationCount >= 2) return "high";
-  if (coreCoverage >= minimumCoreCoverage * 0.75 && dimensions.roleRelevance >= 48 && (dimensions.professionalEvidence >= 38 || dimensions.trajectory >= 65) && channelCount >= 2) return "medium";
+function confidenceFor(dimensions: CareerMatchDimensions, coreCoverage: number, minimumCoreCoverage: number, metadata: CareerProfessionalEvidence): CareerEvidenceMatch["confidence"] {
+  if (coreCoverage >= minimumCoreCoverage && dimensions.roleRelevance >= 65 && dimensions.professionalEvidence >= 60 && metadata.contexts.length >= 2 && metadata.implementationCount >= 2 && metadata.directDurationMonths >= 12) return "high";
+  if (coreCoverage >= minimumCoreCoverage * 0.75 && dimensions.roleRelevance >= 48 && (dimensions.professionalEvidence >= 38 || dimensions.trajectory >= 65) && metadata.contexts.length >= 1) return "medium";
   return "low";
 }
 
@@ -213,6 +224,7 @@ export function scoreCareerEvidence(career: CareerReference, input: CareerEviden
   const groups = requirements.core.map((item) => evaluateGroup(item, recruiterEvidence));
   const supporting = directCapabilityEvidence(requirements.supporting, recruiterEvidence);
   const transferable = directCapabilityEvidence(requirements.transferable, recruiterEvidence);
+  const identityEvidence = directCapabilityEvidence(requirements.directCapabilities, recruiterEvidence);
   const coreEvidence = groups.map((item) => item.evidence).filter((item): item is CapabilityEvidence => Boolean(item));
   const directEvidence = unique([...coreEvidence, ...supporting]);
   const identity = roleIdentityEvidence(career, input);
@@ -226,17 +238,27 @@ export function scoreCareerEvidence(career: CareerReference, input: CareerEviden
   };
   const weighted = Object.entries(CAREER_MATCH_WEIGHTS).reduce((sum, [dimension, weight]) => sum + dimensions[dimension as keyof CareerMatchDimensions] * weight, 0);
   const score = clamp(weighted, scoreCeiling(core.coverage, requirements.minimumCoreCoverage, dimensions.coreRequirements));
-  const missingCore = groups.filter((item) => !item.evidence).map((item) => `Limited direct evidence: ${item.group.label}`);
-  const missingSupporting = requirements.supporting.filter((capabilityId) => !evidenceFor(recruiterEvidence, capabilityId)).map((capabilityId) => `Limited supporting evidence: ${capabilityLabel(capabilityId)}`);
-  const missingSignals = unique([...missingCore, ...missingSupporting]).slice(0, 4);
+  const coreGaps = groups.filter((item) => !item.evidence).map((item) => item.group.label);
+  const supportingOpportunities = requirements.supporting.filter((capabilityId) => !evidenceFor(recruiterEvidence, capabilityId)).map(capabilityLabel);
+  const missingSignals = unique([
+    ...coreGaps.map((gap) => `Limited direct evidence: ${gap}`),
+    ...supportingOpportunities.map((opportunity) => `Limited supporting evidence: ${opportunity}`),
+  ]).slice(0, 4);
   const strongestEvidence = directEvidence.toSorted((left, right) => right.quality - left.quality || right.relevantMonths - left.relevantMonths).map(evidenceDescription).slice(0, 4);
   const transferableEvidence = transferable.toSorted((left, right) => right.quality - left.quality || right.relevantMonths - left.relevantMonths).map((item) => `Transferable: ${item.label}${item.durationBucket === "unknown" ? "" : ` (${item.durationBucket})`}`).slice(0, 3);
-  const metadata = professionalMetadata(directEvidence);
-  const limitingFactors = [...missingSignals];
-  if (dimensions.roleRelevance >= 65 && metadata.relevantDurationMonths > 0 && metadata.relevantDurationMonths < 12) limitingFactors.push(`Direct ${career.title} evidence is recent but shorter than one year.`);
-  if (!limitingFactors.length) limitingFactors.push("No material evidence limitation was detected in the supplied profile.");
+  const metadata = professionalMetadata(identityEvidence, transferable);
+  const confidence = confidenceFor(dimensions, core.coverage, requirements.minimumCoreCoverage, metadata);
+  const limitingFactors: string[] = [];
+  if (dimensions.roleRelevance >= 65 && metadata.directDurationMonths > 0 && metadata.directDurationMonths < 12) {
+    limitingFactors.push(`Direct ${career.title} evidence is recent but shorter than one year.`);
+  } else if (confidence === "medium" && !coreGaps.length) {
+    if (!metadata.directDurationMonths) limitingFactors.push(`Direct ${career.title} evidence is relevant, but its duration is not clearly dated enough for high confidence.`);
+    else if (metadata.implementationCount < 2) limitingFactors.push(`Career relevance is strong, but the CV shows limited repeated ${career.title} implementation evidence.`);
+    else limitingFactors.push(`Direct ${career.title} evidence is strong, but not yet established enough across time for high confidence.`);
+  } else if (confidence === "low" && !coreGaps.length) {
+    limitingFactors.push(`The current evidence does not yet support medium recruiter confidence for ${career.title}.`);
+  }
   const evidenceSignals = strongestEvidence.length ? strongestEvidence : transferableEvidence;
-  const confidence = confidenceFor(dimensions, core.coverage, requirements.minimumCoreCoverage, recruiterEvidence.channelCount, metadata.implementationCount);
   return {
     careerSlug: career.slug,
     title: career.title,
@@ -245,7 +267,13 @@ export function scoreCareerEvidence(career: CareerReference, input: CareerEviden
     dimensions,
     evidenceSignals,
     missingSignals,
-    evidenceSummary: { strongestEvidence, transferableEvidence, limitingFactors: unique(limitingFactors).slice(0, 4) },
+    evidenceSummary: {
+      strongestEvidence,
+      transferableEvidence,
+      coreGaps: unique(coreGaps).slice(0, 4),
+      supportingOpportunities: unique(supportingOpportunities).slice(0, 4),
+      limitingFactors: unique(limitingFactors).slice(0, 3),
+    },
     professionalEvidence: metadata,
     confidence,
   };
