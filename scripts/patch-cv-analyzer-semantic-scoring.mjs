@@ -1,8 +1,11 @@
 import fs from "node:fs";
 
 const client = fs.readFileSync("src/components/cv-analyzer/CVAnalyzerClient.tsx", "utf8");
+const matchCard = fs.readFileSync("src/components/cv-analyzer/CareerMatchCard.tsx", "utf8");
 const semantic = fs.readFileSync("src/lib/cvAnalyzer/semanticAnalysis.ts", "utf8");
 const matching = fs.readFileSync("src/lib/cvAnalyzer/careerMatching.ts", "utf8");
+const requirements = fs.readFileSync("src/lib/cvAnalyzer/careerRequirements.ts", "utf8");
+const recruiterEvidence = fs.readFileSync("src/lib/cvAnalyzer/careerEvidence.ts", "utf8");
 const projectEvidence = fs.readFileSync("src/lib/cvAnalyzer/projectEvidence.ts", "utf8");
 
 for (const token of [
@@ -12,7 +15,7 @@ for (const token of [
   "CV freshness warning",
   "Update my recent experience",
   "analysis.alignmentMode",
-  "match.evidenceSignals",
+  "CareerMatchCard",
 ]) {
   if (!client.includes(token)) throw new Error(`Canonical CV Analyzer UI contract is missing: ${token}`);
 }
@@ -30,8 +33,20 @@ for (const token of [
   if (!semantic.includes(token)) throw new Error(`Canonical semantic scoring contract is missing: ${token}`);
 }
 
-for (const token of ["Career's own canonical title", "careerConcepts", "evidenceSignals", "missingSignals", "resolveTargetCareer"]) {
+for (const token of ["CAREER_MATCH_WEIGHTS", "roleRelevance", "professionalEvidence", "coreRequirements", "trajectory", "transferability", "scoreCeiling", "evidenceSummary", "missingSignals", "resolveTargetCareer"]) {
   if (!matching.includes(token)) throw new Error(`Career matching contract is missing: ${token}`);
+}
+
+for (const token of ["CAPABILITIES", '"data-scientist"', '"data-analyst"', '"ai-automation-specialist"', "minimumCoreCoverage", "catalog-derived"]) {
+  if (!requirements.includes(token)) throw new Error(`Career requirement contract is missing: ${token}`);
+}
+
+for (const token of ["employed_role", "independent_role", "implemented_project", "durationBucket", "recentImplementationCount", "buildRecruiterEvidence"]) {
+  if (!recruiterEvidence.includes(token)) throw new Error(`Recruiter evidence contract is missing: ${token}`);
+}
+
+for (const token of ["Role relevance", "Professional evidence", "Core requirements", "Current trajectory", "Transferability", "Why this Career ranks here", "not hiring probability"]) {
+  if (!matchCard.includes(token)) throw new Error(`Career match explanation UI is missing: ${token}`);
 }
 
 for (const token of ["named_product_evidence", "implementation_evidence", "case_study_evidence", "explicit_project_section"]) {

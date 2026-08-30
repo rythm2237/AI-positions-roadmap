@@ -3,6 +3,7 @@ import {
   resolveTargetCareer,
   scoreCareerEvidence,
   type CareerEvidenceMatch,
+  type CareerMatchDimensions,
   type CareerReference,
 } from "./careerMatching.ts";
 import { assessProjectEvidence, type ProjectEvidenceAssessment } from "./projectEvidence.ts";
@@ -375,7 +376,17 @@ export function analyzeSemanticCV(profile: SemanticCVProfile, rawText: string, c
   const evidenceText = `${experience}\n${projects}\n${summary}`.trim() || source;
   const freshness = assessCVFreshness(experience, source);
   const projectEvidence = assessProjectEvidence({ projects, summary, experience, source });
-  const matchingInput = { headline: profile.headline, summary, skills, experience, projects, source, projectEvidence };
+  const matchingInput = {
+    headline: profile.headline,
+    summary,
+    skills,
+    experience,
+    projects,
+    education: mergeSection(profile.education, parsed.sections.education),
+    certifications: mergeSection(profile.certifications, parsed.sections.certifications),
+    source,
+    projectEvidence,
+  };
   const ranked = rankCareerEvidence(careers, matchingInput);
   const alignmentMode = profile.openToSuggestions || !profile.targetPosition.trim() ? "discovery" : "targeted";
   const selectedCareer = alignmentMode === "targeted" ? resolveTargetCareer(profile.targetPosition, careers) : null;
@@ -425,11 +436,23 @@ export function analyzeSemanticCV(profile: SemanticCVProfile, rawText: string, c
   if (projectEvidence.confidence === "none" || projectEvidence.confidence === "low") gaps.push("Add a substantial project, named product, case study or portfolio reference that proves a target-role skill in practice.");
 
   const weekly = Math.max(1, Math.min(40, Number(profile.weeklyHours) || 5));
+  const emptyDimensions: CareerMatchDimensions = { roleRelevance: targetScore, professionalEvidence: 0, coreRequirements: 0, trajectory: 0, transferability: 0 };
   const baseMatches = alignmentMode === "discovery"
     ? ranked.slice(0, 3)
     : targetedMatch
       ? [targetedMatch]
-      : [{ careerSlug: "custom-target", title: profile.targetPosition, score: targetScore, match: targetScore, evidenceSignals: [], missingSignals: ["No exact Career Catalog entry was resolved for this target."], confidence: "low" as const }];
+      : [{
+          careerSlug: "custom-target",
+          title: profile.targetPosition,
+          score: targetScore,
+          match: targetScore,
+          dimensions: emptyDimensions,
+          evidenceSignals: [],
+          missingSignals: ["No exact Career Catalog entry was resolved for this target."],
+          evidenceSummary: { strongestEvidence: [], transferableEvidence: [], limitingFactors: ["No exact Career Catalog entry was resolved for this target."] },
+          professionalEvidence: { relevantDurationMonths: 0, durationBucket: "unknown" as const, contexts: [], implementationCount: 0 },
+          confidence: "low" as const,
+        }];
   const matches = baseMatches.map((match) => ({ ...match, weeks: gapClosingEstimate(match, weekly) }));
   const firstGap = gaps[0] ?? "Tailor the strongest evidence to the role you want to pursue.";
   const nextActions = [
