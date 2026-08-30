@@ -138,6 +138,10 @@ assert.ok(targeted.rows.some((row) => row.label === "Target job alignment"));
 assert.ok(!targeted.rows.some((row) => row.label === "Career direction alignment"));
 assert.equal(targeted.matches.length, 1, "Targeted mode must score only the selected Career.");
 assert.equal(targeted.matches[0].careerSlug, "ai-automation-specialist");
+assert.equal(targeted.matches[0].evidenceSummary.coreGaps.length, 0, "Implemented AI products must satisfy the AI Automation core rather than produce a fabricated learning gap.");
+assert.equal(targeted.matches[0].weeks, "No core learning gap detected", "Optional evidence opportunities must not produce a false gap-closing estimate.");
+assert.ok(targeted.matches[0].professionalEvidence.directDurationBucket !== "unknown", "Career identity evidence must expose its own dated duration.");
+assert.ok(Array.isArray(targeted.matches[0].evidenceSummary.supportingOpportunities), "Supporting opportunities must remain separate from core gaps.");
 
 const rawOnly = analyzeSemanticCV(emptyProfile, imported.rawText, careers);
 assert.ok(rawOnly.projectEvidence.namedProducts.length >= 2, "Structured-prefill failure must not remove raw text from semantic project analysis.");

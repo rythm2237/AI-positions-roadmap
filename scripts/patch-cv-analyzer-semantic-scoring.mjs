@@ -16,6 +16,7 @@ for (const token of [
   "Update my recent experience",
   "analysis.alignmentMode",
   "CareerMatchCard",
+  "No priority CV gap was detected",
 ]) {
   if (!client.includes(token)) throw new Error(`Canonical CV Analyzer UI contract is missing: ${token}`);
 }
@@ -33,11 +34,11 @@ for (const token of [
   if (!semantic.includes(token)) throw new Error(`Canonical semantic scoring contract is missing: ${token}`);
 }
 
-for (const token of ["CAREER_MATCH_WEIGHTS", "roleRelevance", "professionalEvidence", "coreRequirements", "trajectory", "transferability", "scoreCeiling", "evidenceSummary", "missingSignals", "resolveTargetCareer"]) {
+for (const token of ["CAREER_MATCH_WEIGHTS", "roleRelevance", "professionalEvidence", "coreRequirements", "trajectory", "transferability", "scoreCeiling", "coreGaps", "supportingOpportunities", "directDurationBucket", "transferableDurationBucket", "resolveTargetCareer"]) {
   if (!matching.includes(token)) throw new Error(`Career matching contract is missing: ${token}`);
 }
 
-for (const token of ["CAPABILITIES", '"data-scientist"', '"data-analyst"', '"ai-automation-specialist"', "minimumCoreCoverage", "catalog-derived"]) {
+for (const token of ["CAPABILITIES", '"process-automation"', '"data-scientist"', '"data-analyst"', '"ai-automation-specialist"', "directCapabilities", "minimumCoreCoverage", "catalog-derived"]) {
   if (!requirements.includes(token)) throw new Error(`Career requirement contract is missing: ${token}`);
 }
 
@@ -45,7 +46,7 @@ for (const token of ["employed_role", "independent_role", "implemented_project",
   if (!recruiterEvidence.includes(token)) throw new Error(`Recruiter evidence contract is missing: ${token}`);
 }
 
-for (const token of ["Role relevance", "Professional evidence", "Core requirements", "Current trajectory", "Transferability", "Why this Career ranks here", "not hiring probability"]) {
+for (const token of ["Role relevance", "Professional evidence", "Core requirements", "Current trajectory", "Transferability", "Direct Career evidence", "Core evidence gaps", "Additional evidence opportunities", "No material core-evidence limitation", "Why this Career ranks here", "not hiring probability"]) {
   if (!matchCard.includes(token)) throw new Error(`Career match explanation UI is missing: ${token}`);
 }
 

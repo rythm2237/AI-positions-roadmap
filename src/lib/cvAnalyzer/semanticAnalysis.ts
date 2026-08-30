@@ -356,7 +356,9 @@ function customTargetScore(targetPosition: string, source: string, evidenceText:
 }
 
 function gapClosingEstimate(match: CareerEvidenceMatch, weeklyHours: number) {
-  let hours = 12 + Math.min(8, match.missingSignals.length) * 8;
+  const coreGapCount = match.evidenceSummary.coreGaps.length;
+  if (!coreGapCount) return "No core learning gap detected";
+  let hours = 12 + Math.min(8, coreGapCount) * 8;
   if (match.score < 40) hours += 30;
   else if (match.score < 60) hours += 16;
   else if (match.score >= 80) hours = Math.max(12, hours - 8);
@@ -449,8 +451,21 @@ export function analyzeSemanticCV(profile: SemanticCVProfile, rawText: string, c
           dimensions: emptyDimensions,
           evidenceSignals: [],
           missingSignals: ["No exact Career Catalog entry was resolved for this target."],
-          evidenceSummary: { strongestEvidence: [], transferableEvidence: [], limitingFactors: ["No exact Career Catalog entry was resolved for this target."] },
-          professionalEvidence: { relevantDurationMonths: 0, durationBucket: "unknown" as const, contexts: [], implementationCount: 0 },
+          evidenceSummary: {
+            strongestEvidence: [],
+            transferableEvidence: [],
+            coreGaps: ["No exact Career Catalog entry was resolved for this target."],
+            supportingOpportunities: [],
+            limitingFactors: [],
+          },
+          professionalEvidence: {
+            directDurationMonths: 0,
+            directDurationBucket: "unknown" as const,
+            transferableDurationMonths: 0,
+            transferableDurationBucket: "unknown" as const,
+            contexts: [],
+            implementationCount: 0,
+          },
           confidence: "low" as const,
         }];
   const matches = baseMatches.map((match) => ({ ...match, weeks: gapClosingEstimate(match, weekly) }));
