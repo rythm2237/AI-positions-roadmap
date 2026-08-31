@@ -74,6 +74,7 @@ const CONTEXT_WEIGHT: Record<EvidenceContext, number> = {
 const IMPLEMENTATION_VERBS = /\b(?:built|building|created|developed|designed|implemented|launched|deployed|architected|integrated|automated|validated|delivered|engineered|operated|led|managed|analyzed|analysed|improved|transformed)\b/i;
 const QUANTIFIED_EVIDENCE = /(?:\b\d+(?:\.\d+)?\s*%|(?:€|\$|£)\s?\d|\b\d+(?:\.\d+)?\s*(?:hours?|days?|weeks?|months?|years?|users?|teams?|locations?|areas?|workflows?|projects?|reports?|dashboards?)\b|\b(?:reduced|increased|improved|saved|cut|grew)\s+(?:by\s+)?\d+)/i;
 const MONTHS: Record<string, number> = { jan: 1, january: 1, feb: 2, february: 2, mar: 3, march: 3, apr: 4, april: 4, may: 5, jun: 6, june: 6, jul: 7, july: 7, aug: 8, august: 8, sep: 9, september: 9, oct: 10, october: 10, nov: 11, november: 11, dec: 12, december: 12 };
+const EXPERIENCE_DATE_RANGE = /((?:(?:jan(?:uary)?|feb(?:ruary)?|mar(?:ch)?|apr(?:il)?|may|jun(?:e)?|jul(?:y)?|aug(?:ust)?|sep(?:tember)?|oct(?:ober)?|nov(?:ember)?|dec(?:ember)?)\s+)?(?:19|20)\d{2})\s*(?:-|to|–|—)\s*((?:(?:jan(?:uary)?|feb(?:ruary)?|mar(?:ch)?|apr(?:il)?|may|jun(?:e)?|jul(?:y)?|aug(?:ust)?|sep(?:tember)?|oct(?:ober)?|nov(?:ember)?|dec(?:ember)?)\s+)?(?:19|20)\d{2}|present|current|now)/i;
 
 function unique<T>(values: readonly T[]) {
   return [...new Set(values)];
@@ -94,7 +95,7 @@ function parsePoint(value: string, fallbackMonth: number) {
 function parseDuration(text: string) {
   const current = new Date();
   const normalized = text.replace(/[–—]/g, "-");
-  const match = normalized.match(/((?:(?:jan(?:uary)?|feb(?:ruary)?|mar(?:ch)?|apr(?:il)?|may|jun(?:e)?|jul(?:y)?|aug(?:ust)?|sep(?:tember)?|oct(?:ober)?|nov(?:ember)?|dec(?:ember)?)\s+)?(?:19|20)\d{2})\s*(?:-|to)\s*((?:(?:jan(?:uary)?|feb(?:ruary)?|mar(?:ch)?|apr(?:il)?|may|jun(?:e)?|jul(?:y)?|aug(?:ust)?|sep(?:tember)?|oct(?:ober)?|nov(?:ember)?|dec(?:ember)?)\s+)?(?:19|20)\d{2}|present|current|now)/i);
+  const match = normalized.match(EXPERIENCE_DATE_RANGE);
   if (!match) return { months: 0, recent: false };
   const start = parsePoint(match[1], 1);
   const isPresent = /present|current|now/i.test(match[2]);
@@ -119,15 +120,28 @@ function experienceContext(header: string): ExperienceEntry["context"] {
   return "employed_role";
 }
 
+function likelyExperienceHeader(line: string) {
+  const value = line.trim();
+  if (!value || value.length > 180) return false;
+  if (/^[•●▪*\-]/.test(value) || /[.!?]$/.test(value)) return false;
+  return !IMPLEMENTATION_VERBS.test(value);
+}
+
 function splitExperience(experience: string): ExperienceEntry[] {
   const lines = experience.replace(/\r/g, "").split("\n").map((line) => line.trim()).filter(Boolean);
   const entries: string[][] = [];
   let current: string[] = [];
   for (const line of lines) {
-    const startsEntry = /(?:19|20)\d{2}\s*(?:-|to|–|—)\s*(?:(?:19|20)\d{2}|present|current|now)/i.test(line);
-    if (startsEntry && current.length) {
-      entries.push(current);
-      current = [];
+    const startsEntry = EXPERIENCE_DATE_RANGE.test(line);
+    const currentHasDate = current.some((currentLine) => EXPERIENCE_DATE_RANGE.test(currentLine));
+    if (startsEntry && currentHasDate && current.length) {
+      const carry: string[] = [];
+      const possibleHeader = current[current.length - 1];
+      if (possibleHeader && likelyExperienceHeader(possibleHeader)) {
+        carry.unshift(current.pop()!);
+      }
+      if (current.length) entries.push(current);
+      current = carry;
     }
     current.push(line);
   }
