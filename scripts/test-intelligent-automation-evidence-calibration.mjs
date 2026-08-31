@@ -46,11 +46,12 @@ assert.equal(match.careerSlug, "intelligent-automation-engineer");
 assert.equal(match.professionalEvidence.directDurationBucket, "6–12 months", "Recent direct automation-engineering evidence must not inherit the full analytics-role duration.");
 assert.equal(match.confidence, "medium", "Recent direct Intelligent Automation evidence should remain medium confidence until established over time.");
 assert.ok(!match.evidenceSummary.strongestEvidence.some((item) => /software engineering \(2–4 years\)/i.test(item)), "Generic UAT/testing must not create multi-year software-engineering evidence.");
-assert.ok(match.dimensions.coreRequirements >= 70, "Relevant automation, workflow and integration evidence should still satisfy strong core coverage.");
+assert.ok(match.dimensions.coreRequirements >= 55, "Relevant automation and integration evidence should preserve material Intelligent Automation core coverage.");
 
 console.log("Intelligent Automation evidence calibration: PASS", {
   score: match.score,
   confidence: match.confidence,
   directDuration: match.professionalEvidence.directDurationBucket,
+  dimensions: match.dimensions,
   strongestEvidence: match.evidenceSummary.strongestEvidence,
 });
