@@ -72,8 +72,13 @@ function geographyScore(job: FitJobInput, agent: JobAgent) {
 function salaryScore(job: FitJobInput, agent: JobAgent) {
   if (agent.minimum_salary === null) return { score: 10, explanation: "No minimum salary constraint configured." };
   if (job.salaryMax === null || job.salaryMax === undefined) return { score: 5, explanation: "Salary is not disclosed, so alignment cannot be verified." };
-  if (job.salaryMax < agent.minimum_salary) return { score: 0, explanation: "Published salary range is below the configured minimum." };
-  return { score: 10, explanation: "Published salary range meets the configured minimum." };
+  const expectedCurrency = agent.salary_currency?.trim().toUpperCase() || null;
+  const jobCurrency = job.currency?.trim().toUpperCase() || null;
+  if (!expectedCurrency || !jobCurrency || expectedCurrency !== jobCurrency) {
+    return { score: 5, explanation: "Salary is present, but its currency cannot be safely compared with the configured salary threshold." };
+  }
+  if (job.salaryMax < agent.minimum_salary) return { score: 0, explanation: `Published salary range is below the configured minimum in ${expectedCurrency}.` };
+  return { score: 10, explanation: `Published salary range meets the configured minimum in ${expectedCurrency}.` };
 }
 
 function experienceScore(job: FitJobInput, profile: Profile) {
