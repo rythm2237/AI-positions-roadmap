@@ -138,8 +138,20 @@ export async function runJobSearch() {
     };
   });
 
-  if (rows.length) {
-    const save = await supabase.from("job_opportunities").upsert(rows, {
+  // The database conflict target is (user_id, job_url). Provider expansion can
+  // surface the same vacancy through multiple role queries with slightly
+  // different title/location text, so semantic dedupe alone is insufficient.
+  // Collapse by the exact persistence key before issuing a single upsert.
+  const rowsByConflictKey = new Map<string, (typeof rows)[number]>();
+  for (const row of rows) {
+    const key = `${row.user_id}|${row.job_url}`;
+    const existing = rowsByConflictKey.get(key);
+    if (!existing || row.fit_score > existing.fit_score) rowsByConflictKey.set(key, row);
+  }
+  const persistedRows = [...rowsByConflictKey.values()];
+
+  if (persistedRows.length) {
+    const save = await supabase.from("job_opportunities").upsert(persistedRows, {
       onConflict: "user_id,job_url",
       ignoreDuplicates: false,
     });
@@ -153,19 +165,20 @@ export async function runJobSearch() {
     }
   }
 
-  const eligible = rows.filter((row) => row.eligibility_status === "eligible").length;
-  const blocked = rows.filter((row) => row.eligibility_status === "blocked").length;
-  const unverified = rows.filter((row) => row.eligibility_status === "unverified").length;
+  const eligible = persistedRows.filter((row) => row.eligibility_status === "eligible").length;
+  const blocked = persistedRows.filter((row) => row.eligibility_status === "blocked").length;
+  const unverified = persistedRows.filter((row) => row.eligibility_status === "unverified").length;
   const providersUsed = [...new Set([...unique.values()].map((job) => job.source))];
   const providersConfigured = [hasSerpApi ? "SerpApi" : null, hasAdzuna ? "Adzuna" : null].filter(Boolean);
   await supabase.from("user_activity").insert({
     user_id: user.id,
     action: "job_agent_search_run",
     metadata: {
-      reviewed: rows.length,
+      reviewed: persistedRows.length,
       eligible,
       blocked,
       unverified,
+      duplicate_conflict_rows_removed: rows.length - persistedRows.length,
       providers: providersUsed.length ? providersUsed : providersConfigured,
       provider_strategy: "serpapi-primary-adzuna-fallback-v1",
       hard_eligibility_gate: "hard-gate-v1",
@@ -174,5 +187,5 @@ export async function runJobSearch() {
   });
 
   revalidatePath("/job-agent");
-  redirect(`/job-agent?searched=${rows.length}&eligible=${eligible}&expanded=${roleQueries.length}`);
+  redirect(`/job-agent?searched=${persistedRows.length}&eligible=${eligible}&expanded=${roleQueries.length}`);
 }
