@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { requireUser } from "@/lib/auth/session";
 import { createClient } from "@/lib/supabase/server";
+import { inferSearchCurrency } from "@/lib/job-agent/currency";
 import type { JobAgent, JobAgentMode } from "@/types/jobAgent";
 
 const modes = new Set<JobAgentMode>(["discovery_only", "prepare_applications", "assisted_apply"]);
@@ -18,9 +19,25 @@ const number = (form: FormData, key: string, min: number, max: number) => {
   const value = Number(raw);
   return Number.isFinite(value) && value >= min && value <= max ? value : null;
 };
-const countryAliases: Record<string, string> = { frence: "France", france: "France", germany: "Germany", deutschland: "Germany", netherlands: "Netherlands", holland: "Netherlands", switzerland: "Switzerland", schweiz: "Switzerland", suisse: "Switzerland", "united kingdom": "United Kingdom", uk: "United Kingdom" };
+const countryAliases: Record<string, string> = {
+  frence: "France",
+  france: "France",
+  germany: "Germany",
+  deutschland: "Germany",
+  hungary: "Hungary",
+  magyarorszag: "Hungary",
+  "magyarország": "Hungary",
+  netherlands: "Netherlands",
+  holland: "Netherlands",
+  switzerland: "Switzerland",
+  schweiz: "Switzerland",
+  suisse: "Switzerland",
+  "united kingdom": "United Kingdom",
+  uk: "United Kingdom",
+};
 const normalizeCountries = (values: string[]) => values.map((value) => countryAliases[value.trim().toLowerCase()] ?? value.trim()).filter(Boolean);
 const normalized = (values: string[] | undefined | null) => [...(values ?? [])].map((value) => value.trim().toLowerCase()).sort();
+const sameNormalized = (left: string[] | undefined | null, right: string[] | undefined | null) => JSON.stringify(normalized(left)) === JSON.stringify(normalized(right));
 const criteriaSnapshot = (value: Partial<JobAgent> | Record<string, unknown> | null | undefined, languages: string[]) => JSON.stringify({
   primary_career: value?.primary_career ?? null,
   secondary_careers: normalized(value?.secondary_careers as string[] | undefined),
@@ -34,6 +51,7 @@ const criteriaSnapshot = (value: Partial<JobAgent> | Record<string, unknown> | n
   excluded_companies: normalized(value?.excluded_companies as string[] | undefined),
   minimum_salary: value?.minimum_salary ?? null,
   preferred_salary: value?.preferred_salary ?? null,
+  salary_currency: value?.salary_currency ?? null,
   english_only_priority: value?.english_only_priority ?? false,
   exclude_unknown_languages: value?.exclude_unknown_languages ?? true,
   auto_prepare_threshold: value?.auto_prepare_threshold ?? 75,
@@ -70,6 +88,13 @@ export async function saveJobAgent(form: FormData) {
   const notificationChannels = form.getAll("notification_channels").map(String).filter((channel) => ["in_app", "email", "push"].includes(channel));
   const workplacePreferences = form.getAll("workplace_preferences").map(String).filter((value) => ["remote", "hybrid", "on_site"].includes(value));
   const employmentTypes = form.getAll("employment_types").map(String).filter((value) => ["full_time", "part_time", "contract", "freelance", "internship", "permanent"].includes(value));
+  const searchCountries = normalizeCountries(list(form, "search_countries"));
+  const submittedCities = list(form, "cities_regions");
+  const existingAgent = existingAgentResult.data;
+  const searchCountriesChanged = Boolean(existingAgent) && !sameNormalized(existingAgent?.search_countries, searchCountries);
+  const citiesUnchangedFromPreviousCountry = Boolean(existingAgent) && sameNormalized(existingAgent?.cities_regions, submittedCities);
+  const citiesRegions = searchCountriesChanged && citiesUnchangedFromPreviousCountry ? [] : submittedCities;
+  const salaryCurrency = inferSearchCurrency(searchCountries);
 
   const payload = {
     user_id: user.id,
@@ -82,9 +107,9 @@ export async function saveJobAgent(form: FormData) {
     excluded_roles: list(form, "excluded_roles"),
     min_seniority: text(form, "min_seniority"),
     max_seniority: text(form, "max_seniority"),
-    search_countries: normalizeCountries(list(form, "search_countries")),
+    search_countries: searchCountries,
     excluded_countries: normalizeCountries(list(form, "excluded_countries")),
-    cities_regions: list(form, "cities_regions"),
+    cities_regions: citiesRegions,
     max_commute_minutes: number(form, "max_commute_minutes", 0, 360),
     workplace_preferences: workplacePreferences,
     willing_to_relocate: form.has("willing_to_relocate") ? checked(form, "willing_to_relocate") : null,
@@ -101,7 +126,7 @@ export async function saveJobAgent(form: FormData) {
     excluded_companies: list(form, "excluded_companies"),
     minimum_salary: minimumSalary,
     preferred_salary: preferredSalary,
-    salary_currency: text(form, "salary_currency"),
+    salary_currency: salaryCurrency,
     salary_negotiable: form.has("salary_negotiable") ? checked(form, "salary_negotiable") : null,
     auto_prepare_threshold: autoPrepare,
     strong_match_threshold: strongMatch,
@@ -137,7 +162,17 @@ export async function saveJobAgent(form: FormData) {
     ]);
   }
 
-  await supabase.from("user_activity").insert({ user_id: user.id, action: "job_agent_configured", metadata: { mode: automationMode, criteria_changed: criteriaChanged } });
+  await supabase.from("user_activity").insert({
+    user_id: user.id,
+    action: "job_agent_configured",
+    metadata: {
+      mode: automationMode,
+      criteria_changed: criteriaChanged,
+      search_countries_changed: searchCountriesChanged,
+      stale_city_filter_cleared: searchCountriesChanged && citiesUnchangedFromPreviousCountry && submittedCities.length > 0,
+      salary_currency: salaryCurrency,
+    },
+  });
   revalidatePath("/job-agent");
   redirect(`/job-agent?saved=1${criteriaChanged ? "&criteria_changed=1" : ""}`);
 }
