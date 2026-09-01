@@ -24,10 +24,11 @@ export function ResumeUploader({ userId, label = "Upload resume" }: { userId: st
       const detected = extractMasterCvSkills(data.text);
       if (!detected.length) return 0;
 
-      const profileResult = await supabase.from("profiles").select("skills").eq("id", userId).single<{ skills: string[] }>();
+      const profileResult = await supabase.from("profiles").select("skills").eq("id", userId).single();
       if (profileResult.error) return 0;
-      const existing = profileResult.data.skills ?? [];
-      const byKey = new Map(existing.map((skill) => [skill.trim().toLowerCase(), skill]));
+      const profileData = profileResult.data as { skills?: string[] } | null;
+      const existing: string[] = profileData?.skills ?? [];
+      const byKey = new Map(existing.map((skill: string) => [skill.trim().toLowerCase(), skill]));
       for (const skill of detected) if (!byKey.has(skill.toLowerCase())) byKey.set(skill.toLowerCase(), skill);
       const merged = [...byKey.values()].slice(0, 50);
       const update = await supabase.from("profiles").update({ skills: merged }).eq("id", userId);
