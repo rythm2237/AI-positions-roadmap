@@ -50,13 +50,24 @@ type RawSerpApiJob = {
   location?: string;
   description?: string;
   share_link?: string;
+  link?: string;
   apply_options?: Array<{ title?: string; link?: string }>;
+  extensions?: string[];
   detected_extensions?: {
     posted_at?: string;
     schedule_type?: string;
     work_from_home?: boolean;
     salary?: string;
   };
+};
+
+type RawSerpApiOrganicResult = {
+  title?: string;
+  link?: string;
+  source?: string;
+  displayed_link?: string;
+  snippet?: string;
+  date?: string;
 };
 
 function workModel(job: RawJob): JobProviderResult["workplaceModel"] {
@@ -83,7 +94,7 @@ function employmentTypes(job: RawJob): string[] {
 
 function serpWorkModel(job: RawSerpApiJob): JobProviderResult["workplaceModel"] {
   if (job.detected_extensions?.work_from_home) return "remote";
-  const text = `${job.title ?? ""} ${job.description ?? ""} ${job.detected_extensions?.schedule_type ?? ""}`.toLowerCase();
+  const text = `${job.title ?? ""} ${job.description ?? ""} ${(job.extensions ?? []).join(" ")} ${job.detected_extensions?.schedule_type ?? ""}`.toLowerCase();
   if (/\b(remote|work from home|home-based|home based)\b/.test(text)) return "remote";
   if (/\bhybrid\b/.test(text)) return "hybrid";
   if (/\b(on[- ]?site|office[- ]based|office based)\b/.test(text)) return "on_site";
@@ -93,7 +104,7 @@ function serpWorkModel(job: RawSerpApiJob): JobProviderResult["workplaceModel"] 
 function serpEmploymentTypes(job: RawSerpApiJob): string[] {
   const found = new Set<string>();
   const schedule = (job.detected_extensions?.schedule_type ?? "").toLowerCase();
-  const text = `${job.title ?? ""} ${job.description ?? ""}`.toLowerCase();
+  const text = `${job.title ?? ""} ${job.description ?? ""} ${(job.extensions ?? []).join(" ")}`.toLowerCase();
   if (/full[- ]?time/.test(schedule) || /\bfull[- ]?time\b/.test(text)) found.add("full_time");
   if (/part[- ]?time/.test(schedule) || /\bpart[- ]?time\b/.test(text)) found.add("part_time");
   if (/contract|contractor|fixed[- ]term|temporary/.test(schedule) || /\b(contract|contractor|fixed[- ]term|temporary)\b/.test(text)) found.add("contract");
@@ -172,54 +183,100 @@ export async function searchAdzunaJobs(input: { country: string; query: string; 
   });
 }
 
+function mapSerpJob(job: RawSerpApiJob, input: { country: string; location: string }): JobProviderResult | null {
+  const title = job.title?.trim();
+  const company = job.company_name?.trim() || "Not specified";
+  const jobUrl = job.apply_options?.find((option) => option.link)?.link?.trim() || job.share_link?.trim() || job.link?.trim();
+  const externalId = job.job_id?.trim() || jobUrl;
+  if (!title || !jobUrl || !externalId) return null;
+  const description = job.description?.trim() || (job.extensions ?? []).join(" · ");
+  return {
+    externalId,
+    source: "SerpApi",
+    company,
+    title,
+    location: job.location?.trim() || input.location,
+    country: input.country.trim(),
+    url: jobUrl,
+    description,
+    descriptionComplete: Boolean(job.description && job.description.trim().length >= 120),
+    salaryMin: null,
+    salaryMax: null,
+    currency: null,
+    workplaceModel: serpWorkModel(job),
+    employmentTypes: serpEmploymentTypes(job),
+    createdAt: null,
+  };
+}
+
+function looksLikeJobResult(result: RawSerpApiOrganicResult) {
+  const haystack = `${result.title ?? ""} ${result.source ?? ""} ${result.displayed_link ?? ""}`.toLowerCase();
+  return /\b(job|jobs|career|careers|vacancy|vacancies|position|hiring)\b/.test(haystack)
+    || /linkedin|indeed|glassdoor|profession|jobrapido|jooble|careerjet|workable|greenhouse|lever|smartrecruiters/.test(haystack);
+}
+
+async function searchSerpApiGoogleSearch(input: { country: string; query: string; location: string; gl: string | null; limit: number; apiKey: string }): Promise<JobProviderResult[]> {
+  const q = `${input.query} jobs in ${input.location}`;
+  const params = new URLSearchParams({ engine: "google", q, api_key: input.apiKey, output: "json", hl: "en", location: input.location });
+  if (input.gl) params.set("gl", input.gl);
+  const response = await fetch(`https://serpapi.com/search?${params}`, { headers: { Accept: "application/json" }, cache: "no-store" });
+  const payload = await response.json().catch(() => ({})) as {
+    error?: string;
+    jobs_results?: { jobs?: RawSerpApiJob[] };
+    organic_results?: RawSerpApiOrganicResult[];
+  };
+  if (!response.ok || payload.error) {
+    console.warn("Job Agent SerpApi Google Search failed", { status: response.status, country: input.country, query: input.query, error: payload.error ?? null });
+    return [];
+  }
+  const jobs = (payload.jobs_results?.jobs ?? []).map((job) => mapSerpJob(job, { country: input.country, location: input.location })).filter((job): job is JobProviderResult => Boolean(job));
+  if (jobs.length) return jobs.slice(0, input.limit);
+
+  return (payload.organic_results ?? []).filter(looksLikeJobResult).slice(0, input.limit).flatMap((result) => {
+    if (!result.title?.trim() || !result.link?.trim()) return [];
+    return [{
+      externalId: result.link.trim(),
+      source: "SerpApi" as const,
+      company: result.source?.trim() || "Not specified",
+      title: result.title.trim(),
+      location: input.location,
+      country: input.country.trim(),
+      url: result.link.trim(),
+      description: result.snippet?.trim() || "",
+      descriptionComplete: false,
+      salaryMin: null,
+      salaryMax: null,
+      currency: null,
+      workplaceModel: "unknown" as const,
+      employmentTypes: [],
+      createdAt: result.date ?? null,
+    }];
+  });
+}
+
 export async function searchSerpApiJobs(input: { country: string; query: string; location?: string; limit?: number }): Promise<JobProviderResult[]> {
   const apiKey = process.env.SERPAPI_API_KEY;
   if (!apiKey) return [];
   const gl = resolveSerpApiCountry(input.country);
   const location = input.location?.trim() ? `${input.location.trim()}, ${input.country.trim()}` : input.country.trim();
-  const params = new URLSearchParams({
-    engine: "google_jobs",
-    q: input.query,
-    api_key: apiKey,
-    output: "json",
-    hl: "en",
-    location,
-  });
+  const limit = Math.min(10, Math.max(1, input.limit ?? 10));
+
+  // Regular Google Search has much broader country coverage than the dedicated
+  // Google Jobs engine and exposes a structured jobs_results block when Google
+  // serves one. Use it as the global entry point, including markets such as Hungary.
+  const globalResults = await searchSerpApiGoogleSearch({ country: input.country, query: input.query, location, gl, limit, apiKey });
+  if (globalResults.length) return globalResults;
+
+  // If Google Search did not expose a jobs block, try the dedicated engine. Some
+  // countries are unsupported by that engine; a 400 is therefore a recoverable
+  // provider limitation, not an application error.
+  const params = new URLSearchParams({ engine: "google_jobs", q: input.query, api_key: apiKey, output: "json", hl: "en", location });
   if (gl) params.set("gl", gl);
   const response = await fetch(`https://serpapi.com/search?${params}`, { headers: { Accept: "application/json" }, cache: "no-store" });
-  if (!response.ok) {
-    console.warn("Job Agent SerpApi search failed", { status: response.status, country: input.country, query: input.query });
+  const payload = await response.json().catch(() => ({})) as { jobs_results?: RawSerpApiJob[]; error?: string };
+  if (!response.ok || payload.error) {
+    console.warn("Job Agent SerpApi Google Jobs unavailable", { status: response.status, country: input.country, query: input.query, error: payload.error ?? null });
     return [];
   }
-  const payload = await response.json() as { jobs_results?: RawSerpApiJob[]; error?: string };
-  if (payload.error) {
-    console.warn("Job Agent SerpApi returned an error", { country: input.country, query: input.query, error: payload.error });
-    return [];
-  }
-  const limit = Math.min(10, Math.max(1, input.limit ?? 10));
-  return (payload.jobs_results ?? []).slice(0, limit).flatMap((job) => {
-    const title = job.title?.trim();
-    const company = job.company_name?.trim() || "Not specified";
-    const jobUrl = job.apply_options?.find((option) => option.link)?.link?.trim() || job.share_link?.trim();
-    const externalId = job.job_id?.trim() || jobUrl;
-    if (!title || !jobUrl || !externalId) return [];
-    const description = job.description?.trim() || "";
-    return [{
-      externalId,
-      source: "SerpApi" as const,
-      company,
-      title,
-      location: job.location?.trim() || location,
-      country: input.country.trim(),
-      url: jobUrl,
-      description,
-      descriptionComplete: description.length >= 120,
-      salaryMin: null,
-      salaryMax: null,
-      currency: null,
-      workplaceModel: serpWorkModel(job),
-      employmentTypes: serpEmploymentTypes(job),
-      createdAt: null,
-    }];
-  });
+  return (payload.jobs_results ?? []).map((job) => mapSerpJob(job, { country: input.country, location })).filter((job): job is JobProviderResult => Boolean(job)).slice(0, limit);
 }
