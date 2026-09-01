@@ -101,12 +101,19 @@ export async function runJobSearch() {
       workplaceModel: job.workplaceModel,
     }, profile, agent);
 
-    const hardBlocked = eligibility.status !== "eligible";
-    const recommendation = hardBlocked ? "skip" : fit.recommendation;
+    const hardBlocked = eligibility.status === "blocked";
+    const needsHumanVerification = eligibility.status === "unverified";
+    const recommendation = hardBlocked
+      ? "skip"
+      : needsHumanVerification && (fit.recommendation === "strong" || fit.recommendation === "prepare")
+        ? "review"
+        : fit.recommendation;
     const eligibilityReasons = eligibility.reasons;
     const gaps = hardBlocked
       ? [...eligibilityReasons, ...fit.gaps.filter((gap) => !gap.toLowerCase().includes("language"))]
-      : fit.gaps;
+      : needsHumanVerification
+        ? [...eligibilityReasons, ...fit.gaps]
+        : fit.gaps;
 
     return {
       user_id: user.id,
@@ -133,7 +140,7 @@ export async function runJobSearch() {
       eligibility_status: eligibility.status,
       eligibility_reasons: eligibilityReasons,
       eligibility_checked_at: now,
-      eligibility_version: "hard-gate-v1",
+      eligibility_version: "hard-gate-v2",
       updated_at: now,
     };
   });
@@ -181,11 +188,11 @@ export async function runJobSearch() {
       duplicate_conflict_rows_removed: rows.length - persistedRows.length,
       providers: providersUsed.length ? providersUsed : providersConfigured,
       provider_strategy: "serpapi-primary-adzuna-fallback-v1",
-      hard_eligibility_gate: "hard-gate-v1",
+      hard_eligibility_gate: "hard-gate-v2",
       expanded_role_queries: roleQueries,
     },
   });
 
   revalidatePath("/job-agent");
-  redirect(`/job-agent?searched=${persistedRows.length}&eligible=${eligible}&expanded=${roleQueries.length}`);
+  redirect(`/job-agent?searched=${persistedRows.length}&eligible=${eligible}&unverified=${unverified}&expanded=${roleQueries.length}`);
 }
