@@ -14,7 +14,7 @@ export async function getJobAgentWorkspace(user: User) {
     supabase.from("job_opportunities")
       .select("id,user_id,agent_id,external_job_id,source,company,role,location,country,job_url,fit_score,recommendation,strengths,gaps,founder_positioning,status,skip_reason,decision_status,decision_at,snoozed_until,last_surfaced_at,surfaced_count,salary_min,salary_max,salary_currency,eligibility_status,eligibility_reasons,eligibility_checked_at,eligibility_version,submission_method,submission_receipt,discovered_at,updated_at")
       .eq("user_id", user.id)
-      .eq("eligibility_status", "eligible")
+      .in("eligibility_status", ["eligible", "unverified"])
       .neq("status", "skipped")
       .neq("recommendation", "skip")
       .order("discovered_at", { ascending: false })
@@ -31,7 +31,7 @@ export async function getJobAgentWorkspace(user: User) {
   const jobRows = allJobs.filter((job) => !applicationJobIds.has(job.id) && job.decision_status !== "rejected" && job.decision_status !== "approved" && (job.decision_status !== "snoozed" || !job.snoozed_until || Date.parse(job.snoozed_until) <= now));
   const stats: JobAgentDashboardStats = {
     jobsFound: jobRows.length,
-    strongMatches: jobRows.filter((job) => (job.fit_score ?? 0) >= (agent.data?.strong_match_threshold ?? 85)).length,
+    strongMatches: jobRows.filter((job) => job.eligibility_status === "eligible" && (job.fit_score ?? 0) >= (agent.data?.strong_match_threshold ?? 85)).length,
     applicationsSent: applicationRows.filter((application) => application.status === "applied").length,
     readyForSubmit: applicationRows.filter((application) => application.status === "ready_for_submit").length,
     recruiterReplies: applicationRows.filter((application) => ["recruiter_response", "interview", "assessment", "offer"].includes(application.status)).length,
