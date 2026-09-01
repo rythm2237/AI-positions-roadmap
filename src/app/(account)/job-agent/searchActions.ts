@@ -21,6 +21,16 @@ import type { Profile } from "@/types/identity";
 const normalizeKey = (value: string) => value.trim().toLowerCase().replace(/[^a-z0-9]+/g, " ").trim();
 const dedupeKey = (job: JobProviderResult) => [job.title, job.company, job.location].map(normalizeKey).join("|");
 
+type SearchResult = {
+  searched: number;
+  eligible: number;
+  unverified: number;
+  expanded: number;
+  error?: never;
+} | {
+  error: "provider" | "profile" | "paused" | "criteria" | "country" | "search-save";
+};
+
 async function searchWithFallback(input: { country: string; query: string; location?: string }): Promise<JobProviderResult[]> {
   if (serpApiConfigured()) {
     const globalResults = await searchSerpApiJobs({ ...input, limit: 10 });
@@ -32,29 +42,29 @@ async function searchWithFallback(input: { country: string; query: string; locat
   return [];
 }
 
-export async function runJobSearch() {
+export async function searchCurrentUserJobs(): Promise<SearchResult> {
   const user = await requireUser("/job-agent");
   const supabase = await createClient();
   const hasSerpApi = serpApiConfigured();
   const hasAdzuna = adzunaConfigured();
-  if (!hasSerpApi && !hasAdzuna) redirect("/job-agent?error=provider");
+  if (!hasSerpApi && !hasAdzuna) return { error: "provider" };
 
   const [agentResult, profileResult] = await Promise.all([
     supabase.from("job_agents").select("*").eq("user_id", user.id).single<JobAgent>(),
     supabase.from("profiles").select("*").eq("id", user.id).single<Profile>(),
   ]);
-  if (agentResult.error || profileResult.error) redirect("/job-agent?error=profile");
+  if (agentResult.error || profileResult.error) return { error: "profile" };
 
   const agent = agentResult.data;
   const profile = profileResult.data;
-  if (agent.status !== "active") redirect("/job-agent?error=paused");
+  if (agent.status !== "active") return { error: "paused" };
 
   const countries = agent.search_countries.slice(0, 3);
   const roleQueries = expandRoleQueries(agent, 6);
-  if (!countries.length || !roleQueries.length) redirect("/job-agent?error=criteria");
+  if (!countries.length || !roleQueries.length) return { error: "criteria" };
 
   const searchableCountries = countries.filter((country) => hasSerpApi || (hasAdzuna && resolveAdzunaCountry(country)));
-  if (!searchableCountries.length) redirect("/job-agent?error=country");
+  if (!searchableCountries.length) return { error: "country" };
 
   const batches = await Promise.all(
     searchableCountries.flatMap((country) =>
@@ -103,11 +113,7 @@ export async function runJobSearch() {
 
     const hardBlocked = eligibility.status === "blocked";
     const needsHumanVerification = eligibility.status === "unverified";
-    const recommendation = hardBlocked
-      ? "skip"
-      : needsHumanVerification
-        ? "review"
-        : fit.recommendation;
+    const recommendation = hardBlocked ? "skip" : needsHumanVerification ? "review" : fit.recommendation;
     const eligibilityReasons = eligibility.reasons;
     const gaps = hardBlocked
       ? [...eligibilityReasons, ...fit.gaps.filter((gap) => !gap.toLowerCase().includes("language"))]
@@ -145,10 +151,6 @@ export async function runJobSearch() {
     };
   });
 
-  // The database conflict target is (user_id, job_url). Provider expansion can
-  // surface the same vacancy through multiple role queries with slightly
-  // different title/location text, so semantic dedupe alone is insufficient.
-  // Collapse by the exact persistence key before issuing a single upsert.
   const rowsByConflictKey = new Map<string, (typeof rows)[number]>();
   for (const row of rows) {
     const key = `${row.user_id}|${row.job_url}`;
@@ -168,7 +170,7 @@ export async function runJobSearch() {
         message: save.error.message,
         userId: user.id,
       });
-      redirect("/job-agent?error=search-save");
+      return { error: "search-save" };
     }
   }
 
@@ -190,9 +192,17 @@ export async function runJobSearch() {
       provider_strategy: "serpapi-primary-adzuna-fallback-v1",
       hard_eligibility_gate: "hard-gate-v3",
       expanded_role_queries: roleQueries,
+      search_countries: agent.search_countries,
+      cities_regions: agent.cities_regions,
     },
   });
 
   revalidatePath("/job-agent");
-  redirect(`/job-agent?searched=${persistedRows.length}&eligible=${eligible}&unverified=${unverified}&expanded=${roleQueries.length}`);
+  return { searched: persistedRows.length, eligible, unverified, expanded: roleQueries.length };
+}
+
+export async function runJobSearch() {
+  const result = await searchCurrentUserJobs();
+  if ("error" in result) redirect(`/job-agent?error=${result.error}`);
+  redirect(`/job-agent?searched=${result.searched}&eligible=${result.eligible}&unverified=${result.unverified}&expanded=${result.expanded}`);
 }
