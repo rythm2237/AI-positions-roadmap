@@ -6,15 +6,38 @@ import { requireUser } from "@/lib/auth/session";
 import { createClient } from "@/lib/supabase/server";
 import { calculateJobFit } from "@/lib/job-agent/fit";
 import { evaluateJobEligibility } from "@/lib/job-agent/eligibility";
-import { adzunaConfigured, resolveAdzunaCountry, searchAdzunaJobs } from "@/lib/job-agent/providers/adzuna";
+import {
+  adzunaConfigured,
+  resolveAdzunaCountry,
+  searchAdzunaJobs,
+  searchSerpApiJobs,
+  serpApiConfigured,
+  type JobProviderResult,
+} from "@/lib/job-agent/providers/adzuna";
 import { expandRoleQueries } from "@/lib/job-agent/roleSearchExpansion";
 import type { JobAgent } from "@/types/jobAgent";
 import type { Profile } from "@/types/identity";
 
+const normalizeKey = (value: string) => value.trim().toLowerCase().replace(/[^a-z0-9]+/g, " ").trim();
+const dedupeKey = (job: JobProviderResult) => [job.title, job.company, job.location].map(normalizeKey).join("|");
+
+async function searchWithFallback(input: { country: string; query: string; location?: string }): Promise<JobProviderResult[]> {
+  if (serpApiConfigured()) {
+    const globalResults = await searchSerpApiJobs({ ...input, limit: 10 });
+    if (globalResults.length) return globalResults;
+  }
+  if (adzunaConfigured() && resolveAdzunaCountry(input.country)) {
+    return searchAdzunaJobs({ ...input, limit: 20 });
+  }
+  return [];
+}
+
 export async function runJobSearch() {
   const user = await requireUser("/job-agent");
   const supabase = await createClient();
-  if (!adzunaConfigured()) redirect("/job-agent?error=provider");
+  const hasSerpApi = serpApiConfigured();
+  const hasAdzuna = adzunaConfigured();
+  if (!hasSerpApi && !hasAdzuna) redirect("/job-agent?error=provider");
 
   const [agentResult, profileResult] = await Promise.all([
     supabase.from("job_agents").select("*").eq("user_id", user.id).single<JobAgent>(),
@@ -27,24 +50,28 @@ export async function runJobSearch() {
   if (agent.status !== "active") redirect("/job-agent?error=paused");
 
   const countries = agent.search_countries.slice(0, 3);
-  const supportedCountries = countries.filter((country) => resolveAdzunaCountry(country));
   const roleQueries = expandRoleQueries(agent, 6);
   if (!countries.length || !roleQueries.length) redirect("/job-agent?error=criteria");
-  if (!supportedCountries.length) redirect("/job-agent?error=country");
+
+  const searchableCountries = countries.filter((country) => hasSerpApi || (hasAdzuna && resolveAdzunaCountry(country)));
+  if (!searchableCountries.length) redirect("/job-agent?error=country");
 
   const batches = await Promise.all(
-    supportedCountries.flatMap((country) =>
-      roleQueries.map((query) => searchAdzunaJobs({
+    searchableCountries.flatMap((country) =>
+      roleQueries.map((query) => searchWithFallback({
         country,
         query,
         location: agent.cities_regions[0],
-        limit: 20,
       }))
     )
   );
 
-  const unique = new Map<string, Awaited<ReturnType<typeof searchAdzunaJobs>>[number]>();
-  for (const job of batches.flat()) unique.set(`${job.source}:${job.externalId}`, job);
+  const unique = new Map<string, JobProviderResult>();
+  for (const job of batches.flat()) {
+    const key = dedupeKey(job);
+    const existing = unique.get(key);
+    if (!existing || (existing.source === "Adzuna" && job.source === "SerpApi")) unique.set(key, job);
+  }
 
   const now = new Date().toISOString();
   const rows = [...unique.values()].map((job) => {
@@ -129,6 +156,8 @@ export async function runJobSearch() {
   const eligible = rows.filter((row) => row.eligibility_status === "eligible").length;
   const blocked = rows.filter((row) => row.eligibility_status === "blocked").length;
   const unverified = rows.filter((row) => row.eligibility_status === "unverified").length;
+  const providersUsed = [...new Set([...unique.values()].map((job) => job.source))];
+  const providersConfigured = [hasSerpApi ? "SerpApi" : null, hasAdzuna ? "Adzuna" : null].filter(Boolean);
   await supabase.from("user_activity").insert({
     user_id: user.id,
     action: "job_agent_search_run",
@@ -137,7 +166,8 @@ export async function runJobSearch() {
       eligible,
       blocked,
       unverified,
-      providers: ["Adzuna"],
+      providers: providersUsed.length ? providersUsed : providersConfigured,
+      provider_strategy: "serpapi-primary-adzuna-fallback-v1",
       hard_eligibility_gate: "hard-gate-v1",
       expanded_role_queries: roleQueries,
     },

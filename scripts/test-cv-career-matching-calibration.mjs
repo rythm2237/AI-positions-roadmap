@@ -32,6 +32,13 @@ function targeted(text, title, overrides = {}) {
   return analyze(text, { ...overrides, targetPosition: title, openToSuggestions: false }).matches[0];
 }
 
+function monthYearMonthsAgo(months) {
+  const date = new Date();
+  date.setUTCDate(1);
+  date.setUTCMonth(date.getUTCMonth() - months);
+  return date.toLocaleString("en-US", { month: "short", year: "numeric", timeZone: "UTC" });
+}
+
 const experiencedBI = `
 EXPERIENCED BI / DATA ANALYST
 SUMMARY
@@ -94,14 +101,16 @@ assert.ok(transitionAutomation.dimensions.trajectory > transitionData.dimensions
 assert.ok(transitionScientist.score < transitionData.score && transitionScientist.score < transitionAutomation.score, "Generic analytics transferability must not over-rank Data Scientist.");
 assert.ok(!transitionAutomation.missingSignals.some((signal) => /product architecture|ai integration/i.test(signal)), "Detected product architecture and AI integration must never reappear as missing.");
 
+const recentAiStart = monthYearMonthsAgo(3);
+const establishedAnalyticsStart = monthYearMonthsAgo(17);
 const realProfileTimeline = `
 AI AUTOMATION AND OPERATIONS ANALYTICS PROFESSIONAL
 SUMMARY
 Independent AI Product Builder focused on AI Automation, AI agents, business solutions and human-in-the-loop systems.
 EXPERIENCE
-Independent AI Product Builder | Independent | Apr 2026 - Present
+Independent AI Product Builder | Independent | ${recentAiStart} - Present
 Built and deployed RYTHM Company OS and AI Career OS with AI agents, product architecture, API integration, governed workflows and human approval controls.
-Fulfilment Operations Flow Planner | IKEA | Mar 2025 - Present
+Fulfilment Operations Flow Planner | IKEA | ${establishedAnalyticsStart} - Present
 Built Power BI decision-support tools for warehouse movement analysis, forecasting and capacity planning. Designed data models, reporting and business process automation.
 PROJECTS
 RYTHM Company OS. Implemented and deployed governed multi-agent workflows with API integrations and approval controls.
