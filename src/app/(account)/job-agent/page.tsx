@@ -5,7 +5,6 @@ import { JobAgentDashboardView } from "@/components/job-agent/JobAgentDashboardV
 import { JobAgentSettingsForm } from "@/components/job-agent/JobAgentSettingsForm";
 import { ResumeUploader } from "@/components/identity/ResumeUploader";
 import { saveJobAgent, setJobAgentStatus } from "./actions";
-import { runJobSearch } from "./searchActions";
 
 const errorMessages: Record<string, string> = {
   criteria: "Add at least one target role and one search country before running the Agent.",
@@ -18,6 +17,7 @@ const errorMessages: Record<string, string> = {
   thresholds: "Fit thresholds are invalid. Auto-skip must be lower than auto-prepare, which must be lower than strong-match.",
   salary: "Preferred salary cannot be lower than minimum salary.",
   save: "The Job Agent settings could not be saved. Review the fields and retry.",
+  "search-save": "The search completed, but the discovered vacancies could not be saved. Retry the search.",
 };
 
 export default async function JobAgentPage({
@@ -35,9 +35,9 @@ export default async function JobAgentPage({
   const errorMessage = query.error ? errorMessages[query.error] ?? "The Agent could not complete that action. Review the relevant settings and retry." : null;
 
   return <main className="mx-auto max-w-6xl px-5 py-10 sm:py-12">
-    <div className="flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between"><div><p className="eyebrow">Roadmap execution layer</p><h1 className="mt-2 font-display text-3xl font-semibold text-white sm:text-4xl">Job Application Agent</h1><p className="mt-3 max-w-3xl text-sm leading-6 text-slate-400 sm:text-base">Move from career preparation into job discovery, explainable Fit Scores, grounded application packs and a persistent tracker. Consequential decisions remain under your control.</p>{agent ? <p className="mt-2 text-xs text-slate-500">Saved search: {agent.search_countries.join(", ") || "No country"}{agent.cities_regions.length ? ` · ${agent.cities_regions.join(", ")}` : ""}. Change settings below and save them before searching.</p> : null}</div>{agent ? <div className="flex flex-wrap gap-3"><form action={runJobSearch}><button className="btn-primary min-h-11">Search saved settings</button></form><form action={setJobAgentStatus}><input type="hidden" name="status" value={agent.status === "active" ? "paused" : "active"} /><button className={agent.status === "active" ? "btn-secondary min-h-11" : "btn-primary min-h-11"}>{agent.status === "active" ? "Pause Agent" : "Resume Agent"}</button></form></div> : null}</div>
+    <div className="flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between"><div><p className="eyebrow">Roadmap execution layer</p><h1 className="mt-2 font-display text-3xl font-semibold text-white sm:text-4xl">Job Application Agent</h1><p className="mt-3 max-w-3xl text-sm leading-6 text-slate-400 sm:text-base">Move from career preparation into job discovery, explainable Fit Scores, grounded application packs and a persistent tracker. Consequential decisions remain under your control.</p>{agent ? <p className="mt-2 text-xs text-slate-500">Saved search: {agent.search_countries.join(", ") || "No country"}{agent.cities_regions.length ? ` · ${agent.cities_regions.join(", ")}` : ""}. The main search button now saves any edits currently in the settings form before searching.</p> : null}</div>{agent ? <div className="flex flex-wrap gap-3"><button type="submit" form="job-agent-settings" name="intent" value="save_and_search" className="btn-primary min-h-11">Save & Search current settings</button><form action={setJobAgentStatus}><input type="hidden" name="status" value={agent.status === "active" ? "paused" : "active"} /><button className={agent.status === "active" ? "btn-secondary min-h-11" : "btn-primary min-h-11"}>{agent.status === "active" ? "Pause Agent" : "Resume Agent"}</button></form></div> : null}</div>
 
-    {query.saved ? <p role="status" className="mt-6 rounded-xl border border-emerald-300/20 bg-emerald-400/10 p-3 text-sm text-emerald-200">Job Agent settings saved. Searches now use this saved configuration.</p> : null}
+    {query.saved ? <p role="status" className="mt-6 rounded-xl border border-emerald-300/20 bg-emerald-400/10 p-3 text-sm text-emerald-200">Job Agent settings saved. The search used this saved configuration.</p> : null}
     {query.searched ? <p role="status" className="mt-6 rounded-xl border border-cyan-300/20 bg-cyan-400/10 p-3 text-sm text-cyan-100">Search completed. {query.searched} provider records were evaluated and deduplicated. Language-incompatible jobs are excluded from recommendations.</p> : null}
     {errorMessage ? <p role="alert" className="mt-6 rounded-xl border border-rose-300/20 bg-rose-400/10 p-3 text-sm text-rose-200">{errorMessage}</p> : null}
 
