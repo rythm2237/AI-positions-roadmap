@@ -31,7 +31,7 @@ export function JobAgentSettingsForm({
   const inferredCurrency = inferSearchCurrency(savedCountries);
 
   return (
-    <form action={action} className="mt-8 space-y-6">
+    <form id="job-agent-settings" action={action} className="mt-8 space-y-6">
       <section className="glass rounded-2xl border border-white/[.07] p-5 sm:p-6">
         <h2 className="font-display text-xl font-semibold text-white">1. Target roles</h2>
         <div className="mt-5 grid gap-5 md:grid-cols-2">
@@ -45,7 +45,7 @@ export function JobAgentSettingsForm({
 
       <section className="glass rounded-2xl border border-white/[.07] p-5 sm:p-6">
         <h2 className="font-display text-xl font-semibold text-white">2. Geography & work style</h2>
-        <p className="mt-2 text-xs leading-5 text-amber-200/80">Search uses the last saved geography. Save changes here before running “Search saved settings”. If the country changes and an old city is left untouched, the stale city filter is cleared automatically.</p>
+        <p className="mt-2 text-xs leading-5 text-cyan-200/80">Use “Save & Search” after editing. The current form values are saved first, then the search runs with exactly those values. If the country changes and an old city is left untouched, the stale city filter is cleared automatically.</p>
         <div className="mt-5 grid gap-5 md:grid-cols-2">
           <label className="text-sm text-slate-400">Search countries<input name="search_countries" defaultValue={csv(agent?.search_countries) || (preferenceCountry ?? "")} placeholder="Germany, France, Netherlands" className="input-field mt-2 min-h-11 w-full" /></label>
           <label className="text-sm text-slate-400">Cities / regions<input name="cities_regions" defaultValue={csv(agent?.cities_regions)} className="input-field mt-2 min-h-11 w-full" /></label>
@@ -123,8 +123,9 @@ export function JobAgentSettingsForm({
       </section>
 
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
-        <button className="btn-primary min-h-12 px-6">{agent ? "Save Agent Settings" : "Activate Job Agent"}</button>
-        <p className="text-xs leading-5 text-slate-500">Save geography or preference changes before searching. Job submissions remain constrained by the selected authority mode and available integrations.</p>
+        <button type="submit" name="intent" value="save_and_search" className="btn-primary min-h-12 px-6">{agent ? "Save & Search Jobs" : "Activate & Search Jobs"}</button>
+        <button type="submit" name="intent" value="save_only" className="btn-secondary min-h-12 px-6">{agent ? "Save Settings Only" : "Activate Without Search"}</button>
+        <p className="text-xs leading-5 text-slate-500">“Save & Search” persists the current form first and then searches with that exact configuration. Job submissions remain constrained by the selected authority mode and available integrations.</p>
       </div>
     </form>
   );
