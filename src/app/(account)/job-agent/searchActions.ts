@@ -105,7 +105,7 @@ export async function runJobSearch() {
     const needsHumanVerification = eligibility.status === "unverified";
     const recommendation = hardBlocked
       ? "skip"
-      : needsHumanVerification && (fit.recommendation === "strong" || fit.recommendation === "prepare")
+      : needsHumanVerification
         ? "review"
         : fit.recommendation;
     const eligibilityReasons = eligibility.reasons;
@@ -140,7 +140,7 @@ export async function runJobSearch() {
       eligibility_status: eligibility.status,
       eligibility_reasons: eligibilityReasons,
       eligibility_checked_at: now,
-      eligibility_version: "hard-gate-v2",
+      eligibility_version: "hard-gate-v3",
       updated_at: now,
     };
   });
@@ -188,7 +188,7 @@ export async function runJobSearch() {
       duplicate_conflict_rows_removed: rows.length - persistedRows.length,
       providers: providersUsed.length ? providersUsed : providersConfigured,
       provider_strategy: "serpapi-primary-adzuna-fallback-v1",
-      hard_eligibility_gate: "hard-gate-v2",
+      hard_eligibility_gate: "hard-gate-v3",
       expanded_role_queries: roleQueries,
     },
   });
