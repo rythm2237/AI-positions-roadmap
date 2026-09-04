@@ -12,6 +12,8 @@ export type EligibilityJobInput = {
   descriptionComplete?: boolean;
   workplaceModel?: "remote" | "hybrid" | "on_site" | "unknown";
   employmentTypes?: string[];
+  seniority?: string | null;
+  visaSponsorship?: string | null;
   salaryMin?: number | null;
   salaryMax?: number | null;
   currency?: string | null;
@@ -115,6 +117,9 @@ export function evaluateJobEligibility(job: EligibilityJobInput, profile: Profil
     if (!location) unverified.push("Job location could not be verified against configured cities/regions.");
     else if (!agent.cities_regions.some((place) => location.includes(normalize(place)))) blockers.push("Location is outside the configured cities/regions.");
   }
+  if (agent.max_commute_minutes !== null && job.workplaceModel !== "remote") {
+    unverified.push(`Commute time could not be verified against the configured ${agent.max_commute_minutes}-minute maximum.`);
+  }
 
   const allowedWorkplaces = agent.workplace_preferences.map(normalize);
   if (allowedWorkplaces.length && allowedWorkplaces.length < 3) {
@@ -128,7 +133,9 @@ export function evaluateJobEligibility(job: EligibilityJobInput, profile: Profil
     else if (!agent.employment_types.some((value) => detectedEmployment.includes(normalize(value)))) blockers.push(`Employment type is outside the configured filter: ${job.employmentTypes?.join(", ")}.`);
   }
 
-  const jobSeniority = detectedSeniority(job.title);
+  // Prefer normalized provider/detail evidence. Title parsing is only a fallback because
+  // many valid mid-level vacancies omit seniority from the visible title.
+  const jobSeniority = configuredSeniority(job.seniority ?? null) ?? detectedSeniority(job.title);
   const minSeniority = configuredSeniority(agent.min_seniority);
   const maxSeniority = configuredSeniority(agent.max_seniority);
   if ((minSeniority !== null || maxSeniority !== null) && jobSeniority === null) unverified.push("Seniority could not be verified from the vacancy title.");
@@ -153,11 +160,16 @@ export function evaluateJobEligibility(job: EligibilityJobInput, profile: Profil
   if (!requiredLanguages.length && agent.exclude_unknown_languages && !job.descriptionComplete) unverified.push("Full language requirements are not available from the job source.");
 
   if (agent.minimum_salary !== null) {
-    if (job.salaryMax !== null && job.salaryMax !== undefined && job.salaryMax < agent.minimum_salary) blockers.push("Published salary range is below the configured minimum.");
+    const comparableCurrency = Boolean(agent.salary_currency && job.currency && normalize(agent.salary_currency) === normalize(job.currency));
+    if (job.salaryMax !== null && job.salaryMax !== undefined && comparableCurrency && job.salaryMax < agent.minimum_salary) blockers.push("Published salary range is below the configured minimum.");
+    else if (job.salaryMax !== null && job.salaryMax !== undefined && !comparableCurrency) unverified.push("Salary currency cannot be compared with the configured minimum.");
     else if ((job.salaryMax === null || job.salaryMax === undefined) && agent.salary_negotiable === false) unverified.push("Salary is undisclosed and the configured minimum cannot be verified.");
   }
 
-  if (needsSponsorship(agent) && noSponsorship.test(text)) blockers.push("Vacancy states that sponsorship/right-to-work support is unavailable.");
+  if (needsSponsorship(agent)) {
+    if (job.visaSponsorship === "not_available" || noSponsorship.test(text)) blockers.push("Vacancy states that sponsorship/right-to-work support is unavailable.");
+    else if (job.visaSponsorship !== "available") unverified.push("Sponsorship availability could not be verified.");
+  }
 
   if (blockers.length) return { status: "blocked", reasons: blockers, requiredLanguages, postingLanguage };
   if (unverified.length) return { status: "unverified", reasons: unverified, requiredLanguages, postingLanguage };

@@ -31,21 +31,24 @@ export function JobAgentSettingsForm({
   const inferredCurrency = inferSearchCurrency(savedCountries);
 
   return (
-    <form action={action} className="mt-8 space-y-6">
+    <form id="job-agent-settings" action={action} className="mt-8 space-y-6">
       <section className="glass rounded-2xl border border-white/[.07] p-5 sm:p-6">
         <h2 className="font-display text-xl font-semibold text-white">1. Target roles</h2>
+        <p className="mt-2 text-xs leading-5 text-slate-400"><strong className="text-rose-200">Hard:</strong> exclusions and seniority bounds. <strong className="text-cyan-200">Preference:</strong> secondary, market and adjacent titles.</p>
         <div className="mt-5 grid gap-5 md:grid-cols-2">
           <label className="text-sm text-slate-400">Primary career<input name="primary_career" defaultValue={primaryCareer} className="input-field mt-2 min-h-11 w-full" /></label>
           <label className="text-sm text-slate-400">Secondary careers<input name="secondary_careers" defaultValue={csv(agent?.secondary_careers)} placeholder="AI Solutions Consultant, Data Analyst" className="input-field mt-2 min-h-11 w-full" /></label>
           <label className="text-sm text-slate-400">Desired job titles<input name="desired_titles" defaultValue={csv(agent?.desired_titles)} className="input-field mt-2 min-h-11 w-full" /></label>
           <label className="text-sm text-slate-400">Adjacent roles<input name="adjacent_roles" defaultValue={csv(agent?.adjacent_roles)} className="input-field mt-2 min-h-11 w-full" /></label>
           <label className="text-sm text-slate-400 md:col-span-2">Roles to exclude<input name="excluded_roles" defaultValue={csv(agent?.excluded_roles)} className="input-field mt-2 min-h-11 w-full" /></label>
+          <label className="text-sm text-slate-400">Minimum seniority<input name="min_seniority" defaultValue={agent?.min_seniority ?? ""} placeholder="e.g. mid" className="input-field mt-2 min-h-11 w-full" /></label>
+          <label className="text-sm text-slate-400">Maximum seniority<input name="max_seniority" defaultValue={agent?.max_seniority ?? ""} placeholder="e.g. senior" className="input-field mt-2 min-h-11 w-full" /></label>
         </div>
       </section>
 
       <section className="glass rounded-2xl border border-white/[.07] p-5 sm:p-6">
         <h2 className="font-display text-xl font-semibold text-white">2. Geography & work style</h2>
-        <p className="mt-2 text-xs leading-5 text-amber-200/80">Search uses the last saved geography. Save changes here before running “Search saved settings”. If the country changes and an old city is left untouched, the stale city filter is cleared automatically.</p>
+        <p className="mt-2 text-xs leading-5 text-cyan-200/80"><strong>Hard constraints.</strong> “Save & Search” saves and searches these exact visible values. The system never clears or substitutes a country or city silently.</p>
         <div className="mt-5 grid gap-5 md:grid-cols-2">
           <label className="text-sm text-slate-400">Search countries<input name="search_countries" defaultValue={csv(agent?.search_countries) || (preferenceCountry ?? "")} placeholder="Germany, France, Netherlands" className="input-field mt-2 min-h-11 w-full" /></label>
           <label className="text-sm text-slate-400">Cities / regions<input name="cities_regions" defaultValue={csv(agent?.cities_regions)} className="input-field mt-2 min-h-11 w-full" /></label>
@@ -64,7 +67,7 @@ export function JobAgentSettingsForm({
       <section className="glass rounded-2xl border border-white/[.07] p-5 sm:p-6">
         <h2 className="font-display text-xl font-semibold text-white">3. Constraints & preferences</h2>
         <div className="mt-5 grid gap-5 md:grid-cols-2">
-          <label className="text-sm text-slate-400">Languages<input name="profile_languages" defaultValue={knownLanguages} className="input-field mt-2 min-h-11 w-full" /></label>
+          <label className="text-sm text-slate-400">Job-search languages (hard)<input name="profile_languages" defaultValue={csv(agent?.search_languages) || knownLanguages} className="input-field mt-2 min-h-11 w-full" /><span className="mt-1 block text-xs text-slate-500">Used only by Job Agent; this does not overwrite your profile.</span></label>
           <div className="space-y-3 pt-1 text-sm text-slate-300">
             <label className="flex items-center gap-2"><input type="checkbox" name="english_only_priority" defaultChecked={agent?.english_only_priority} />Prioritize English-only roles</label>
             <label className="flex items-center gap-2"><input type="checkbox" name="exclude_unknown_languages" defaultChecked={agent ? agent.exclude_unknown_languages : true} />Penalize jobs requiring unknown languages</label>
@@ -78,7 +81,9 @@ export function JobAgentSettingsForm({
           {[["full_time","Full-time"],["part_time","Part-time"],["contract","Contract"],["freelance","Freelance"],["internship","Internship"],["permanent","Permanent"]].map(([value,label]) => <label key={value} className="flex items-center gap-2"><input type="checkbox" name="employment_types" value={value} defaultChecked={agent?.employment_types.includes(value)} />{label}</label>)}
         </div>
         <div className="mt-5 grid gap-5 md:grid-cols-2">
-          <label className="text-sm text-slate-400">Industries<input name="industries" defaultValue={csv(agent?.industries)} className="input-field mt-2 min-h-11 w-full" /></label>
+          <label className="text-sm text-slate-400">Preferred industries<input name="industries" defaultValue={csv(agent?.industries)} className="input-field mt-2 min-h-11 w-full" /></label>
+          <label className="text-sm text-slate-400">Excluded industries (hard)<input name="excluded_industries" defaultValue={csv(agent?.excluded_industries)} className="input-field mt-2 min-h-11 w-full" /></label>
+          <label className="text-sm text-slate-400">Preferred companies<input name="preferred_companies" defaultValue={csv(agent?.preferred_companies)} className="input-field mt-2 min-h-11 w-full" /></label>
           <label className="text-sm text-slate-400">Excluded companies<input name="excluded_companies" defaultValue={csv(agent?.excluded_companies)} className="input-field mt-2 min-h-11 w-full" /></label>
           <label className="text-sm text-slate-400">Minimum salary<input type="number" min="0" name="minimum_salary" defaultValue={agent?.minimum_salary ?? ""} className="input-field mt-2 min-h-11 w-full" /></label>
           <label className="text-sm text-slate-400">Preferred salary<input type="number" min="0" name="preferred_salary" defaultValue={agent?.preferred_salary ?? ""} className="input-field mt-2 min-h-11 w-full" /></label>
@@ -123,8 +128,9 @@ export function JobAgentSettingsForm({
       </section>
 
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
-        <button className="btn-primary min-h-12 px-6">{agent ? "Save Agent Settings" : "Activate Job Agent"}</button>
-        <p className="text-xs leading-5 text-slate-500">Save geography or preference changes before searching. Job submissions remain constrained by the selected authority mode and available integrations.</p>
+        <button type="submit" name="intent" value="save_and_search" className="btn-primary min-h-12 px-6">{agent ? "Save & Search Jobs" : "Activate & Search Jobs"}</button>
+        <button type="submit" name="intent" value="save_only" className="btn-secondary min-h-12 px-6">{agent ? "Save Settings Only" : "Activate Without Search"}</button>
+        <p className="text-xs leading-5 text-slate-500">“Save & Search” persists the current form first and then searches with that exact configuration. Job submissions remain constrained by the selected authority mode and available integrations.</p>
       </div>
     </form>
   );
