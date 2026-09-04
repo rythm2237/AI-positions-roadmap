@@ -77,4 +77,6 @@ test("Layer 20 — release gate refuses incomplete evidence", () => { const comp
 test("authorization and responsive UI contracts remain explicit", () => {
   const sql = source("supabase/migrations/20260903103540_job_acquisition_system.sql"); const dashboard = source("src/components/job-agent/JobAgentDashboardView.tsx");
   assert.match(sql, /enable row level security/); assert.match(sql, /\(select auth\.uid\(\)\) = user_id/); assert.match(dashboard, /sm:grid-cols-2/); assert.match(dashboard, /lg:grid-cols-2/);
+  const documentText = source("src/lib/job-agent/documentText.ts");
+  assert.doesNotMatch(documentText, /fetch\s*\(/); assert.match(documentText, /PDFParse/); assert.match(documentText, /mammoth/);
 });

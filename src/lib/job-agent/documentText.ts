@@ -1,27 +1,31 @@
 import "server-only";
 
-type ExtractionResponse = { text?: string; error?: string };
+async function extractPdf(buffer: Buffer) {
+  const worker = await import("pdf-parse/worker");
+  const { PDFParse } = await import("pdf-parse");
+  PDFParse.setWorker(worker.getData());
+  const parser = new PDFParse({ data: new Uint8Array(buffer) });
+  try {
+    return (await parser.getText()).text;
+  } finally {
+    await parser.destroy();
+  }
+}
 
-function extractionOrigin() {
-  const configured = process.env.NEXT_PUBLIC_SITE_URL?.trim();
-  if (configured) return configured.replace(/\/$/, "");
-  const vercel = process.env.VERCEL_URL?.trim();
-  if (vercel) return `https://${vercel.replace(/^https?:\/\//, "").replace(/\/$/, "")}`;
-  return "http://localhost:3000";
+async function extractDocx(buffer: Buffer) {
+  const mammoth = await import("mammoth");
+  return (await mammoth.extractRawText({ buffer })).value;
 }
 
 export async function extractStoredCVText(file: File): Promise<string> {
   if (file.size > 8 * 1024 * 1024) throw new Error("CV files must be 8 MB or smaller.");
-  const body = new FormData();
-  body.append("file", file);
-  const response = await fetch(`${extractionOrigin()}/api/cv-analyzer/extract`, {
-    method: "POST",
-    body,
-    cache: "no-store",
-  });
-  const data = await response.json() as ExtractionResponse;
-  if (!response.ok || !data.text?.trim()) {
-    throw new Error(data.error || "MASTER_CV_EMPTY");
-  }
-  return data.text.trim();
+  const buffer = Buffer.from(await file.arrayBuffer());
+  const extracted = file.type === "application/pdf"
+    ? await extractPdf(buffer)
+    : file.type === "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+      ? await extractDocx(buffer)
+      : buffer.toString("utf8");
+  const normalized = extracted.replace(/\u0000/g, "").replace(/[ \t]+\n/g, "\n").trim();
+  if (!normalized) throw new Error("MASTER_CV_EMPTY");
+  return normalized.slice(0, 120_000);
 }
