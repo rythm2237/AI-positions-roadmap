@@ -17,6 +17,7 @@ import { jobReportDue } from "../src/lib/job-agent/notificationSchedule.ts";
 import { classifyRelease } from "../src/lib/job-agent/releaseGate.ts";
 import { currencyForCountry, inferSearchCurrency } from "../src/lib/job-agent/currency.ts";
 import { parseProviderAnnualSalary, parseProviderPostedAt } from "../src/lib/job-agent/providerFields.ts";
+import { preserveOpportunityConflictUrls } from "../src/lib/job-agent/persistence.ts";
 
 const root = new URL("..", import.meta.url);
 const source = (path) => readFileSync(new URL(path, root), "utf8");
@@ -50,6 +51,11 @@ test("Layer 6 — cross-query URL deduplication and freshness", () => {
   const result = deduplicateJobs([a, b]); assert.equal(result.length, 1); assert.equal(result[0].sourceQueries.length, 2); assert.equal(assessFreshness(candidate({ expiresAt: "2026-08-01" }), new Date("2026-09-03")).status, "expired");
   const relativeDate = deduplicateJobs([candidate({ postedAt: "4 days ago" })], new Date("2026-09-04T12:00:00Z"));
   assert.equal(relativeDate[0].postedAt, "2026-08-31T12:00:00.000Z");
+  const stable = preserveOpportunityConflictUrls(
+    [{ source: "SerpApi", external_job_id: "job-1", job_url: "https://jobs.example.com/new" }],
+    [{ source: "SerpApi", external_job_id: "job-1", job_url: "https://jobs.example.com/original" }],
+  );
+  assert.equal(stable[0].job_url, "https://jobs.example.com/original");
 });
 test("Layer 7 — hard gate separates blocked from unverified", () => {
   const evidence = evidenceFromProfile(profile); const eligible = evaluateHardEligibility({ job: candidate(), profile, agent, intent, evidence, expired: false }); assert.equal(eligible.status, "eligible");
