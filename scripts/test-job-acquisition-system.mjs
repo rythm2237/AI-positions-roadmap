@@ -48,6 +48,8 @@ test("Layer 5 — canonical normalization rejects unsafe URLs", () => {
 test("Layer 6 — cross-query URL deduplication and freshness", () => {
   const a = candidate(); const b = candidate({ source: "Other", sourceQuery: "Automation Consultant", sourceQueries: ["Automation Consultant"], applicationUrl: "https://jobs.example.com/1?gclid=123" });
   const result = deduplicateJobs([a, b]); assert.equal(result.length, 1); assert.equal(result[0].sourceQueries.length, 2); assert.equal(assessFreshness(candidate({ expiresAt: "2026-08-01" }), new Date("2026-09-03")).status, "expired");
+  const relativeDate = deduplicateJobs([candidate({ postedAt: "4 days ago" })], new Date("2026-09-04T12:00:00Z"));
+  assert.equal(relativeDate[0].postedAt, "2026-08-31T12:00:00.000Z");
 });
 test("Layer 7 — hard gate separates blocked from unverified", () => {
   const evidence = evidenceFromProfile(profile); const eligible = evaluateHardEligibility({ job: candidate(), profile, agent, intent, evidence, expired: false }); assert.equal(eligible.status, "eligible");
