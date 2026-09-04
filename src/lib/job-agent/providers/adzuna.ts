@@ -1,5 +1,7 @@
 import "server-only";
 
+import { parseProviderAnnualSalary, parseProviderPostedAt } from "../providerFields";
+
 export type JobProviderResult = {
   externalId: string;
   source: "Adzuna" | "SerpApi";
@@ -17,6 +19,20 @@ export type JobProviderResult = {
   employmentTypes: string[];
   createdAt: string | null;
 };
+
+export class JobProviderRequestError extends Error {
+  constructor(public readonly code: "RATE_LIMIT" | "AUTH_FAILURE" | "INVALID_QUERY" | "UNSUPPORTED_COUNTRY" | "PROVIDER_ERROR", message: string, public readonly status: number | null = null) {
+    super(message);
+    this.name = "JobProviderRequestError";
+  }
+}
+
+function providerHttpError(provider: string, response: Response, detail?: string) {
+  const code = response.status === 429 ? "RATE_LIMIT"
+    : response.status === 401 || response.status === 403 ? "AUTH_FAILURE"
+      : response.status === 400 || response.status === 422 ? "INVALID_QUERY" : "PROVIDER_ERROR";
+  return new JobProviderRequestError(code, `${provider} returned HTTP ${response.status}${detail ? `: ${detail.slice(0, 180)}` : ""}`, response.status);
+}
 
 type AdzunaCountry = "gb" | "us" | "ca" | "au" | "nz" | "de" | "fr" | "nl" | "ch";
 const currencies: Record<AdzunaCountry, string> = { gb: "GBP", us: "USD", ca: "CAD", au: "AUD", nz: "NZD", de: "EUR", fr: "EUR", nl: "EUR", ch: "CHF" };
@@ -151,14 +167,15 @@ export async function searchAdzunaJobs(input: { country: string; query: string; 
   const code = resolveAdzunaCountry(input.country);
   const appId = process.env.ADZUNA_APP_ID;
   const appKey = process.env.ADZUNA_APP_KEY;
-  if (!code || !appId || !appKey) return [];
+  if (!code) throw new JobProviderRequestError("UNSUPPORTED_COUNTRY", `Adzuna does not support ${input.country}.`);
+  if (!appId || !appKey) throw new JobProviderRequestError("AUTH_FAILURE", "Adzuna credentials are not configured.");
   const limit = Math.min(50, Math.max(1, input.limit ?? 20));
   const params = new URLSearchParams({ app_id: appId, app_key: appKey, what: input.query, results_per_page: String(limit), sort_by: "date", "content-type": "application/json" });
   if (input.location) params.set("where", input.location);
   const response = await fetch(`https://api.adzuna.com/v1/api/jobs/${code}/search/1?${params}`, { headers: { Accept: "application/json" }, cache: "no-store" });
   if (!response.ok) {
     console.warn("Job Agent Adzuna search failed", { status: response.status, country: code, query: input.query });
-    return [];
+    throw providerHttpError("Adzuna", response);
   }
   const payload = await response.json() as { results?: RawJob[] };
   return (payload.results ?? []).flatMap((job) => {
@@ -190,6 +207,7 @@ function mapSerpJob(job: RawSerpApiJob, input: { country: string; location: stri
   const externalId = job.job_id?.trim() || jobUrl;
   if (!title || !jobUrl || !externalId) return null;
   const description = job.description?.trim() || (job.extensions ?? []).join(" · ");
+  const salary = parseProviderAnnualSalary(job.detected_extensions?.salary);
   return {
     externalId,
     source: "SerpApi",
@@ -200,12 +218,12 @@ function mapSerpJob(job: RawSerpApiJob, input: { country: string; location: stri
     url: jobUrl,
     description,
     descriptionComplete: Boolean(job.description && job.description.trim().length >= 120),
-    salaryMin: null,
-    salaryMax: null,
-    currency: null,
+    salaryMin: salary.min,
+    salaryMax: salary.max,
+    currency: salary.currency,
     workplaceModel: serpWorkModel(job),
     employmentTypes: serpEmploymentTypes(job),
-    createdAt: null,
+    createdAt: parseProviderPostedAt(job.detected_extensions?.posted_at),
   };
 }
 
@@ -227,7 +245,7 @@ async function searchSerpApiGoogleSearch(input: { country: string; query: string
   };
   if (!response.ok || payload.error) {
     console.warn("Job Agent SerpApi Google Search failed", { status: response.status, country: input.country, query: input.query, error: payload.error ?? null });
-    return [];
+    throw providerHttpError("SerpApi", response, payload.error);
   }
   const jobs = (payload.jobs_results?.jobs ?? []).map((job) => mapSerpJob(job, { country: input.country, location: input.location })).filter((job): job is JobProviderResult => Boolean(job));
   if (jobs.length) return jobs.slice(0, input.limit);
@@ -254,9 +272,9 @@ async function searchSerpApiGoogleSearch(input: { country: string; query: string
   });
 }
 
-export async function searchSerpApiJobs(input: { country: string; query: string; location?: string; limit?: number }): Promise<JobProviderResult[]> {
+export async function searchSerpApiJobsDetailed(input: { country: string; query: string; location?: string; limit?: number }): Promise<{ jobs: JobProviderResult[]; requestCount: number }> {
   const apiKey = process.env.SERPAPI_API_KEY;
-  if (!apiKey) return [];
+  if (!apiKey) throw new JobProviderRequestError("AUTH_FAILURE", "SerpApi credentials are not configured.");
   const gl = resolveSerpApiCountry(input.country);
   const location = input.location?.trim() ? `${input.location.trim()}, ${input.country.trim()}` : input.country.trim();
   const limit = Math.min(10, Math.max(1, input.limit ?? 10));
@@ -265,7 +283,7 @@ export async function searchSerpApiJobs(input: { country: string; query: string;
   // Google Jobs engine and exposes a structured jobs_results block when Google
   // serves one. Use it as the global entry point, including markets such as Hungary.
   const globalResults = await searchSerpApiGoogleSearch({ country: input.country, query: input.query, location, gl, limit, apiKey });
-  if (globalResults.length) return globalResults;
+  if (globalResults.length) return { jobs: globalResults, requestCount: 1 };
 
   // If Google Search did not expose a jobs block, try the dedicated engine. Some
   // countries are unsupported by that engine; a 400 is therefore a recoverable
@@ -276,7 +294,15 @@ export async function searchSerpApiJobs(input: { country: string; query: string;
   const payload = await response.json().catch(() => ({})) as { jobs_results?: RawSerpApiJob[]; error?: string };
   if (!response.ok || payload.error) {
     console.warn("Job Agent SerpApi Google Jobs unavailable", { status: response.status, country: input.country, query: input.query, error: payload.error ?? null });
-    return [];
+    // The broad Google Search request above succeeded for this country. If only the
+    // dedicated Jobs surface rejects the market, the combined provider outcome is
+    // NO_RESULTS rather than UNSUPPORTED_COUNTRY.
+    if (response.status === 400 && /location|country|unsupported/i.test(payload.error ?? "")) return { jobs: [], requestCount: 2 };
+    throw providerHttpError("SerpApi", response, payload.error);
   }
-  return (payload.jobs_results ?? []).map((job) => mapSerpJob(job, { country: input.country, location })).filter((job): job is JobProviderResult => Boolean(job)).slice(0, limit);
+  return { jobs: (payload.jobs_results ?? []).map((job) => mapSerpJob(job, { country: input.country, location })).filter((job): job is JobProviderResult => Boolean(job)).slice(0, limit), requestCount: 2 };
+}
+
+export async function searchSerpApiJobs(input: { country: string; query: string; location?: string; limit?: number }): Promise<JobProviderResult[]> {
+  return (await searchSerpApiJobsDetailed(input)).jobs;
 }

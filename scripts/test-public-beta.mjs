@@ -18,14 +18,15 @@ for (const title of approvedTitles) assert.ok(catalog.includes(`"${title}"`), `M
 for (const generic of ["Software Engineer", "Frontend Developer", "Backend Developer", "Full Stack Developer"]) assert.ok(!catalog.includes(`"${generic}"`), `Generic career leaked into catalog: ${generic}`);
 assert.equal(
   (catalog.match(/"available",\s*"\/careers\//g) ?? []).length,
-  22,
+  approvedTitles.length,
   "Every active Career should have an available public route",
 );
 assert.match(positions, /CAREER_DOMAINS/);
 assert.match(waitlist, /CAREER_CATALOG/);
 assert.match(world, /CAREER_CATALOG\.map/);
 assert.doesNotMatch(openingScene, /CareerAliasSearch/);
-assert.match(header, /<CareerSearch \/>/);
+assert.match(header, /import RoleSearchDialog/);
+assert.match(header, /<RoleSearchDialog open=\{careerSearchOpen\}/);
 assert.match(compactSearch, /event\.ctrlKey \|\| event\.metaKey/);
 assert.match(compactSearch, /event\.key\.toLowerCase\(\) === "k"/);
 assert.match(world, /getBoundingClientRect\(\)/);
@@ -33,16 +34,15 @@ assert.match(world, /new ResizeObserver\(onResize\)/);
 assert.match(world, /instancedNodes\.updateMatrixWorld\(true\)/);
 assert.match(world, /hits\[0\]\.instanceId/);
 assert.doesNotMatch(landing, /CareerIntelligenceSection|PricingPreviewSection/);
-assert.doesNotMatch(header, /Career Market Intelligence|Pricing|CV Analyzer/);
-const publicMenu = header.match(/const PUBLIC_NAV_ITEMS = \[([\s\S]*?)\] as const;/)?.[1] ?? "";
+assert.doesNotMatch(header, /Career Market Intelligence|Pricing/);
+const publicMenu = header.match(/const NAV_ITEMS: NavItem\[\] = \[([\s\S]*?)\];/)?.[1] ?? "";
 assert.match(publicMenu, /Explore Careers/);
 assert.match(publicMenu, /How It Works/);
-assert.match(publicMenu, /Why Career OS/);
+assert.match(publicMenu, /Why AI Role Path/);
 assert.doesNotMatch(publicMenu, /AI Engineer/);
-assert.match(header, /label: "Explore AI Careers", href: "\/#career-universe"/);
-assert.match(header, /Continue Journey/);
-assert.match(header, /activeOverlay === "why"/);
-assert.match(header, /inert=\{!activeOverlay\}/);
+assert.match(header, /setCareerSearchOpen\(true\)/);
+assert.match(header, /overlay === "why"/);
+assert.match(header, /role="dialog" aria-modal="true" aria-hidden=\{!overlay\}/);
 assert.match(workspace, /aria-label="Back to Career Universe"/);
 assert.match(workspace, /href="\/"/);
 const workspaceLabels = [...workspaceNav.matchAll(/label: "([^"]+)"/g)].map((match) => match[1]);

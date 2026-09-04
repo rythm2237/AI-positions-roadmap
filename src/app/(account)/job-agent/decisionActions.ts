@@ -14,9 +14,13 @@ export async function rejectJob(form: FormData) {
   if (!id) redirect("/job-agent?error=job");
   const supabase = await createClient();
   const now = new Date().toISOString();
+  const job = await supabase.from("job_opportunities").select("role,company").eq("id", id).eq("user_id", user.id).maybeSingle<{ role: string; company: string }>();
   const result = await supabase.from("job_opportunities").update({ decision_status: "rejected", decision_at: now, snoozed_until: null, updated_at: now }).eq("id", id).eq("user_id", user.id);
   if (result.error) redirect("/job-agent?error=decision");
-  await supabase.from("user_activity").insert({ user_id: user.id, action: "job_agent_job_rejected", metadata: { job_id: id } });
+  await Promise.all([
+    supabase.from("user_activity").insert({ user_id: user.id, action: "job_agent_job_rejected", metadata: { job_id: id } }),
+    job.data ? supabase.rpc("record_job_agent_learning_signal", { p_signal_type: "rejected_role", p_signal_key: job.data.role, p_value: { role: job.data.role, company: job.data.company, lastJobId: id, inspectable: true }, p_confidence: 0.25 }) : Promise.resolve(),
+  ]);
   revalidatePath("/job-agent");
   redirect("/job-agent?decision=rejected");
 }
@@ -47,14 +51,17 @@ export async function approveJob(form: FormData) {
     .update({ decision_status: "approved", decision_at: now, snoozed_until: null, updated_at: now })
     .eq("id", id)
     .eq("user_id", user.id)
-    .eq("eligibility_status", "eligible")
+    .in("eligibility_status", ["eligible", "unverified"])
     .neq("status", "skipped")
     .neq("recommendation", "skip")
     .select("id")
     .maybeSingle();
   if (result.error) redirect("/job-agent?error=decision");
   if (!result.data) redirect(`/job-agent/jobs/${id}?error=not-eligible`);
-  await supabase.from("user_activity").insert({ user_id: user.id, action: "job_agent_job_approved", metadata: { job_id: id, eligibility_gate: "hard-gate-v1" } });
+  await Promise.all([
+    supabase.from("user_activity").insert({ user_id: user.id, action: "job_agent_job_approved", metadata: { job_id: id, eligibility_gate: "hard-gate-v4" } }),
+    supabase.from("job_approval_requests").insert({ user_id: user.id, job_id: id, action: "prepare_pack", status: "approved", scope: { jobId: id, permission: "prepare_truthful_application_pack_only" }, requested_at: now, decided_at: now, expires_at: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString(), consumed_at: now }),
+  ]);
   revalidatePath("/job-agent");
   const next = new FormData();
   next.set("job_id", id);
