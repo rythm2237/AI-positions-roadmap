@@ -15,6 +15,7 @@ import { enrichRequirements } from "@/lib/job-agent/requirements";
 import { evaluateHardEligibility } from "@/lib/job-agent/hardEligibility";
 import { calculateEvidenceGroundedFit } from "@/lib/job-agent/fitIntelligence";
 import { determineExecutionCapability } from "@/lib/job-agent/execution";
+import { preserveOpportunityConflictUrls } from "@/lib/job-agent/persistence";
 import type { JobAgent, NormalizedJobSearchIntent } from "@/types/jobAgent";
 import type { Profile } from "@/types/identity";
 
@@ -126,7 +127,21 @@ export async function searchCurrentUserJobs(): Promise<SearchResult> {
 
   let savedJobs: Array<{ id: string; canonical_key: string | null; job_url: string }> = [];
   if (rows.length) {
-    const save = await supabase.from("job_opportunities").upsert(rows, { onConflict: "user_id,job_url", ignoreDuplicates: false }).select("id,canonical_key,job_url").returns<Array<{ id: string; canonical_key: string | null; job_url: string }>>();
+    // `job_url` is the legacy conflict target, while providers also have a stable
+    // `(user_id, source, external_job_id)` identity. Preserve the original conflict
+    // URL when a provider rotates its redirect URL so both unique keys resolve to
+    // the same row instead of raising 23505.
+    const externalIds = [...new Set(rows.map((row) => row.external_job_id).filter(Boolean))];
+    const existing = externalIds.length
+      ? await supabase.from("job_opportunities").select("source,external_job_id,job_url").eq("user_id", user.id).in("external_job_id", externalIds).returns<Array<{ source: string; external_job_id: string | null; job_url: string }>>()
+      : { data: [], error: null };
+    if (existing.error) {
+      await supabase.from("job_search_runs").update({ status: "failed", error_code: `IDENTITY_LOOKUP_${existing.error.code}`, latency_ms: Date.now() - started, completed_at: new Date().toISOString() }).eq("id", searchRun.data.id).eq("user_id", user.id);
+      console.error("Job Agent opportunity identity lookup failed", { code: existing.error.code, correlationId, userId: user.id });
+      return { error: "search-save" };
+    }
+    const persistenceRows = preserveOpportunityConflictUrls(rows, existing.data ?? []);
+    const save = await supabase.from("job_opportunities").upsert(persistenceRows, { onConflict: "user_id,job_url", ignoreDuplicates: false }).select("id,canonical_key,job_url").returns<Array<{ id: string; canonical_key: string | null; job_url: string }>>();
     if (save.error) {
       await supabase.from("job_search_runs").update({ status: "failed", error_code: `PERSIST_${save.error.code}`, latency_ms: Date.now() - started, completed_at: new Date().toISOString() }).eq("id", searchRun.data.id).eq("user_id", user.id);
       console.error("Job Agent opportunity upsert failed", { code: save.error.code, message: save.error.message, correlationId, userId: user.id });
