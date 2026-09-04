@@ -1,5 +1,6 @@
 import { createHash } from "node:crypto";
 import type { CanonicalJobCandidate } from "./contracts.ts";
+import { parseProviderPostedAt } from "./providerFields.ts";
 import type { JobFreshnessStatus } from "../../types/jobAgent.ts";
 
 const TRACKING_PARAMS = /^(utm_|gclid$|fbclid$|ref$|referrer$|source$|src$|trk$|tracking)/i;
@@ -47,13 +48,22 @@ function quality(job: CanonicalJobCandidate) {
   return (job.descriptionComplete ? 1000 : 0) + job.description.length + (job.applicationUrl === job.sourceUrl ? 0 : 50);
 }
 
-export function deduplicateJobs(jobs: CanonicalJobCandidate[]) {
+export function deduplicateJobs(jobs: CanonicalJobCandidate[], now = new Date()) {
   const byKey = new Map<string, CanonicalJobCandidate>();
   for (const candidate of jobs) {
     const applicationUrl = canonicalizeJobUrl(candidate.applicationUrl);
     const sourceUrl = canonicalizeJobUrl(candidate.sourceUrl);
     if (!applicationUrl || !sourceUrl) continue;
-    const normalized = { ...candidate, applicationUrl, sourceUrl, normalizedTitle: normalizeJobText(candidate.title) };
+    const normalized = {
+      ...candidate,
+      applicationUrl,
+      sourceUrl,
+      normalizedTitle: normalizeJobText(candidate.title),
+      // Provider payloads can expose human-readable values such as "4 days ago".
+      // Convert them before freshness checks and before writing to timestamptz columns.
+      postedAt: parseProviderPostedAt(candidate.postedAt, now),
+      expiresAt: parseProviderPostedAt(candidate.expiresAt, now),
+    };
     const key = canonicalJobKey(normalized);
     normalized.canonicalKey = key;
     const existing = byKey.get(key);
