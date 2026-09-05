@@ -51,12 +51,12 @@ export default function Header() {
     <>
       <header className="fixed inset-x-0 top-0 z-50 border-b border-white/[0.045] bg-[#03050e]/78 backdrop-blur-xl" role="banner">
         <div className="mx-auto grid h-[68px] max-w-7xl grid-cols-[1fr_auto_1fr] items-center px-5 sm:px-8">
-          <Link href="/" className="group flex min-w-0 justify-self-start rounded-xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-400" aria-label="AI Role Path home">
+          <Link href="/" className="group col-start-1 flex min-w-0 justify-self-start rounded-xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-400" aria-label="AI Role Path home">
             <BrandMark size={38} className="h-[38px] w-auto min-[430px]:hidden" />
             <BrandLogoWithDescriptor priority className="hidden h-10 w-auto min-[430px]:block" />
           </Link>
 
-          <nav className="hidden items-center justify-center gap-1 xl:flex" aria-label="Primary navigation">
+          <nav className="col-start-2 hidden items-center justify-center gap-1 xl:flex" aria-label="Primary navigation">
             <button type="button" onClick={() => setCareerSearchOpen(true)} className="inline-flex items-center gap-2 whitespace-nowrap rounded-xl border border-cyan-300/15 bg-cyan-300/[0.04] px-3 py-2 text-sm font-medium text-cyan-100 transition hover:bg-cyan-300/[0.08]">
               <svg viewBox="0 0 24 24" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="1.8" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m16.5 16.5 4 4"/></svg>
               Search Careers
@@ -68,7 +68,7 @@ export default function Header() {
             ))}
           </nav>
 
-          <div className="justify-self-end pr-14 xl:pr-0">
+          <div className="col-start-3 justify-self-end pr-14 xl:pr-0">
             <button type="button" onClick={() => setMobileOpen(true)} className="grid h-10 w-10 place-items-center rounded-xl border border-white/10 bg-[#080b1c]/70 text-slate-300 backdrop-blur-sm xl:hidden" aria-label="Open navigation"><svg viewBox="0 0 24 24" className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth="2"><path d="M4 7h16M4 12h16M4 17h16" /></svg></button>
           </div>
         </div>
