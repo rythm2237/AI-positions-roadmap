@@ -22,13 +22,13 @@ const footerGroups = [
     links: [
       ["Security", "/security"],
       ["AI Transparency", "/ai-transparency"],
-      ["Data & Privacy", "/legal/privacy"],
+      ["Data & Privacy", "/privacy"],
     ],
   },
   {
     title: "Legal",
     links: [
-      ["Privacy", "/legal/privacy"],
+      ["Privacy", "/privacy"],
       ["Terms", "/legal/terms"],
       ["Cookies", "/legal/cookies"],
       ["Refunds", "/legal/refunds"],
