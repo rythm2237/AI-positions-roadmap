@@ -3,7 +3,8 @@ import type { CareerEvidenceItem, FitConfidence, FitExplanation, JobClassificati
 
 export type EvidenceGroundedFit = { score: number; confidence: FitConfidence; classification: JobClassification; strengths: string[]; gaps: string[]; explanation: FitExplanation };
 const normalize = (value: string) => value.toLowerCase().replace(/[^a-z0-9+#.]+/g, " ").replace(/\s+/g, " ").trim();
-const tokens = (value: string) => new Set(normalize(value).split(" ").filter((part) => part.length > 2));
+const stem = (value: string) => value.replace(/(?:ing|ed|es|s)$/i, "");
+const tokens = (value: string) => new Set(normalize(value).split(" ").filter((part) => part.length > 2).map(stem));
 const overlapRatio = (a: string, b: string) => { const left = tokens(a); const right = tokens(b); if (!left.size || !right.size) return 0; return [...left].filter((part) => right.has(part)).length / Math.max(left.size, right.size); };
 const demonstratedTypes = new Set(["work_implementation", "project_implementation", "quantified_achievement", "portfolio_artifact"]);
 
@@ -23,6 +24,16 @@ function skillEvidenceWeight(evidence: CareerEvidenceItem | undefined) {
   return Math.min(0.3, evidence.confidence);
 }
 
+function demonstratedEvidenceMatches(item: CareerEvidenceItem, body: string) {
+  const label = normalize(item.label);
+  if (label && body.includes(label)) return true;
+  const labelTokens = [...tokens(item.label)];
+  if (!labelTokens.length) return false;
+  const bodyTokens = tokens(body);
+  const matched = labelTokens.filter((token) => bodyTokens.has(token)).length;
+  return matched >= Math.max(1, Math.ceil(labelTokens.length * 0.5));
+}
+
 export function calculateEvidenceGroundedFit(job: CanonicalJobCandidate, intent: NormalizedJobSearchIntent, evidence: CareerEvidenceItem[]): EvidenceGroundedFit {
   const targets = [intent.primaryTargetRole, ...intent.soft.marketTitleVariants, ...intent.soft.secondaryRoles, ...intent.soft.adjacentRoles];
   const roleSimilarity = Math.max(0, ...targets.map((target) => overlapRatio(job.title, target)));
@@ -32,7 +43,7 @@ export function calculateEvidenceGroundedFit(job: CanonicalJobCandidate, intent:
   const preferredMatches = job.preferredSkills.map((skill) => ({ skill, evidence: skillMatch(skill, evidence) }));
   const demonstrated = evidence.filter((item) => demonstratedTypes.has(item.evidenceType));
   const body = normalize(`${job.title} ${job.description}`);
-  const demonstratedMatches = demonstrated.filter((item) => body.includes(normalize(item.label)));
+  const demonstratedMatches = demonstrated.filter((item) => demonstratedEvidenceMatches(item, body));
   const demonstratedScore = Math.min(20, demonstratedMatches.reduce((sum, item) => sum + (item.evidenceType === "quantified_achievement" ? 6 : 4), 0));
   const requiredScore = job.requiredSkills.length ? Math.round(requiredMatches.reduce((sum, match) => sum + skillEvidenceWeight(match.evidence), 0) / job.requiredSkills.length * 10) : 5;
   const preferredScore = job.preferredSkills.length ? Math.round(preferredMatches.reduce((sum, match) => sum + skillEvidenceWeight(match.evidence), 0) / job.preferredSkills.length * 5) : 3;
@@ -59,9 +70,9 @@ export function calculateEvidenceGroundedFit(job: CanonicalJobCandidate, intent:
       dimensions: { roleRelevance: role, demonstratedEvidence: demonstratedScore, experienceDepth: experience, requiredSkills: requiredScore, preferredSkills: preferredScore, seniority, industry, language: languages, geography, workplace, salary, careerTrajectory: trajectory },
       strongestEvidence: strongest.map((item) => ({ evidenceId: item.id, label: item.label, source: item.sourceType, contribution: item.evidenceType === "quantified_achievement" ? 6 : 4 })),
       missingEvidence,
-      transferableEvidence: demonstratedMatches.filter((item) => item.evidenceType === "project_implementation" || item.evidenceType === "portfolio_artifact").map((item) => ({ evidenceId: item.id, label: item.label, source: item.sourceType })),
+      transferableEvidence: strongest.filter((item) => item.evidenceType === "project_implementation" || item.evidenceType === "portfolio_artifact" || item.provenance.transferableCapability === true).map((item) => ({ evidenceId: item.id, label: item.label, source: item.sourceType })),
       whyRankedHere: [role >= 20 ? "The vacancy title aligns with a confirmed target role." : "The vacancy has partial semantic overlap with target roles.", demonstratedMatches.length ? `${demonstratedMatches.length} demonstrated evidence item(s) matched the vacancy.` : "Title similarity was not treated as professional evidence.", confidence === "low" ? "Incomplete vacancy or profile evidence limits confidence." : "The ranking uses multiple verified dimensions."],
-      scoringVersion: "evidence-fit-v1",
+      scoringVersion: "evidence-fit-v2",
     },
   };
 }

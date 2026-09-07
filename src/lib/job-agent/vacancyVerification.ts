@@ -63,7 +63,7 @@ async function fetchPublic(urlValue: string, redirects = 0): Promise<{ response:
   const response = await fetch(url, {
     cache: "no-store",
     redirect: "manual",
-    headers: { Accept: "text/html,application/ld+json,application/json", "User-Agent": "AI-Role-Path-Job-Verification/1.1" },
+    headers: { Accept: "text/html,application/ld+json,application/json", "User-Agent": "AI-Role-Path-Job-Verification/1.2" },
     signal: AbortSignal.timeout(8_000),
   });
   if ([301, 302, 303, 307, 308].includes(response.status)) {
@@ -161,6 +161,43 @@ function meaningfulConflict(existing: string | null, verified: string | null) {
   return Boolean(a && b && !a.includes(b) && !b.includes(a));
 }
 
+function looksLikeListingPage(job: CanonicalJobCandidate, finalUrl: string, pageText: string) {
+  const title = job.title.toLowerCase();
+  const sample = pageText.slice(0, 5000).toLowerCase();
+  let pathname = "";
+  let host = "";
+  try {
+    const parsed = new URL(finalUrl);
+    pathname = decodeURIComponent(parsed.pathname).toLowerCase();
+    host = parsed.hostname.toLowerCase();
+  } catch {
+    // finalUrl was already validated; this is defensive only.
+  }
+
+  const listingTitle = /\b(offres? d['’]emploi|emplois? pour|job listings?|job openings?|jobs? (?:in|near|for)|vacancies|browse jobs?|find jobs?)\b/i.test(title);
+  const listingBody = /\b(offres? mises? à jour quotidiennement|parcourir les offres|emplois? pour .{0,100} dans|\d+[+,]?\s+offres? d['’]emploi|\d+[+,]?\s+(?:open )?jobs?|create a job alert|créer une alerte)\b/i.test(sample);
+  const aggregatorSearchPath = /(?:trabajo|bebee)\./i.test(host) && (/\/emploi-[^/]+\/[^/]+\/?$/.test(pathname) || /\/jobs?[-/]?(?:search|in|for)?\b/.test(pathname));
+  return listingTitle || listingBody || aggregatorSearchPath;
+}
+
+function providerFallback(job: CanonicalJobCandidate, httpStatus: number, finalUrl: string): VacancyVerification | null {
+  if (![403, 429].includes(httpStatus) || job.description.trim().length < 120) return null;
+  return {
+    status: "unverified",
+    job,
+    provenance: {
+      method: "provider_payload_fallback",
+      source: job.source,
+      sourceUrl: finalUrl,
+      httpStatus,
+      verifiedAt: new Date().toISOString(),
+      reason: "Public source page could not be fetched reliably; provider vacancy payload was retained without claiming canonical verification.",
+      fields: ["provider_description"],
+    },
+    errorCode: httpStatus === 429 ? "SOURCE_RATE_LIMITED" : "SOURCE_ACCESS_BLOCKED",
+  };
+}
+
 export async function verifyVacancy(job: CanonicalJobCandidate): Promise<VacancyVerification> {
   if ((job.source.startsWith("Greenhouse:") || job.source.startsWith("Lever:")) && job.descriptionComplete) {
     return { status: "verified", job, provenance: { method: "official_provider_api", source: job.source, sourceUrl: job.sourceUrl, verifiedAt: new Date().toISOString() } };
@@ -174,7 +211,11 @@ export async function verifyVacancy(job: CanonicalJobCandidate): Promise<Vacancy
     if (response.status === 404 || response.status === 410) {
       return { status: "verified", job: { ...job, expiresAt: new Date().toISOString() }, provenance: { method: "source_page", httpStatus: response.status, sourceUrl: finalUrl, verifiedAt: new Date().toISOString(), fields: ["application_status"] } };
     }
-    if (!response.ok) return { status: "failed", job, provenance: { method: "source_page", httpStatus: response.status, sourceUrl: finalUrl }, errorCode: `HTTP_${response.status}` };
+    if (!response.ok) {
+      const fallback = providerFallback(job, response.status, finalUrl);
+      if (fallback) return fallback;
+      return { status: "failed", job, provenance: { method: "source_page", httpStatus: response.status, sourceUrl: finalUrl }, errorCode: `HTTP_${response.status}` };
+    }
     const size = Number(response.headers.get("content-length") ?? "0");
     if (size > 2_000_000) return { status: "failed", job, provenance: { method: "source_page", sourceUrl: finalUrl }, errorCode: "VERIFICATION_RESPONSE_TOO_LARGE" };
     const contentType = response.headers.get("content-type") ?? "";
@@ -223,6 +264,10 @@ export async function verifyVacancy(job: CanonicalJobCandidate): Promise<Vacancy
         job: verifiedJob,
         provenance: { method: "json_ld_jobposting", httpStatus: response.status, contentType, sourceUrl: finalUrl, verifiedAt: new Date().toISOString(), fields: ["title", "company", "location", "country", "description", "employment_type", "posted_at", "expires_at", "application_url"] },
       };
+    }
+
+    if (looksLikeListingPage(job, finalUrl, pageText)) {
+      return { status: "failed", job, provenance: { method: "source_page", httpStatus: response.status, sourceUrl: finalUrl, verifiedAt: new Date().toISOString(), reason: "Page represents a vacancy search/listing rather than one canonical vacancy." }, errorCode: "NOT_CANONICAL_VACANCY" };
     }
 
     const guidanceOrListing = /\b(how to become|career opportunities|\d+[+,]?\s+(?:open )?jobs?|job listings?|browse jobs?|find jobs?)\b/i.test(`${job.title} ${pageText.slice(0, 1200)}`);

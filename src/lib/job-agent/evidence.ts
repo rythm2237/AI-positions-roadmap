@@ -3,8 +3,17 @@ import { extractMasterCvSkills } from "../cvAnalyzer/masterCvEvidence.ts";
 import type { CareerEvidenceItem, EvidenceSourceType, EvidenceType } from "../../types/jobAgent.ts";
 import type { Profile } from "../../types/identity.ts";
 
-const actionVerb = /\b(achieved|automated|built|created|delivered|designed|developed|implemented|improved|integrated|launched|led|managed|optimized|reduced|scaled|streamlined|transformed)\b/i;
+const actionVerb = /\b(achiev(?:ed|ing)|automat(?:ed|ing)|built|creat(?:ed|ing)|deliver(?:ed|ing)|design(?:ed|ing)|develop(?:ed|ing)|implement(?:ed|ing)|improv(?:ed|ing)|integrat(?:ed|ing)|launch(?:ed|ing)|led|manag(?:ed|ing)|optimiz(?:ed|ing)|reduc(?:ed|ing)|scal(?:ed|ing)|streamlin(?:ed|ing)|transform(?:ed|ing))\b/i;
 const metric = /(?:\b\d+(?:\.\d+)?\s*(?:%|hours?|days?|users?|customers?|projects?|workflows?|teams?|countries?)\b|[$€£]\s?\d)/i;
+const implementationCapabilities: Array<[string, RegExp]> = [
+  ["Workflow Optimization", /\b(?:workflow|workflows)\b/i],
+  ["Process Improvement", /\b(?:process|processes|continuous improvement)\b/i],
+  ["Automation Delivery", /\b(?:automation|automated|automating|rpa)\b/i],
+  ["Business Process Analysis", /\b(?:business process|process analysis|requirements? analysis)\b/i],
+  ["Stakeholder Collaboration", /\b(?:stakeholder|cross[- ]functional|business users?|customers?|clients?)\b/i],
+  ["Data Analysis", /\b(?:data analysis|analytics|reporting|dashboard)\b/i],
+  ["Solution Implementation", /\b(?:solution|system|application|tool)\b/i],
+];
 
 function fingerprint(sourceType: EvidenceSourceType, sourceId: string | null, evidenceType: EvidenceType, label: string, value: string) {
   return createHash("sha256").update([sourceType, sourceId ?? "", evidenceType, label.toLowerCase(), value.toLowerCase()].join("|")).digest("hex");
@@ -33,9 +42,18 @@ export function evidenceFromMasterCv(resumeId: string, resumeText: string): Care
     const demonstrated = contexts.find((line) => actionVerb.test(line));
     const value = demonstrated ?? contexts[0] ?? skill;
     const evidenceType: EvidenceType = demonstrated ? (metric.test(demonstrated) ? "quantified_achievement" : "work_implementation") : "skill_mention";
-    result.push(item("master_cv", resumeId, evidenceType, skill, value, demonstrated ? 0.9 : 0.62, null, { lineExcerpt: value.slice(0, 500), parser: "master-cv-evidence-v1" }));
+    result.push(item("master_cv", resumeId, evidenceType, skill, value, demonstrated ? 0.9 : 0.62, null, { lineExcerpt: value.slice(0, 500), parser: "master-cv-evidence-v2" }));
   }
-  return result;
+
+  const implementationLines = lines.filter((line) => actionVerb.test(line)).slice(0, 30);
+  for (const line of implementationLines) {
+    for (const [label, pattern] of implementationCapabilities) {
+      if (!pattern.test(line)) continue;
+      const evidenceType: EvidenceType = metric.test(line) ? "quantified_achievement" : "work_implementation";
+      result.push(item("master_cv", resumeId, evidenceType, label, line.slice(0, 700), metric.test(line) ? 0.9 : 0.82, null, { lineExcerpt: line.slice(0, 500), parser: "master-cv-evidence-v2", transferableCapability: true }));
+    }
+  }
+  return mergeEvidence(result);
 }
 
 export function mergeEvidence(...collections: CareerEvidenceItem[][]) {
