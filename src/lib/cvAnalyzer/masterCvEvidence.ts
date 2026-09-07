@@ -40,6 +40,8 @@ const SKILL_PATTERNS: Array<[string, RegExp]> = [
   ["Process Mapping", /\bprocess\s+mapping\b/i],
   ["Digital Transformation", /\bdigital\s+transformation\b/i],
   ["Solution Design", /\bsolution\s+design\b/i],
+  ["HTML", /\bhtml\b/i],
+  ["CSS", /\bcss\b/i],
   ["JavaScript", /\bjavascript\b/i],
   ["TypeScript", /\btypescript\b/i],
   ["React", /\breact(?:\.js)?\b/i],
@@ -54,6 +56,10 @@ const SKILL_PATTERNS: Array<[string, RegExp]> = [
   ["Supabase", /\bsupabase\b/i],
   ["Vercel", /\bvercel\b/i],
   ["SEO", /\bseo\b/i],
+  ["SEM", /\bsem\b/i],
+  ["Google Ads", /\bgoogle\s+ads\b/i],
+  ["Facebook Ads", /\bfacebook\s+ads\b/i],
+  ["Photoshop", /\bphotoshop\b/i],
   ["Google Analytics", /\bgoogle\s+analytics\b/i],
 ];
 
