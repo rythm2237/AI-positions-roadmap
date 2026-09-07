@@ -227,10 +227,38 @@ function mapSerpJob(job: RawSerpApiJob, input: { country: string; location: stri
   };
 }
 
+const organicAggregatorHosts = [
+  "jobleads.", "linkedin.", "indeed.", "glassdoor.", "jobrapido.", "jooble.", "careerjet.",
+  "monster.", "ziprecruiter.", "profession.hu", "jobsora.", "talent.com", "bebee.",
+];
+
+function organicHost(result: RawSerpApiOrganicResult) {
+  try { return new URL(result.link ?? "").hostname.toLowerCase().replace(/^www\./, ""); }
+  catch { return ""; }
+}
+
+function isAggregatorOrganicResult(result: RawSerpApiOrganicResult) {
+  const host = organicHost(result);
+  return organicAggregatorHosts.some((token) => host.includes(token));
+}
+
+function isListingStyleOrganicTitle(title: string) {
+  const value = title.trim().toLowerCase();
+  return /^\d+[+,]?\s+.*\bjobs?\b/.test(value)
+    || /^jobs?\s+(in|near|at|for)\b/.test(value)
+    || /\b(job openings|job opportunities|vacancies)\b/.test(value)
+    || /\bfind\s+\d*\s*jobs?\b/.test(value);
+}
+
 function looksLikeJobResult(result: RawSerpApiOrganicResult) {
+  if (!result.title?.trim() || !result.link?.trim()) return false;
+  if (isAggregatorOrganicResult(result) || isListingStyleOrganicTitle(result.title)) return false;
   const haystack = `${result.title ?? ""} ${result.source ?? ""} ${result.displayed_link ?? ""}`.toLowerCase();
-  return /\b(job|jobs|career|careers|vacancy|vacancies|position|hiring)\b/.test(haystack)
-    || /linkedin|indeed|glassdoor|profession|jobrapido|jooble|careerjet|workable|greenhouse|lever|smartrecruiters/.test(haystack);
+  // Organic fallback is intentionally conservative. Structured Google Jobs results are
+  // preferred. Here we accept direct vacancy-looking pages or known ATS hosts, but do
+  // not promote job aggregators/search-result pages to canonical vacancies.
+  return /\b(job|career|vacancy|position|hiring|engineer|developer|consultant|analyst|scientist|manager|specialist|architect)\b/.test(haystack)
+    || /workable|greenhouse|lever|smartrecruiters|ashbyhq|workdayjobs/.test(haystack);
 }
 
 async function searchSerpApiGoogleSearch(input: { country: string; query: string; location: string; gl: string | null; limit: number; apiKey: string }): Promise<JobProviderResult[]> {
@@ -255,7 +283,7 @@ async function searchSerpApiGoogleSearch(input: { country: string; query: string
     return [{
       externalId: result.link.trim(),
       source: "SerpApi" as const,
-      company: result.source?.trim() || "Not specified",
+      company: result.source?.trim() || "Employer not verified",
       title: result.title.trim(),
       location: input.location,
       country: input.country.trim(),
