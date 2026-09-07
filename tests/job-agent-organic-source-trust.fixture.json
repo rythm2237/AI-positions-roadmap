@@ -1,0 +1,9 @@
+{
+  "organic_result": {
+    "title": "Senior Data Scientist, GenAI & AI Solutions Consultant",
+    "source": "JobLeads",
+    "link": "https://www.jobleads.com/example",
+    "snippet": "Sopra Steria Next recherche un Responsable IA/GenAI"
+  },
+  "expected": "reject_from_organic_fallback"
+}
