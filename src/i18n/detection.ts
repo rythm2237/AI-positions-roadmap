@@ -1,7 +1,6 @@
 import {
   DEFAULT_LOCALE,
   isSupportedLocale,
-  normalizeLocale,
   type AppLocale,
 } from "./config";
 
@@ -10,6 +9,12 @@ export type LocaleSignals = {
   persistedLocale?: string | null;
   acceptLanguage?: string | null;
 };
+
+function supportedBaseLocale(value: string | null | undefined): AppLocale | null {
+  if (!value) return null;
+  const base = value.trim().toLowerCase().split(/[-_]/, 1)[0];
+  return isSupportedLocale(base) ? base : null;
+}
 
 export function localeFromAcceptLanguage(header: string | null | undefined): AppLocale | null {
   if (!header) return null;
@@ -26,8 +31,8 @@ export function localeFromAcceptLanguage(header: string | null | undefined): App
     .sort((a, b) => b.quality - a.quality);
 
   for (const candidate of candidates) {
-    const base = candidate.tag.toLowerCase().split(/[-_]/, 1)[0];
-    if (isSupportedLocale(base)) return base;
+    const locale = supportedBaseLocale(candidate.tag);
+    if (locale) return locale;
   }
 
   return null;
@@ -39,11 +44,10 @@ export function localeFromAcceptLanguage(header: string | null | undefined): App
  * This function has no redirect or persistence side effects.
  */
 export function resolveLocale(signals: LocaleSignals): AppLocale {
-  if (signals.explicitLocale && isSupportedLocale(normalizeLocale(signals.explicitLocale))) {
-    return normalizeLocale(signals.explicitLocale);
-  }
-  if (signals.persistedLocale && isSupportedLocale(normalizeLocale(signals.persistedLocale))) {
-    return normalizeLocale(signals.persistedLocale);
-  }
-  return localeFromAcceptLanguage(signals.acceptLanguage) ?? DEFAULT_LOCALE;
+  return (
+    supportedBaseLocale(signals.explicitLocale) ??
+    supportedBaseLocale(signals.persistedLocale) ??
+    localeFromAcceptLanguage(signals.acceptLanguage) ??
+    DEFAULT_LOCALE
+  );
 }
