@@ -3,6 +3,9 @@ import { extractMasterCvSkills } from "../cvAnalyzer/masterCvEvidence.ts";
 import type { CareerEvidenceItem, EvidenceSourceType, EvidenceType } from "../../types/jobAgent.ts";
 import type { Profile } from "../../types/identity.ts";
 
+// Strong CV evidence requires an explicit delivered action. Gerunds such as "designing" or "optimizing"
+// can appear in course titles, summaries, or generic prose and must not be promoted to work evidence by themselves.
+const demonstratedActionVerb = /\b(achieved|automated|built|created|delivered|designed|developed|implemented|improved|integrated|launched|led|managed|optimized|reduced|scaled|streamlined|transformed)\b/i;
 const actionVerb = /\b(achiev(?:ed|ing)|automat(?:ed|ing)|built|creat(?:ed|ing)|deliver(?:ed|ing)|design(?:ed|ing)|develop(?:ed|ing)|implement(?:ed|ing)|improv(?:ed|ing)|integrat(?:ed|ing)|launch(?:ed|ing)|led|manag(?:ed|ing)|optimiz(?:ed|ing)|reduc(?:ed|ing)|scal(?:ed|ing)|streamlin(?:ed|ing)|transform(?:ed|ing))\b/i;
 const metric = /(?:\b\d+(?:\.\d+)?\s*(?:%|hours?|days?|users?|customers?|projects?|workflows?|teams?|countries?)\b|[$€£]\s?\d)/i;
 const implementationCapabilities: Array<[string, RegExp]> = [
@@ -39,18 +42,19 @@ export function evidenceFromMasterCv(resumeId: string, resumeText: string): Care
   const result: CareerEvidenceItem[] = [];
   for (const skill of skills) {
     const contexts = lines.filter((line) => line.toLowerCase().includes(skill.toLowerCase())).slice(0, 3);
-    const demonstrated = contexts.find((line) => actionVerb.test(line));
+    const demonstrated = contexts.find((line) => demonstratedActionVerb.test(line));
     const value = demonstrated ?? contexts[0] ?? skill;
     const evidenceType: EvidenceType = demonstrated ? (metric.test(demonstrated) ? "quantified_achievement" : "work_implementation") : "skill_mention";
-    result.push(item("master_cv", resumeId, evidenceType, skill, value, demonstrated ? 0.9 : 0.62, null, { lineExcerpt: value.slice(0, 500), parser: "master-cv-evidence-v2" }));
+    result.push(item("master_cv", resumeId, evidenceType, skill, value, demonstrated ? 0.9 : 0.62, null, { lineExcerpt: value.slice(0, 500), parser: "master-cv-evidence-v3" }));
   }
 
-  const implementationLines = lines.filter((line) => actionVerb.test(line)).slice(0, 30);
+  // Transferable implementation evidence must also be tied to a strong delivered action, not generic gerund prose.
+  const implementationLines = lines.filter((line) => demonstratedActionVerb.test(line)).slice(0, 30);
   for (const line of implementationLines) {
     for (const [label, pattern] of implementationCapabilities) {
       if (!pattern.test(line)) continue;
       const evidenceType: EvidenceType = metric.test(line) ? "quantified_achievement" : "work_implementation";
-      result.push(item("master_cv", resumeId, evidenceType, label, line.slice(0, 700), metric.test(line) ? 0.9 : 0.82, null, { lineExcerpt: line.slice(0, 500), parser: "master-cv-evidence-v2", transferableCapability: true }));
+      result.push(item("master_cv", resumeId, evidenceType, label, line.slice(0, 700), metric.test(line) ? 0.9 : 0.82, null, { lineExcerpt: line.slice(0, 500), parser: "master-cv-evidence-v3", transferableCapability: true }));
     }
   }
   return mergeEvidence(result);
@@ -75,7 +79,7 @@ export function evidenceFromCvAnalyzer(input: { sourceId: string; skills: string
   values(input.languages, 15).forEach((language) => result.push(item(source, input.sourceId, "language", language, language, 0.85, null, { field: "languages", explicitlySaved: true })));
   values(input.certifications, 20).forEach((certificate) => result.push(item(source, input.sourceId, "certification", certificate, certificate, 0.85, null, { field: "certifications", explicitlySaved: true })));
   values(input.projects, 20).forEach((project, index) => result.push(item(source, input.sourceId, actionVerb.test(project) ? "project_implementation" : "user_claim", `Project evidence ${index + 1}`, project.slice(0, 700), actionVerb.test(project) ? 0.82 : 0.6, null, { field: "projects", explicitlySaved: true })));
-  values(input.experience, 30).filter((line) => actionVerb.test(line)).forEach((line, index) => result.push(item(source, input.sourceId, metric.test(line) ? "quantified_achievement" : "work_implementation", `Experience evidence ${index + 1}`, line.slice(0, 700), metric.test(line) ? 0.9 : 0.8, null, { field: "experience", explicitlySaved: true })));
+  values(input.experience, 30).filter((line) => demonstratedActionVerb.test(line)).forEach((line, index) => result.push(item(source, input.sourceId, metric.test(line) ? "quantified_achievement" : "work_implementation", `Experience evidence ${index + 1}`, line.slice(0, 700), metric.test(line) ? 0.9 : 0.8, null, { field: "experience", explicitlySaved: true })));
   result.push(item(source, input.sourceId, "assessment_result", "CV Analyzer score", `${Math.max(0, Math.min(100, Math.round(input.overall)))}/100`, 0.75, null, { strengths: input.strengths.slice(0, 10), explicitlySaved: true, analyzerVersion: "semantic-cv-v1" }));
   return result;
 }
