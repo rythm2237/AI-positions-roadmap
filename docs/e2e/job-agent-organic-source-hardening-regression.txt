@@ -1,0 +1,8 @@
+Regression fixtures:
+- source=English jobs in France, url=https://englishjobs.fr/jobs/specialist -> reject as aggregator/job-board organic fallback
+- source=Get on Board, url=https://www.getonbrd.com/jobs-ai%20automation -> reject as listing/search page
+- source=JobPath.world, url=https://jobpath.world/jobs/... -> do not claim JobPath.world is employer
+- source=Simplify Jobs, url=https://simplify.jobs/p/... -> do not claim Simplify Jobs is employer
+- source=Recruit.net, url=https://www.recruit.net/job/... -> do not claim Recruit.net is employer
+- source=MetaIntro, url=https://www.metaintro.com/job/... -> do not claim MetaIntro is employer
+- source=Welcome to the Jungle, url=https://app.welcometothejungle.com/jobs/... -> do not claim the platform is employer
