@@ -1,5 +1,5 @@
 export const PUBLIC_BETA = {
-  publicCareerIntelligence: false,
+  publicCareerIntelligence: true,
   automaticIntelligenceRefresh: false,
   pricing: false,
   cvAnalyzer: false,
