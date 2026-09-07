@@ -8,7 +8,8 @@ const SKILL_PATTERNS: Array<[string, RegExp]> = [
   ["Microsoft Fabric", /\b(?:microsoft\s+)?fabric\b/i],
   ["DAX", /\bdax\b/i],
   ["Power Query", /\bpower\s*query\b/i],
-  ["Excel", /\bexcel\b/i],
+  // Keep Excel case-sensitive so ordinary prose such as "I excel in..." is not treated as Microsoft Excel evidence.
+  ["Excel", /\b(?:Microsoft\s+Excel|MS\s+Excel|Excel)\b/],
   ["SQL", /\bsql\b/i],
   ["Python", /\bpython\b/i],
   ["Pandas", /\bpandas\b/i],
