@@ -47,10 +47,10 @@ jobs:
         run: npm ci
 
       - name: Evidence provenance regressions
-        run: node --experimental-strip-types --test scripts/test-job-agent-evidence-provenance.mjs
+        run: node --experimental-strip-types --test --test-concurrency=1 scripts/test-job-agent-evidence-provenance.mjs
 
       - name: Job Acquisition System suite
-        run: node --experimental-strip-types --test scripts/test-job-acquisition-system.mjs
+        run: node --experimental-strip-types --test --test-concurrency=1 scripts/test-job-acquisition-system.mjs
 
       - name: Typecheck
         run: npm run typecheck
