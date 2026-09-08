@@ -6,8 +6,10 @@ on:
       - "src/lib/job-agent/**"
       - "src/lib/cvAnalyzer/masterCvEvidence.ts"
       - "src/app/(account)/job-agent/**"
+      - "src/components/job-agent/**"
       - "scripts/test-job-acquisition-system.mjs"
       - "scripts/test-job-agent-evidence-provenance.mjs"
+      - "scripts/test-job-agent-search-ux.mjs"
       - "supabase/migrations/**job**"
       - "vercel.json"
       - "package.json"
@@ -19,8 +21,10 @@ on:
       - "src/lib/job-agent/**"
       - "src/lib/cvAnalyzer/masterCvEvidence.ts"
       - "src/app/(account)/job-agent/**"
+      - "src/components/job-agent/**"
       - "scripts/test-job-acquisition-system.mjs"
       - "scripts/test-job-agent-evidence-provenance.mjs"
+      - "scripts/test-job-agent-search-ux.mjs"
       - "supabase/migrations/**job**"
       - "vercel.json"
       - "package.json"
@@ -48,6 +52,9 @@ jobs:
 
       - name: Evidence provenance regressions
         run: node --experimental-strip-types --test --test-concurrency=1 scripts/test-job-agent-evidence-provenance.mjs
+
+      - name: Search UX regressions
+        run: node --test --test-concurrency=1 scripts/test-job-agent-search-ux.mjs
 
       - name: Job Acquisition System suite
         run: node --experimental-strip-types --test --test-concurrency=1 scripts/test-job-acquisition-system.mjs
