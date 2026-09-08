@@ -2,27 +2,61 @@ import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import test from "node:test";
 
-const source = readFileSync(new URL("../src/components/job-agent/JobAgentSearchButton.tsx", import.meta.url), "utf8");
+const buttonSource = readFileSync(new URL("../src/components/job-agent/JobAgentSearchButton.tsx", import.meta.url), "utf8");
+const pageSource = readFileSync(new URL("../src/app/(account)/job-agent/page.tsx", import.meta.url), "utf8");
+const dashboardSource = readFileSync(new URL("../src/components/job-agent/JobAgentDashboardView.tsx", import.meta.url), "utf8");
+const repositorySource = readFileSync(new URL("../src/lib/job-agent/repository.ts", import.meta.url), "utf8");
+const normalizationSource = readFileSync(new URL("../src/lib/job-agent/normalization.ts", import.meta.url), "utf8");
 
 test("search control exposes an immediate accessible pending state", () => {
-  assert.match(source, /disabled=\{pending\}/);
-  assert.match(source, /aria-busy=\{pending\}/);
-  assert.match(source, /role="status"/);
-  assert.match(source, /aria-live="polite"/);
+  assert.match(buttonSource, /disabled=\{pending\}/);
+  assert.match(buttonSource, /aria-busy=\{pending\}/);
+  assert.match(buttonSource, /role="status"/);
+  assert.match(buttonSource, /aria-live="polite"/);
 });
 
 test("search control communicates staged progress without claiming exact backend completion", () => {
-  assert.match(source, /Saving settings/);
-  assert.match(source, /Searching providers/);
-  assert.match(source, /Verifying vacancies/);
-  assert.match(source, /Ranking results/);
-  assert.match(source, /progress: 90/);
-  assert.doesNotMatch(source, /100% complete/i);
+  assert.match(buttonSource, /Saving settings/);
+  assert.match(buttonSource, /Searching providers/);
+  assert.match(buttonSource, /Verifying vacancies/);
+  assert.match(buttonSource, /Ranking results/);
+  assert.match(buttonSource, /progress: 90/);
+  assert.doesNotMatch(buttonSource, /100% complete/i);
 });
 
 test("search form blocks a second save-and-search submission while one is in flight", () => {
-  assert.match(source, /searchInFlight/);
-  assert.match(source, /event\.preventDefault\(\)/);
-  assert.match(source, /submitter\.disabled = true/);
-  assert.match(source, /getAttribute\("value"\) === "save_and_search"/);
+  assert.match(buttonSource, /searchInFlight/);
+  assert.match(buttonSource, /event\.preventDefault\(\)/);
+  assert.match(buttonSource, /submitter\.disabled = true/);
+  assert.match(buttonSource, /getAttribute\("value"\) === "save_and_search"/);
+});
+
+test("search summary uses visual cards and omits expired counts", () => {
+  assert.match(pageSource, /Canonical jobs/);
+  assert.match(pageSource, /Needs review/);
+  assert.match(pageSource, /Source issues/);
+  assert.match(pageSource, /Expired vacancies are removed before ranking/);
+  assert.doesNotMatch(pageSource, /label: "Expired"/);
+});
+
+test("desktop identity sources live in a sticky sidebar and mobile uses a collapsible panel", () => {
+  assert.match(pageSource, /sticky top-24 hidden lg:block/);
+  assert.match(pageSource, /Profile, CV & LinkedIn/);
+  assert.match(pageSource, /Your search identity/);
+});
+
+test("job results render as compact expandable rows with actions inside", () => {
+  assert.match(dashboardSource, /<details className=/);
+  assert.match(dashboardSource, /Compact by default/);
+  assert.match(dashboardSource, /Prepare with review/);
+  assert.match(dashboardSource, /Evidence & details/);
+  assert.match(dashboardSource, /Snooze/);
+  assert.match(dashboardSource, /Blocked by hard rules/);
+});
+
+test("expired vacancies are removed before ranking and excluded from workspace stats", () => {
+  assert.match(normalizationSource, /Expired vacancies are removed at the earliest canonicalization boundary/);
+  assert.match(normalizationSource, /expiration <= now\.getTime\(\)/);
+  assert.match(repositorySource, /\.neq\("freshness_status", "expired"\)/);
+  assert.match(repositorySource, /job\.freshness_status !== "expired"/);
 });

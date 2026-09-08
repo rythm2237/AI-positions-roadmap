@@ -14,6 +14,7 @@ export async function getJobAgentWorkspace(user: User) {
     supabase.from("job_opportunities")
       .select("id,user_id,agent_id,external_job_id,source,company,role,normalized_title,source_query,location,country,job_url,job_description,required_languages,application_url,source_url,workplace_model,employment_types,seniority,required_skills,preferred_skills,education_requirements,certification_requirements,visa_sponsorship,posted_at,expires_at,verification_status,verification_provenance,verified_at,freshness_status,stale_reason,fit_score,fit_confidence,fit_explanation,decision_classification,execution_capability,recommendation,strengths,gaps,founder_positioning,status,skip_reason,decision_status,decision_at,snoozed_until,last_surfaced_at,surfaced_count,salary_min,salary_max,salary_currency,eligibility_status,eligibility_reasons,eligibility_detail,eligibility_checked_at,eligibility_version,current_intent_version,submission_method,submission_receipt,discovered_at,updated_at")
       .eq("user_id", user.id)
+      .neq("freshness_status", "expired")
       .order("discovered_at", { ascending: false })
       .limit(100)
       .returns<JobOpportunity[]>(),
@@ -29,7 +30,7 @@ export async function getJobAgentWorkspace(user: User) {
   const allJobs = jobs.data ?? [];
   const currentVersion = agent.data?.intent_version ?? 0;
   const currentJobs = currentVersion ? allJobs.filter((job) => job.current_intent_version === currentVersion) : allJobs;
-  const jobRows = currentJobs.filter((job) => !applicationJobIds.has(job.id) && job.decision_status !== "rejected" && job.decision_status !== "approved" && (job.decision_status !== "snoozed" || !job.snoozed_until || Date.parse(job.snoozed_until) <= now));
+  const jobRows = currentJobs.filter((job) => job.freshness_status !== "expired" && !applicationJobIds.has(job.id) && job.decision_status !== "rejected" && job.decision_status !== "approved" && (job.decision_status !== "snoozed" || !job.snoozed_until || Date.parse(job.snoozed_until) <= now));
   const stats: JobAgentDashboardStats = {
     jobsFound: jobRows.length,
     strongMatches: jobRows.filter((job) => job.eligibility_status === "eligible" && (job.fit_score ?? 0) >= (agent.data?.strong_match_threshold ?? 85)).length,

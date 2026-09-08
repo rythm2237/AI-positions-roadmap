@@ -22,6 +22,33 @@ const errorMessages: Record<string, string> = {
   "search-save": "The search completed, but the discovered vacancies could not be saved. Retry the search.",
 };
 
+type IdentityPanelProps = {
+  profile: { current_position: string | null; skills: string[]; certificates: string[]; languages: string[] };
+  latestResume: { title: string; version: number; file_type: string } | undefined;
+  userId: string;
+  linkedinUrl: string | null | undefined;
+};
+
+function IdentityPanel({ profile, latestResume, userId, linkedinUrl }: IdentityPanelProps) {
+  return <div className="space-y-3">
+    <section className="rounded-2xl border border-white/[.07] bg-white/[.025] p-4">
+      <div className="flex items-start justify-between gap-3"><div><p className="text-[11px] uppercase tracking-[.16em] text-slate-500">Profile</p><p className="mt-2 font-semibold text-white">{profile.current_position || "Current role not set"}</p></div><span className="rounded-full border border-white/10 px-2 py-1 text-[10px] text-slate-400">{profile.skills.length} skills</span></div>
+      <p className="mt-2 text-xs leading-5 text-slate-400">{profile.certificates.length} certifications · {profile.languages.length} languages</p>
+      <Link href="/profile" className="mt-3 inline-block text-sm font-semibold text-violet-300">Review profile →</Link>
+    </section>
+    <section className="rounded-2xl border border-white/[.07] bg-white/[.025] p-4">
+      <p className="text-[11px] uppercase tracking-[.16em] text-slate-500">Master CV</p>
+      <p className="mt-2 font-semibold text-white">{latestResume ? latestResume.title : "No CV uploaded"}</p>
+      <p className="mt-2 text-xs leading-5 text-slate-400">{latestResume ? `Version ${latestResume.version} · ${latestResume.file_type.toUpperCase()}` : "Upload a factual Master CV so Job Agent can score roles against CV evidence."}</p>
+      <div className="mt-3"><ResumeUploader userId={userId} label={latestResume ? "Replace Master CV" : "Upload Master CV"} /></div>
+    </section>
+    <section className="rounded-2xl border border-white/[.07] bg-white/[.025] p-4">
+      <div className="flex items-start justify-between gap-3"><div><p className="text-[11px] uppercase tracking-[.16em] text-slate-500">LinkedIn</p><p className="mt-2 font-semibold text-white">{linkedinUrl ? "Profile URL saved" : "Not connected"}</p></div><span className={`mt-1 h-2.5 w-2.5 rounded-full ${linkedinUrl ? "bg-emerald-300" : "bg-slate-600"}`} aria-hidden="true" /></div>
+      <p className="mt-2 text-xs leading-5 text-slate-400">The saved URL is used as an identity reference. Live synchronization is not claimed without approved API access.</p>
+    </section>
+  </div>;
+}
+
 export default async function JobAgentPage({
   searchParams,
 }: {
@@ -35,25 +62,45 @@ export default async function JobAgentPage({
   const knownLanguages = workspace.profile.languages.join(", ");
   const latestResume = workspace.resumes[0];
   const errorMessage = query.error ? errorMessages[query.error] ?? "The Agent could not complete that action. Review the relevant settings and retry." : null;
-  const searchContext = agent ? [agent.search_countries.join(", ") || "No country", agent.workplace_preferences.length ? agent.workplace_preferences.map((value) => value.replace("_", " ")).join("/") : "Any workplace", agent.english_only_priority ? "English-only" : (agent.search_languages?.join(", ") || workspace.profile.languages.join(", ") || "Languages unconfirmed"), agent.primary_career || agent.desired_titles[0] || "No target role"].join(" · ") : null;
+  const searchChips = agent ? [
+    agent.search_countries.join(", ") || "No country",
+    agent.workplace_preferences.length ? agent.workplace_preferences.map((value) => value.replace("_", " ")).join(" / ") : "Any workplace",
+    agent.english_only_priority ? "English-only" : (agent.search_languages?.join(", ") || workspace.profile.languages.join(", ") || "Languages unconfirmed"),
+    agent.primary_career || agent.desired_titles[0] || "No target role",
+  ] : [];
+  const resultSummary = query.searched ? [
+    { label: "Canonical jobs", value: Number(query.searched || 0), tone: "text-cyan-200 border-cyan-300/15 bg-cyan-400/[.04]" },
+    { label: "Ready", value: Number(query.eligible || 0), tone: "text-emerald-200 border-emerald-300/15 bg-emerald-400/[.04]" },
+    { label: "Needs review", value: Number(query.unverified || 0), tone: "text-amber-200 border-amber-300/15 bg-amber-400/[.04]" },
+    { label: "Blocked", value: Number(query.blocked || 0), tone: "text-rose-200 border-rose-300/15 bg-rose-400/[.04]" },
+    ...(Number(query.provider_errors || 0) ? [{ label: "Source issues", value: Number(query.provider_errors || 0), tone: "text-violet-200 border-violet-300/15 bg-violet-400/[.04]" }] : []),
+  ] : [];
 
-  return <main className="mx-auto max-w-6xl px-5 py-10 sm:py-12">
-    <div className="flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between"><div><p className="eyebrow">Roadmap execution layer</p><h1 className="mt-2 font-display text-3xl font-semibold text-white sm:text-4xl">Job Acquisition System</h1><p className="mt-3 max-w-3xl text-sm leading-6 text-slate-400 sm:text-base">Live discovery, source-aware verification, hard eligibility, evidence-grounded ranking, truthful application packs and lifecycle tracking. Consequential decisions remain under your control.</p>{searchContext ? <div className="mt-3 rounded-xl border border-cyan-300/15 bg-cyan-300/[.04] px-3 py-2 text-sm text-cyan-100"><strong>Current confirmed search:</strong> {searchContext}</div> : null}</div>{agent ? <div className="flex flex-wrap gap-3"><JobAgentSearchButton /><form action={setJobAgentStatus}><input type="hidden" name="status" value={agent.status === "active" ? "paused" : "active"} /><button className={agent.status === "active" ? "btn-secondary min-h-11" : "btn-primary min-h-11"}>{agent.status === "active" ? "Pause Agent" : "Resume Agent"}</button></form></div> : null}</div>
+  return <main className="mx-auto max-w-[1440px] px-5 py-10 sm:py-12">
+    <div className="flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between">
+      <div className="min-w-0"><p className="eyebrow">Roadmap execution layer</p><h1 className="mt-2 font-display text-3xl font-semibold text-white sm:text-4xl">Job Acquisition System</h1><p className="mt-3 max-w-3xl text-sm leading-6 text-slate-400 sm:text-base">Live discovery, source-aware verification, hard eligibility, evidence-grounded ranking, truthful application packs and lifecycle tracking. Consequential decisions remain under your control.</p>{searchChips.length ? <div className="mt-4 flex flex-wrap gap-2" aria-label="Current confirmed search">{searchChips.map((chip) => <span key={chip} className="rounded-full border border-cyan-300/15 bg-cyan-300/[.035] px-3 py-1.5 text-xs text-cyan-100">{chip}</span>)}</div> : null}</div>
+      {agent ? <div className="flex shrink-0 flex-wrap gap-3"><JobAgentSearchButton /><form action={setJobAgentStatus}><input type="hidden" name="status" value={agent.status === "active" ? "paused" : "active"} /><button className={agent.status === "active" ? "btn-secondary min-h-11" : "btn-primary min-h-11"}>{agent.status === "active" ? "Pause Agent" : "Resume Agent"}</button></form></div> : null}
+    </div>
 
-    {query.saved ? <p role="status" className="mt-6 rounded-xl border border-emerald-300/20 bg-emerald-400/10 p-3 text-sm text-emerald-200">Job Agent settings saved. The search used this saved configuration.</p> : null}
-    {query.searched ? <p role="status" className="mt-6 rounded-xl border border-cyan-300/20 bg-cyan-400/10 p-3 text-sm leading-6 text-cyan-100">Search {query.outcome === "partial" ? "completed with provider warnings" : query.outcome === "no_results" ? "completed with no matching records" : "completed"}. {query.searched} canonical vacancies · {query.eligible ?? 0} eligible · {query.unverified ?? 0} unverified · {query.blocked ?? 0} blocked · {query.expired ?? 0} expired{Number(query.provider_errors ?? 0) ? ` · ${query.provider_errors} provider errors` : ""}. Correlation: <code>{query.correlation?.slice(0, 8)}</code>.</p> : null}
-    {errorMessage ? <p role="alert" className="mt-6 rounded-xl border border-rose-300/20 bg-rose-400/10 p-3 text-sm text-rose-200">{errorMessage}</p> : null}
+    {query.saved ? <p role="status" className="mt-5 rounded-xl border border-emerald-300/15 bg-emerald-400/[.06] px-4 py-3 text-sm text-emerald-200">Settings saved. This search used the confirmed configuration above.</p> : null}
 
-    <section className="mt-8 grid gap-4 md:grid-cols-3" aria-label="Career identity sources">
-      <div className="glass rounded-2xl border border-white/[.07] p-5"><p className="text-xs uppercase tracking-[.16em] text-slate-500">Profile</p><p className="mt-2 font-semibold text-white">{workspace.profile.current_position || "Current role not set"}</p><p className="mt-2 text-sm text-slate-400">{workspace.profile.skills.length} skills · {workspace.profile.certificates.length} certifications · {workspace.profile.languages.length} languages</p><Link href="/profile" className="mt-4 inline-block text-sm font-semibold text-violet-300">Review profile →</Link></div>
-      <div className="glass rounded-2xl border border-white/[.07] p-5"><p className="text-xs uppercase tracking-[.16em] text-slate-500">Master CV</p><p className="mt-2 font-semibold text-white">{latestResume ? latestResume.title : "No CV uploaded"}</p><p className="mt-2 text-sm text-slate-400">{latestResume ? `Version ${latestResume.version} · ${latestResume.file_type.toUpperCase()}` : "Upload a factual Master CV so Job Agent can score roles against CV evidence."}</p><div className="mt-4"><ResumeUploader userId={user.id} label={latestResume ? "Replace Master CV" : "Upload Master CV"} /></div></div>
-      <div className="glass rounded-2xl border border-white/[.07] p-5"><p className="text-xs uppercase tracking-[.16em] text-slate-500">LinkedIn</p><p className="mt-2 font-semibold text-white">{agent?.linkedin_url ? "Profile URL saved" : "Not connected"}</p><p className="mt-2 text-sm text-slate-400">V1 records the URL and review preference. No live synchronization is claimed without approved API access.</p></div>
-    </section>
+    {query.searched ? <section className="mt-5 rounded-2xl border border-white/[.07] bg-white/[.02] p-4" aria-labelledby="search-summary-title">
+      <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between"><div><p id="search-summary-title" className="text-sm font-semibold text-white">{query.outcome === "partial" ? "Search complete · some sources need attention" : query.outcome === "no_results" ? "Search complete · no matching jobs" : "Search complete"}</p><p className="mt-1 text-xs text-slate-500">Expired vacancies are removed before ranking and are not included below.</p></div>{query.correlation ? <code className="text-[11px] text-slate-600">Run {query.correlation.slice(0, 8)}</code> : null}</div>
+      <div className="mt-4 grid grid-cols-2 gap-2 sm:grid-cols-3 xl:grid-cols-5">{resultSummary.map((item) => <div key={item.label} className={`rounded-xl border px-3 py-3 ${item.tone}`}><p className="text-2xl font-semibold">{item.value}</p><p className="mt-0.5 text-[11px] opacity-75">{item.label}</p></div>)}</div>
+    </section> : null}
 
-    {workspace.latestSearch ? <section className="mt-6 rounded-2xl border border-white/[.07] bg-white/[.025] p-4 text-xs leading-5 text-slate-400"><strong className="text-slate-200">Latest run evidence:</strong> {workspace.latestSearch.status} · {workspace.latestSearch.deduplicated_count} canonical jobs · {workspace.latestSearch.latency_ms ?? "—"} ms · estimated provider cost ${Number(workspace.latestSearch.estimated_cost ?? 0).toFixed(4)} · correlation {String(workspace.latestSearch.correlation_id).slice(0, 8)}</section> : null}
+    {errorMessage ? <p role="alert" className="mt-5 rounded-xl border border-rose-300/20 bg-rose-400/10 p-3 text-sm text-rose-200">{errorMessage}</p> : null}
 
-    {agent ? <JobAgentDashboardView agent={agent} stats={workspace.stats} jobs={workspace.jobs} applications={workspace.applications} inbox={workspace.inbox} /> : <section className="mt-8 rounded-2xl border border-violet-300/15 bg-violet-400/[.04] p-5 sm:p-6"><p className="eyebrow">First activation</p><h2 className="mt-2 font-display text-2xl font-semibold text-white">Confirm only what the roadmap does not already know</h2><p className="mt-2 max-w-3xl text-sm leading-6 text-slate-400">Your target career and latest CV are reused as evidence without silently changing your profile. Sensitive employment and salary information stays optional.</p></section>}
+    <details className="mt-5 rounded-2xl border border-white/[.07] bg-white/[.02] lg:hidden"><summary className="cursor-pointer list-none px-4 py-3 text-sm font-semibold text-slate-200 [&::-webkit-details-marker]:hidden">Profile, CV & LinkedIn <span className="float-right text-slate-500">⌄</span></summary><div className="border-t border-white/[.06] p-3"><IdentityPanel profile={workspace.profile} latestResume={latestResume} userId={user.id} linkedinUrl={agent?.linkedin_url} /></div></details>
 
-    <JobAgentSettingsForm agent={agent} primaryCareer={primaryCareer} knownLanguages={knownLanguages} preferenceCountry={workspace.preferences?.job_search_country} action={saveJobAgent} />
+    <div className="mt-6 grid gap-6 lg:grid-cols-[minmax(0,1fr)_320px] lg:items-start">
+      <div className="min-w-0">
+        {workspace.latestSearch ? <section className="rounded-xl border border-white/[.06] bg-white/[.015] px-4 py-3 text-xs leading-5 text-slate-500"><strong className="text-slate-300">Latest run:</strong> {workspace.latestSearch.status} · {workspace.latestSearch.deduplicated_count} active canonical jobs · {workspace.latestSearch.latency_ms ?? "—"} ms · estimated provider cost ${Number(workspace.latestSearch.estimated_cost ?? 0).toFixed(4)} · run {String(workspace.latestSearch.correlation_id).slice(0, 8)}</section> : null}
+        {agent ? <JobAgentDashboardView agent={agent} stats={workspace.stats} jobs={workspace.jobs} applications={workspace.applications} inbox={workspace.inbox} /> : <section className="rounded-2xl border border-violet-300/15 bg-violet-400/[.04] p-5 sm:p-6"><p className="eyebrow">First activation</p><h2 className="mt-2 font-display text-2xl font-semibold text-white">Confirm only what the roadmap does not already know</h2><p className="mt-2 max-w-3xl text-sm leading-6 text-slate-400">Your target career and latest CV are reused as evidence without silently changing your profile. Sensitive employment and salary information stays optional.</p></section>}
+      </div>
+      <aside className="sticky top-24 hidden lg:block" aria-label="Career identity sources"><div className="mb-3 flex items-center justify-between px-1"><p className="text-xs font-semibold uppercase tracking-[.16em] text-slate-500">Your search identity</p><Link href="/profile" className="text-xs text-violet-300">Edit</Link></div><IdentityPanel profile={workspace.profile} latestResume={latestResume} userId={user.id} linkedinUrl={agent?.linkedin_url} /></aside>
+    </div>
+
+    <section className="mt-8"><JobAgentSettingsForm agent={agent} primaryCareer={primaryCareer} knownLanguages={knownLanguages} preferenceCountry={workspace.preferences?.job_search_country} action={saveJobAgent} /></section>
   </main>;
 }

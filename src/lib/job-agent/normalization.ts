@@ -64,6 +64,12 @@ export function deduplicateJobs(jobs: CanonicalJobCandidate[], now = new Date())
       postedAt: parseProviderPostedAt(candidate.postedAt, now),
       expiresAt: parseProviderPostedAt(candidate.expiresAt, now),
     };
+
+    // Expired vacancies are removed at the earliest canonicalization boundary. They never
+    // enter verification, eligibility, ranking, persistence, dashboard counts or user UI.
+    const expiration = normalized.expiresAt ? Date.parse(normalized.expiresAt) : Number.NaN;
+    if (Number.isFinite(expiration) && expiration <= now.getTime()) continue;
+
     const key = canonicalJobKey(normalized);
     normalized.canonicalKey = key;
     const existing = byKey.get(key);
