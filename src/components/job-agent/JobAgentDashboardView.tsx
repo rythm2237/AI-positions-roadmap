@@ -34,7 +34,12 @@ const explanation = (job: JobOpportunity) => {
 
 const badge = (status: string | null | undefined) => status?.replaceAll("_", " ") ?? "unknown";
 
-const countryLabel = (job: JobOpportunity) => job.country || job.location || "Location unverified";
+const locationLabel = (job: JobOpportunity) => {
+  const location = job.location?.trim();
+  const country = job.country?.trim();
+  if (location && country && !location.toLowerCase().includes(country.toLowerCase())) return `${location} · ${country}`;
+  return location || country || "Location unverified";
+};
 
 function ResultActions({ job, blocked }: { job: JobOpportunity; blocked: boolean }) {
   return <div className="flex flex-wrap items-center gap-2">
@@ -57,7 +62,7 @@ function JobResult({ job, now }: { job: JobOpportunity; now: number }) {
           <p className="truncate font-semibold text-white">{job.role}</p>
           {dueSnooze ? <span className="hidden shrink-0 rounded-full bg-amber-400/10 px-2 py-1 text-[10px] font-semibold text-amber-200 sm:inline">Snoozed</span> : null}
         </div>
-        <p className="mt-1 truncate text-sm text-slate-400">{job.company} · {countryLabel(job)}</p>
+        <p className="mt-1 truncate text-sm text-slate-400">{job.company} · {locationLabel(job)}</p>
       </div>
       <div className="hidden shrink-0 items-center gap-2 md:flex">
         <span className={`rounded-full px-2.5 py-1 text-[11px] font-semibold ${job.eligibility_status === "eligible" ? "bg-emerald-400/10 text-emerald-200" : blocked ? "bg-rose-400/10 text-rose-200" : "bg-amber-400/10 text-amber-200"}`}>{job.eligibility_status === "unverified" ? "Needs review" : badge(job.eligibility_status)}</span>
