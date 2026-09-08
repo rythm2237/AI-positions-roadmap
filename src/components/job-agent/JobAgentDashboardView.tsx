@@ -98,7 +98,7 @@ export function JobAgentDashboardView({ agent, stats, jobs, applications, inbox 
   const blocked = activeJobs.filter((job) => job.eligibility_status === "blocked");
 
   return <>
-    <section className="mt-6 flex gap-2 overflow-x-auto pb-1" aria-label="Job Agent activity summary">{activityStats.map(([key, label]) => <div key={key} className="min-w-[128px] flex-1 rounded-xl border border-white/[.07] bg-white/[.02] px-3 py-3"><p className="text-xl font-semibold text-white">{stats[key]}</p><p className="mt-0.5 text-[11px] text-slate-500">{label}</p></div>)}</section>
+    <section className="mt-6 grid grid-flow-col auto-cols-[128px] gap-2 overflow-x-auto pb-1 sm:grid-flow-row sm:grid-cols-2 lg:grid-cols-6" aria-label="Job Agent activity summary">{activityStats.map(([key, label]) => <div key={key} className="rounded-xl border border-white/[.07] bg-white/[.02] px-3 py-3"><p className="text-xl font-semibold text-white">{stats[key]}</p><p className="mt-0.5 text-[11px] text-slate-500">{label}</p></div>)}</section>
 
     <section id="current-results" className="mt-6 glass rounded-2xl border border-white/[.07] p-4 sm:p-6" aria-labelledby="matches-title">
       <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
