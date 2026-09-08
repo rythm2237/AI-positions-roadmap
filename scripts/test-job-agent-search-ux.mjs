@@ -9,6 +9,7 @@ const repositorySource = readFileSync(new URL("../src/lib/job-agent/repository.t
 const normalizationSource = readFileSync(new URL("../src/lib/job-agent/normalization.ts", import.meta.url), "utf8");
 const searchActionSource = readFileSync(new URL("../src/app/(account)/job-agent/searchActions.ts", import.meta.url), "utf8");
 const resultGroupsSource = readFileSync(new URL("../src/lib/job-agent/resultGroups.ts", import.meta.url), "utf8");
+const searchRunMetricsSource = readFileSync(new URL("../src/lib/job-agent/searchRunMetrics.ts", import.meta.url), "utf8");
 
 test("search control exposes an immediate accessible pending state without disabling its submit intent", () => {
   assert.match(buttonSource, /aria-disabled=\{pending\}/);
@@ -74,9 +75,17 @@ test("current results are scoped to the latest search run", () => {
 });
 
 test("expired vacancies are excluded from every active search count", () => {
-  assert.match(searchActionSource, /const activeProcessed = processed\.filter/);
-  assert.match(searchActionSource, /deduplicated_count: activeProcessed\.length/);
-  assert.match(searchActionSource, /searched: activeProcessed\.length/);
+  assert.match(searchActionSource, /summarizeCanonicalSearchRun/);
+  assert.match(searchActionSource, /deduplicated_count: searched/);
+  assert.match(searchActionSource, /metadata: \{ correlation_id: correlationId, intent_version: intentRecord\.version, searched,/);
+  assert.match(searchRunMetricsSource, /freshnessStatus !== "expired"/);
+});
+
+test("latest-run aggregates collapse provider rows to persisted canonical job ids", () => {
+  assert.match(searchActionSource, /processedByJobId/);
+  assert.match(searchActionSource, /latestRunJobIds/);
+  assert.match(searchActionSource, /sourceRows\.values\(\)/);
+  assert.match(searchRunMetricsSource, /new Map\(candidates\.map\(\(candidate\) => \[candidate\.jobId, candidate\]\)\)/);
 });
 
 test("desktop identity sources live in a sticky sidebar and mobile uses a collapsible panel", () => {
