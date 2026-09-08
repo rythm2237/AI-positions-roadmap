@@ -156,6 +156,25 @@ test("Layer 6b — latest-run summary grouping excludes expired jobs and remains
   assert.equal(countProviderIssues({ attemptsByStatus: { success: 2, provider_error: 3, rate_limit: 1 } }), 4);
 });
 
+test("Layer 6b2 — visible results collapse the same vacancy discovered under multiple URLs", () => {
+  const base = {
+    freshness_status: "fresh",
+    fit_score: 50,
+    eligibility_status: "unverified",
+    company: "Reply Deutschland SE",
+    role: "(Junior) Power Platform Consultant (m/w/d)",
+    country: "Germany",
+    location: "Gütersloh",
+    updated_at: "2026-09-08T10:00:00.000Z",
+  };
+  const grouped = groupCurrentJobResults([
+    { ...base, id: "provider-a", job_url: "https://a.example/jobs/1", verification_status: "unverified", job_description: "short" },
+    { ...base, id: "provider-b", job_url: "https://b.example/vacancy/9", verification_status: "partially_verified", job_description: "complete source description" },
+  ]);
+  assert.equal(grouped.active.length, 1);
+  assert.equal(grouped.active[0].id, "provider-b");
+});
+
 test("Layer 6c — latest-run metrics count each persisted canonical job once", () => {
   const metrics = summarizeCanonicalSearchRun([
     { jobId: "job-1", freshnessStatus: "fresh", eligibilityStatus: "unverified", classification: "stretch" },
@@ -183,6 +202,16 @@ test("Layer 6e — requirement sections preserve skills and education without re
     educationRequirements: [],
   }), []);
   assert.deepEqual(enriched.requiredSkills.sort(), ["Generative AI", "LLM", "Prompt Design", "Retrieval-Augmented Generation", "Stakeholder Management"].sort());
+  assert.equal(enriched.educationRequirements.length, 1);
+});
+
+test("Layer 6f — German requirement sections extract grounded consulting evidence", () => {
+  const enriched = enrichRequirements(candidate({
+    description: "Deine Skills? Mehr als interessant:\nFundiertes Verständnis für AI im Unternehmensumfeld.\nErfahrung in Workshops und Bedarfsanalysen sowie Business Cases und Entscheidungsvorlagen.\nPraktische Erfahrung in der Kundenberatung und im Lösungsvertrieb.\nEin Studium oder eine Ausbildung ist von Vorteil.\nDu verdienst echten Mehrwert. Freu dich auf Weiterbildung.",
+    requiredSkills: [],
+    educationRequirements: [],
+  }), []);
+  assert.deepEqual(enriched.requiredSkills.sort(), ["Business Case Development", "Solution Consulting", "Workshop Facilitation"].sort());
   assert.equal(enriched.educationRequirements.length, 1);
 });
 
