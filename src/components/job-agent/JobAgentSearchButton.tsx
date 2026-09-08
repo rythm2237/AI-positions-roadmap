@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useSearchParams } from "next/navigation";
 
 const SEARCH_STARTED_EVENT = "job-agent-search-started";
@@ -24,37 +24,59 @@ export function JobAgentSearchButton({
   const searchParams = useSearchParams();
   const navigationKey = searchParams.toString();
   const searchInFlight = useRef(false);
+  const searchStartHref = useRef<string | null>(null);
   const [pending, setPending] = useState(false);
   const [elapsedSeconds, setElapsedSeconds] = useState(0);
 
+  const resetProgress = useCallback(() => {
+    searchInFlight.current = false;
+    searchStartHref.current = null;
+    setPending(false);
+    setElapsedSeconds(0);
+  }, []);
+
+  const beginProgress = useCallback(() => {
+    searchInFlight.current = true;
+    searchStartHref.current = window.location.href;
+    setPending(true);
+    setElapsedSeconds(0);
+  }, []);
+
   useEffect(() => {
-    const start = () => {
-      searchInFlight.current = true;
-      setPending(true);
-      setElapsedSeconds(0);
-    };
+    const start = () => beginProgress();
     window.addEventListener(SEARCH_STARTED_EVENT, start);
     return () => window.removeEventListener(SEARCH_STARTED_EVENT, start);
-  }, []);
+  }, [beginProgress]);
 
   // Next.js can preserve this client component when a server action redirects back
   // to /job-agent with new search params. Reset local progress after that navigation.
   useEffect(() => {
-    searchInFlight.current = false;
-    setPending(false);
-    setElapsedSeconds(0);
-  }, [navigationKey]);
+    if (!pending) return;
+    resetProgress();
+  }, [navigationKey, pending, resetProgress]);
+
+  // Browser URL is the source of truth for completion. In some Next.js server-action
+  // redirects the component instance is preserved and useSearchParams can lag behind
+  // the actual location. Detect the real URL change directly so the control cannot
+  // remain visually stuck at "Ranking results…" after results are already rendered.
+  useEffect(() => {
+    if (!pending || !searchStartHref.current) return;
+
+    const poll = window.setInterval(() => {
+      const startHref = searchStartHref.current;
+      if (!startHref) return;
+      if (window.location.href !== startHref) resetProgress();
+    }, 250);
+
+    return () => window.clearInterval(poll);
+  }, [pending, resetProgress]);
 
   // Recover correctly when the page is restored from browser back/forward cache.
   useEffect(() => {
-    const onPageShow = () => {
-      searchInFlight.current = false;
-      setPending(false);
-      setElapsedSeconds(0);
-    };
+    const onPageShow = () => resetProgress();
     window.addEventListener("pageshow", onPageShow);
     return () => window.removeEventListener("pageshow", onPageShow);
-  }, []);
+  }, [resetProgress]);
 
   useEffect(() => {
     const form = document.getElementById(formId) as HTMLFormElement | null;
@@ -70,7 +92,6 @@ export function JobAgentSearchButton({
         return;
       }
 
-      searchInFlight.current = true;
       if (submitter instanceof HTMLButtonElement || submitter instanceof HTMLInputElement) submitter.disabled = true;
       window.dispatchEvent(new Event(SEARCH_STARTED_EVENT));
     };
@@ -103,8 +124,7 @@ export function JobAgentSearchButton({
     const form = document.getElementById(formId) as HTMLFormElement | null;
     if (!form || !form.checkValidity()) return;
 
-    setPending(true);
-    setElapsedSeconds(0);
+    beginProgress();
   };
 
   return (
