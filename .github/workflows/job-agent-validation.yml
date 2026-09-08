@@ -65,7 +65,11 @@ jobs:
         continue-on-error: true
         run: node --experimental-strip-types --test --test-name-pattern="Layer (16|17|18|19|20) —" scripts/test-job-acquisition-system.mjs
 
-      - name: Run complete 20-layer Job Acquisition System suite
+      - name: Diagnose authorization and responsive UI contract
+        continue-on-error: true
+        run: node --experimental-strip-types --test --test-name-pattern="authorization and responsive UI contracts remain explicit" scripts/test-job-acquisition-system.mjs
+
+      - name: Run complete Job Acquisition System suite
         run: npm run test:job-acquisition
 
       - name: Typecheck
