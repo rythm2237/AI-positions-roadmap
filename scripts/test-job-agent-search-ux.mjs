@@ -24,5 +24,5 @@ test("search form blocks a second save-and-search submission while one is in fli
   assert.match(source, /searchInFlight/);
   assert.match(source, /event\.preventDefault\(\)/);
   assert.match(source, /submitter\.disabled = true/);
-  assert.match(source, /value\) === "save_and_search"/);
+  assert.match(source, /getAttribute\("value"\) === "save_and_search"/);
 });
