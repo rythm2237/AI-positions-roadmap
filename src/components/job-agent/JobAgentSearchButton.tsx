@@ -36,8 +36,6 @@ export function JobAgentSearchButton({
   }, []);
 
   const beginProgress = useCallback(() => {
-    // Start progress only from the form submit event. Starting it from onClick can
-    // disable the submit control before the browser performs the native submit.
     searchInFlight.current = true;
     searchStartHref.current = window.location.href;
     searchStartNavigationKey.current = navigationKey;
@@ -62,9 +60,9 @@ export function JobAgentSearchButton({
         return;
       }
 
-      // Do not disable the native submitter here. Its name/value carries the
-      // `save_and_search` intent to the server action. React will disable the visible
-      // control from `pending` immediately after this submit event starts.
+      // Keep the submitter enabled while the browser/React constructs FormData.
+      // Its name/value is the only signal that tells the server action to run search
+      // after saving. Duplicate clicks are blocked by the in-flight guard instead.
       beginProgress();
     };
 
@@ -72,16 +70,12 @@ export function JobAgentSearchButton({
     return () => form.removeEventListener("submit", onSubmit);
   }, [beginProgress, formId]);
 
-  // Reset only after search parameters really change. Depending on `pending` alone
-  // caused the previous regression by resetting immediately after search start.
   useEffect(() => {
     if (!pending) return;
     const startKey = searchStartNavigationKey.current;
     if (startKey !== null && navigationKey !== startKey) resetProgress();
   }, [navigationKey, pending, resetProgress]);
 
-  // Next.js may preserve this client component across a server-action redirect.
-  // The browser URL is therefore a second completion signal if useSearchParams lags.
   useEffect(() => {
     if (!pending || !searchStartHref.current) return;
 
@@ -93,7 +87,6 @@ export function JobAgentSearchButton({
     return () => window.clearInterval(poll);
   }, [pending, resetProgress]);
 
-  // Avoid a permanently busy control if the browser restores the page from cache.
   useEffect(() => {
     const onPageShow = (event: PageTransitionEvent) => {
       if (event.persisted) resetProgress();
@@ -109,8 +102,6 @@ export function JobAgentSearchButton({
   }, [pending]);
 
   const phaseIndex = useMemo(() => {
-    // Typical searches take long enough to expose all four phases. These timings are
-    // deliberately short and do not claim exact backend completion percentages.
     if (elapsedSeconds < 1) return 0;
     if (elapsedSeconds < 4) return 1;
     if (elapsedSeconds < 8) return 2;
@@ -131,8 +122,6 @@ export function JobAgentSearchButton({
       return;
     }
 
-    // Let native form validation and submission continue. The submit event above is
-    // the single place that starts progress and the duplicate-submit guard.
     if (!form.checkValidity()) {
       event.preventDefault();
       form.reportValidity();
@@ -145,11 +134,11 @@ export function JobAgentSearchButton({
       form={formId}
       name="intent"
       value="save_and_search"
-      disabled={pending}
       aria-disabled={pending}
       aria-busy={pending}
+      data-pending={pending ? "true" : "false"}
       onClick={handleClick}
-      className={`${className} relative min-w-[16rem] overflow-hidden disabled:cursor-wait disabled:opacity-100`}
+      className={`${className} relative min-w-[16rem] overflow-hidden data-[pending=true]:cursor-wait`}
     >
       {pending ? (
         <>

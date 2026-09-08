@@ -8,11 +8,13 @@ const dashboardSource = readFileSync(new URL("../src/components/job-agent/JobAge
 const repositorySource = readFileSync(new URL("../src/lib/job-agent/repository.ts", import.meta.url), "utf8");
 const normalizationSource = readFileSync(new URL("../src/lib/job-agent/normalization.ts", import.meta.url), "utf8");
 
-test("search control exposes an immediate accessible pending state", () => {
-  assert.match(buttonSource, /disabled=\{pending\}/);
+test("search control exposes an immediate accessible pending state without disabling its submit intent", () => {
+  assert.match(buttonSource, /aria-disabled=\{pending\}/);
   assert.match(buttonSource, /aria-busy=\{pending\}/);
+  assert.match(buttonSource, /data-pending=\{pending \? "true" : "false"\}/);
   assert.match(buttonSource, /role="status"/);
   assert.match(buttonSource, /aria-live="polite"/);
+  assert.doesNotMatch(buttonSource, /\n\s+disabled=\{pending\}/);
 });
 
 test("search control communicates staged progress without claiming exact backend completion", () => {
@@ -24,13 +26,16 @@ test("search control communicates staged progress without claiming exact backend
   assert.doesNotMatch(buttonSource, /100% complete/i);
 });
 
-test("search form blocks duplicate submissions without disabling the successful submitter", () => {
+test("search form blocks duplicate submissions while preserving save-and-search intent", () => {
   assert.match(buttonSource, /const onSubmit = \(event: SubmitEvent\)/);
   assert.match(buttonSource, /if \(searchInFlight\.current\)/);
   assert.match(buttonSource, /event\.preventDefault\(\)/);
   assert.match(buttonSource, /beginProgress\(\)/);
+  assert.match(buttonSource, /name="intent"/);
+  assert.match(buttonSource, /value="save_and_search"/);
   assert.match(buttonSource, /getAttribute\("value"\) === "save_and_search"/);
   assert.doesNotMatch(buttonSource, /submitter\.disabled = true/);
+  assert.doesNotMatch(buttonSource, /\n\s+disabled=\{pending\}/);
 });
 
 test("search progress resets only after navigation actually changes", () => {
