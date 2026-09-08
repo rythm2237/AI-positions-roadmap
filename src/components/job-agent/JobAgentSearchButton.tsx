@@ -5,10 +5,10 @@ import { useEffect, useMemo, useState } from "react";
 const SEARCH_STARTED_EVENT = "job-agent-search-started";
 
 const phases = [
-  "Saving settings",
-  "Searching providers",
-  "Verifying vacancies",
-  "Ranking results",
+  { label: "Saving settings", progress: 18 },
+  { label: "Searching providers", progress: 45 },
+  { label: "Verifying vacancies", progress: 72 },
+  { label: "Ranking results", progress: 90 },
 ] as const;
 
 export function JobAgentSearchButton({
@@ -33,6 +33,30 @@ export function JobAgentSearchButton({
   }, []);
 
   useEffect(() => {
+    const form = document.getElementById(formId) as HTMLFormElement | null;
+    if (!form) return;
+
+    let searchInFlight = false;
+    const onSubmit = (event: SubmitEvent) => {
+      const submitter = event.submitter as HTMLButtonElement | HTMLInputElement | null;
+      const isSearch = submitter?.getAttribute("name") === "intent" && submitter?.getAttribute("value") === "save_and_search";
+      if (!isSearch) return;
+
+      if (searchInFlight) {
+        event.preventDefault();
+        return;
+      }
+
+      searchInFlight = true;
+      if (submitter instanceof HTMLButtonElement || submitter instanceof HTMLInputElement) submitter.disabled = true;
+      window.dispatchEvent(new Event(SEARCH_STARTED_EVENT));
+    };
+
+    form.addEventListener("submit", onSubmit);
+    return () => form.removeEventListener("submit", onSubmit);
+  }, [formId]);
+
+  useEffect(() => {
     if (!pending) return;
     const timer = window.setInterval(() => setElapsedSeconds((value) => value + 1), 1000);
     return () => window.clearInterval(timer);
@@ -45,6 +69,8 @@ export function JobAgentSearchButton({
     return 3;
   }, [elapsedSeconds]);
 
+  const phase = phases[phaseIndex];
+
   const handleClick = (event: React.MouseEvent<HTMLButtonElement>) => {
     if (pending) {
       event.preventDefault();
@@ -56,7 +82,6 @@ export function JobAgentSearchButton({
 
     setPending(true);
     setElapsedSeconds(0);
-    window.dispatchEvent(new Event(SEARCH_STARTED_EVENT));
   };
 
   return (
@@ -73,13 +98,15 @@ export function JobAgentSearchButton({
     >
       {pending ? (
         <>
-          <span
-            aria-hidden="true"
-            className="absolute inset-y-0 left-0 w-1/2 animate-[job-agent-search-progress_1.7s_ease-in-out_infinite] bg-white/15"
-          />
+          <span aria-hidden="true" className="absolute inset-x-0 bottom-0 h-1 bg-black/20">
+            <span
+              className="block h-full bg-white/70 transition-[width] duration-700 ease-out"
+              style={{ width: `${phase.progress}%` }}
+            />
+          </span>
           <span className="relative flex items-center justify-center gap-2">
             <span className="inline-block size-2 animate-pulse rounded-full bg-white" />
-            {phases[phaseIndex]}…
+            {phase.label}…
           </span>
           <span className="sr-only" role="status" aria-live="polite">
             Job search is running. Please wait and do not submit again.
