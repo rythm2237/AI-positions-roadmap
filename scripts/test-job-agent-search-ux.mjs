@@ -24,11 +24,19 @@ test("search control communicates staged progress without claiming exact backend
   assert.doesNotMatch(buttonSource, /100% complete/i);
 });
 
-test("search form blocks a second save-and-search submission while one is in flight", () => {
-  assert.match(buttonSource, /searchInFlight/);
+test("search form blocks duplicate submissions without disabling the successful submitter", () => {
+  assert.match(buttonSource, /const onSubmit = \(event: SubmitEvent\)/);
+  assert.match(buttonSource, /if \(searchInFlight\.current\)/);
   assert.match(buttonSource, /event\.preventDefault\(\)/);
-  assert.match(buttonSource, /submitter\.disabled = true/);
+  assert.match(buttonSource, /beginProgress\(\)/);
   assert.match(buttonSource, /getAttribute\("value"\) === "save_and_search"/);
+  assert.doesNotMatch(buttonSource, /submitter\.disabled = true/);
+});
+
+test("search progress resets only after navigation actually changes", () => {
+  assert.match(buttonSource, /searchStartNavigationKey/);
+  assert.match(buttonSource, /navigationKey !== startKey/);
+  assert.match(buttonSource, /window\.location\.href !== startHref/);
 });
 
 test("search summary uses visual cards and omits expired counts", () => {
