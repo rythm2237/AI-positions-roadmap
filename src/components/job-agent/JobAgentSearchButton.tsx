@@ -1,6 +1,7 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { useSearchParams } from "next/navigation";
 
 const SEARCH_STARTED_EVENT = "job-agent-search-started";
 
@@ -20,11 +21,21 @@ export function JobAgentSearchButton({
   idleLabel?: string;
   className?: string;
 }) {
+  const searchParams = useSearchParams();
+  const navigationKey = searchParams.toString();
+  const searchInFlight = useRef(false);
   const [pending, setPending] = useState(false);
   const [elapsedSeconds, setElapsedSeconds] = useState(0);
 
+  const resetSearchState = () => {
+    searchInFlight.current = false;
+    setPending(false);
+    setElapsedSeconds(0);
+  };
+
   useEffect(() => {
     const start = () => {
+      searchInFlight.current = true;
       setPending(true);
       setElapsedSeconds(0);
     };
@@ -32,22 +43,35 @@ export function JobAgentSearchButton({
     return () => window.removeEventListener(SEARCH_STARTED_EVENT, start);
   }, []);
 
+  // Next.js can preserve this client component when a server action redirects back
+  // to /job-agent with new search params. Reset the local progress state whenever
+  // that navigation completes so the UI cannot remain stuck on "Ranking results".
+  useEffect(() => {
+    resetSearchState();
+  }, [navigationKey]);
+
+  // Also recover correctly from browser back/forward cache restoration.
+  useEffect(() => {
+    const onPageShow = () => resetSearchState();
+    window.addEventListener("pageshow", onPageShow);
+    return () => window.removeEventListener("pageshow", onPageShow);
+  }, []);
+
   useEffect(() => {
     const form = document.getElementById(formId) as HTMLFormElement | null;
     if (!form) return;
 
-    let searchInFlight = false;
     const onSubmit = (event: SubmitEvent) => {
       const submitter = event.submitter as HTMLButtonElement | HTMLInputElement | null;
       const isSearch = submitter?.getAttribute("name") === "intent" && submitter?.getAttribute("value") === "save_and_search";
       if (!isSearch) return;
 
-      if (searchInFlight) {
+      if (searchInFlight.current) {
         event.preventDefault();
         return;
       }
 
-      searchInFlight = true;
+      searchInFlight.current = true;
       if (submitter instanceof HTMLButtonElement || submitter instanceof HTMLInputElement) submitter.disabled = true;
       window.dispatchEvent(new Event(SEARCH_STARTED_EVENT));
     };
@@ -72,7 +96,7 @@ export function JobAgentSearchButton({
   const phase = phases[phaseIndex];
 
   const handleClick = (event: React.MouseEvent<HTMLButtonElement>) => {
-    if (pending) {
+    if (pending || searchInFlight.current) {
       event.preventDefault();
       return;
     }
@@ -80,6 +104,7 @@ export function JobAgentSearchButton({
     const form = document.getElementById(formId) as HTMLFormElement | null;
     if (!form || !form.checkValidity()) return;
 
+    searchInFlight.current = true;
     setPending(true);
     setElapsedSeconds(0);
   };
