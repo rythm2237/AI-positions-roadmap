@@ -7,6 +7,8 @@ const pageSource = readFileSync(new URL("../src/app/(account)/job-agent/page.tsx
 const dashboardSource = readFileSync(new URL("../src/components/job-agent/JobAgentDashboardView.tsx", import.meta.url), "utf8");
 const repositorySource = readFileSync(new URL("../src/lib/job-agent/repository.ts", import.meta.url), "utf8");
 const normalizationSource = readFileSync(new URL("../src/lib/job-agent/normalization.ts", import.meta.url), "utf8");
+const searchActionSource = readFileSync(new URL("../src/app/(account)/job-agent/searchActions.ts", import.meta.url), "utf8");
+const resultGroupsSource = readFileSync(new URL("../src/lib/job-agent/resultGroups.ts", import.meta.url), "utf8");
 
 test("search control exposes an immediate accessible pending state without disabling its submit intent", () => {
   assert.match(buttonSource, /aria-disabled=\{pending\}/);
@@ -50,6 +52,31 @@ test("search summary uses visual cards and omits expired counts", () => {
   assert.match(pageSource, /Source issues/);
   assert.match(pageSource, /Expired vacancies are removed before ranking/);
   assert.doesNotMatch(pageSource, /label: "Expired"/);
+  assert.match(pageSource, /groupCurrentJobResults\(workspace\.jobs\)/);
+  assert.match(pageSource, /workspace\.latestSearch/);
+  assert.doesNotMatch(pageSource, /value: Number\(query\.searched/);
+});
+
+test("summary cards and grouped sections share one grouping contract", () => {
+  assert.match(pageSource, /groupedResults\.active\.length/);
+  assert.match(pageSource, /groupedResults\.ready\.length/);
+  assert.match(pageSource, /groupedResults\.review\.length/);
+  assert.match(pageSource, /groupedResults\.blocked\.length/);
+  assert.match(dashboardSource, /groupCurrentJobResults\(jobs\)/);
+  assert.match(resultGroupsSource, /freshness_status !== "expired"/);
+});
+
+test("current results are scoped to the latest search run", () => {
+  assert.match(repositorySource, /select\("id,correlation_id,status/);
+  assert.match(repositorySource, /from\("job_opportunity_sources"\)/);
+  assert.match(repositorySource, /eq\("search_run_id", latestSearch\.data\.id\)/);
+  assert.match(repositorySource, /latestRunJobIds\.has\(job\.id\)/);
+});
+
+test("expired vacancies are excluded from every active search count", () => {
+  assert.match(searchActionSource, /const activeProcessed = processed\.filter/);
+  assert.match(searchActionSource, /deduplicated_count: activeProcessed\.length/);
+  assert.match(searchActionSource, /searched: activeProcessed\.length/);
 });
 
 test("desktop identity sources live in a sticky sidebar and mobile uses a collapsible panel", () => {

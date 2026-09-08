@@ -20,16 +20,25 @@ export async function getJobAgentWorkspace(user: User) {
       .returns<JobOpportunity[]>(),
     supabase.from("applications").select("id,job_id,status,agent_mode,execution_capability,submission_receipt,submission_evidence,submitted_at,follow_up_due_at,applied_at,recruiter_contact,last_response_at,next_action,continuation_url,notes,created_at,job_opportunities(company,role,location,country,job_url,application_url,fit_score,fit_confidence,eligibility_status,execution_capability,source,founder_positioning,decision_status,snoozed_until)").eq("user_id", user.id).order("created_at", { ascending: false }).limit(50).returns<ApplicationRecord[]>(),
     supabase.from("job_agent_inbox").select("id,job_id,application_id,category,title,body,priority,recommended_action,deep_link,status,read_at,created_at").eq("user_id", user.id).eq("status", "open").order("created_at", { ascending: false }).limit(20).returns<JobAgentInboxItem[]>(),
-    supabase.from("job_search_runs").select("correlation_id,status,provider_records,deduplicated_count,eligible_count,unverified_count,blocked_count,recommended_count,expired_count,provider_summary,latency_ms,estimated_cost,started_at,completed_at").eq("user_id", user.id).order("started_at", { ascending: false }).limit(1).maybeSingle(),
+    supabase.from("job_search_runs").select("id,correlation_id,status,provider_records,deduplicated_count,eligible_count,unverified_count,blocked_count,recommended_count,expired_count,provider_summary,latency_ms,estimated_cost,started_at,completed_at").eq("user_id", user.id).order("started_at", { ascending: false }).limit(1).maybeSingle(),
   ]);
   if (profile.error) throw profile.error;
   if (agent.error) throw agent.error;
+  if (latestSearch.error) throw latestSearch.error;
+
+  const latestRunSources = latestSearch.data?.id
+    ? await supabase.from("job_opportunity_sources").select("job_id").eq("user_id", user.id).eq("search_run_id", latestSearch.data.id).returns<Array<{ job_id: string }>>()
+    : { data: [] as Array<{ job_id: string }>, error: null };
+  if (latestRunSources.error) throw latestRunSources.error;
+
   const now = Date.now();
   const applicationRows = applications.data ?? [];
   const applicationJobIds = new Set(applicationRows.map((application) => application.job_id));
   const allJobs = jobs.data ?? [];
   const currentVersion = agent.data?.intent_version ?? 0;
-  const currentJobs = currentVersion ? allJobs.filter((job) => job.current_intent_version === currentVersion) : allJobs;
+  const latestRunJobIds = new Set((latestRunSources.data ?? []).map((source) => source.job_id));
+  const currentJobs = (currentVersion ? allJobs.filter((job) => job.current_intent_version === currentVersion) : allJobs)
+    .filter((job) => !latestSearch.data?.id || latestRunJobIds.has(job.id));
   const jobRows = currentJobs.filter((job) => job.freshness_status !== "expired" && !applicationJobIds.has(job.id) && job.decision_status !== "rejected" && job.decision_status !== "approved" && (job.decision_status !== "snoozed" || !job.snoozed_until || Date.parse(job.snoozed_until) <= now));
   const stats: JobAgentDashboardStats = {
     jobsFound: jobRows.length,

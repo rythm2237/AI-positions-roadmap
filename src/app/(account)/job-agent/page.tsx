@@ -6,6 +6,7 @@ import { JobAgentSettingsForm } from "@/components/job-agent/JobAgentSettingsFor
 import { JobAgentSearchButton } from "@/components/job-agent/JobAgentSearchButton";
 import { ResumeUploader } from "@/components/identity/ResumeUploader";
 import { saveJobAgent, setJobAgentStatus } from "./actions";
+import { countProviderIssues, groupCurrentJobResults } from "@/lib/job-agent/resultGroups";
 
 const errorMessages: Record<string, string> = {
   criteria: "Add at least one target role and one search country before running the Agent.",
@@ -68,13 +69,15 @@ export default async function JobAgentPage({
     agent.english_only_priority ? "English-only" : (agent.search_languages?.join(", ") || workspace.profile.languages.join(", ") || "Languages unconfirmed"),
     agent.primary_career || agent.desired_titles[0] || "No target role",
   ] : [];
-  const resultSummary = query.searched ? [
-    { label: "Canonical jobs", value: Number(query.searched || 0), tone: "text-cyan-200 border-cyan-300/15 bg-cyan-400/[.04]" },
-    { label: "Ready", value: Number(query.eligible || 0), tone: "text-emerald-200 border-emerald-300/15 bg-emerald-400/[.04]" },
-    { label: "Needs review", value: Number(query.unverified || 0), tone: "text-amber-200 border-amber-300/15 bg-amber-400/[.04]" },
-    { label: "Blocked", value: Number(query.blocked || 0), tone: "text-rose-200 border-rose-300/15 bg-rose-400/[.04]" },
-    ...(Number(query.provider_errors || 0) ? [{ label: "Source issues", value: Number(query.provider_errors || 0), tone: "text-violet-200 border-violet-300/15 bg-violet-400/[.04]" }] : []),
-  ] : [];
+  const groupedResults = groupCurrentJobResults(workspace.jobs);
+  const sourceIssues = countProviderIssues(workspace.latestSearch?.provider_summary);
+  const resultSummary = [
+    { label: "Canonical jobs", value: groupedResults.active.length, tone: "text-cyan-200 border-cyan-300/15 bg-cyan-400/[.04]" },
+    { label: "Ready", value: groupedResults.ready.length, tone: "text-emerald-200 border-emerald-300/15 bg-emerald-400/[.04]" },
+    { label: "Needs review", value: groupedResults.review.length, tone: "text-amber-200 border-amber-300/15 bg-amber-400/[.04]" },
+    { label: "Blocked", value: groupedResults.blocked.length, tone: "text-rose-200 border-rose-300/15 bg-rose-400/[.04]" },
+    ...(sourceIssues ? [{ label: "Source issues", value: sourceIssues, tone: "text-violet-200 border-violet-300/15 bg-violet-400/[.04]" }] : []),
+  ];
 
   return <main className="mx-auto max-w-[1440px] px-5 py-10 sm:py-12">
     <div className="flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between">
@@ -84,8 +87,8 @@ export default async function JobAgentPage({
 
     {query.saved ? <p role="status" className="mt-5 rounded-xl border border-emerald-300/15 bg-emerald-400/[.06] px-4 py-3 text-sm text-emerald-200">Settings saved. This search used the confirmed configuration above.</p> : null}
 
-    {query.searched ? <section className="mt-5 rounded-2xl border border-white/[.07] bg-white/[.02] p-4" aria-labelledby="search-summary-title">
-      <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between"><div><p id="search-summary-title" className="text-sm font-semibold text-white">{query.outcome === "partial" ? "Search complete · some sources need attention" : query.outcome === "no_results" ? "Search complete · no matching jobs" : "Search complete"}</p><p className="mt-1 text-xs text-slate-500">Expired vacancies are removed before ranking and are not included below.</p></div>{query.correlation ? <code className="text-[11px] text-slate-600">Run {query.correlation.slice(0, 8)}</code> : null}</div>
+    {workspace.latestSearch ? <section className="mt-5 rounded-2xl border border-white/[.07] bg-white/[.02] p-4" aria-labelledby="search-summary-title">
+      <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between"><div><p id="search-summary-title" className="text-sm font-semibold text-white">{workspace.latestSearch.status === "partial" ? "Search complete · some sources need attention" : groupedResults.active.length === 0 ? "Search complete · no matching jobs" : "Search complete"}</p><p className="mt-1 text-xs text-slate-500">Expired vacancies are removed before ranking and are not included below.</p></div><code className="text-[11px] text-slate-600">Run {String(workspace.latestSearch.correlation_id).slice(0, 8)}</code></div>
       <div className="mt-4 grid grid-cols-2 gap-2 sm:grid-cols-3 xl:grid-cols-5">{resultSummary.map((item) => <div key={item.label} className={`rounded-xl border px-3 py-3 ${item.tone}`}><p className="text-2xl font-semibold">{item.value}</p><p className="mt-0.5 text-[11px] opacity-75">{item.label}</p></div>)}</div>
     </section> : null}
 

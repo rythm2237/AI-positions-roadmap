@@ -179,21 +179,22 @@ export async function searchCurrentUserJobs(): Promise<SearchResult> {
   const persistenceErrors = secondaryWrites.flatMap((result, index) => result.error ? [`${["sources", "verification", "fit", "inbox"][index]}:${result.error.code}`] : []);
   if (persistenceErrors.length) console.error("Job Agent secondary persistence was partial", { correlationId, userId: user.id, errorCodes: persistenceErrors });
 
-  const eligible = processed.filter((item) => item.effectiveEligibilityStatus === "eligible").length;
-  const unverified = processed.filter((item) => item.effectiveEligibilityStatus === "unverified").length;
-  const blocked = processed.filter((item) => item.effectiveEligibilityStatus === "blocked" && item.freshness.status !== "expired").length;
+  const activeProcessed = processed.filter((item) => item.freshness.status !== "expired");
+  const eligible = activeProcessed.filter((item) => item.effectiveEligibilityStatus === "eligible").length;
+  const unverified = activeProcessed.filter((item) => item.effectiveEligibilityStatus === "unverified").length;
+  const blocked = activeProcessed.filter((item) => item.effectiveEligibilityStatus === "blocked").length;
   const expired = processed.filter((item) => item.freshness.status === "expired").length;
-  const recommended = processed.filter((item) => item.classification === "strong_match" || item.classification === "good_match").length;
+  const recommended = activeProcessed.filter((item) => item.classification === "strong_match" || item.classification === "good_match").length;
   const status = allFailed ? "failed" : providerFailures.length || persistenceErrors.length ? "partial" : "completed";
   const attemptsByStatus = Object.fromEntries([...new Set(gateway.attempts.map((attempt) => attempt.status))].map((attemptStatus) => [attemptStatus, gateway.attempts.filter((attempt) => attempt.status === attemptStatus).length]));
   const estimatedCost = gateway.attempts.reduce((sum, attempt) => sum + providerCost(attempt.provider, attempt.requestCount), 0);
-  await supabase.from("job_search_runs").update({ status, provider_records: gateway.jobs.length, deduplicated_count: processed.length, eligible_count: eligible, unverified_count: unverified, blocked_count: blocked, recommended_count: recommended, expired_count: expired, provider_summary: { attemptsByStatus, evidenceWarnings: evidenceResult.warnings, persistenceErrors }, api_usage: { requests: gateway.attempts.reduce((sum, attempt) => sum + attempt.requestCount, 0) }, estimated_cost: estimatedCost, latency_ms: Date.now() - started, error_code: allFailed ? "ALL_PROVIDERS_FAILED" : persistenceErrors.length ? "SECONDARY_PERSISTENCE_PARTIAL" : null, completed_at: new Date().toISOString() }).eq("id", searchRun.data.id).eq("user_id", user.id);
+  await supabase.from("job_search_runs").update({ status, provider_records: gateway.jobs.length, deduplicated_count: activeProcessed.length, eligible_count: eligible, unverified_count: unverified, blocked_count: blocked, recommended_count: recommended, expired_count: expired, provider_summary: { attemptsByStatus, evidenceWarnings: evidenceResult.warnings, persistenceErrors }, api_usage: { requests: gateway.attempts.reduce((sum, attempt) => sum + attempt.requestCount, 0) }, estimated_cost: estimatedCost, latency_ms: Date.now() - started, error_code: allFailed ? "ALL_PROVIDERS_FAILED" : persistenceErrors.length ? "SECONDARY_PERSISTENCE_PARTIAL" : null, completed_at: new Date().toISOString() }).eq("id", searchRun.data.id).eq("user_id", user.id);
 
-  await supabase.from("user_activity").insert({ user_id: user.id, action: "job_agent_search_run_v2", metadata: { correlation_id: correlationId, intent_version: intentRecord.version, searched: processed.length, eligible, unverified, blocked, expired, recommended, provider_errors: providerFailures.length, providers: providers.map((provider) => provider.name), queries: queries.map((query) => query.query), latency_ms: Date.now() - started } });
+  await supabase.from("user_activity").insert({ user_id: user.id, action: "job_agent_search_run_v2", metadata: { correlation_id: correlationId, intent_version: intentRecord.version, searched: activeProcessed.length, eligible, unverified, blocked, expired, recommended, provider_errors: providerFailures.length, providers: providers.map((provider) => provider.name), queries: queries.map((query) => query.query), latency_ms: Date.now() - started } });
   revalidatePath("/job-agent");
 
   if (allFailed && !processed.length) return { error: "provider-failure" };
-  return { searched: processed.length, eligible, unverified, blocked, expired, expanded: queries.length, providerErrors: providerFailures.length, outcome: processed.length ? providerFailures.length || persistenceErrors.length ? "partial" : "completed" : "no_results", correlationId };
+  return { searched: activeProcessed.length, eligible, unverified, blocked, expired, expanded: queries.length, providerErrors: providerFailures.length, outcome: activeProcessed.length ? providerFailures.length || persistenceErrors.length ? "partial" : "completed" : "no_results", correlationId };
 }
 
 export async function runJobSearch() {

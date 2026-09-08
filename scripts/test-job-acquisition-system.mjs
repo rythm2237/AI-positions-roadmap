@@ -18,6 +18,7 @@ import { classifyRelease } from "../src/lib/job-agent/releaseGate.ts";
 import { currencyForCountry, inferSearchCurrency } from "../src/lib/job-agent/currency.ts";
 import { parseProviderAnnualSalary, parseProviderPostedAt } from "../src/lib/job-agent/providerFields.ts";
 import { preserveOpportunityConflictUrls } from "../src/lib/job-agent/persistence.ts";
+import { countProviderIssues, groupCurrentJobResults } from "../src/lib/job-agent/resultGroups.ts";
 
 const root = new URL("..", import.meta.url);
 const source = (path) => readFileSync(new URL(path, root), "utf8");
@@ -132,6 +133,24 @@ test("Layer 6 — cross-query URL deduplication and freshness", () => {
     [{ source: "SerpApi", external_job_id: "job-1", job_url: "https://jobs.example.com/original" }],
   );
   assert.equal(stable[0].job_url, "https://jobs.example.com/original");
+});
+
+test("Layer 6b — latest-run summary grouping excludes expired jobs and remains internally consistent", () => {
+  const base = {
+    freshness_status: "fresh",
+    fit_score: 50,
+    eligibility_status: "unverified",
+  };
+  const grouped = groupCurrentJobResults([
+    { ...base, id: "ready", eligibility_status: "eligible", fit_score: 80 },
+    { ...base, id: "review" },
+    { ...base, id: "blocked", eligibility_status: "blocked", fit_score: null },
+    { ...base, id: "expired", freshness_status: "expired", eligibility_status: "eligible", fit_score: 90 },
+  ]);
+  assert.equal(grouped.active.length, 3);
+  assert.deepEqual([grouped.ready.length, grouped.review.length, grouped.blocked.length], [1, 1, 1]);
+  assert.equal(grouped.ready.length + grouped.review.length + grouped.blocked.length, grouped.active.length);
+  assert.equal(countProviderIssues({ attemptsByStatus: { success: 2, provider_error: 3, rate_limit: 1 } }), 4);
 });
 
 test("Layer 7 — hard gate separates blocked from unverified", () => {
