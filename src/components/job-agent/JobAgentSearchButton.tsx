@@ -27,12 +27,6 @@ export function JobAgentSearchButton({
   const [pending, setPending] = useState(false);
   const [elapsedSeconds, setElapsedSeconds] = useState(0);
 
-  const resetSearchState = () => {
-    searchInFlight.current = false;
-    setPending(false);
-    setElapsedSeconds(0);
-  };
-
   useEffect(() => {
     const start = () => {
       searchInFlight.current = true;
@@ -44,15 +38,20 @@ export function JobAgentSearchButton({
   }, []);
 
   // Next.js can preserve this client component when a server action redirects back
-  // to /job-agent with new search params. Reset the local progress state whenever
-  // that navigation completes so the UI cannot remain stuck on "Ranking results".
+  // to /job-agent with new search params. Reset local progress after that navigation.
   useEffect(() => {
-    resetSearchState();
+    searchInFlight.current = false;
+    setPending(false);
+    setElapsedSeconds(0);
   }, [navigationKey]);
 
-  // Also recover correctly from browser back/forward cache restoration.
+  // Recover correctly when the page is restored from browser back/forward cache.
   useEffect(() => {
-    const onPageShow = () => resetSearchState();
+    const onPageShow = () => {
+      searchInFlight.current = false;
+      setPending(false);
+      setElapsedSeconds(0);
+    };
     window.addEventListener("pageshow", onPageShow);
     return () => window.removeEventListener("pageshow", onPageShow);
   }, []);
@@ -104,7 +103,6 @@ export function JobAgentSearchButton({
     const form = document.getElementById(formId) as HTMLFormElement | null;
     if (!form || !form.checkValidity()) return;
 
-    searchInFlight.current = true;
     setPending(true);
     setElapsedSeconds(0);
   };
