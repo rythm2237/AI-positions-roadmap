@@ -7,7 +7,7 @@ const phases = [
   { label: "Saving settings", progress: 18 },
   { label: "Searching providers", progress: 45 },
   { label: "Verifying vacancies", progress: 72 },
-  { label: "Ranking results", progress: 92 },
+  { label: "Ranking results", progress: 90 },
 ] as const;
 
 export function JobAgentSearchButton({
@@ -62,6 +62,9 @@ export function JobAgentSearchButton({
         return;
       }
 
+      // Do not disable the native submitter here. Its name/value carries the
+      // `save_and_search` intent to the server action. React will disable the visible
+      // control from `pending` immediately after this submit event starts.
       beginProgress();
     };
 
@@ -69,9 +72,8 @@ export function JobAgentSearchButton({
     return () => form.removeEventListener("submit", onSubmit);
   }, [beginProgress, formId]);
 
-  // Reset only after search parameters really change. Depending on `pending` here
-  // caused the previous regression: setting pending=true immediately triggered the
-  // reset effect and could break the submission lifecycle.
+  // Reset only after search parameters really change. Depending on `pending` alone
+  // caused the previous regression by resetting immediately after search start.
   useEffect(() => {
     if (!pending) return;
     const startKey = searchStartNavigationKey.current;
@@ -107,8 +109,8 @@ export function JobAgentSearchButton({
   }, [pending]);
 
   const phaseIndex = useMemo(() => {
-    // Searches in this workflow commonly complete in ~8–20 seconds. These shorter
-    // intervals make each user-facing phase observable without delaying real work.
+    // Typical searches take long enough to expose all four phases. These timings are
+    // deliberately short and do not claim exact backend completion percentages.
     if (elapsedSeconds < 1) return 0;
     if (elapsedSeconds < 4) return 1;
     if (elapsedSeconds < 8) return 2;
@@ -130,7 +132,7 @@ export function JobAgentSearchButton({
     }
 
     // Let native form validation and submission continue. The submit event above is
-    // the single place that starts the progress state and duplicate-submit guard.
+    // the single place that starts progress and the duplicate-submit guard.
     if (!form.checkValidity()) {
       event.preventDefault();
       form.reportValidity();
