@@ -2,6 +2,7 @@ import Link from "next/link";
 import { approveJob, rejectJob, snoozeJob } from "@/app/(account)/job-agent/decisionActions";
 import { dismissInboxItem, markInboxRead } from "@/app/(account)/job-agent/inboxActions";
 import type { ApplicationRecord, FitExplanation, JobAgent, JobAgentDashboardStats, JobAgentInboxItem, JobOpportunity } from "@/types/jobAgent";
+import { groupCurrentJobResults } from "@/lib/job-agent/resultGroups";
 
 const activityStats: Array<[keyof JobAgentDashboardStats, string]> = [
   ["jobsFound", "Active jobs"],
@@ -92,10 +93,7 @@ function JobResult({ job, now }: { job: JobOpportunity; now: number }) {
 
 export function JobAgentDashboardView({ agent, stats, jobs, applications, inbox }: { agent: JobAgent; stats: JobAgentDashboardStats; jobs: JobOpportunity[]; applications: ApplicationRecord[]; inbox: JobAgentInboxItem[] }) {
   const now = Date.now();
-  const activeJobs = jobs.filter((job) => job.freshness_status !== "expired").sort((a, b) => (b.fit_score ?? -1) - (a.fit_score ?? -1));
-  const recommended = activeJobs.filter((job) => job.eligibility_status === "eligible");
-  const review = activeJobs.filter((job) => job.eligibility_status !== "eligible" && job.eligibility_status !== "blocked");
-  const blocked = activeJobs.filter((job) => job.eligibility_status === "blocked");
+  const { active: activeJobs, ready: recommended, review, blocked } = groupCurrentJobResults(jobs);
 
   return <>
     <section className="mt-6 grid grid-flow-col auto-cols-[128px] gap-2 overflow-x-auto pb-1 sm:grid-flow-row sm:grid-cols-2 lg:grid-cols-6" aria-label="Job Agent activity summary">{activityStats.map(([key, label]) => <div key={key} className="rounded-xl border border-white/[.07] bg-white/[.02] px-3 py-3"><p className="text-xl font-semibold text-white">{stats[key]}</p><p className="mt-0.5 text-[11px] text-slate-500">{label}</p></div>)}</section>
