@@ -19,6 +19,7 @@ import { currencyForCountry, inferSearchCurrency } from "../src/lib/job-agent/cu
 import { parseProviderAnnualSalary, parseProviderPostedAt } from "../src/lib/job-agent/providerFields.ts";
 import { preserveOpportunityConflictUrls } from "../src/lib/job-agent/persistence.ts";
 import { countProviderIssues, groupCurrentJobResults } from "../src/lib/job-agent/resultGroups.ts";
+import { summarizeCanonicalSearchRun } from "../src/lib/job-agent/searchRunMetrics.ts";
 
 const root = new URL("..", import.meta.url);
 const source = (path) => readFileSync(new URL(path, root), "utf8");
@@ -151,6 +152,16 @@ test("Layer 6b — latest-run summary grouping excludes expired jobs and remains
   assert.deepEqual([grouped.ready.length, grouped.review.length, grouped.blocked.length], [1, 1, 1]);
   assert.equal(grouped.ready.length + grouped.review.length + grouped.blocked.length, grouped.active.length);
   assert.equal(countProviderIssues({ attemptsByStatus: { success: 2, provider_error: 3, rate_limit: 1 } }), 4);
+});
+
+test("Layer 6c — latest-run metrics count each persisted canonical job once", () => {
+  const metrics = summarizeCanonicalSearchRun([
+    { jobId: "job-1", freshnessStatus: "fresh", eligibilityStatus: "unverified", classification: "stretch" },
+    { jobId: "job-1", freshnessStatus: "fresh", eligibilityStatus: "unverified", classification: "stretch" },
+    { jobId: "job-2", freshnessStatus: "fresh", eligibilityStatus: "blocked", classification: "blocked" },
+    { jobId: "job-3", freshnessStatus: "expired", eligibilityStatus: "eligible", classification: "expired" },
+  ]);
+  assert.deepEqual(metrics, { searched: 2, eligible: 0, unverified: 1, blocked: 1, expired: 1, recommended: 0 });
 });
 
 test("Layer 7 — hard gate separates blocked from unverified", () => {
