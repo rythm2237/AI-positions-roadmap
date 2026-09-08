@@ -5,6 +5,7 @@ import { isIP } from "node:net";
 import type { CanonicalJobCandidate } from "./contracts";
 import type { JobVerificationStatus } from "../../types/jobAgent";
 import { safeExternalUrl } from "./normalization";
+import { extractSourcePageIdentity, sourceCompanyMatchesHost } from "./sourcePageIdentity";
 
 export type VacancyVerification = {
   status: JobVerificationStatus;
@@ -49,8 +50,10 @@ function textFromHtml(html: string) {
     .replace(/<script\b[^>]*>[\s\S]*?<\/script>/gi, " ")
     .replace(/<style\b[^>]*>[\s\S]*?<\/style>/gi, " ")
     .replace(/<br\s*\/?>/gi, "\n")
+    .replace(/<\/(?:p|li|div|section|article|h[1-6]|details|summary)>/gi, "\n")
     .replace(/<[^>]+>/g, " ")
-    .replace(/\s+/g, " ")
+    .replace(/[\t\r ]+/g, " ")
+    .replace(/\n\s*\n+/g, "\n")
     .trim();
 }
 
@@ -275,9 +278,30 @@ export async function verifyVacancy(job: CanonicalJobCandidate): Promise<Vacancy
       return { status: "failed", job, provenance: { method: "source_page", httpStatus: response.status, sourceUrl: finalUrl, verifiedAt: new Date().toISOString(), reason: "Page does not represent one canonical vacancy." }, errorCode: "NOT_CANONICAL_VACANCY" };
     }
 
+    const identity = contentType.includes("html") ? extractSourcePageIdentity(body, finalUrl) : { title: null, company: null, location: null };
+    const title = identity.title ?? job.title;
+    const company = identity.company ?? job.company;
+    const providerCompanyPlaceholder = /not specified|employer not verified/i.test(job.company) || sourceCompanyMatchesHost(job.company, finalUrl);
+    const companyConflict = meaningfulConflict(job.company, company) && !providerCompanyPlaceholder;
+    const titleConflict = meaningfulConflict(job.title, title);
+    if (companyConflict || titleConflict) {
+      return {
+        status: "failed",
+        job: { ...job, expiresAt: looksClosed ? new Date().toISOString() : job.expiresAt },
+        provenance: { method: "source_page_identity", sourceUrl: finalUrl, verifiedAt: new Date().toISOString(), conflict: { company: companyConflict, title: titleConflict }, verified: identity },
+        errorCode: "CANONICAL_METADATA_CONFLICT",
+      };
+    }
     const description = pageText.length >= 300 ? pageText.slice(0, 120_000) : job.description;
-    const verifiedJob = { ...job, sourceUrl: finalUrl, description, descriptionComplete: description.length >= 300, expiresAt: looksClosed ? new Date().toISOString() : job.expiresAt };
-    return { status: verifiedJob.descriptionComplete ? "partially_verified" : "unverified", job: verifiedJob, provenance: { method: "source_page_text", httpStatus: response.status, contentType, sourceUrl: finalUrl, verifiedAt: new Date().toISOString(), fields: verifiedJob.descriptionComplete ? ["description", "application_status"] : ["application_status"] } };
+    const verifiedJob = { ...job, title, company, location: identity.location ?? job.location, sourceUrl: finalUrl, description, descriptionComplete: description.length >= 300, expiresAt: looksClosed ? new Date().toISOString() : job.expiresAt };
+    const verifiedFields = [
+      ...(identity.title ? ["title"] : []),
+      ...(identity.company ? ["company"] : []),
+      ...(identity.location ? ["location"] : []),
+      ...(verifiedJob.descriptionComplete ? ["description"] : []),
+      "application_status",
+    ];
+    return { status: verifiedJob.descriptionComplete ? "partially_verified" : "unverified", job: verifiedJob, provenance: { method: identity.title || identity.company ? "source_page_identity" : "source_page_text", httpStatus: response.status, contentType, sourceUrl: finalUrl, verifiedAt: new Date().toISOString(), fields: verifiedFields } };
   } catch (error) {
     const code = error instanceof Error ? error.message.slice(0, 120) : "VERIFICATION_FAILED";
     return { status: "failed", job, provenance: { method: "source_page", sourceUrl: safe, failedAt: new Date().toISOString() }, errorCode: code };

@@ -55,6 +55,7 @@ test("search summary uses visual cards and omits expired counts", () => {
   assert.doesNotMatch(pageSource, /label: "Expired"/);
   assert.match(pageSource, /groupCurrentJobResults\(workspace\.jobs\)/);
   assert.match(pageSource, /workspace\.latestSearch/);
+  assert.doesNotMatch(pageSource, /latestSearch\.deduplicated_count/);
   assert.doesNotMatch(pageSource, /value: Number\(query\.searched/);
 });
 

@@ -20,6 +20,8 @@ import { parseProviderAnnualSalary, parseProviderPostedAt } from "../src/lib/job
 import { preserveOpportunityConflictUrls } from "../src/lib/job-agent/persistence.ts";
 import { countProviderIssues, groupCurrentJobResults } from "../src/lib/job-agent/resultGroups.ts";
 import { summarizeCanonicalSearchRun } from "../src/lib/job-agent/searchRunMetrics.ts";
+import { extractSourcePageIdentity, sourceCompanyMatchesHost } from "../src/lib/job-agent/sourcePageIdentity.ts";
+import { enrichRequirements } from "../src/lib/job-agent/requirements.ts";
 
 const root = new URL("..", import.meta.url);
 const source = (path) => readFileSync(new URL(path, root), "utf8");
@@ -162,6 +164,26 @@ test("Layer 6c — latest-run metrics count each persisted canonical job once", 
     { jobId: "job-3", freshnessStatus: "expired", eligibilityStatus: "eligible", classification: "expired" },
   ]);
   assert.deepEqual(metrics, { searched: 2, eligible: 0, unverified: 1, blocked: 1, expired: 1, recommended: 0 });
+});
+
+test("Layer 6d — canonical board pages can replace a publisher label with the real employer", () => {
+  const html = `<main><h1>Senior Insurance AI Solutions Consultant</h1><a href="/career/company/milliman"><img /></a><a href="/career/company/milliman">Milliman</a><p>Paris, Île-de-France - Frankreich</p></main>`;
+  assert.deepEqual(extractSourcePageIdentity(html, "https://www.experteer.fr/career/view-jobs/role-1"), {
+    title: "Senior Insurance AI Solutions Consultant",
+    company: "Milliman",
+    location: "Paris, Île-de-France - Frankreich",
+  });
+  assert.equal(sourceCompanyMatchesHost("Experteer.fr", "https://www.experteer.fr/career/view-jobs/role-1"), true);
+});
+
+test("Layer 6e — requirement sections preserve skills and education without repeated must wording", () => {
+  const enriched = enrichRequirements(candidate({
+    description: "Principales exigences\nStakeholder Management\nGenerative AI and LLMs\nPrompt Design and Retrieval-Augmented Generation\nBachelor degree in a quantitative field\nDescription du poste\nBuild useful systems.",
+    requiredSkills: [],
+    educationRequirements: [],
+  }), []);
+  assert.deepEqual(enriched.requiredSkills.sort(), ["Generative AI", "LLM", "Prompt Design", "Retrieval-Augmented Generation", "Stakeholder Management"].sort());
+  assert.equal(enriched.educationRequirements.length, 1);
 });
 
 test("Layer 7 — hard gate separates blocked from unverified", () => {

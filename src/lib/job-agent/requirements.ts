@@ -6,6 +6,7 @@ const COMMON_SKILLS = [
   "Machine Learning", "Generative AI", "LLM", "RAG", "OpenAI", "AI Agents", "Prompt Engineering", "Power BI", "Power Automate", "Power Apps", "Power Platform",
   "Copilot Studio", "Microsoft Fabric", "Dataverse", "DAX", "Power Query", "Tableau", "Excel", "ETL", "Data Modeling", "Data Analysis", "REST API", "API Integration",
   "RPA", "UiPath", "n8n", "Zapier", "Stakeholder Management", "Requirements Gathering", "Business Analysis", "Process Mapping", "Digital Transformation", "Solution Design",
+  "Prompt Design", "Retrieval-Augmented Generation", "Agentic Workflows", "Commercial Awareness",
   "Product Management", "Project Management", "Agile", "Scrum", "Git", "GitHub", "Supabase", "Vercel", "SEO", "Google Analytics",
 ];
 
@@ -24,18 +25,30 @@ export function enrichRequirements(job: CanonicalJobCandidate, evidence: CareerE
   const knownSkills = [...new Set([...COMMON_SKILLS, ...evidence.map((item) => item.label)].filter((label) => label.length > 1))];
   const required = new Set(job.requiredSkills);
   const preferred = new Set(job.preferredSkills);
+  let requirementSection = false;
   for (const clause of clauses) {
     const lower = clause.toLowerCase();
+    if (/^(?:main |key |principal(?:es)? )?(?:requirements?|qualifications?|exigences|anforderungen)\b/i.test(clause.trim())) {
+      requirementSection = true;
+      continue;
+    }
+    if (/^(?:responsibilities|description(?: du poste)?|benefits|about (?:the role|us)|responsabilit[eé]s|aufgaben)\b/i.test(clause.trim())) requirementSection = false;
     for (const skill of knownSkills) {
       if (!lower.includes(skill.toLowerCase())) continue;
-      if (/\b(required|must|need|minimum|proficient|strong experience)\b/.test(lower)) required.add(skill);
+      if (requirementSection || /\b(required|must|need|minimum|proficient|strong experience)\b/.test(lower)) required.add(skill);
       else if (/\b(preferred|nice to have|bonus|desirable)\b/.test(lower)) preferred.add(skill);
     }
   }
   const education = new Set(job.educationRequirements);
   const certifications = new Set(job.certificationRequirements);
+  requirementSection = false;
   for (const clause of clauses) {
-    if (/\b(?:bachelor(?:'s)?|master(?:'s)?|ph\.?d\.?|doctorate|degree)\b/i.test(clause) && /\b(required|must|minimum|need)\b/i.test(clause)) education.add(clause.trim().slice(0, 300));
+    if (/^(?:main |key |principal(?:es)? )?(?:requirements?|qualifications?|exigences|anforderungen)\b/i.test(clause.trim())) {
+      requirementSection = true;
+      continue;
+    }
+    if (/^(?:responsibilities|description(?: du poste)?|benefits|about (?:the role|us)|responsabilit[eé]s|aufgaben)\b/i.test(clause.trim())) requirementSection = false;
+    if (/\b(?:bachelor(?:'s)?|master(?:'s)?|ph\.?d\.?|doctorate|degree)\b/i.test(clause) && (requirementSection || /\b(required|must|minimum|need)\b/i.test(clause))) education.add(clause.trim().slice(0, 300));
     const certificate = clause.match(/\b(?:valid|required|must (?:hold|have)|certified)\b[^.!?\n]{0,100}\b(PMP|CPA|CFA|CISSP|CISM|CCNA|AWS Certified|Azure Certified|professional licen[cs]e|security clearance)\b/i)?.[1];
     if (certificate) certifications.add(certificate);
   }
