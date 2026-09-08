@@ -1,0 +1,56 @@
+name: Job Agent validation
+
+on:
+  pull_request:
+    paths:
+      - "src/lib/job-agent/**"
+      - "src/lib/cvAnalyzer/masterCvEvidence.ts"
+      - "src/app/(account)/job-agent/**"
+      - "scripts/test-job-acquisition-system.mjs"
+      - "scripts/test-job-agent-evidence-provenance.mjs"
+      - "supabase/migrations/**job**"
+      - "vercel.json"
+      - "package.json"
+      - ".github/workflows/job-agent-validation.yml"
+  push:
+    branches:
+      - main
+    paths:
+      - "src/lib/job-agent/**"
+      - "src/lib/cvAnalyzer/masterCvEvidence.ts"
+      - "src/app/(account)/job-agent/**"
+      - "scripts/test-job-acquisition-system.mjs"
+      - "scripts/test-job-agent-evidence-provenance.mjs"
+      - "supabase/migrations/**job**"
+      - "vercel.json"
+      - "package.json"
+      - ".github/workflows/job-agent-validation.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  validate-job-agent:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run 20-layer Job Acquisition System suite
+        run: npm run test:job-acquisition
+
+      - name: Run evidence provenance regressions
+        run: node --experimental-strip-types --test scripts/test-job-agent-evidence-provenance.mjs
+
+      - name: Typecheck
+        run: npm run typecheck
