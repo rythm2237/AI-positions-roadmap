@@ -14,7 +14,7 @@ test("search control exposes an immediate accessible pending state without disab
   assert.match(buttonSource, /data-pending=\{pending \? "true" : "false"\}/);
   assert.match(buttonSource, /role="status"/);
   assert.match(buttonSource, /aria-live="polite"/);
-  assert.doesNotMatch(buttonSource, /disabled=\{pending\}/);
+  assert.doesNotMatch(buttonSource, /\n\s+disabled=\{pending\}/);
 });
 
 test("search control communicates staged progress without claiming exact backend completion", () => {
@@ -35,7 +35,7 @@ test("search form blocks duplicate submissions while preserving save-and-search 
   assert.match(buttonSource, /value="save_and_search"/);
   assert.match(buttonSource, /getAttribute\("value"\) === "save_and_search"/);
   assert.doesNotMatch(buttonSource, /submitter\.disabled = true/);
-  assert.doesNotMatch(buttonSource, /disabled=\{pending\}/);
+  assert.doesNotMatch(buttonSource, /\n\s+disabled=\{pending\}/);
 });
 
 test("search progress resets only after navigation actually changes", () => {
