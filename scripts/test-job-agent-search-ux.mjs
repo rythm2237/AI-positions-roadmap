@@ -102,6 +102,8 @@ test("job results render as compact expandable rows with actions inside", () => 
   assert.match(dashboardSource, /Evidence & details/);
   assert.match(dashboardSource, /Snooze/);
   assert.match(dashboardSource, /Blocked by hard rules/);
+  assert.match(dashboardSource, /locationLabel\(job\)/);
+  assert.match(dashboardSource, /location\.toLowerCase\(\)\.includes\(country\.toLowerCase\(\)\)/);
 });
 
 test("expired vacancies are removed before ranking and excluded from workspace stats", () => {
