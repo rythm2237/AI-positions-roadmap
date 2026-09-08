@@ -283,7 +283,9 @@ async function searchSerpApiGoogleSearch(input: { country: string; query: string
     return [{
       externalId: result.link.trim(),
       source: "SerpApi" as const,
-      company: result.source?.trim() || "Employer not verified",
+      // Organic search `source` identifies the publishing site, not necessarily the
+      // hiring organization. Verification may promote an employer from the vacancy page.
+      company: "Employer not verified",
       title: result.title.trim(),
       location: input.location,
       country: input.country.trim(),
