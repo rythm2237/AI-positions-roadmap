@@ -49,29 +49,8 @@ jobs:
       - name: Evidence provenance regressions
         run: node --experimental-strip-types --test scripts/test-job-agent-evidence-provenance.mjs
 
-      - name: Diagnose layers 1-5
-        continue-on-error: true
-        run: node --experimental-strip-types --test --test-name-pattern="Layer ([1-5]) —" scripts/test-job-acquisition-system.mjs
-
-      - name: Diagnose layers 6-10
-        continue-on-error: true
-        run: node --experimental-strip-types --test --test-name-pattern="Layer (6|7|8|9|10) —" scripts/test-job-acquisition-system.mjs
-
-      - name: Diagnose layers 11-15
-        continue-on-error: true
-        run: node --experimental-strip-types --test --test-name-pattern="Layer (11|12|13|14|15) —" scripts/test-job-acquisition-system.mjs
-
-      - name: Diagnose layers 16-20
-        continue-on-error: true
-        run: node --experimental-strip-types --test --test-name-pattern="Layer (16|17|18|19|20) —" scripts/test-job-acquisition-system.mjs
-
-      - name: Diagnose authorization and responsive UI contract
-        continue-on-error: true
-        run: node --experimental-strip-types --test --test-name-pattern="authorization and responsive UI contracts remain explicit" scripts/test-job-acquisition-system.mjs
-
-      - name: Run complete Job Acquisition System suite
-        run: npm run test:job-acquisition
+      - name: Job Acquisition System suite
+        run: node --experimental-strip-types --test scripts/test-job-acquisition-system.mjs
 
       - name: Typecheck
-        if: always()
         run: npm run typecheck
