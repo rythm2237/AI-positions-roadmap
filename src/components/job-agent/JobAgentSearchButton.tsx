@@ -3,13 +3,11 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useSearchParams } from "next/navigation";
 
-const SEARCH_STARTED_EVENT = "job-agent-search-started";
-
 const phases = [
   { label: "Saving settings", progress: 18 },
   { label: "Searching providers", progress: 45 },
   { label: "Verifying vacancies", progress: 72 },
-  { label: "Ranking results", progress: 90 },
+  { label: "Ranking results", progress: 92 },
 ] as const;
 
 export function JobAgentSearchButton({
@@ -25,58 +23,27 @@ export function JobAgentSearchButton({
   const navigationKey = searchParams.toString();
   const searchInFlight = useRef(false);
   const searchStartHref = useRef<string | null>(null);
+  const searchStartNavigationKey = useRef<string | null>(null);
   const [pending, setPending] = useState(false);
   const [elapsedSeconds, setElapsedSeconds] = useState(0);
 
   const resetProgress = useCallback(() => {
     searchInFlight.current = false;
     searchStartHref.current = null;
+    searchStartNavigationKey.current = null;
     setPending(false);
     setElapsedSeconds(0);
   }, []);
 
   const beginProgress = useCallback(() => {
+    // Start progress only from the form submit event. Starting it from onClick can
+    // disable the submit control before the browser performs the native submit.
     searchInFlight.current = true;
     searchStartHref.current = window.location.href;
+    searchStartNavigationKey.current = navigationKey;
     setPending(true);
     setElapsedSeconds(0);
-  }, []);
-
-  useEffect(() => {
-    const start = () => beginProgress();
-    window.addEventListener(SEARCH_STARTED_EVENT, start);
-    return () => window.removeEventListener(SEARCH_STARTED_EVENT, start);
-  }, [beginProgress]);
-
-  // Next.js can preserve this client component when a server action redirects back
-  // to /job-agent with new search params. Reset local progress after that navigation.
-  useEffect(() => {
-    if (!pending) return;
-    resetProgress();
-  }, [navigationKey, pending, resetProgress]);
-
-  // Browser URL is the source of truth for completion. In some Next.js server-action
-  // redirects the component instance is preserved and useSearchParams can lag behind
-  // the actual location. Detect the real URL change directly so the control cannot
-  // remain visually stuck at "Ranking results…" after results are already rendered.
-  useEffect(() => {
-    if (!pending || !searchStartHref.current) return;
-
-    const poll = window.setInterval(() => {
-      const startHref = searchStartHref.current;
-      if (!startHref) return;
-      if (window.location.href !== startHref) resetProgress();
-    }, 250);
-
-    return () => window.clearInterval(poll);
-  }, [pending, resetProgress]);
-
-  // Recover correctly when the page is restored from browser back/forward cache.
-  useEffect(() => {
-    const onPageShow = () => resetProgress();
-    window.addEventListener("pageshow", onPageShow);
-    return () => window.removeEventListener("pageshow", onPageShow);
-  }, [resetProgress]);
+  }, [navigationKey]);
 
   useEffect(() => {
     const form = document.getElementById(formId) as HTMLFormElement | null;
@@ -84,7 +51,10 @@ export function JobAgentSearchButton({
 
     const onSubmit = (event: SubmitEvent) => {
       const submitter = event.submitter as HTMLButtonElement | HTMLInputElement | null;
-      const isSearch = submitter?.getAttribute("name") === "intent" && submitter?.getAttribute("value") === "save_and_search";
+      const isSearch =
+        submitter?.getAttribute("name") === "intent" &&
+        submitter?.getAttribute("value") === "save_and_search";
+
       if (!isSearch) return;
 
       if (searchInFlight.current) {
@@ -92,13 +62,43 @@ export function JobAgentSearchButton({
         return;
       }
 
-      if (submitter instanceof HTMLButtonElement || submitter instanceof HTMLInputElement) submitter.disabled = true;
-      window.dispatchEvent(new Event(SEARCH_STARTED_EVENT));
+      beginProgress();
     };
 
     form.addEventListener("submit", onSubmit);
     return () => form.removeEventListener("submit", onSubmit);
-  }, [formId]);
+  }, [beginProgress, formId]);
+
+  // Reset only after search parameters really change. Depending on `pending` here
+  // caused the previous regression: setting pending=true immediately triggered the
+  // reset effect and could break the submission lifecycle.
+  useEffect(() => {
+    if (!pending) return;
+    const startKey = searchStartNavigationKey.current;
+    if (startKey !== null && navigationKey !== startKey) resetProgress();
+  }, [navigationKey, pending, resetProgress]);
+
+  // Next.js may preserve this client component across a server-action redirect.
+  // The browser URL is therefore a second completion signal if useSearchParams lags.
+  useEffect(() => {
+    if (!pending || !searchStartHref.current) return;
+
+    const poll = window.setInterval(() => {
+      const startHref = searchStartHref.current;
+      if (startHref && window.location.href !== startHref) resetProgress();
+    }, 250);
+
+    return () => window.clearInterval(poll);
+  }, [pending, resetProgress]);
+
+  // Avoid a permanently busy control if the browser restores the page from cache.
+  useEffect(() => {
+    const onPageShow = (event: PageTransitionEvent) => {
+      if (event.persisted) resetProgress();
+    };
+    window.addEventListener("pageshow", onPageShow);
+    return () => window.removeEventListener("pageshow", onPageShow);
+  }, [resetProgress]);
 
   useEffect(() => {
     if (!pending) return;
@@ -107,9 +107,11 @@ export function JobAgentSearchButton({
   }, [pending]);
 
   const phaseIndex = useMemo(() => {
-    if (elapsedSeconds < 2) return 0;
-    if (elapsedSeconds < 7) return 1;
-    if (elapsedSeconds < 15) return 2;
+    // Searches in this workflow commonly complete in ~8–20 seconds. These shorter
+    // intervals make each user-facing phase observable without delaying real work.
+    if (elapsedSeconds < 1) return 0;
+    if (elapsedSeconds < 4) return 1;
+    if (elapsedSeconds < 8) return 2;
     return 3;
   }, [elapsedSeconds]);
 
@@ -122,9 +124,17 @@ export function JobAgentSearchButton({
     }
 
     const form = document.getElementById(formId) as HTMLFormElement | null;
-    if (!form || !form.checkValidity()) return;
+    if (!form) {
+      event.preventDefault();
+      return;
+    }
 
-    beginProgress();
+    // Let native form validation and submission continue. The submit event above is
+    // the single place that starts the progress state and duplicate-submit guard.
+    if (!form.checkValidity()) {
+      event.preventDefault();
+      form.reportValidity();
+    }
   };
 
   return (
@@ -152,7 +162,7 @@ export function JobAgentSearchButton({
             {phase.label}…
           </span>
           <span className="sr-only" role="status" aria-live="polite">
-            Job search is running. Please wait and do not submit again.
+            {phase.label}. Job search is running. Please wait and do not submit again.
           </span>
         </>
       ) : (
