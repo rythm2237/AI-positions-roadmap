@@ -1,7 +1,39 @@
 import type { CanonicalJobCandidate, JobProvider, SearchGatewayResult } from "./contracts.ts";
-import { deduplicateJobs, normalizeJobText } from "./normalization.ts";
+import { canonicalJobKey, deduplicateJobs, normalizeJobText } from "./normalization.ts";
 
 const recoveryLimit = () => Math.max(0, Math.min(Number(process.env.JOB_AGENT_TRUSTED_RECOVERY_MAX ?? 4) || 0, 6));
+
+const serpApiCountryCodes: Record<string, string> = {
+  "united kingdom": "gb", uk: "gb", britain: "gb",
+  "united states": "us", usa: "us",
+  canada: "ca", australia: "au", "new zealand": "nz",
+  germany: "de", deutschland: "de",
+  france: "fr",
+  netherlands: "nl", holland: "nl",
+  switzerland: "ch", schweiz: "ch", suisse: "ch",
+  hungary: "hu", magyarorszag: "hu",
+  austria: "at", belgium: "be", spain: "es", italy: "it", ireland: "ie",
+  poland: "pl", portugal: "pt", sweden: "se", norway: "no", denmark: "dk", finland: "fi",
+  czechia: "cz", "czech republic": "cz", slovakia: "sk", slovenia: "si", croatia: "hr",
+};
+
+function providerCountry(provider: JobProvider, country: string) {
+  if (provider.name !== "SerpApi") return country;
+  return serpApiCountryCodes[normalizeJobText(country)] ?? country;
+}
+
+function restoreRequestedCountry(outcome: Awaited<ReturnType<JobProvider["search"]>>, country: string) {
+  if (!outcome.jobs.length) return outcome;
+  return {
+    ...outcome,
+    jobs: outcome.jobs.map((job) => {
+      if (normalizeJobText(job.country) === normalizeJobText(country)) return job;
+      const normalized = { ...job, country, canonicalKey: "" };
+      normalized.canonicalKey = canonicalJobKey(normalized);
+      return normalized;
+    }),
+  };
+}
 
 function sameVacancyIdentity(a: CanonicalJobCandidate, b: CanonicalJobCandidate) {
   const titleA = normalizeJobText(a.title);
@@ -45,18 +77,22 @@ async function recoverIncompleteAdzunaVacancies(input: {
   const recovered: Array<{ country: string; query: string; outcome: Awaited<ReturnType<JobProvider["search"]>> }> = [];
   for (const job of targets) {
     const query = recoveryQuery(job);
+    const country = job.country ?? "";
     try {
-      const outcome = await serpApi.search({
-        country: job.country ?? "",
+      // Exact-title/company recovery does not need the aggregator's granular location label.
+      // Sending values such as "17ème Arrondissement, Paris" can cause SerpApi to reject an
+      // otherwise valid lookup. Search at country scope and let identity verification enforce
+      // the vacancy match after retrieval.
+      const rawOutcome = await serpApi.search({
+        country: providerCountry(serpApi, country),
         query,
-        location: job.location ?? undefined,
         limit: 5,
         correlationId: `${input.correlationId}:trusted-recovery`,
       });
-      recovered.push({ country: job.country ?? "", query, outcome });
+      recovered.push({ country, query, outcome: restoreRequestedCountry(rawOutcome, country) });
     } catch (error) {
       recovered.push({
-        country: job.country ?? "",
+        country,
         query,
         outcome: {
           provider: serpApi.name,
@@ -84,7 +120,8 @@ export async function orchestrateProviderSearch(input: { providers: JobProvider[
     const batch = requests.slice(index, index + 8);
     outcomes.push(...await Promise.all(batch.map(async ({ provider, country, query }) => {
       try {
-        return { country, query, outcome: await provider.search({ country, query, location: input.location, limit: input.limitPerRequest ?? 10, correlationId: input.correlationId }) };
+        const rawOutcome = await provider.search({ country: providerCountry(provider, country), query, location: input.location, limit: input.limitPerRequest ?? 10, correlationId: input.correlationId });
+        return { country, query, outcome: restoreRequestedCountry(rawOutcome, country) };
       } catch (error) {
         return { country, query, outcome: { provider: provider.name, status: "provider_error" as const, jobs: [], latencyMs: 0, requestCount: 0, rateLimitState: {}, errorCode: "UNHANDLED_ADAPTER_ERROR", errorMessage: error instanceof Error ? error.message.slice(0, 240) : "Unknown provider adapter error" } };
       }
