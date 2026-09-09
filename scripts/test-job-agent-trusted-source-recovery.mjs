@@ -132,6 +132,47 @@ test("trusted-source recovery performs one bounded exact lookup for an incomplet
   assert.equal(result.attempts.some((attempt) => attempt.query.includes("Bechtle") && attempt.provider === "SerpApi"), true);
 });
 
+test("trusted-source recovery shares its bounded budget across configured countries", async () => {
+  const priorLimit = process.env.JOB_AGENT_TRUSTED_RECOVERY_MAX;
+  process.env.JOB_AGENT_TRUSTED_RECOVERY_MAX = "2";
+  const calls = [];
+  const franceJobs = [
+    job({ externalId: "fr-1", company: "France One", title: "AI Consultant France One", normalizedTitle: "ai consultant france one", country: "France", location: "Paris", sourceUrl: "https://www.adzuna.fr/details/fr-1", applicationUrl: "https://www.adzuna.fr/details/fr-1" }),
+    job({ externalId: "fr-2", company: "France Two", title: "AI Consultant France Two", normalizedTitle: "ai consultant france two", country: "France", location: "Paris", sourceUrl: "https://www.adzuna.fr/details/fr-2", applicationUrl: "https://www.adzuna.fr/details/fr-2" }),
+  ];
+  const germanyJobs = [
+    job({ externalId: "de-1", company: "Bechtle", title: "AI Solution Consultant (w/m/d)", country: "Germany", location: "Köln" }),
+    job({ externalId: "de-2", company: "Germany Two", title: "AI Consultant Germany Two", normalizedTitle: "ai consultant germany two", country: "Germany", location: "Berlin", sourceUrl: "https://www.adzuna.de/details/de-2", applicationUrl: "https://www.adzuna.de/details/de-2" }),
+  ];
+  const adzuna = {
+    name: "Adzuna",
+    countrySupport: () => true,
+    health: async () => ({ configured: true, status: "healthy" }),
+    rateLimitState: async () => ({}),
+    search: async (input) => outcome("Adzuna", input.country === "France" ? franceJobs : germanyJobs),
+  };
+  const serp = {
+    name: "SerpApi",
+    countrySupport: () => true,
+    health: async () => ({ configured: true, status: "healthy" }),
+    rateLimitState: async () => ({}),
+    search: async (input) => {
+      calls.push(input);
+      return outcome("SerpApi", []);
+    },
+  };
+  try {
+    await orchestrateProviderSearch({ providers: [adzuna, serp], queries: ["AI Consultant"], countries: ["France", "Germany"], correlationId: "country-fairness", maxRequests: 4 });
+    const recoveryCalls = calls.filter((call) => call.correlationId?.endsWith(":trusted-recovery"));
+    assert.equal(recoveryCalls.length, 2);
+    assert.equal(recoveryCalls.some((call) => call.country === "France"), true);
+    assert.equal(recoveryCalls.some((call) => call.country === "de"), true);
+  } finally {
+    if (priorLimit === undefined) delete process.env.JOB_AGENT_TRUSTED_RECOVERY_MAX;
+    else process.env.JOB_AGENT_TRUSTED_RECOVERY_MAX = priorLimit;
+  }
+});
+
 test("trusted-source recovery remains conservative when no alternate canonical source is found", async () => {
   const adzuna = { name: "Adzuna", countrySupport: () => true, health: async () => ({ configured: true, status: "healthy" }), rateLimitState: async () => ({}), search: async () => outcome("Adzuna", [job()]) };
   const serp = { name: "SerpApi", countrySupport: () => true, health: async () => ({ configured: true, status: "healthy" }), rateLimitState: async () => ({}), search: async () => outcome("SerpApi", []) };
