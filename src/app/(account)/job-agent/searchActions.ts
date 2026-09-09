@@ -5,7 +5,7 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { requireUser } from "@/lib/auth/session";
 import { createClient } from "@/lib/supabase/server";
-import { assessFreshness } from "@/lib/job-agent/normalization";
+import { assessFreshness, canonicalJobKey, safeExternalUrl } from "@/lib/job-agent/normalization";
 import { configuredJobProviders, runProviderGateway } from "@/lib/job-agent/providers/gateway";
 import { createJobSearchIntent, validateJobSearchIntent } from "@/lib/job-agent/intent";
 import { planSearchQueries } from "@/lib/job-agent/searchStrategy";
@@ -17,6 +17,7 @@ import { calculateEvidenceGroundedFit } from "@/lib/job-agent/fitIntelligence";
 import { determineExecutionCapability } from "@/lib/job-agent/execution";
 import { preserveOpportunityConflictUrls } from "@/lib/job-agent/persistence";
 import { summarizeCanonicalSearchRun } from "@/lib/job-agent/searchRunMetrics";
+import type { CanonicalJobCandidate } from "@/lib/job-agent/contracts";
 import type { JobAgent, NormalizedJobSearchIntent } from "@/types/jobAgent";
 import type { Profile } from "@/types/identity";
 
@@ -31,6 +32,37 @@ type SearchResult = {
   outcome: "completed" | "partial" | "no_results";
   correlationId: string;
 } | { error: "provider" | "provider-failure" | "profile" | "paused" | "criteria" | "country" | "search-save" };
+
+type ContinuityOpportunityRow = {
+  external_job_id: string | null;
+  source: string;
+  source_query: string | null;
+  company: string;
+  role: string;
+  normalized_title: string | null;
+  location: string | null;
+  country: string | null;
+  source_url: string | null;
+  application_url: string | null;
+  job_url: string | null;
+  job_description: string | null;
+  workplace_model: string | null;
+  employment_types: unknown;
+  seniority: string | null;
+  salary_min: number | null;
+  salary_max: number | null;
+  salary_currency: string | null;
+  required_languages: unknown;
+  required_skills: unknown;
+  preferred_skills: unknown;
+  education_requirements: unknown;
+  certification_requirements: unknown;
+  visa_sponsorship: string | null;
+  posted_at: string | null;
+  expires_at: string | null;
+  canonical_key: string | null;
+  freshness_status: string | null;
+};
 
 async function persistIntent(supabase: Awaited<ReturnType<typeof createClient>>, userId: string, agent: JobAgent, intent: NormalizedJobSearchIntent) {
   const existing = await supabase.from("job_search_intents").select("id,version").eq("user_id", userId).eq("fingerprint", intent.fingerprint).maybeSingle<{ id: string; version: number }>();
@@ -52,6 +84,56 @@ async function persistIntent(supabase: Awaited<ReturnType<typeof createClient>>,
 
 const providerCost = (provider: string, requests: number) => provider === "SerpApi" ? requests * Math.max(0, Number(process.env.SERPAPI_ESTIMATED_COST_PER_SEARCH_USD ?? 0)) : 0;
 const verificationRejectCodes = new Set(["NOT_CANONICAL_VACANCY", "CANONICAL_METADATA_CONFLICT"]);
+const continuityWindowMs = 14 * 24 * 60 * 60 * 1000;
+const stringArray = (value: unknown) => Array.isArray(value) ? value.filter((item): item is string => typeof item === "string") : [];
+
+function continuityCandidate(row: ContinuityOpportunityRow): CanonicalJobCandidate | null {
+  if (row.source !== "Adzuna" || !row.external_job_id || !row.company || !row.role || !row.country) return null;
+  if (row.freshness_status === "expired") return null;
+  if (row.expires_at && new Date(row.expires_at).getTime() <= Date.now()) return null;
+  const sourceUrl = safeExternalUrl(row.source_url ?? row.job_url ?? "");
+  const applicationUrl = safeExternalUrl(row.application_url ?? row.job_url ?? row.source_url ?? "");
+  if (!sourceUrl || !applicationUrl) return null;
+  const sourceQueries = (row.source_query ?? "").split("|").map((item) => item.trim()).filter(Boolean);
+  if (!sourceQueries.length) return null;
+  const workplaceModel = row.workplace_model === "remote" || row.workplace_model === "hybrid" || row.workplace_model === "onsite" ? row.workplace_model : "unknown";
+  const candidate: CanonicalJobCandidate = {
+    externalId: row.external_job_id,
+    source: "Adzuna",
+    sourceQuery: sourceQueries[0],
+    company: row.company,
+    title: row.role,
+    normalizedTitle: row.normalized_title ?? "",
+    location: row.location,
+    country: row.country,
+    sourceUrl,
+    applicationUrl,
+    description: row.job_description ?? "",
+    // Persisted Adzuna search descriptions are continuity hints only. Never promote a cached
+    // snippet to complete evidence; the independent recovery result must still be verified.
+    descriptionComplete: false,
+    workplaceModel,
+    employmentTypes: stringArray(row.employment_types),
+    seniority: row.seniority,
+    salaryMin: row.salary_min,
+    salaryMax: row.salary_max,
+    currency: row.salary_currency,
+    requiredLanguages: stringArray(row.required_languages),
+    requiredSkills: stringArray(row.required_skills),
+    preferredSkills: stringArray(row.preferred_skills),
+    educationRequirements: stringArray(row.education_requirements),
+    certificationRequirements: stringArray(row.certification_requirements),
+    visaSponsorship: row.visa_sponsorship,
+    postedAt: row.posted_at,
+    expiresAt: row.expires_at,
+    canonicalKey: row.canonical_key ?? "",
+    sourceQueries,
+    sources: [{ provider: "Adzuna", sourceJobId: row.external_job_id, sourceQuery: sourceQueries[0], sourceUrl, providerPayload: { continuitySeed: true } }],
+  };
+  if (!candidate.normalizedTitle) candidate.normalizedTitle = candidate.title.toLowerCase();
+  if (!candidate.canonicalKey) candidate.canonicalKey = canonicalJobKey(candidate);
+  return candidate;
+}
 
 export async function searchCurrentUserJobs(): Promise<SearchResult> {
   const user = await requireUser("/job-agent");
@@ -87,7 +169,24 @@ export async function searchCurrentUserJobs(): Promise<SearchResult> {
   if (searchRun.error) return { error: "search-save" };
 
   const evidenceResult = await loadUnifiedEvidence(supabase, user.id, profile);
-  const gateway = await runProviderGateway({ providers, queries: queries.map((query) => query.query), countries, location: intent.hard.citiesRegions[0], correlationId, limitPerRequest: 10, maxRequests: 36 });
+  const continuityCutoff = new Date(Date.now() - continuityWindowMs).toISOString();
+  const continuityResult = await supabase.from("job_opportunities")
+    .select("external_job_id,source,source_query,company,role,normalized_title,location,country,source_url,application_url,job_url,job_description,workplace_model,employment_types,seniority,salary_min,salary_max,salary_currency,required_languages,required_skills,preferred_skills,education_requirements,certification_requirements,visa_sponsorship,posted_at,expires_at,canonical_key,freshness_status")
+    .eq("user_id", user.id)
+    .eq("agent_id", agent.id)
+    .eq("source", "Adzuna")
+    .eq("current_intent_version", intentRecord.version)
+    .gte("updated_at", continuityCutoff)
+    .order("updated_at", { ascending: false })
+    .limit(40)
+    .returns<ContinuityOpportunityRow[]>();
+  if (continuityResult.error) console.error("Job Agent continuity seed lookup failed", { correlationId, code: continuityResult.error.code });
+  const continuityJobs = (continuityResult.data ?? []).flatMap((row) => {
+    const candidate = continuityCandidate(row);
+    return candidate ? [candidate] : [];
+  });
+  const gatewayInput = { providers, queries: queries.map((query) => query.query), countries, location: intent.hard.citiesRegions[0], correlationId, limitPerRequest: 10, maxRequests: 36, continuityJobs };
+  const gateway = await runProviderGateway(gatewayInput);
   const providerFailures = gateway.attempts.filter((attempt) => ["provider_error", "rate_limit", "auth_failure", "invalid_query"].includes(attempt.status));
   const allFailed = gateway.attempts.length > 0 && gateway.attempts.every((attempt) => ["provider_error", "rate_limit", "auth_failure", "invalid_query"].includes(attempt.status));
 
