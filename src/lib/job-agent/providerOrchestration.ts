@@ -54,6 +54,41 @@ function recoveryQueryKey(job: CanonicalJobCandidate) {
   return `${normalizeJobText(job.country)}|${normalizeJobText(job.title)}|${normalizeJobText(job.company)}`;
 }
 
+function sourceQueryKey(job: CanonicalJobCandidate) {
+  return normalizeJobText(job.sourceQuery)
+    || normalizeJobText(job.sourceQueries?.[0] ?? "")
+    || "unknown";
+}
+
+function fairRowsAcrossSourceQueries(rows: CanonicalJobCandidate[]) {
+  if (rows.length <= 1) return rows;
+  const byQuery = new Map<string, CanonicalJobCandidate[]>();
+  const queryOrder: string[] = [];
+  for (const row of rows) {
+    const key = sourceQueryKey(row);
+    if (!byQuery.has(key)) {
+      byQuery.set(key, []);
+      queryOrder.push(key);
+    }
+    byQuery.get(key)?.push(row);
+  }
+
+  const ordered: CanonicalJobCandidate[] = [];
+  let round = 0;
+  while (ordered.length < rows.length) {
+    let added = false;
+    for (const query of queryOrder) {
+      const row = byQuery.get(query)?.[round];
+      if (!row) continue;
+      ordered.push(row);
+      added = true;
+    }
+    if (!added) break;
+    round += 1;
+  }
+  return ordered;
+}
+
 function balancedRecoveryTargets(rows: CanonicalJobCandidate[], limit: number) {
   if (limit <= 0 || rows.length <= 1) return rows.slice(0, limit);
   const byCountry = new Map<string, CanonicalJobCandidate[]>();
@@ -66,6 +101,15 @@ function balancedRecoveryTargets(rows: CanonicalJobCandidate[], limit: number) {
     }
     byCountry.get(country)?.push(row);
   }
+
+  // Build each country's queue with round-robin fairness across the original discovery
+  // queries first. This prevents one high-volume query (for example AI Automation Specialist)
+  // from consuming every recovery slot assigned to the country before later queries such as
+  // AI Solutions Consultant can be inspected.
+  for (const country of countryOrder) {
+    byCountry.set(country, fairRowsAcrossSourceQueries(byCountry.get(country) ?? []));
+  }
+
   const selected: CanonicalJobCandidate[] = [];
   let round = 0;
   while (selected.length < limit) {
@@ -101,10 +145,8 @@ async function recoverIncompleteAdzunaVacancies(input: {
     // rows that differ only by granular location would generate the same provider request,
     // so collapse them before applying the bounded recovery budget.
     .filter((job, index, rows) => rows.findIndex((other) => recoveryQueryKey(other) === recoveryQueryKey(job)) === index);
-  // Keep the recovery budget bounded, but distribute it across countries so the ordering
-  // of configured markets cannot starve later countries. With France + Germany and the
-  // default budget of four, recovery alternates FR/DE/FR/DE instead of spending all
-  // requests on whichever country happened to be listed first.
+  // Keep the recovery budget bounded while distributing it across both configured countries
+  // and the original discovery queries inside each country.
   const targets = balancedRecoveryTargets(candidates, limit);
 
   const recovered: Array<{ country: string; query: string; outcome: Awaited<ReturnType<JobProvider["search"]>> }> = [];
