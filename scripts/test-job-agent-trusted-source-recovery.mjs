@@ -212,6 +212,50 @@ test("duplicate title/company rows consume only one trusted recovery slot", asyn
   }
 });
 
+test("trusted-source recovery shares a country's budget across original discovery queries", async () => {
+  const priorLimit = process.env.JOB_AGENT_TRUSTED_RECOVERY_MAX;
+  process.env.JOB_AGENT_TRUSTED_RECOVERY_MAX = "2";
+  const calls = [];
+  const automationJobs = [
+    job({ externalId: "de-auto-1", sourceQuery: "AI Automation Specialist", sourceQueries: ["AI Automation Specialist"], company: "DataSmart Point GmbH", title: "KI-Manager Weiterbildung", normalizedTitle: "ki manager weiterbildung", country: "Germany", location: "Berlin", sourceUrl: "https://www.adzuna.de/details/de-auto-1", applicationUrl: "https://www.adzuna.de/details/de-auto-1" }),
+    job({ externalId: "de-auto-2", sourceQuery: "AI Automation Specialist", sourceQueries: ["AI Automation Specialist"], company: "Automation Two", title: "Automation Specialist", normalizedTitle: "automation specialist", country: "Germany", location: "Hamburg", sourceUrl: "https://www.adzuna.de/details/de-auto-2", applicationUrl: "https://www.adzuna.de/details/de-auto-2" }),
+  ];
+  const solutionJobs = [
+    job({ externalId: "de-bechtle", sourceQuery: "AI Solutions Consultant", sourceQueries: ["AI Solutions Consultant"], company: "Bechtle", title: "AI Solution Consultant (w/m/d)", normalizedTitle: "ai solution consultant w m d", country: "Germany", location: "Köln", sourceUrl: "https://www.adzuna.de/details/de-bechtle", applicationUrl: "https://www.adzuna.de/details/de-bechtle" }),
+  ];
+  const adzuna = {
+    name: "Adzuna",
+    countrySupport: () => true,
+    health: async () => ({ configured: true, status: "healthy" }),
+    rateLimitState: async () => ({}),
+    search: async (input) => {
+      if (input.query === "AI Automation Specialist") return outcome("Adzuna", automationJobs);
+      if (input.query === "AI Solutions Consultant") return outcome("Adzuna", solutionJobs);
+      return outcome("Adzuna", []);
+    },
+  };
+  const serp = {
+    name: "SerpApi",
+    countrySupport: () => true,
+    health: async () => ({ configured: true, status: "healthy" }),
+    rateLimitState: async () => ({}),
+    search: async (input) => {
+      calls.push(input);
+      return outcome("SerpApi", []);
+    },
+  };
+  try {
+    await orchestrateProviderSearch({ providers: [adzuna, serp], queries: ["AI Automation Specialist", "AI Solutions Consultant"], countries: ["Germany"], correlationId: "source-query-fairness", maxRequests: 4 });
+    const recoveryCalls = calls.filter((call) => call.correlationId?.endsWith(":trusted-recovery"));
+    assert.equal(recoveryCalls.length, 2);
+    assert.equal(recoveryCalls.some((call) => call.query.includes("DataSmart Point GmbH")), true);
+    assert.equal(recoveryCalls.some((call) => call.query.includes("Bechtle")), true);
+  } finally {
+    if (priorLimit === undefined) delete process.env.JOB_AGENT_TRUSTED_RECOVERY_MAX;
+    else process.env.JOB_AGENT_TRUSTED_RECOVERY_MAX = priorLimit;
+  }
+});
+
 test("trusted-source recovery remains conservative when no alternate canonical source is found", async () => {
   const adzuna = { name: "Adzuna", countrySupport: () => true, health: async () => ({ configured: true, status: "healthy" }), rateLimitState: async () => ({}), search: async () => outcome("Adzuna", [job()]) };
   const serp = { name: "SerpApi", countrySupport: () => true, health: async () => ({ configured: true, status: "healthy" }), rateLimitState: async () => ({}), search: async () => outcome("SerpApi", []) };
