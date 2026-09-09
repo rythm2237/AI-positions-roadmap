@@ -96,7 +96,7 @@ function continuityCandidate(row: ContinuityOpportunityRow): CanonicalJobCandida
   if (!sourceUrl || !applicationUrl) return null;
   const sourceQueries = (row.source_query ?? "").split("|").map((item) => item.trim()).filter(Boolean);
   if (!sourceQueries.length) return null;
-  const workplaceModel = row.workplace_model === "remote" || row.workplace_model === "hybrid" || row.workplace_model === "onsite" ? row.workplace_model : "unknown";
+  const workplaceModel = row.workplace_model === "remote" || row.workplace_model === "hybrid" || row.workplace_model === "on_site" ? row.workplace_model : "unknown";
   const candidate: CanonicalJobCandidate = {
     externalId: row.external_job_id,
     source: "Adzuna",
