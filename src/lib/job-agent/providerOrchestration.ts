@@ -240,12 +240,15 @@ export async function orchestrateProviderSearch(input: {
   // (for example an employer ATS or public employment-service vacancy page). Recovery results
   // remain ordinary candidates and are not promoted to verified status here.
   const recoveryOutcomes = await recoverIncompleteAdzunaVacancies({ providers: input.providers, jobs: recoveryInputJobs, correlationId: input.correlationId });
+  const recoveredJobs = deduplicateJobs(recoveryOutcomes.flatMap((item) => item.outcome.jobs));
   outcomes.push(...recoveryOutcomes);
 
   return {
-    // Continuity seeds are deliberately absent here. Only current provider outcomes and
-    // independent recovery results are emitted into the current run.
-    jobs: deduplicateJobs(outcomes.flatMap((item) => item.outcome.jobs)),
+    // Continuity seeds are deliberately absent here. Trusted recovery candidates are emitted
+    // before bulk discovery rows so downstream bounded processing (currently 80 jobs/run)
+    // cannot silently discard the very candidates created to repair incomplete aggregator data.
+    // They remain ordinary candidates and still pass vacancy verification and hard eligibility.
+    jobs: deduplicateJobs([...recoveredJobs, ...primaryJobs]),
     attempts: outcomes.map(({ country, query, outcome }) => ({ provider: outcome.provider, query, country, location: input.location ?? null, status: outcome.status, recordsReceived: outcome.jobs.length, requestCount: outcome.requestCount, rateLimitState: outcome.rateLimitState, latencyMs: outcome.latencyMs, errorCode: outcome.errorCode, errorMessage: outcome.errorMessage })),
   };
 }
