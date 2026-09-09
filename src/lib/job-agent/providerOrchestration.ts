@@ -231,7 +231,12 @@ export async function orchestrateProviderSearch(input: {
     const sourceQueries = [...new Set([job.sourceQuery, ...(job.sourceQueries ?? [])].filter(Boolean))];
     return sourceQueries.some((query) => rateLimitedAdzunaAttempts.has(attemptKey(job.country ?? "", query)));
   });
-  const recoveryInputJobs = deduplicateJobs([...primaryJobs, ...continuitySeeds]);
+
+  // Activated continuity seeds represent current-run provider failures, so they must be
+  // considered before ordinary incomplete Adzuna rows when the bounded recovery budget is
+  // allocated. They are still hints only: the cached row is never emitted, and any recovery
+  // result must pass the same independent verification and hard-eligibility gates.
+  const recoveryInputJobs = deduplicateJobs([...continuitySeeds, ...primaryJobs]);
 
   // Adzuna's public Search API intentionally returns only description snippets. When the
   // corresponding public Adzuna detail page is rate-limited, do not retry or bypass it.

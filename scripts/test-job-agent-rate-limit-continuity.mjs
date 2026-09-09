@@ -132,3 +132,76 @@ test("ordinary Adzuna no-results does not reactivate a persisted vacancy", async
   assert.equal(calls.some((call) => call.correlationId.endsWith(":trusted-recovery")), false);
   assert.equal(result.jobs.length, 0);
 });
+
+test("activated continuity seeds take recovery priority over ordinary incomplete Adzuna candidates", async () => {
+  const calls = [];
+  const continuitySeed = job();
+  const discoveryQueries = [
+    "AI Automation Specialist",
+    "Business AI Consultant",
+    "Digital Transformation Consultant",
+    "Power Platform Consultant",
+    "AI Solutions Consultant",
+  ];
+  const ordinaryByQuery = new Map(discoveryQueries.slice(0, 4).map((query, index) => [
+    query,
+    job({
+      externalId: `ordinary-${index}`,
+      sourceQuery: query,
+      sourceQueries: [query],
+      company: `Ordinary Company ${index}`,
+      title: `Ordinary Role ${index}`,
+      sourceUrl: `https://www.adzuna.de/details/ordinary-${index}`,
+      applicationUrl: `https://www.adzuna.de/details/ordinary-${index}`,
+      sources: [{ provider: "Adzuna", sourceJobId: `ordinary-${index}`, sourceQuery: query, sourceUrl: `https://www.adzuna.de/details/ordinary-${index}`, providerPayload: {} }],
+    }),
+  ]));
+  const trusted = job({
+    externalId: "ba-bechtle-priority",
+    source: "SerpApi",
+    sourceQuery: "recovery",
+    sourceQueries: ["recovery"],
+    country: "de",
+    sourceUrl: "https://www.arbeitsagentur.de/jobsuche/jobdetail/15086-44420166-94-S",
+    applicationUrl: "https://www.arbeitsagentur.de/jobsuche/jobdetail/15086-44420166-94-S",
+    description: "Complete independent vacancy text.",
+    descriptionComplete: true,
+    sources: [{ provider: "SerpApi", sourceJobId: "ba-bechtle-priority", sourceQuery: "recovery", sourceUrl: "https://www.arbeitsagentur.de/jobsuche/jobdetail/15086-44420166-94-S", providerPayload: {} }],
+  });
+
+  const adzuna = {
+    name: "Adzuna",
+    countrySupport: () => true,
+    health: async () => ({ configured: true, status: "healthy" }),
+    rateLimitState: async () => ({}),
+    search: async (input) => {
+      if (input.query === "AI Solutions Consultant") return { ...outcome("Adzuna", [], "rate_limit"), errorCode: "RATE_LIMIT", errorMessage: "Adzuna returned HTTP 429" };
+      return outcome("Adzuna", ordinaryByQuery.has(input.query) ? [ordinaryByQuery.get(input.query)] : []);
+    },
+  };
+  const serp = {
+    name: "SerpApi",
+    countrySupport: () => true,
+    health: async () => ({ configured: true, status: "healthy" }),
+    rateLimitState: async () => ({}),
+    search: async (input) => {
+      calls.push(input);
+      if (input.correlationId.endsWith(":trusted-recovery") && input.query.includes("Bechtle")) return outcome("SerpApi", [trusted]);
+      return outcome("SerpApi", []);
+    },
+  };
+
+  const result = await orchestrateProviderSearch({
+    providers: [adzuna, serp],
+    queries: discoveryQueries,
+    countries: ["Germany"],
+    correlationId: "continuity-priority",
+    maxRequests: 10,
+    continuityJobs: [continuitySeed],
+  });
+
+  const recoveryCalls = calls.filter((call) => call.correlationId.endsWith(":trusted-recovery"));
+  assert.equal(recoveryCalls.length, 4, "recovery budget should remain capped at four");
+  assert.equal(recoveryCalls.some((call) => call.query.includes("Bechtle")), true, "rate-limited continuity vacancy must not lose its recovery slot to ordinary incomplete rows");
+  assert.equal(result.jobs.some((item) => item.applicationUrl.includes("arbeitsagentur.de")), true);
+});
