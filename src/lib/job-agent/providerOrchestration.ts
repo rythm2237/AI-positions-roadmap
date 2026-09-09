@@ -50,6 +50,10 @@ function recoveryQuery(job: CanonicalJobCandidate) {
   return `"${job.title.replaceAll('"', "").trim()}" ${job.company.trim()}`.trim();
 }
 
+function recoveryQueryKey(job: CanonicalJobCandidate) {
+  return `${normalizeJobText(job.country)}|${normalizeJobText(job.title)}|${normalizeJobText(job.company)}`;
+}
+
 function balancedRecoveryTargets(rows: CanonicalJobCandidate[], limit: number) {
   if (limit <= 0 || rows.length <= 1) return rows.slice(0, limit);
   const byCountry = new Map<string, CanonicalJobCandidate[]>();
@@ -92,10 +96,14 @@ async function recoverIncompleteAdzunaVacancies(input: {
   const candidates = input.jobs
     .filter((job) => job.source === "Adzuna" && !job.descriptionComplete && job.country)
     .filter((job) => !alreadyCovered.some((other) => sameVacancyIdentity(job, other)))
-    .filter((job, index, rows) => rows.findIndex((other) => sameVacancyIdentity(job, other)) === index);
+    .filter((job, index, rows) => rows.findIndex((other) => sameVacancyIdentity(job, other)) === index)
+    // Recovery is executed by exact title + company at country scope. Multiple canonical
+    // rows that differ only by granular location would generate the same provider request,
+    // so collapse them before applying the bounded recovery budget.
+    .filter((job, index, rows) => rows.findIndex((other) => recoveryQueryKey(other) === recoveryQueryKey(job)) === index);
   // Keep the recovery budget bounded, but distribute it across countries so the ordering
   // of configured markets cannot starve later countries. With France + Germany and the
-  // default budget of four, recovery now alternates FR/DE/FR/DE instead of spending all
+  // default budget of four, recovery alternates FR/DE/FR/DE instead of spending all
   // requests on whichever country happened to be listed first.
   const targets = balancedRecoveryTargets(candidates, limit);
 
