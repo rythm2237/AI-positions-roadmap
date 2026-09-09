@@ -107,6 +107,7 @@ test("trusted-source recovery remains conservative when no alternate canonical s
 test("Bechtle German fixture extracts consulting skills and both required languages without losing travel evidence", () => {
   const bechtleText = `
 Deine Skills? Mehr als interessant:
+Wir arbeiten mit unseren Kunden und für die Fachbereiche. Deine Kenntnisse und Erfahrungen sind für die Rolle wichtig.
 Fundiertes Verständnis für AI im Unternehmensumfeld.
 Erfahrung in Workshops und Bedarfsanalysen sowie in der Erstellung von Business Cases und Entscheidungsvorlagen.
 Praktische Erfahrung in der Kundenberatung oder im Lösungsvertrieb.
