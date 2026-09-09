@@ -27,7 +27,7 @@ export type JobEligibilityResult = {
 };
 
 const languagePatterns: Array<[string, RegExp]> = [
-  ["English", /\benglish\b/i],
+  ["English", /\b(english|englisch(?:e|en|er|es)?|englischkenntnisse)\b/i],
   ["German", /\b(german|deutsch(?:e|en|er|es)?|deutschkenntnisse)\b/i],
   ["French", /\b(french|fran[cç]ais)\b/i],
   ["Dutch", /\b(dutch|nederlands)\b/i],
