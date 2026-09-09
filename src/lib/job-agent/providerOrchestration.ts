@@ -3,23 +3,15 @@ import { canonicalJobKey, deduplicateJobs, normalizeJobText } from "./normalizat
 
 const recoveryLimit = () => Math.max(0, Math.min(Number(process.env.JOB_AGENT_TRUSTED_RECOVERY_MAX ?? 4) || 0, 6));
 
-const serpApiCountryCodes: Record<string, string> = {
-  "united kingdom": "gb", uk: "gb", britain: "gb",
-  "united states": "us", usa: "us",
-  canada: "ca", australia: "au", "new zealand": "nz",
-  germany: "de", deutschland: "de",
-  france: "fr",
-  netherlands: "nl", holland: "nl",
-  switzerland: "ch", schweiz: "ch", suisse: "ch",
-  hungary: "hu", magyarorszag: "hu",
-  austria: "at", belgium: "be", spain: "es", italy: "it", ireland: "ie",
-  poland: "pl", portugal: "pt", sweden: "se", norway: "no", denmark: "dk", finland: "fi",
-  czechia: "cz", "czech republic": "cz", slovakia: "sk", slovenia: "si", croatia: "hr",
-};
-
 function providerCountry(provider: JobProvider, country: string) {
   if (provider.name !== "SerpApi") return country;
-  return serpApiCountryCodes[normalizeJobText(country)] ?? country;
+  const normalized = normalizeJobText(country);
+  // Germany needs an explicit ISO override because Intl.DisplayNames can resolve the
+  // historical DD region before DE in the lower-level SerpApi adapter. Other configured
+  // country names must remain human-readable here because the adapter also uses this
+  // value to build SerpApi's `location` parameter (e.g. "France", not "fr").
+  if (normalized === "germany" || normalized === "deutschland") return "de";
+  return country;
 }
 
 function restoreRequestedCountry(outcome: Awaited<ReturnType<JobProvider["search"]>>, country: string) {

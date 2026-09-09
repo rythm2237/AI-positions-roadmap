@@ -51,7 +51,7 @@ const outcome = (provider, jobs, status = jobs.length ? "success" : "no_results"
   rateLimitState: {},
 });
 
-test("SerpApi receives canonical country code while persisted candidates keep configured country name", async () => {
+test("SerpApi receives Germany override while persisted candidates keep configured country name", async () => {
   const calls = [];
   const serp = {
     name: "SerpApi",
@@ -67,6 +67,23 @@ test("SerpApi receives canonical country code while persisted candidates keep co
   assert.equal(calls[0].country, "de");
   assert.equal(result.jobs[0].country, "Germany");
   assert.equal(result.attempts[0].country, "Germany");
+});
+
+test("SerpApi keeps France human-readable so its location parameter is not reduced to fr", async () => {
+  const calls = [];
+  const serp = {
+    name: "SerpApi",
+    countrySupport: () => true,
+    health: async () => ({ configured: true, status: "healthy" }),
+    rateLimitState: async () => ({}),
+    search: async (input) => {
+      calls.push(input);
+      return outcome("SerpApi", []);
+    },
+  };
+  const result = await orchestrateProviderSearch({ providers: [serp], queries: ["AI Solutions Consultant"], countries: ["France"], correlationId: "france-label", maxRequests: 1 });
+  assert.equal(calls[0].country, "France");
+  assert.equal(result.attempts[0].country, "France");
 });
 
 test("trusted-source recovery performs one bounded exact lookup for an incomplete Adzuna vacancy", async () => {
