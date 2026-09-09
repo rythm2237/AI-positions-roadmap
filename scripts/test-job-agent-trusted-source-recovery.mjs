@@ -51,6 +51,24 @@ const outcome = (provider, jobs, status = jobs.length ? "success" : "no_results"
   rateLimitState: {},
 });
 
+test("SerpApi receives canonical country code while persisted candidates keep configured country name", async () => {
+  const calls = [];
+  const serp = {
+    name: "SerpApi",
+    countrySupport: () => true,
+    health: async () => ({ configured: true, status: "healthy" }),
+    rateLimitState: async () => ({}),
+    search: async (input) => {
+      calls.push(input);
+      return outcome("SerpApi", [job({ source: "SerpApi", country: input.country, descriptionComplete: true })]);
+    },
+  };
+  const result = await orchestrateProviderSearch({ providers: [serp], queries: ["AI Solution Consultant"], countries: ["Germany"], correlationId: "country-normalization", maxRequests: 1 });
+  assert.equal(calls[0].country, "de");
+  assert.equal(result.jobs[0].country, "Germany");
+  assert.equal(result.attempts[0].country, "Germany");
+});
+
 test("trusted-source recovery performs one bounded exact lookup for an incomplete Adzuna vacancy", async () => {
   const calls = [];
   const adzuna = {
@@ -67,6 +85,7 @@ test("trusted-source recovery performs one bounded exact lookup for an incomplet
     externalId: "ba-15086-44420166-94-S",
     source: "SerpApi",
     sourceQuery: "recovery",
+    country: "de",
     sourceUrl: "https://www.arbeitsagentur.de/jobsuche/jobdetail/15086-44420166-94-S",
     applicationUrl: "https://www.arbeitsagentur.de/jobsuche/jobdetail/15086-44420166-94-S",
     description: "Complete independent public vacancy text for Bechtle AI Solution Consultant.",
@@ -90,7 +109,9 @@ test("trusted-source recovery performs one bounded exact lookup for an incomplet
   const recoveryCalls = calls.filter((call) => call.provider === "SerpApi" && call.query.includes("Bechtle"));
   assert.equal(recoveryCalls.length, 1);
   assert.match(recoveryCalls[0].query, /"AI Solution Consultant \(w\/m\/d\)" Bechtle/);
-  assert.equal(result.jobs.some((item) => item.applicationUrl.includes("arbeitsagentur.de") && item.descriptionComplete), true);
+  assert.equal(recoveryCalls[0].country, "de");
+  assert.equal(recoveryCalls[0].location, undefined);
+  assert.equal(result.jobs.some((item) => item.applicationUrl.includes("arbeitsagentur.de") && item.descriptionComplete && item.country === "Germany"), true);
   assert.equal(result.attempts.some((attempt) => attempt.query.includes("Bechtle") && attempt.provider === "SerpApi"), true);
 });
 
