@@ -50,6 +50,35 @@ function recoveryQuery(job: CanonicalJobCandidate) {
   return `"${job.title.replaceAll('"', "").trim()}" ${job.company.trim()}`.trim();
 }
 
+function balancedRecoveryTargets(rows: CanonicalJobCandidate[], limit: number) {
+  if (limit <= 0 || rows.length <= 1) return rows.slice(0, limit);
+  const byCountry = new Map<string, CanonicalJobCandidate[]>();
+  const countryOrder: string[] = [];
+  for (const row of rows) {
+    const country = normalizeJobText(row.country) || "unknown";
+    if (!byCountry.has(country)) {
+      byCountry.set(country, []);
+      countryOrder.push(country);
+    }
+    byCountry.get(country)?.push(row);
+  }
+  const selected: CanonicalJobCandidate[] = [];
+  let round = 0;
+  while (selected.length < limit) {
+    let added = false;
+    for (const country of countryOrder) {
+      const row = byCountry.get(country)?.[round];
+      if (!row) continue;
+      selected.push(row);
+      added = true;
+      if (selected.length >= limit) break;
+    }
+    if (!added) break;
+    round += 1;
+  }
+  return selected;
+}
+
 async function recoverIncompleteAdzunaVacancies(input: {
   providers: JobProvider[];
   jobs: CanonicalJobCandidate[];
@@ -60,11 +89,15 @@ async function recoverIncompleteAdzunaVacancies(input: {
   if (!serpApi || limit === 0) return [];
 
   const alreadyCovered = input.jobs.filter((job) => job.source !== "Adzuna" && job.descriptionComplete);
-  const targets = input.jobs
+  const candidates = input.jobs
     .filter((job) => job.source === "Adzuna" && !job.descriptionComplete && job.country)
     .filter((job) => !alreadyCovered.some((other) => sameVacancyIdentity(job, other)))
-    .filter((job, index, rows) => rows.findIndex((other) => sameVacancyIdentity(job, other)) === index)
-    .slice(0, limit);
+    .filter((job, index, rows) => rows.findIndex((other) => sameVacancyIdentity(job, other)) === index);
+  // Keep the recovery budget bounded, but distribute it across countries so the ordering
+  // of configured markets cannot starve later countries. With France + Germany and the
+  // default budget of four, recovery now alternates FR/DE/FR/DE instead of spending all
+  // requests on whichever country happened to be listed first.
+  const targets = balancedRecoveryTargets(candidates, limit);
 
   const recovered: Array<{ country: string; query: string; outcome: Awaited<ReturnType<JobProvider["search"]>> }> = [];
   for (const job of targets) {
