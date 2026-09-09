@@ -60,6 +60,10 @@ function sourceQueryKey(job: CanonicalJobCandidate) {
     || "unknown";
 }
 
+function attemptKey(country: string, query: string) {
+  return `${normalizeJobText(country)}|${normalizeJobText(query)}`;
+}
+
 function fairRowsAcrossSourceQueries(rows: CanonicalJobCandidate[]) {
   if (rows.length <= 1) return rows;
   const byQuery = new Map<string, CanonicalJobCandidate[]>();
@@ -185,7 +189,16 @@ async function recoverIncompleteAdzunaVacancies(input: {
   return recovered;
 }
 
-export async function orchestrateProviderSearch(input: { providers: JobProvider[]; queries: string[]; countries: string[]; location?: string; correlationId: string; limitPerRequest?: number; maxRequests?: number }): Promise<SearchGatewayResult> {
+export async function orchestrateProviderSearch(input: {
+  providers: JobProvider[];
+  queries: string[];
+  countries: string[];
+  location?: string;
+  correlationId: string;
+  limitPerRequest?: number;
+  maxRequests?: number;
+  continuityJobs?: CanonicalJobCandidate[];
+}): Promise<SearchGatewayResult> {
   const maxRequests = Math.max(1, Math.min(input.maxRequests ?? 36, 60));
   const requests = input.countries.flatMap((country) => input.queries.flatMap((query) => input.providers.map((provider) => ({ provider, country, query })))).slice(0, maxRequests);
   const outcomes: Array<{ country: string; query: string; outcome: Awaited<ReturnType<JobProvider["search"]>> }> = [];
@@ -204,16 +217,34 @@ export async function orchestrateProviderSearch(input: { providers: JobProvider[
   }
 
   const primaryJobs = deduplicateJobs(outcomes.flatMap((item) => item.outcome.jobs));
+  const rateLimitedAdzunaAttempts = new Set(
+    outcomes
+      .filter(({ outcome }) => outcome.provider === "Adzuna" && outcome.status === "rate_limit" && outcome.jobs.length === 0)
+      .map(({ country, query }) => attemptKey(country, query)),
+  );
+  // A recent persisted Adzuna row is continuity evidence only, never a fresh discovery.
+  // It may seed an exact independent lookup when the same country/query failed specifically
+  // because of a transient Adzuna rate limit. Ordinary no-results responses do not activate
+  // continuity, preventing removed vacancies from being resurrected from cache.
+  const continuitySeeds = (input.continuityJobs ?? []).filter((job) => {
+    if (job.source !== "Adzuna" || !job.country) return false;
+    const sourceQueries = [...new Set([job.sourceQuery, ...(job.sourceQueries ?? [])].filter(Boolean))];
+    return sourceQueries.some((query) => rateLimitedAdzunaAttempts.has(attemptKey(job.country ?? "", query)));
+  });
+  const recoveryInputJobs = deduplicateJobs([...primaryJobs, ...continuitySeeds]);
+
   // Adzuna's public Search API intentionally returns only description snippets. When the
   // corresponding public Adzuna detail page is rate-limited, do not retry or bypass it.
   // Instead, make a small, bounded exact-title/company lookup through the already-approved
   // SerpApi provider so the normal vacancy verifier can inspect an independent public source
   // (for example an employer ATS or public employment-service vacancy page). Recovery results
   // remain ordinary candidates and are not promoted to verified status here.
-  const recoveryOutcomes = await recoverIncompleteAdzunaVacancies({ providers: input.providers, jobs: primaryJobs, correlationId: input.correlationId });
+  const recoveryOutcomes = await recoverIncompleteAdzunaVacancies({ providers: input.providers, jobs: recoveryInputJobs, correlationId: input.correlationId });
   outcomes.push(...recoveryOutcomes);
 
   return {
+    // Continuity seeds are deliberately absent here. Only current provider outcomes and
+    // independent recovery results are emitted into the current run.
     jobs: deduplicateJobs(outcomes.flatMap((item) => item.outcome.jobs)),
     attempts: outcomes.map(({ country, query, outcome }) => ({ provider: outcome.provider, query, country, location: input.location ?? null, status: outcome.status, recordsReceived: outcome.jobs.length, requestCount: outcome.requestCount, rateLimitState: outcome.rateLimitState, latencyMs: outcome.latencyMs, errorCode: outcome.errorCode, errorMessage: outcome.errorMessage })),
   };
