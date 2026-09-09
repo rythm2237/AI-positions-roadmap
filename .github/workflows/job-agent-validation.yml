@@ -10,6 +10,7 @@ on:
       - "scripts/test-job-acquisition-system.mjs"
       - "scripts/test-job-agent-evidence-provenance.mjs"
       - "scripts/test-job-agent-search-ux.mjs"
+      - "scripts/test-job-agent-trusted-source-recovery.mjs"
       - "supabase/migrations/**job**"
       - "vercel.json"
       - "package.json"
@@ -25,6 +26,7 @@ on:
       - "scripts/test-job-acquisition-system.mjs"
       - "scripts/test-job-agent-evidence-provenance.mjs"
       - "scripts/test-job-agent-search-ux.mjs"
+      - "scripts/test-job-agent-trusted-source-recovery.mjs"
       - "supabase/migrations/**job**"
       - "vercel.json"
       - "package.json"
@@ -55,6 +57,9 @@ jobs:
 
       - name: Search UX regressions
         run: node --test --test-concurrency=1 scripts/test-job-agent-search-ux.mjs
+
+      - name: Trusted-source recovery regressions
+        run: node --experimental-strip-types --test --test-concurrency=1 scripts/test-job-agent-trusted-source-recovery.mjs
 
       - name: Job Acquisition System suite
         run: node --experimental-strip-types --test --test-concurrency=1 scripts/test-job-acquisition-system.mjs
