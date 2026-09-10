@@ -64,6 +64,45 @@ function attemptKey(country: string, query: string) {
   return `${normalizeJobText(country)}|${normalizeJobText(query)}`;
 }
 
+function recoveryToken(token: string) {
+  if (token.length > 5 && token.endsWith("ies")) return `${token.slice(0, -3)}y`;
+  if (token.length > 4 && token.endsWith("s") && !token.endsWith("ss")) return token.slice(0, -1);
+  return token;
+}
+
+function recoveryTokens(value: string) {
+  return normalizeJobText(value)
+    .split(" ")
+    .map((token) => recoveryToken(token.trim()))
+    .filter((token) => token.length >= 2);
+}
+
+function isContinuitySeed(job: CanonicalJobCandidate) {
+  return job.sources.some((source) => {
+    const payload = source.providerPayload;
+    return Boolean(payload && typeof payload === "object" && "continuitySeed" in payload && payload.continuitySeed === true);
+  });
+}
+
+function recoveryRelevanceScore(job: CanonicalJobCandidate) {
+  const query = job.sourceQuery || job.sourceQueries?.[0] || "";
+  const queryText = normalizeJobText(query);
+  const titleText = normalizeJobText(job.normalizedTitle || job.title);
+  const queryTokens = [...new Set(recoveryTokens(queryText))];
+  const titleTokens = new Set(recoveryTokens(titleText));
+  if (!queryTokens.length) return 0;
+
+  const matched = queryTokens.filter((token) => titleTokens.has(token)).length;
+  const coverage = matched / queryTokens.length;
+  const precision = matched / Math.max(titleTokens.size, 1);
+  const exactPhrase = titleText.includes(queryText) || queryText.includes(titleText) ? 1 : 0;
+  // Continuity seeds were activated only by an exact current-run country/query rate limit,
+  // so preserve their explicit priority while using lexical title relevance to rank ordinary
+  // candidates inside the same source-query bucket. Lightweight singularization handles
+  // common variants such as "Solution" vs "Solutions" without role/company hardcoding.
+  return (isContinuitySeed(job) ? 10_000 : 0) + exactPhrase * 1_000 + coverage * 100 + precision * 20;
+}
+
 function fairRowsAcrossSourceQueries(rows: CanonicalJobCandidate[]) {
   if (rows.length <= 1) return rows;
   const byQuery = new Map<string, CanonicalJobCandidate[]>();
@@ -75,6 +114,18 @@ function fairRowsAcrossSourceQueries(rows: CanonicalJobCandidate[]) {
       queryOrder.push(key);
     }
     byQuery.get(key)?.push(row);
+  }
+
+  // Provider result order is not a relevance guarantee. Rank only within each original
+  // discovery-query bucket before round-robin allocation so unrelated rows cannot consume a
+  // scarce recovery slot ahead of a close title match. Stable index tie-breaking preserves
+  // deterministic provider order when scores are equal.
+  for (const query of queryOrder) {
+    const ranked = (byQuery.get(query) ?? [])
+      .map((row, index) => ({ row, index, score: recoveryRelevanceScore(row) }))
+      .sort((a, b) => b.score - a.score || a.index - b.index)
+      .map(({ row }) => row);
+    byQuery.set(query, ranked);
   }
 
   const ordered: CanonicalJobCandidate[] = [];
@@ -107,9 +158,8 @@ function balancedRecoveryTargets(rows: CanonicalJobCandidate[], limit: number) {
   }
 
   // Build each country's queue with round-robin fairness across the original discovery
-  // queries first. This prevents one high-volume query (for example AI Automation Specialist)
-  // from consuming every recovery slot assigned to the country before later queries such as
-  // AI Solutions Consultant can be inspected.
+  // queries first. Within each query, candidates are ranked by title relevance so a noisy
+  // provider ordering cannot spend the bounded recovery budget on unrelated vacancies.
   for (const country of countryOrder) {
     byCountry.set(country, fairRowsAcrossSourceQueries(byCountry.get(country) ?? []));
   }
