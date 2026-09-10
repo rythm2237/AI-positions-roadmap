@@ -7,7 +7,7 @@ type ProcessingConfig = {
   eyebrow: string;
   title: string;
   description: string;
-  accent: string;
+  accent: "cyan" | "violet";
   phases: Array<{ label: string; kicker: string; detail: string }>;
   signals: Array<{ label: string; description: string }>;
   insights: string[];
@@ -168,7 +168,8 @@ export default function GlobalProcessingExperience() {
   const [elapsedSeconds, setElapsedSeconds] = useState(0);
   const pendingCount = useRef(0);
   const startedAt = useRef(0);
-  const revealTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const visibleRef = useRef(false);
+  const revealTimer = useRef<number | null>(null);
 
   useEffect(() => {
     const originalFetch = window.fetch.bind(window);
@@ -183,7 +184,10 @@ export default function GlobalProcessingExperience() {
         startedAt.current = Date.now();
         setElapsedSeconds(0);
         setActive(config);
-        revealTimer.current = window.setTimeout(() => setVisible(true), 280);
+        revealTimer.current = window.setTimeout(() => {
+          visibleRef.current = true;
+          setVisible(true);
+        }, 280);
       }
 
       try {
@@ -191,14 +195,15 @@ export default function GlobalProcessingExperience() {
       } finally {
         pendingCount.current = Math.max(0, pendingCount.current - 1);
         if (pendingCount.current === 0) {
-          if (revealTimer.current) window.clearTimeout(revealTimer.current);
+          if (revealTimer.current !== null) window.clearTimeout(revealTimer.current);
           revealTimer.current = null;
           const elapsed = Date.now() - startedAt.current;
           const finish = () => {
+            visibleRef.current = false;
             setVisible(false);
             window.setTimeout(() => setActive(null), 220);
           };
-          if (visible && elapsed < 900) window.setTimeout(finish, 900 - elapsed);
+          if (visibleRef.current && elapsed < 900) window.setTimeout(finish, 900 - elapsed);
           else finish();
         }
       }
@@ -206,9 +211,9 @@ export default function GlobalProcessingExperience() {
 
     return () => {
       window.fetch = originalFetch;
-      if (revealTimer.current) window.clearTimeout(revealTimer.current);
+      if (revealTimer.current !== null) window.clearTimeout(revealTimer.current);
     };
-  }, [visible]);
+  }, []);
 
   useEffect(() => {
     if (!visible) return;
