@@ -11,7 +11,7 @@ export async function GET() {
     return NextResponse.json({ error: "unauthorized" }, { status: 401, headers: { "Cache-Control": "no-store" } });
   }
 
-  const { data, error } = await supabase
+  const { data: run, error } = await supabase
     .from("job_search_runs")
     .select("id,status,provider_records,deduplicated_count,eligible_count,unverified_count,blocked_count,recommended_count,started_at,completed_at")
     .eq("user_id", authData.user.id)
@@ -23,22 +23,33 @@ export async function GET() {
     return NextResponse.json({ error: "progress_unavailable" }, { status: 500, headers: { "Cache-Control": "no-store" } });
   }
 
+  if (!run) {
+    return NextResponse.json({ run: null }, { headers: { "Cache-Control": "no-store" } });
+  }
+
+  const { data: attempts } = await supabase
+    .from("job_provider_attempts")
+    .select("records_received")
+    .eq("user_id", authData.user.id)
+    .eq("search_run_id", run.id);
+
+  const liveDiscovered = (attempts ?? []).reduce((sum, item) => sum + Number(item.records_received ?? 0), 0);
+  const finalDiscovered = Number(run.provider_records ?? 0);
+
   return NextResponse.json(
     {
-      run: data
-        ? {
-            id: data.id,
-            status: data.status,
-            discovered: Number(data.provider_records ?? 0),
-            canonical: Number(data.deduplicated_count ?? 0),
-            eligible: Number(data.eligible_count ?? 0),
-            unverified: Number(data.unverified_count ?? 0),
-            blocked: Number(data.blocked_count ?? 0),
-            recommended: Number(data.recommended_count ?? 0),
-            startedAt: data.started_at,
-            completedAt: data.completed_at,
-          }
-        : null,
+      run: {
+        id: run.id,
+        status: run.status,
+        discovered: finalDiscovered > 0 ? finalDiscovered : liveDiscovered,
+        canonical: Number(run.deduplicated_count ?? 0),
+        eligible: Number(run.eligible_count ?? 0),
+        unverified: Number(run.unverified_count ?? 0),
+        blocked: Number(run.blocked_count ?? 0),
+        recommended: Number(run.recommended_count ?? 0),
+        startedAt: run.started_at,
+        completedAt: run.completed_at,
+      },
     },
     { headers: { "Cache-Control": "no-store" } },
   );
