@@ -13,6 +13,7 @@ on:
       - "scripts/test-job-agent-trusted-source-recovery.mjs"
       - "scripts/test-job-agent-rate-limit-continuity.mjs"
       - "scripts/test-job-agent-recovery-priority.mjs"
+      - "scripts/test-job-agent-recovery-relevance-ranking.mjs"
       - "supabase/migrations/**job**"
       - "vercel.json"
       - "package.json"
@@ -31,6 +32,7 @@ on:
       - "scripts/test-job-agent-trusted-source-recovery.mjs"
       - "scripts/test-job-agent-rate-limit-continuity.mjs"
       - "scripts/test-job-agent-recovery-priority.mjs"
+      - "scripts/test-job-agent-recovery-relevance-ranking.mjs"
       - "supabase/migrations/**job**"
       - "vercel.json"
       - "package.json"
@@ -70,6 +72,9 @@ jobs:
 
       - name: Recovery priority regressions
         run: node --experimental-strip-types --test --test-concurrency=1 scripts/test-job-agent-recovery-priority.mjs
+
+      - name: Recovery relevance ranking regressions
+        run: node --experimental-strip-types --test --test-concurrency=1 scripts/test-job-agent-recovery-relevance-ranking.mjs
 
       - name: Job Acquisition System suite
         run: node --experimental-strip-types --test --test-concurrency=1 scripts/test-job-acquisition-system.mjs
