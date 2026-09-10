@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
+import { usePathname } from "next/navigation";
 
 type ProcessingConfig = {
   id: string;
@@ -11,6 +12,32 @@ type ProcessingConfig = {
   phases: Array<{ label: string; kicker: string; detail: string }>;
   signals: Array<{ label: string; description: string }>;
   insights: string[];
+};
+
+const APPLICATION_PACK_CONFIG: ProcessingConfig = {
+  id: "application-pack",
+  eyebrow: "Job Acquisition · Application Pack",
+  title: "Building a truthful application pack from your evidence.",
+  description: "AI Role Path is grounding the pack in your Master CV, profile evidence and the verified vacancy before anything is presented for human review.",
+  accent: "violet",
+  phases: [
+    { label: "Checking readiness", kicker: "Confirming the application gate", detail: "Reviewing vacancy eligibility, freshness, Master CV availability and unresolved requirements." },
+    { label: "Selecting evidence", kicker: "Choosing what actually supports the role", detail: "Matching CV facts, projects, skills and achievements to the vacancy requirements." },
+    { label: "Drafting materials", kicker: "Building the application story", detail: "Preparing the tailored CV highlights, portfolio cases, cover note and recruiter message." },
+    { label: "Grounding statements", kicker: "Protecting accuracy", detail: "Checking generated statements against source evidence and preparing the pack for your review." },
+  ],
+  signals: [
+    { label: "Master CV", description: "Source of truth" },
+    { label: "Vacancy", description: "Verified requirements" },
+    { label: "Evidence", description: "Supported claims" },
+    { label: "Review", description: "Human approval" },
+  ],
+  insights: [
+    "The application pack is generated for review, never silently submitted.",
+    "Tailoring changes emphasis, not the underlying facts in your career history.",
+    "Unsupported claims are treated as gaps rather than invented achievements.",
+    "Application readiness and job fit are separate checks: a strong fit can still require eligibility verification.",
+  ],
 };
 
 const CONFIGS: Array<{ match: (url: string) => boolean; config: ProcessingConfig }> = [
@@ -163,6 +190,7 @@ function configFor(url: string) {
 }
 
 export default function GlobalProcessingExperience() {
+  const pathname = usePathname();
   const [active, setActive] = useState<ProcessingConfig | null>(null);
   const [visible, setVisible] = useState(false);
   const [elapsedSeconds, setElapsedSeconds] = useState(0);
@@ -170,6 +198,26 @@ export default function GlobalProcessingExperience() {
   const startedAt = useRef(0);
   const visibleRef = useRef(false);
   const revealTimer = useRef<number | null>(null);
+  const manualProcessing = useRef(false);
+  const manualStartPath = useRef<string | null>(null);
+  const manualFailsafeTimer = useRef<number | null>(null);
+
+  const hideExperience = () => {
+    visibleRef.current = false;
+    setVisible(false);
+    window.setTimeout(() => setActive(null), 220);
+  };
+
+  const beginExperience = (config: ProcessingConfig, delay = 280) => {
+    startedAt.current = Date.now();
+    setElapsedSeconds(0);
+    setActive(config);
+    if (revealTimer.current !== null) window.clearTimeout(revealTimer.current);
+    revealTimer.current = window.setTimeout(() => {
+      visibleRef.current = true;
+      setVisible(true);
+    }, delay);
+  };
 
   useEffect(() => {
     const originalFetch = window.fetch.bind(window);
@@ -180,40 +228,57 @@ export default function GlobalProcessingExperience() {
       if (!config) return originalFetch(input, init);
 
       pendingCount.current += 1;
-      if (pendingCount.current === 1) {
-        startedAt.current = Date.now();
-        setElapsedSeconds(0);
-        setActive(config);
-        revealTimer.current = window.setTimeout(() => {
-          visibleRef.current = true;
-          setVisible(true);
-        }, 280);
-      }
+      if (pendingCount.current === 1 && !manualProcessing.current) beginExperience(config);
 
       try {
         return await originalFetch(input, init);
       } finally {
         pendingCount.current = Math.max(0, pendingCount.current - 1);
-        if (pendingCount.current === 0) {
+        if (pendingCount.current === 0 && !manualProcessing.current) {
           if (revealTimer.current !== null) window.clearTimeout(revealTimer.current);
           revealTimer.current = null;
           const elapsed = Date.now() - startedAt.current;
-          const finish = () => {
-            visibleRef.current = false;
-            setVisible(false);
-            window.setTimeout(() => setActive(null), 220);
-          };
-          if (visibleRef.current && elapsed < 900) window.setTimeout(finish, 900 - elapsed);
-          else finish();
+          if (visibleRef.current && elapsed < 900) window.setTimeout(hideExperience, 900 - elapsed);
+          else hideExperience();
         }
       }
     };
 
+    const onSubmit = (event: SubmitEvent) => {
+      const form = event.target instanceof HTMLFormElement ? event.target : null;
+      const submitter = event.submitter instanceof HTMLElement ? event.submitter : null;
+      const label = submitter?.textContent?.trim().toLowerCase() ?? "";
+      const isApplicationPack = window.location.pathname.startsWith("/job-agent/jobs/") && label === "apply" && Boolean(form?.querySelector('input[name="job_id"]'));
+      if (!isApplicationPack || event.defaultPrevented) return;
+
+      manualProcessing.current = true;
+      manualStartPath.current = window.location.pathname;
+      beginExperience(APPLICATION_PACK_CONFIG, 120);
+      if (manualFailsafeTimer.current !== null) window.clearTimeout(manualFailsafeTimer.current);
+      manualFailsafeTimer.current = window.setTimeout(() => {
+        manualProcessing.current = false;
+        manualStartPath.current = null;
+        hideExperience();
+      }, 60000);
+    };
+
+    document.addEventListener("submit", onSubmit, true);
     return () => {
       window.fetch = originalFetch;
+      document.removeEventListener("submit", onSubmit, true);
       if (revealTimer.current !== null) window.clearTimeout(revealTimer.current);
+      if (manualFailsafeTimer.current !== null) window.clearTimeout(manualFailsafeTimer.current);
     };
   }, []);
+
+  useEffect(() => {
+    if (!manualProcessing.current || !manualStartPath.current || pathname === manualStartPath.current) return;
+    manualProcessing.current = false;
+    manualStartPath.current = null;
+    if (manualFailsafeTimer.current !== null) window.clearTimeout(manualFailsafeTimer.current);
+    manualFailsafeTimer.current = null;
+    hideExperience();
+  }, [pathname]);
 
   useEffect(() => {
     if (!visible) return;
