@@ -8,6 +8,7 @@ import CookieConsent from "@/components/legal/CookieConsent";
 import GlobalFooter from "@/components/landing/GlobalFooter";
 import CareerSwitcherDock from "@/components/navigation/CareerSwitcherDock";
 import FirstVisitGuidedTour from "@/components/onboarding/FirstVisitGuidedTour";
+import GlobalProcessingExperience from "@/components/processing/GlobalProcessingExperience";
 import { absoluteUrl, isIndexableDeployment, seoConfig } from "@/lib/seo";
 import "./globals.css";
 import "./experience-fixes.css";
@@ -104,6 +105,7 @@ export default function RootLayout({ children }: { children: ReactNode }) {
         <CookieConsent />
         <FirstVisitGuidedTour />
         <GlobalExplainMode />
+        <GlobalProcessingExperience />
       </body>
     </html>
   );
