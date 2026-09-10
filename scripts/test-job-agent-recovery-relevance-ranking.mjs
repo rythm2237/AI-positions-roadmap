@@ -5,8 +5,9 @@ import { canonicalJobKey } from "../src/lib/job-agent/normalization.ts";
 
 let nextId = 1;
 function job(overrides = {}) {
+  const id = `job-${nextId++}`;
   const row = {
-    externalId: `job-${nextId++}`,
+    externalId: id,
     source: "Adzuna",
     sourceQuery: "AI Solutions Consultant",
     company: "Example Co",
@@ -14,8 +15,8 @@ function job(overrides = {}) {
     normalizedTitle: "generic role",
     location: "Berlin",
     country: "Germany",
-    sourceUrl: "https://www.adzuna.de/details/example",
-    applicationUrl: "https://www.adzuna.de/details/example",
+    sourceUrl: `https://www.adzuna.de/details/${id}`,
+    applicationUrl: `https://www.adzuna.de/details/${id}`,
     description: "Incomplete aggregator snippet.",
     descriptionComplete: false,
     workplaceModel: "unknown",
@@ -58,12 +59,16 @@ test("trusted recovery ranks title relevance inside a source query before spendi
     company: "GE Vernova",
     title: "Accounting Operations Manager (m/f/d)",
     normalizedTitle: "accounting operations manager m f d",
+    sourceUrl: "https://www.adzuna.de/details/accounting",
+    applicationUrl: "https://www.adzuna.de/details/accounting",
   });
   const relevant = job({
     externalId: "solution-consultant",
     company: "Bechtle",
     title: "AI Solution Consultant (w/m/d)",
     normalizedTitle: "ai solution consultant w m d",
+    sourceUrl: "https://www.adzuna.de/details/solution-consultant",
+    applicationUrl: "https://www.adzuna.de/details/solution-consultant",
   });
 
   const adzuna = {
@@ -106,6 +111,8 @@ test("continuity priority remains stronger than ordinary relevance inside the sa
     company: "Persisted Co",
     title: "AI Consultant",
     normalizedTitle: "ai consultant",
+    sourceUrl: "https://www.adzuna.de/details/continuity",
+    applicationUrl: "https://www.adzuna.de/details/continuity",
     sources: [{ provider: "Adzuna", sourceJobId: "continuity", sourceQuery: "AI Solutions Consultant", sourceUrl: "https://www.adzuna.de/details/continuity", providerPayload: { continuitySeed: true } }],
   });
   const exactFresh = job({
@@ -113,6 +120,8 @@ test("continuity priority remains stronger than ordinary relevance inside the sa
     company: "Fresh Co",
     title: "AI Solutions Consultant",
     normalizedTitle: "ai solutions consultant",
+    sourceUrl: "https://www.adzuna.de/details/exact-fresh",
+    applicationUrl: "https://www.adzuna.de/details/exact-fresh",
   });
 
   const adzuna = {
@@ -132,9 +141,6 @@ test("continuity priority remains stronger than ordinary relevance inside the sa
       return outcome("SerpApi", []);
     },
   };
-
-  // Feed exactFresh as a normal current-run row through a second Adzuna-like provider name so
-  // it participates in the candidate list without changing the rate-limit activation semantics.
   const extraAdzuna = {
     ...adzuna,
     search: async () => outcome("Adzuna", [exactFresh]),
