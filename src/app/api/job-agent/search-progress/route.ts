@@ -82,7 +82,7 @@ export async function GET() {
       run: {
         id: run.id,
         status: run.status,
-        discovered: sourceListings,
+        discovered: canonical,
         sourceListings,
         canonical,
         pipelineCanonical: Number(run.deduplicated_count ?? 0),
