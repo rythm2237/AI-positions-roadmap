@@ -5,10 +5,15 @@ import { orchestrateProviderSearch } from "../providerOrchestration";
 import type { CanonicalJobCandidate, JobProvider, ProviderSearchInput, ProviderSearchOutcome, SearchGatewayResult } from "../contracts";
 import { adzunaConfigured, JobProviderRequestError, resolveAdzunaCountry, searchAdzunaJobs, searchSerpApiJobsDetailed, serpApiConfigured, type JobProviderResult } from "./adzuna";
 
+const providerFetchTimeoutMs = 12_000;
+
 function classify(error: unknown): Pick<ProviderSearchOutcome, "status" | "errorCode" | "errorMessage"> {
   if (error instanceof JobProviderRequestError) {
     const status = error.code === "RATE_LIMIT" ? "rate_limit" : error.code === "AUTH_FAILURE" ? "auth_failure" : error.code === "INVALID_QUERY" ? "invalid_query" : error.code === "UNSUPPORTED_COUNTRY" ? "unsupported_country" : "provider_error";
     return { status, errorCode: error.code, errorMessage: error.message };
+  }
+  if (error instanceof Error && (error.name === "TimeoutError" || error.name === "AbortError")) {
+    return { status: "provider_error", errorCode: "PROVIDER_TIMEOUT", errorMessage: `Provider request exceeded ${providerFetchTimeoutMs} ms.` };
   }
   return { status: "provider_error", errorCode: "UNEXPECTED_PROVIDER_ERROR", errorMessage: error instanceof Error ? error.message.slice(0, 240) : "Unknown provider failure" };
 }
@@ -68,7 +73,7 @@ class GreenhouseProvider implements JobProvider {
   async rateLimitState() { return { publishedLimit: "provider-managed" }; }
   private loadBoard() {
     const networkRequest = !this.payloadPromise;
-    this.payloadPromise ??= fetch(`https://boards-api.greenhouse.io/v1/boards/${encodeURIComponent(this.board)}/jobs?content=true`, { headers: { Accept: "application/json" }, cache: "no-store" }).then(async (response) => {
+    this.payloadPromise ??= fetch(`https://boards-api.greenhouse.io/v1/boards/${encodeURIComponent(this.board)}/jobs?content=true`, { headers: { Accept: "application/json" }, cache: "no-store", signal: AbortSignal.timeout(providerFetchTimeoutMs) }).then(async (response) => {
       if (!response.ok) throw new JobProviderRequestError(response.status === 429 ? "RATE_LIMIT" : response.status === 404 ? "INVALID_QUERY" : "PROVIDER_ERROR", `Greenhouse returned HTTP ${response.status}.`, response.status);
       const payload = await response.json() as { jobs?: GreenhouseJob[] };
       return payload.jobs ?? [];
@@ -99,7 +104,7 @@ class LeverProvider implements JobProvider {
   async rateLimitState() { return { publishedLimit: "provider-managed" }; }
   private loadSite() {
     const networkRequest = !this.payloadPromise;
-    this.payloadPromise ??= fetch(`https://api.lever.co/v0/postings/${encodeURIComponent(this.site)}?mode=json`, { headers: { Accept: "application/json" }, cache: "no-store" }).then(async (response) => {
+    this.payloadPromise ??= fetch(`https://api.lever.co/v0/postings/${encodeURIComponent(this.site)}?mode=json`, { headers: { Accept: "application/json" }, cache: "no-store", signal: AbortSignal.timeout(providerFetchTimeoutMs) }).then(async (response) => {
       if (!response.ok) throw new JobProviderRequestError(response.status === 429 ? "RATE_LIMIT" : response.status === 404 ? "INVALID_QUERY" : "PROVIDER_ERROR", `Lever returned HTTP ${response.status}.`, response.status);
       return response.json() as Promise<LeverJob[]>;
     });
@@ -132,6 +137,6 @@ export function configuredJobProviders(): JobProvider[] {
   ];
 }
 
-export async function runProviderGateway(input: { providers: JobProvider[]; queries: string[]; countries: string[]; location?: string; correlationId: string; limitPerRequest?: number; maxRequests?: number }): Promise<SearchGatewayResult> {
+export async function runProviderGateway(input: { providers: JobProvider[]; queries: string[]; countries: string[]; location?: string; correlationId: string; limitPerRequest?: number; maxRequests?: number; continuityJobs?: CanonicalJobCandidate[]; requestTimeoutMs?: number; gatewayDeadlineMs?: number }): Promise<SearchGatewayResult> {
   return orchestrateProviderSearch(input);
 }

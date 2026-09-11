@@ -2,6 +2,8 @@ import "server-only";
 
 import { parseProviderAnnualSalary, parseProviderPostedAt } from "../providerFields";
 
+const providerFetchTimeoutMs = 12_000;
+
 export type JobProviderResult = {
   externalId: string;
   source: "Adzuna" | "SerpApi";
@@ -172,7 +174,7 @@ export async function searchAdzunaJobs(input: { country: string; query: string; 
   const limit = Math.min(50, Math.max(1, input.limit ?? 20));
   const params = new URLSearchParams({ app_id: appId, app_key: appKey, what: input.query, results_per_page: String(limit), sort_by: "date", "content-type": "application/json" });
   if (input.location) params.set("where", input.location);
-  const response = await fetch(`https://api.adzuna.com/v1/api/jobs/${code}/search/1?${params}`, { headers: { Accept: "application/json" }, cache: "no-store" });
+  const response = await fetch(`https://api.adzuna.com/v1/api/jobs/${code}/search/1?${params}`, { headers: { Accept: "application/json" }, cache: "no-store", signal: AbortSignal.timeout(providerFetchTimeoutMs) });
   if (!response.ok) {
     console.warn("Job Agent Adzuna search failed", { status: response.status, country: code, query: input.query });
     throw providerHttpError("Adzuna", response);
@@ -265,7 +267,7 @@ async function searchSerpApiGoogleSearch(input: { country: string; query: string
   const q = `${input.query} jobs in ${input.location}`;
   const params = new URLSearchParams({ engine: "google", q, api_key: input.apiKey, output: "json", hl: "en", location: input.location });
   if (input.gl) params.set("gl", input.gl);
-  const response = await fetch(`https://serpapi.com/search?${params}`, { headers: { Accept: "application/json" }, cache: "no-store" });
+  const response = await fetch(`https://serpapi.com/search?${params}`, { headers: { Accept: "application/json" }, cache: "no-store", signal: AbortSignal.timeout(providerFetchTimeoutMs) });
   const payload = await response.json().catch(() => ({})) as {
     error?: string;
     jobs_results?: { jobs?: RawSerpApiJob[] };
@@ -320,7 +322,7 @@ export async function searchSerpApiJobsDetailed(input: { country: string; query:
   // provider limitation, not an application error.
   const params = new URLSearchParams({ engine: "google_jobs", q: input.query, api_key: apiKey, output: "json", hl: "en", location });
   if (gl) params.set("gl", gl);
-  const response = await fetch(`https://serpapi.com/search?${params}`, { headers: { Accept: "application/json" }, cache: "no-store" });
+  const response = await fetch(`https://serpapi.com/search?${params}`, { headers: { Accept: "application/json" }, cache: "no-store", signal: AbortSignal.timeout(providerFetchTimeoutMs) });
   const payload = await response.json().catch(() => ({})) as { jobs_results?: RawSerpApiJob[]; error?: string };
   if (!response.ok || payload.error) {
     console.warn("Job Agent SerpApi Google Jobs unavailable", { status: response.status, country: input.country, query: input.query, error: payload.error ?? null });

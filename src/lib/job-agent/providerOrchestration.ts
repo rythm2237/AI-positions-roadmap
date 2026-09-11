@@ -2,6 +2,42 @@ import type { CanonicalJobCandidate, JobProvider, SearchGatewayResult } from "./
 import { canonicalJobKey, deduplicateJobs, normalizeJobText } from "./normalization.ts";
 
 const recoveryLimit = () => Math.max(0, Math.min(Number(process.env.JOB_AGENT_TRUSTED_RECOVERY_MAX ?? 4) || 0, 6));
+const providerRequestTimeoutMs = 15_000;
+const providerGatewayDeadlineMs = 120_000;
+
+type ProviderOutcome = Awaited<ReturnType<JobProvider["search"]>>;
+
+function boundedDuration(value: number | undefined, fallback: number, maximum: number) {
+  if (!Number.isFinite(value)) return fallback;
+  return Math.max(1, Math.min(value ?? fallback, maximum));
+}
+
+function timeoutOutcome(provider: JobProvider, errorCode: "PROVIDER_TIMEOUT" | "GATEWAY_DEADLINE_EXCEEDED", latencyMs: number): ProviderOutcome {
+  return {
+    provider: provider.name,
+    status: "provider_error",
+    jobs: [],
+    latencyMs,
+    requestCount: errorCode === "PROVIDER_TIMEOUT" ? 1 : 0,
+    rateLimitState: {},
+    errorCode,
+    errorMessage: errorCode === "PROVIDER_TIMEOUT"
+      ? `Provider request exceeded ${latencyMs} ms.`
+      : "Provider request was skipped because the search gateway deadline was reached.",
+  };
+}
+
+async function searchProviderWithin(provider: JobProvider, input: Parameters<JobProvider["search"]>[0], timeoutMs: number): Promise<ProviderOutcome> {
+  let timer: ReturnType<typeof setTimeout> | undefined;
+  const timeout = new Promise<ProviderOutcome>((resolve) => {
+    timer = setTimeout(() => resolve(timeoutOutcome(provider, "PROVIDER_TIMEOUT", timeoutMs)), timeoutMs);
+  });
+  try {
+    return await Promise.race([provider.search(input), timeout]);
+  } finally {
+    if (timer) clearTimeout(timer);
+  }
+}
 
 function providerCountry(provider: JobProvider, country: string) {
   if (provider.name !== "SerpApi") return country;
@@ -178,6 +214,8 @@ async function recoverIncompleteAdzunaVacancies(input: {
   providers: JobProvider[];
   jobs: CanonicalJobCandidate[];
   correlationId: string;
+  deadlineAt: number;
+  requestTimeoutMs: number;
 }): Promise<Array<{ country: string; query: string; outcome: Awaited<ReturnType<JobProvider["search"]>> }>> {
   const serpApi = input.providers.find((provider) => provider.name === "SerpApi");
   const limit = recoveryLimit();
@@ -195,13 +233,18 @@ async function recoverIncompleteAdzunaVacancies(input: {
   for (const job of targets) {
     const query = recoveryQuery(job);
     const country = job.country ?? "";
+    const remainingMs = input.deadlineAt - Date.now();
+    if (remainingMs <= 0) {
+      recovered.push({ country, query, outcome: timeoutOutcome(serpApi, "GATEWAY_DEADLINE_EXCEEDED", 0) });
+      continue;
+    }
     try {
-      const rawOutcome = await serpApi.search({
+      const rawOutcome = await searchProviderWithin(serpApi, {
         country: providerCountry(serpApi, country),
         query,
         limit: 5,
         correlationId: `${input.correlationId}:trusted-recovery`,
-      });
+      }, Math.min(input.requestTimeoutMs, remainingMs));
       recovered.push({ country, query, outcome: restoreRequestedCountry(rawOutcome, country) });
     } catch (error) {
       recovered.push({
@@ -232,15 +275,25 @@ export async function orchestrateProviderSearch(input: {
   limitPerRequest?: number;
   maxRequests?: number;
   continuityJobs?: CanonicalJobCandidate[];
+  requestTimeoutMs?: number;
+  gatewayDeadlineMs?: number;
 }): Promise<SearchGatewayResult> {
   const maxRequests = Math.max(1, Math.min(input.maxRequests ?? 36, 60));
+  const requestTimeoutMs = boundedDuration(input.requestTimeoutMs, providerRequestTimeoutMs, 60_000);
+  const gatewayDeadlineMs = boundedDuration(input.gatewayDeadlineMs, providerGatewayDeadlineMs, 180_000);
+  const deadlineAt = Date.now() + gatewayDeadlineMs;
   const requests = input.countries.flatMap((country) => input.queries.flatMap((query) => input.providers.map((provider) => ({ provider, country, query })))).slice(0, maxRequests);
   const outcomes: Array<{ country: string; query: string; outcome: Awaited<ReturnType<JobProvider["search"]>> }> = [];
   for (let index = 0; index < requests.length; index += 8) {
     const batch = requests.slice(index, index + 8);
+    const remainingMs = deadlineAt - Date.now();
+    if (remainingMs <= 0) {
+      outcomes.push(...requests.slice(index).map(({ provider, country, query }) => ({ country, query, outcome: timeoutOutcome(provider, "GATEWAY_DEADLINE_EXCEEDED", 0) })));
+      break;
+    }
     outcomes.push(...await Promise.all(batch.map(async ({ provider, country, query }) => {
       try {
-        const rawOutcome = await provider.search({ country: providerCountry(provider, country), query, location: input.location, limit: input.limitPerRequest ?? 10, correlationId: input.correlationId });
+        const rawOutcome = await searchProviderWithin(provider, { country: providerCountry(provider, country), query, location: input.location, limit: input.limitPerRequest ?? 10, correlationId: input.correlationId }, Math.min(requestTimeoutMs, remainingMs));
         return { country, query, outcome: restoreRequestedCountry(rawOutcome, country) };
       } catch (error) {
         return { country, query, outcome: { provider: provider.name, status: "provider_error" as const, jobs: [], latencyMs: 0, requestCount: 0, rateLimitState: {}, errorCode: "UNHANDLED_ADAPTER_ERROR", errorMessage: error instanceof Error ? error.message.slice(0, 240) : "Unknown provider adapter error" } };
@@ -261,7 +314,7 @@ export async function orchestrateProviderSearch(input: {
   });
 
   const recoveryInputJobs = deduplicateJobs([...continuitySeeds, ...primaryJobs]);
-  const recoveryOutcomes = await recoverIncompleteAdzunaVacancies({ providers: input.providers, jobs: recoveryInputJobs, correlationId: input.correlationId });
+  const recoveryOutcomes = await recoverIncompleteAdzunaVacancies({ providers: input.providers, jobs: recoveryInputJobs, correlationId: input.correlationId, deadlineAt, requestTimeoutMs });
   const recoveredJobs = deduplicateJobs(recoveryOutcomes.flatMap((item) => item.outcome.jobs));
   outcomes.push(...recoveryOutcomes);
 

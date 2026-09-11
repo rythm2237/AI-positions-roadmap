@@ -165,6 +165,15 @@ export async function searchCurrentUserJobs(): Promise<SearchResult> {
     console.error("Job Agent intent persistence failed", { correlationId, userId: user.id, message: error instanceof Error ? error.message : String(error) });
     return { error: "search-save" };
   }
+  const staleRunCutoff = new Date(Date.now() - 6 * 60 * 1000).toISOString();
+  const staleRunRecovery = await supabase.from("job_search_runs").update({
+    status: "failed",
+    error_code: "STALE_RUNTIME_TIMEOUT",
+    completed_at: new Date().toISOString(),
+  }).eq("user_id", user.id).eq("status", "running").lt("created_at", staleRunCutoff);
+  if (staleRunRecovery.error) {
+    console.warn("Job Agent stale search-run recovery failed", { correlationId, userId: user.id, code: staleRunRecovery.error.code });
+  }
   const searchRun = await supabase.from("job_search_runs").insert({ correlation_id: correlationId, user_id: user.id, agent_id: agent.id, intent_id: intentRecord.id, status: "running", queries_planned: queries.length * countries.length }).select("id").single<{ id: string }>();
   if (searchRun.error) return { error: "search-save" };
 
