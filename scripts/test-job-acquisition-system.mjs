@@ -113,6 +113,41 @@ test("Layer 4 — provider gateway preserves no-results and provider-error statu
   assert.deepEqual(result.attempts.map((item) => item.status).sort(), ["no_results", "provider_error"]);
 });
 
+test("Layer 4b — provider gateway times out a stalled adapter and returns a partial-capable result", async () => {
+  const stalled = {
+    name: "stalled",
+    countrySupport: () => true,
+    health: async () => ({ configured: true, status: "healthy" }),
+    rateLimitState: async () => ({}),
+    search: async () => new Promise(() => {}),
+  };
+  const healthy = {
+    name: "healthy",
+    countrySupport: () => true,
+    health: async () => ({ configured: true, status: "healthy" }),
+    rateLimitState: async () => ({}),
+    search: async () => ({ provider: "healthy", status: "no_results", jobs: [], latencyMs: 1, requestCount: 1, rateLimitState: {} }),
+  };
+  const started = Date.now();
+  const result = await orchestrateProviderSearch({
+    providers: [stalled, healthy],
+    queries: ["AI"],
+    countries: ["Germany"],
+    correlationId: "timeout-test",
+    requestTimeoutMs: 20,
+    gatewayDeadlineMs: 100,
+  });
+  assert.ok(Date.now() - started < 500);
+  assert.equal(result.attempts.find((item) => item.provider === "stalled")?.errorCode, "PROVIDER_TIMEOUT");
+  assert.equal(result.attempts.find((item) => item.provider === "healthy")?.status, "no_results");
+});
+
+test("Layer 4c — a new search reconciles stale runs left by a serverless timeout", () => {
+  const action = source("src/app/(account)/job-agent/searchActions.ts");
+  assert.match(action, /STALE_RUNTIME_TIMEOUT/);
+  assert.match(action, /\.eq\("status", "running"\)\.lt\("created_at", staleRunCutoff\)/);
+});
+
 test("Layer 5 — canonical normalization rejects unsafe URLs", () => {
   assert.equal(safeExternalUrl("http://localhost/admin"), null);
   assert.equal(safeExternalUrl("https://127.0.0.1/admin"), null);
