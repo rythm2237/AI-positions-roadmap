@@ -8,7 +8,9 @@ const normalizeIdentityPart = (value: string | null | undefined) => (value ?? ""
   .replace(/\s+/g, " ")
   .trim();
 
-function visibleOpportunityKey(job: JobOpportunity) {
+type VisibleOpportunityIdentity = Pick<JobOpportunity, "id" | "company" | "role" | "country" | "location">;
+
+export function visibleOpportunityKey(job: VisibleOpportunityIdentity) {
   const company = normalizeIdentityPart(job.company);
   const role = normalizeIdentityPart(job.role);
   if (!company || !role) return `id|${job.id}`;
