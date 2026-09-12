@@ -31,6 +31,10 @@ Recommended rollout:
 4. Promote `primary` in Preview, complete authenticated desktop/mobile E2E, then promote gradually in Production.
 5. Keep all provider flags and `JOB_DISCOVERY_V2_MODE=legacy` available for immediate code/config rollback.
 
+### Supabase migration-history prerequisite
+
+Historical migration filenames in this repository must retain the exact versions recorded in `supabase_migrations.schema_migrations`. The legacy files were reconciled to the production history without changing their SQL contents so Preview branching can replay the existing schema deterministically. Do not rename an applied migration or use `migration repair` unless the repository filename and the remote history have first been compared by both version and migration name.
+
 ## Configuration
 
 All variables are server-only unless already documented as public:
