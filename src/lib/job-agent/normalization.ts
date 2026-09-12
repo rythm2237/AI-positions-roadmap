@@ -72,6 +72,10 @@ export function jobDescriptionFingerprint(value: string) {
 }
 
 function sameSourceIdentity(left: CanonicalJobCandidate, right: CanonicalJobCandidate) {
+  // A provider observation ID is only trustworthy when it agrees with the
+  // candidate-level external ID. Malformed/partial payloads must not collapse
+  // otherwise distinct vacancies merely because they reused stale provenance.
+  if (!left.externalId || !right.externalId || left.externalId !== right.externalId) return false;
   return left.sources.some((a) => right.sources.some((b) => a.provider === b.provider && a.sourceJobId && a.sourceJobId === b.sourceJobId));
 }
 
