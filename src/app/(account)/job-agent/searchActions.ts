@@ -1,12 +1,14 @@
 "use server";
 
-import { randomUUID } from "node:crypto";
+import { randomUUID, timingSafeEqual } from "node:crypto";
+import { createClient as createServiceSupabaseClient } from "@supabase/supabase-js";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { requireUser } from "@/lib/auth/session";
 import { createClient } from "@/lib/supabase/server";
 import { assessFreshness, canonicalJobKey, safeExternalUrl } from "@/lib/job-agent/normalization";
 import { configuredJobProviders, runProviderGateway } from "@/lib/job-agent/providers/gateway";
+import { discoveryConfig } from "@/lib/job-agent/providerConfig";
 import { createJobSearchIntent, validateJobSearchIntent } from "@/lib/job-agent/intent";
 import { planSearchQueries } from "@/lib/job-agent/searchStrategy";
 import { loadUnifiedEvidence } from "@/lib/job-agent/unifiedEvidence";
@@ -17,6 +19,7 @@ import { calculateEvidenceGroundedFit } from "@/lib/job-agent/fitIntelligence";
 import { determineExecutionCapability } from "@/lib/job-agent/execution";
 import { preserveOpportunityConflictUrls } from "@/lib/job-agent/persistence";
 import { summarizeCanonicalSearchRun } from "@/lib/job-agent/searchRunMetrics";
+import { logJobDiscoveryEvent } from "@/lib/job-agent/observability";
 import type { CanonicalJobCandidate } from "@/lib/job-agent/contracts";
 import type { JobAgent, NormalizedJobSearchIntent } from "@/types/jobAgent";
 import type { Profile } from "@/types/identity";
@@ -31,7 +34,7 @@ type SearchResult = {
   providerErrors: number;
   outcome: "completed" | "partial" | "no_results";
   correlationId: string;
-} | { error: "provider" | "provider-failure" | "profile" | "paused" | "criteria" | "country" | "search-save" };
+} | { error: "provider" | "provider-failure" | "profile" | "paused" | "criteria" | "country" | "rate-limit" | "search-save" };
 
 type ContinuityOpportunityRow = {
   external_job_id: string | null;
@@ -138,8 +141,24 @@ function continuityCandidate(row: ContinuityOpportunityRow): CanonicalJobCandida
 export async function searchCurrentUserJobs(): Promise<SearchResult> {
   const user = await requireUser("/job-agent");
   const supabase = await createClient();
-  const providers = configuredJobProviders();
+  return executeJobSearch(user, supabase, true);
+}
+
+async function executeJobSearch(user: { id: string }, supabase: Awaited<ReturnType<typeof createClient>>, shouldRevalidate: boolean): Promise<SearchResult> {
+  let providers = configuredJobProviders();
   if (!providers.length) return { error: "provider" };
+
+  const dailyBudget = discoveryConfig().apifyDailyBudgetUsd;
+  if (dailyBudget && providers.some((provider) => provider.metadata.providerType === "APIFY")) {
+    const today = new Date();
+    today.setUTCHours(0, 0, 0, 0);
+    const usage = await supabase.from("job_provider_attempts").select("cost_usd").eq("user_id", user.id).eq("provider_type", "APIFY").gte("created_at", today.toISOString()).returns<Array<{ cost_usd: number | null }>>();
+    const used = (usage.data ?? []).reduce((sum, row) => sum + Number(row.cost_usd ?? 0), 0);
+    if (usage.error || used >= dailyBudget) {
+      providers = providers.filter((provider) => provider.metadata.providerType !== "APIFY");
+      console.warn("Job Agent Apify daily budget guard skipped Apify providers", { userId: user.id, reason: usage.error ? "usage_unavailable" : "budget_reached", used, budget: dailyBudget });
+    }
+  }
 
   const [agentResult, profileResult] = await Promise.all([
     supabase.from("job_agents").select("*").eq("user_id", user.id).single<JobAgent>(),
@@ -149,6 +168,10 @@ export async function searchCurrentUserJobs(): Promise<SearchResult> {
   const agent = agentResult.data;
   const profile = profileResult.data;
   if (agent.status !== "active") return { error: "paused" };
+
+  const minimumIntervalSeconds = Math.max(5, Math.min(300, Number(process.env.JOB_DISCOVERY_MIN_INTERVAL_SECONDS) || 30));
+  const recentRun = await supabase.from("job_search_runs").select("id").eq("user_id", user.id).gte("created_at", new Date(Date.now() - minimumIntervalSeconds * 1000).toISOString()).limit(1).maybeSingle();
+  if (!recentRun.error && recentRun.data) return { error: "rate-limit" };
 
   const intent = createJobSearchIntent(agent, agent.search_languages?.length ? agent.search_languages : profile.languages);
   if (validateJobSearchIntent(intent).length) return { error: "criteria" };
@@ -174,8 +197,9 @@ export async function searchCurrentUserJobs(): Promise<SearchResult> {
   if (staleRunRecovery.error) {
     console.warn("Job Agent stale search-run recovery failed", { correlationId, userId: user.id, code: staleRunRecovery.error.code });
   }
-  const searchRun = await supabase.from("job_search_runs").insert({ correlation_id: correlationId, user_id: user.id, agent_id: agent.id, intent_id: intentRecord.id, status: "running", queries_planned: queries.length * countries.length }).select("id").single<{ id: string }>();
+  const searchRun = await supabase.from("job_search_runs").insert({ correlation_id: correlationId, criteria_hash: intent.fingerprint, user_id: user.id, agent_id: agent.id, intent_id: intentRecord.id, status: "running", queries_planned: queries.length * countries.length }).select("id").single<{ id: string }>();
   if (searchRun.error) return { error: "search-save" };
+  logJobDiscoveryEvent("run_started", { runId: correlationId, userId: user.id, counts: { queries: queries.length, countries: countries.length, providers: providers.length }, metadata: { mode: discoveryConfig().mode, criteriaHash: intent.fingerprint } });
 
   const evidenceResult = await loadUnifiedEvidence(supabase, user.id, profile);
   const continuityCutoff = new Date(Date.now() - continuityWindowMs).toISOString();
@@ -196,11 +220,12 @@ export async function searchCurrentUserJobs(): Promise<SearchResult> {
   });
   const gatewayInput = { providers, queries: queries.map((query) => query.query), countries, location: intent.hard.citiesRegions[0], correlationId, limitPerRequest: 10, maxRequests: 36, continuityJobs };
   const gateway = await runProviderGateway(gatewayInput);
+  gateway.attempts.forEach((attempt) => logJobDiscoveryEvent("provider_completed", { runId: correlationId, userId: user.id, provider: attempt.provider, status: attempt.status, latencyMs: attempt.latencyMs, counts: { raw: attempt.rawCount ?? attempt.recordsReceived, normalized: attempt.normalizedCount ?? attempt.recordsReceived, requests: attempt.requestCount }, metadata: { providerType: attempt.providerType, providerStage: attempt.providerStage, errorCode: attempt.errorCode } }));
   const providerFailures = gateway.attempts.filter((attempt) => ["provider_error", "rate_limit", "auth_failure", "invalid_query"].includes(attempt.status));
   const allFailed = gateway.attempts.length > 0 && gateway.attempts.every((attempt) => ["provider_error", "rate_limit", "auth_failure", "invalid_query"].includes(attempt.status));
 
   if (gateway.attempts.length) {
-    const attempts = await supabase.from("job_provider_attempts").insert(gateway.attempts.map((attempt) => ({ user_id: user.id, search_run_id: searchRun.data.id, provider: attempt.provider, query: attempt.query, country: attempt.country, location: attempt.location, status: attempt.status, records_received: attempt.recordsReceived, request_count: attempt.requestCount, rate_limit_state: attempt.rateLimitState, latency_ms: attempt.latencyMs, error_code: attempt.errorCode ?? null, error_message: attempt.errorMessage?.slice(0, 500) ?? null })));
+    const attempts = await supabase.from("job_provider_attempts").insert(gateway.attempts.map((attempt) => ({ user_id: user.id, search_run_id: searchRun.data.id, provider: attempt.provider, provider_type: attempt.providerType ?? null, provider_stage: attempt.providerStage ?? null, query: attempt.query, country: attempt.country, location: attempt.location, status: attempt.status, records_received: attempt.recordsReceived, raw_count: attempt.rawCount ?? attempt.recordsReceived, normalized_count: attempt.normalizedCount ?? attempt.recordsReceived, request_count: attempt.requestCount, rate_limit_state: attempt.rateLimitState, latency_ms: attempt.latencyMs, cost_usd: attempt.costUsd ?? 0, metadata: attempt.metadata ?? {}, error_code: attempt.errorCode ?? null, error_message: attempt.errorMessage?.slice(0, 500) ?? null })));
     if (attempts.error) console.error("Job Agent provider telemetry failed", { correlationId, code: attempts.error.code });
   }
 
@@ -227,11 +252,11 @@ export async function searchCurrentUserJobs(): Promise<SearchResult> {
   const now = new Date().toISOString();
   const rows = processed.map(({ job, verification, verificationRejected, verificationReason, freshness, eligibility, effectiveEligibilityStatus, fit, classification, execution, recommendation }) => ({
     user_id: user.id, agent_id: agent.id, external_job_id: job.externalId, source: job.source, source_query: job.sourceQueries.join(" | ").slice(0, 1000),
-    canonical_key: job.canonicalKey, company: job.company, role: job.title, normalized_title: job.normalizedTitle, location: job.location, country: job.country,
+    canonical_key: job.canonicalKey, company: job.company, company_normalized: job.companyNormalized ?? job.company.toLowerCase(), role: job.title, normalized_title: job.normalizedTitle, location: job.location, city: job.city ?? null, region: job.region ?? null, country: job.country,
     job_url: job.applicationUrl, application_url: job.applicationUrl, source_url: job.sourceUrl, job_description: job.description, required_languages: job.requiredLanguages,
     workplace_model: job.workplaceModel, employment_types: job.employmentTypes, seniority: job.seniority, required_skills: job.requiredSkills, preferred_skills: job.preferredSkills,
     education_requirements: job.educationRequirements, certification_requirements: job.certificationRequirements, visa_sponsorship: job.visaSponsorship,
-    posted_at: job.postedAt, expires_at: job.expiresAt, salary_min: job.salaryMin, salary_max: job.salaryMax, salary_currency: job.currency,
+    posted_at: job.postedAt, expires_at: job.expiresAt, salary_min: job.salaryMin, salary_max: job.salaryMax, salary_currency: job.currency, salary_period: job.salaryPeriod ?? null,
     verification_status: verification.status, verification_provenance: verification.provenance, verified_at: verification.status === "verified" || verification.status === "partially_verified" ? now : null,
     freshness_status: freshness.status, stale_reason: freshness.reason, eligibility_status: effectiveEligibilityStatus,
     eligibility_reasons: verificationRejected && verificationReason ? [verificationReason, ...eligibility.reasons] : eligibility.reasons,
@@ -275,7 +300,10 @@ export async function searchCurrentUserJobs(): Promise<SearchResult> {
     const jobId = idByKey.get(item.job.canonicalKey) ?? idByUrl.get(item.job.applicationUrl);
     if (!jobId) return;
     processedByJobId.set(jobId, item);
-    for (const source of item.job.sources) sourceRows.set(`${source.provider}|${source.sourceUrl}`, { user_id: user.id, job_id: jobId, search_run_id: searchRun.data.id, provider: source.provider, source_job_id: source.sourceJobId, source_query: source.sourceQuery, source_url: source.sourceUrl, provider_payload: source.providerPayload });
+    for (const source of item.job.sources) {
+      const provider = providers.find((candidateProvider) => candidateProvider.name === source.provider);
+      sourceRows.set(`${source.provider}|${source.sourceUrl}`, { user_id: user.id, job_id: jobId, search_run_id: searchRun.data.id, provider: source.provider, provider_type: provider?.metadata.providerType ?? null, source_job_id: source.sourceJobId, source_query: source.sourceQuery, source_url: source.sourceUrl, provider_payload: source.providerPayload, confidence: provider?.metadata.providerType === "DIRECT" ? 0.95 : provider?.metadata.providerType === "APIFY" ? 0.75 : 0.6, last_seen_at: now });
+    }
     verificationRows.push({ user_id: user.id, job_id: jobId, status: item.verification.status, method: String(item.verification.provenance.method ?? "unknown"), source_url: item.job.sourceUrl, fields: item.verification.provenance, error_code: item.verification.errorCode ?? null, verified_at: now });
     if (item.fit) fitRows.push({ user_id: user.id, job_id: jobId, intent_id: intentRecord.id, score: item.fit.score, confidence: item.fit.confidence, classification: item.fit.classification, dimensions: item.fit.explanation.dimensions, strongest_evidence_ids: item.fit.explanation.strongestEvidence.map((evidence) => evidence.evidenceId).filter(Boolean), missing_evidence: item.fit.explanation.missingEvidence, transferable_evidence_ids: item.fit.explanation.transferableEvidence.map((evidence) => evidence.evidenceId).filter(Boolean), explanation: item.fit.explanation, scoring_version: "evidence-fit-v1" });
     if (!item.verificationRejected && (item.classification === "strong_match" || item.classification === "good_match" || item.effectiveEligibilityStatus === "unverified")) inboxRows.push({ user_id: user.id, job_id: jobId, category: item.classification === "strong_match" ? "new_strong_match" : "new_review_job", title: `${item.job.title} at ${item.job.company}`.slice(0, 160), body: item.fit?.explanation.whyRankedHere.join(" ") || item.eligibility.reasons.join(" "), priority: item.classification === "strong_match" ? "high" : "normal", recommended_action: item.effectiveEligibilityStatus === "unverified" ? "Review unverified hard requirements before preparing an application." : "Review the evidence and application readiness.", deep_link: `/job-agent/jobs/${jobId}`, dedupe_key: `search:${searchRun.data.id}:job:${jobId}` });
@@ -302,14 +330,37 @@ export async function searchCurrentUserJobs(): Promise<SearchResult> {
   const { searched, eligible, unverified, blocked, expired, recommended } = runMetrics;
   const status = allFailed ? "failed" : providerFailures.length || persistenceErrors.length ? "partial" : "completed";
   const attemptsByStatus = Object.fromEntries([...new Set(gateway.attempts.map((attempt) => attempt.status))].map((attemptStatus) => [attemptStatus, gateway.attempts.filter((attempt) => attempt.status === attemptStatus).length]));
-  const estimatedCost = gateway.attempts.reduce((sum, attempt) => sum + providerCost(attempt.provider, attempt.requestCount), 0);
-  await supabase.from("job_search_runs").update({ status, provider_records: gateway.jobs.length, deduplicated_count: searched, eligible_count: eligible, unverified_count: unverified, blocked_count: blocked, recommended_count: recommended, expired_count: expired, provider_summary: { attemptsByStatus, evidenceWarnings: evidenceResult.warnings, persistenceErrors }, api_usage: { requests: gateway.attempts.reduce((sum, attempt) => sum + attempt.requestCount, 0) }, estimated_cost: estimatedCost, latency_ms: Date.now() - started, error_code: allFailed ? "ALL_PROVIDERS_FAILED" : persistenceErrors.length ? "SECONDARY_PERSISTENCE_PARTIAL" : null, completed_at: new Date().toISOString() }).eq("id", searchRun.data.id).eq("user_id", user.id);
+  const estimatedCost = gateway.attempts.reduce((sum, attempt) => sum + (attempt.costUsd ?? providerCost(attempt.provider, attempt.requestCount)), 0);
+  const normalizedBeforeDedupe = gateway.attempts.reduce((sum, attempt) => sum + (attempt.normalizedCount ?? attempt.recordsReceived), 0);
+  const verifiedCount = processed.filter((item) => item.verification.status === "verified" || item.verification.status === "partially_verified").length;
+  const invalidCount = processed.filter((item) => item.verificationRejected).length;
+  const quality = { verifiedVacancyPercentage: processed.length ? Math.round(verifiedCount / processed.length * 1000) / 10 : 0, duplicatePercentage: normalizedBeforeDedupe ? Math.round(Math.max(0, normalizedBeforeDedupe - gateway.jobs.length) / normalizedBeforeDedupe * 1000) / 10 : 0, invalidVacancyPercentage: processed.length ? Math.round(invalidCount / processed.length * 1000) / 10 : 0, estimatedProviderCostUsd: estimatedCost };
+  const shadowReport = gateway.shadowComparison ? { ...gateway.shadowComparison, quality } : {};
+  await supabase.from("job_search_runs").update({ status, provider_records: gateway.jobs.length, deduplicated_count: searched, eligible_count: eligible, unverified_count: unverified, blocked_count: blocked, recommended_count: recommended, expired_count: expired, fallback_triggered: gateway.fallbackTriggered ?? false, shadow_comparison: shadowReport, provider_summary: { attemptsByStatus, providerCounts: gateway.providerCounts ?? {}, fallbackTriggered: gateway.fallbackTriggered ?? false, shadowComparison: gateway.shadowComparison ?? null, quality, evidenceWarnings: evidenceResult.warnings, persistenceErrors }, api_usage: { requests: gateway.attempts.reduce((sum, attempt) => sum + attempt.requestCount, 0), byProviderType: Object.fromEntries(["DIRECT", "APIFY", "SEARCH_API"].map((type) => [type, gateway.attempts.filter((attempt) => attempt.providerType === type).reduce((sum, attempt) => sum + attempt.requestCount, 0)])) }, estimated_cost: estimatedCost, latency_ms: Date.now() - started, error_code: allFailed ? "ALL_PROVIDERS_FAILED" : persistenceErrors.length ? "SECONDARY_PERSISTENCE_PARTIAL" : null, completed_at: new Date().toISOString() }).eq("id", searchRun.data.id).eq("user_id", user.id);
 
   await supabase.from("user_activity").insert({ user_id: user.id, action: "job_agent_search_run_v2", metadata: { correlation_id: correlationId, intent_version: intentRecord.version, searched, eligible, unverified, blocked, expired, recommended, provider_errors: providerFailures.length, providers: providers.map((provider) => provider.name), queries: queries.map((query) => query.query), latency_ms: Date.now() - started } });
-  revalidatePath("/job-agent");
+  logJobDiscoveryEvent("run_completed", { runId: correlationId, userId: user.id, status, latencyMs: Date.now() - started, counts: { raw: gateway.attempts.reduce((sum, attempt) => sum + (attempt.rawCount ?? attempt.recordsReceived), 0), normalized: gateway.jobs.length, deduplicated: searched, verified: verifiedCount, rejected: invalidCount }, metadata: { fallbackTriggered: gateway.fallbackTriggered, providerCounts: gateway.providerCounts, estimatedCost } });
+  if (shouldRevalidate) revalidatePath("/job-agent");
 
   if (allFailed && !processed.length) return { error: "provider-failure" };
   return { searched, eligible, unverified, blocked, expired, expanded: queries.length, providerErrors: providerFailures.length, outcome: searched ? providerFailures.length || persistenceErrors.length ? "partial" : "completed" : "no_results", correlationId };
+}
+
+function validSchedulerSecret(value: string) {
+  const expected = process.env.CRON_SECRET;
+  if (!expected) return false;
+  const actualBytes = Buffer.from(value);
+  const expectedBytes = Buffer.from(expected);
+  return actualBytes.length === expectedBytes.length && timingSafeEqual(actualBytes, expectedBytes);
+}
+
+export async function searchJobsForScheduledUser(userId: string, schedulerSecret: string): Promise<SearchResult> {
+  if (!validSchedulerSecret(schedulerSecret) || !/^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(userId)) return { error: "profile" };
+  const url = process.env.SUPABASE_URL;
+  const key = process.env.SUPABASE_SECRET_KEY ?? process.env.SUPABASE_SERVICE_KEY;
+  if (!url || !key) return { error: "search-save" };
+  const serviceClient = createServiceSupabaseClient(url, key, { auth: { persistSession: false, autoRefreshToken: false } }) as unknown as Awaited<ReturnType<typeof createClient>>;
+  return executeJobSearch({ id: userId }, serviceClient, false);
 }
 
 export async function runJobSearch() {
