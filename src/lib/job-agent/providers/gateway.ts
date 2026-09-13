@@ -3,7 +3,10 @@ import "server-only";
 import { canonicalJobKey, normalizeJobText, safeExternalUrl } from "../normalization";
 import { orchestrateProviderSearch } from "../providerOrchestration";
 import type { CanonicalJobCandidate, JobProvider, ProviderSearchInput, ProviderSearchOutcome, SearchGatewayResult } from "../contracts";
+import { configuredApifyActors, configuredWorkdaySites, discoveryConfig, providerMetadata } from "../providerConfig";
 import { adzunaConfigured, JobProviderRequestError, resolveAdzunaCountry, searchAdzunaJobs, searchSerpApiJobsDetailed, serpApiConfigured, type JobProviderResult } from "./adzuna";
+import { ApifyJobProvider } from "./apify";
+import { WorkdayProvider } from "./workday";
 
 const providerFetchTimeoutMs = 12_000;
 
@@ -36,9 +39,18 @@ function candidate(job: JobProviderResult, query: string): CanonicalJobCandidate
 }
 
 class ExistingProvider implements JobProvider {
-  constructor(public readonly name: "SerpApi" | "Adzuna") {}
+  readonly id: string;
+  readonly enabled = true;
+  readonly metadata;
+  constructor(public readonly name: "SerpApi" | "Adzuna") {
+    this.id = name.toLowerCase();
+    this.metadata = name === "SerpApi"
+      ? providerMetadata("SEARCH_API", "FALLBACK", discoveryConfig().priorities.serpApi, ["web-search"], { expensive: true, fallbackOnly: true })
+      : providerMetadata("SEARCH_API", "SECONDARY", discoveryConfig().priorities.adzuna, ["adzuna"]);
+  }
   countrySupport(country: string) { return this.name === "SerpApi" || Boolean(resolveAdzunaCountry(country)); }
   async health() { const configured = this.name === "SerpApi" ? serpApiConfigured() : adzunaConfigured(); return { configured, status: configured ? "healthy" as const : "unavailable" as const, reason: configured ? undefined : "Credentials are not configured." }; }
+  async healthCheck() { return this.health(); }
   async rateLimitState() { return { known: false }; }
   async search(input: ProviderSearchInput): Promise<ProviderSearchOutcome> {
     const started = Date.now();
@@ -47,7 +59,7 @@ class ExistingProvider implements JobProvider {
       const result = this.name === "SerpApi" ? await searchSerpApiJobsDetailed(input) : { jobs: await searchAdzunaJobs(input), requestCount: 1 };
       const rows = result.jobs;
       const jobs = rows.map((row) => candidate(row, input.query)).filter((row): row is CanonicalJobCandidate => Boolean(row));
-      return { provider: this.name, status: jobs.length ? "success" : "no_results", jobs, latencyMs: Date.now() - started, requestCount: result.requestCount, rateLimitState: { known: false } };
+      return { provider: this.name, status: jobs.length ? "success" : "no_results", jobs, latencyMs: Date.now() - started, requestCount: result.requestCount, rawCount: rows.length, normalizedCount: jobs.length, rateLimitState: { known: false } };
     } catch (error) {
       return { provider: this.name, jobs: [], latencyMs: Date.now() - started, requestCount: 1, rateLimitState: { known: false }, ...classify(error) };
     }
@@ -65,11 +77,15 @@ type GreenhouseJob = { id?: number; title?: string; location?: { name?: string }
 type LeverJob = { id?: string; text?: string; categories?: { location?: string; commitment?: string }; descriptionPlain?: string; additionalPlain?: string; hostedUrl?: string; applyUrl?: string; createdAt?: number; workplaceType?: string };
 
 class GreenhouseProvider implements JobProvider {
+  readonly id: string;
+  readonly enabled = true;
   readonly name: string;
+  readonly metadata;
   private payloadPromise: Promise<GreenhouseJob[]> | null = null;
-  constructor(private readonly board: string) { this.name = `Greenhouse:${board}`; }
+  constructor(private readonly board: string) { this.id = `greenhouse:${board}`; this.name = `Greenhouse:${board}`; this.metadata = providerMetadata("DIRECT", "PRIMARY", discoveryConfig().priorities.greenhouse, ["greenhouse"]); }
   countrySupport() { return true; }
   async health() { return { configured: true, status: "healthy" as const }; }
+  async healthCheck() { return this.health(); }
   async rateLimitState() { return { publishedLimit: "provider-managed" }; }
   private loadBoard() {
     const networkRequest = !this.payloadPromise;
@@ -90,17 +106,21 @@ class GreenhouseProvider implements JobProvider {
         const row: CanonicalJobCandidate = { externalId: String(job.id), source: this.name, sourceQuery: input.query, company: this.board, title: job.title.trim(), normalizedTitle: normalizeJobText(job.title), location, country: location && normalizeJobText(location).includes(normalizeJobText(input.country)) ? input.country : null, sourceUrl: url, applicationUrl: url, description: htmlText(job.content ?? ""), descriptionComplete: Boolean(job.content), workplaceModel: /\bremote\b/i.test(location ?? "") ? "remote" : "unknown", employmentTypes: [], seniority: null, salaryMin: null, salaryMax: null, currency: null, requiredLanguages: [], requiredSkills: [], preferredSkills: [], educationRequirements: [], certificationRequirements: [], visaSponsorship: null, postedAt: job.updated_at ?? null, expiresAt: null, canonicalKey: "", sourceQueries: [input.query], sources: [{ provider: this.name, sourceJobId: String(job.id), sourceQuery: input.query, sourceUrl: url, providerPayload: {} }] };
         row.canonicalKey = canonicalJobKey(row); return [row];
       });
-      return { provider: this.name, status: jobs.length ? "success" : "no_results", jobs, latencyMs: Date.now() - started, requestCount: board.networkRequest ? 1 : 0, rateLimitState: { publishedLimit: "provider-managed" } };
+      return { provider: this.name, status: jobs.length ? "success" : "no_results", jobs, latencyMs: Date.now() - started, requestCount: board.networkRequest ? 1 : 0, rawCount: (await board.payload).length, normalizedCount: jobs.length, rateLimitState: { publishedLimit: "provider-managed" } };
     } catch (error) { return { provider: this.name, jobs: [], latencyMs: Date.now() - started, requestCount: 1, rateLimitState: {}, ...classify(error) }; }
   }
 }
 
 class LeverProvider implements JobProvider {
+  readonly id: string;
+  readonly enabled = true;
   readonly name: string;
+  readonly metadata;
   private payloadPromise: Promise<LeverJob[]> | null = null;
-  constructor(private readonly site: string) { this.name = `Lever:${site}`; }
+  constructor(private readonly site: string) { this.id = `lever:${site}`; this.name = `Lever:${site}`; this.metadata = providerMetadata("DIRECT", "PRIMARY", discoveryConfig().priorities.lever, ["lever"]); }
   countrySupport() { return true; }
   async health() { return { configured: true, status: "healthy" as const }; }
+  async healthCheck() { return this.health(); }
   async rateLimitState() { return { publishedLimit: "provider-managed" }; }
   private loadSite() {
     const networkRequest = !this.payloadPromise;
@@ -121,7 +141,7 @@ class LeverProvider implements JobProvider {
         const row: CanonicalJobCandidate = { externalId: job.id, source: this.name, sourceQuery: input.query, company: this.site, title: job.text.trim(), normalizedTitle: normalizeJobText(job.text), location, country: location && normalizeJobText(location).includes(normalizeJobText(input.country)) ? input.country : null, sourceUrl, applicationUrl, description: [job.descriptionPlain, job.additionalPlain].filter(Boolean).join("\n"), descriptionComplete: Boolean(job.descriptionPlain), workplaceModel: workplace, employmentTypes: job.categories?.commitment ? [normalizeJobText(job.categories.commitment).replaceAll(" ", "_")] : [], seniority: null, salaryMin: null, salaryMax: null, currency: null, requiredLanguages: [], requiredSkills: [], preferredSkills: [], educationRequirements: [], certificationRequirements: [], visaSponsorship: null, postedAt: job.createdAt ? new Date(job.createdAt).toISOString() : null, expiresAt: null, canonicalKey: "", sourceQueries: [input.query], sources: [{ provider: this.name, sourceJobId: job.id, sourceQuery: input.query, sourceUrl, providerPayload: {} }] };
         row.canonicalKey = canonicalJobKey(row); return [row];
       });
-      return { provider: this.name, status: jobs.length ? "success" : "no_results", jobs, latencyMs: Date.now() - started, requestCount: site.networkRequest ? 1 : 0, rateLimitState: { publishedLimit: "provider-managed" } };
+      return { provider: this.name, status: jobs.length ? "success" : "no_results", jobs, latencyMs: Date.now() - started, requestCount: site.networkRequest ? 1 : 0, rawCount: payload.length, normalizedCount: jobs.length, rateLimitState: { publishedLimit: "provider-managed" } };
     } catch (error) { return { provider: this.name, jobs: [], latencyMs: Date.now() - started, requestCount: 1, rateLimitState: {}, ...classify(error) }; }
   }
 }
@@ -129,14 +149,27 @@ class LeverProvider implements JobProvider {
 const configuredTokens = (value: string | undefined) => [...new Set((value ?? "").split(",").map((item) => item.trim()).filter((item) => /^[a-zA-Z0-9_-]{1,80}$/.test(item)))].slice(0, 10);
 
 export function configuredJobProviders(): JobProvider[] {
+  const config = discoveryConfig();
   return [
-    ...(serpApiConfigured() ? [new ExistingProvider("SerpApi")] : []),
-    ...(adzunaConfigured() ? [new ExistingProvider("Adzuna")] : []),
-    ...configuredTokens(process.env.JOB_AGENT_GREENHOUSE_BOARDS).map((board) => new GreenhouseProvider(board)),
-    ...configuredTokens(process.env.JOB_AGENT_LEVER_SITES).map((site) => new LeverProvider(site)),
-  ];
+    ...(config.directEnabled ? configuredTokens(process.env.JOB_AGENT_GREENHOUSE_BOARDS).map((board) => new GreenhouseProvider(board)) : []),
+    ...(config.directEnabled ? configuredTokens(process.env.JOB_AGENT_LEVER_SITES).map((site) => new LeverProvider(site)) : []),
+    ...(config.directEnabled ? configuredWorkdaySites().map((site) => new WorkdayProvider(site)) : []),
+    ...configuredApifyActors().map((actor) => new ApifyJobProvider(actor)),
+    ...(config.adzunaEnabled && adzunaConfigured() ? [new ExistingProvider("Adzuna")] : []),
+    ...(config.serpApiEnabled && serpApiConfigured() ? [new ExistingProvider("SerpApi")] : []),
+  ].sort((left, right) => left.metadata.priority - right.metadata.priority || left.name.localeCompare(right.name));
 }
 
 export async function runProviderGateway(input: { providers: JobProvider[]; queries: string[]; countries: string[]; location?: string; correlationId: string; limitPerRequest?: number; maxRequests?: number; continuityJobs?: CanonicalJobCandidate[]; requestTimeoutMs?: number; gatewayDeadlineMs?: number }): Promise<SearchGatewayResult> {
-  return orchestrateProviderSearch(input);
+  const config = discoveryConfig();
+  return orchestrateProviderSearch({
+    ...input,
+    mode: config.mode,
+    minimumBeforeFallback: config.minimumBeforeFallback,
+    limitPerRequest: Math.min(input.limitPerRequest ?? config.maxResultsPerProvider, config.maxResultsPerProvider),
+    maxRequests: Math.min(input.maxRequests ?? config.maxRequests, config.maxRequests),
+    maxApifyRuns: config.maxApifyRuns,
+    requestTimeoutMs: input.requestTimeoutMs ?? config.requestTimeoutMs,
+    gatewayDeadlineMs: input.gatewayDeadlineMs ?? config.gatewayDeadlineMs,
+  });
 }

@@ -25,9 +25,18 @@ export function safeExternalUrl(value: string | null | undefined): string | null
 }
 
 export function canonicalizeJobUrl(value: string) {
-  const safe = safeExternalUrl(value);
+  let safe = safeExternalUrl(value);
   if (!safe) return null;
-  const url = new URL(safe);
+  let url = new URL(safe);
+  const wrapper = /(^|\.)google\.[a-z.]+$/.test(url.hostname) && url.pathname === "/url"
+    ? url.searchParams.get("url") ?? url.searchParams.get("q")
+    : /(^|\.)(?:serpapi\.com|googleusercontent\.com)$/.test(url.hostname)
+      ? url.searchParams.get("url") ?? url.searchParams.get("target")
+      : null;
+  if (wrapper) {
+    safe = safeExternalUrl(wrapper);
+    if (safe) url = new URL(safe);
+  }
   for (const key of [...url.searchParams.keys()]) if (TRACKING_PARAMS.test(key)) url.searchParams.delete(key);
   url.hash = "";
   url.hostname = url.hostname.toLowerCase();
@@ -45,17 +54,53 @@ export function canonicalJobKey(input: Pick<CanonicalJobCandidate, "title" | "co
 }
 
 function quality(job: CanonicalJobCandidate) {
-  return (job.descriptionComplete ? 1000 : 0) + job.description.length + (job.applicationUrl === job.sourceUrl ? 0 : 50);
+  let sourceScore = 0;
+  try {
+    const host = new URL(job.applicationUrl).hostname.toLowerCase();
+    const trustedAts = /(?:greenhouse\.io|lever\.co|myworkdayjobs\.com|amazon\.jobs|careers\.microsoft\.com)$/.test(host);
+    const aggregator = /(?:linkedin\.com|indeed\.|adzuna\.|google\.)/.test(host);
+    sourceScore = trustedAts ? 500 : aggregator ? -100 : 100;
+  } catch {
+    sourceScore = -500;
+  }
+  return (job.descriptionComplete ? 1000 : 0) + Math.min(job.description.length, 10_000) + sourceScore + (job.source.startsWith("Greenhouse:") || job.source.startsWith("Lever:") ? 500 : 0);
+}
+
+export function jobDescriptionFingerprint(value: string) {
+  const normalized = normalizeJobText(value).split(" ").filter((token) => token.length > 2).slice(0, 240).join(" ");
+  return normalized.length >= 160 ? createHash("sha256").update(normalized).digest("hex") : null;
+}
+
+function sameSourceIdentity(left: CanonicalJobCandidate, right: CanonicalJobCandidate) {
+  // A provider observation ID is only trustworthy when it agrees with the
+  // candidate-level external ID. Malformed/partial payloads must not collapse
+  // otherwise distinct vacancies merely because they reused stale provenance.
+  if (!left.externalId || !right.externalId || left.externalId !== right.externalId) return false;
+  return left.sources.some((a) => right.sources.some((b) => a.provider === b.provider && a.sourceJobId && a.sourceJobId === b.sourceJobId));
+}
+
+function conservativeCrossSourceIdentity(left: CanonicalJobCandidate, right: CanonicalJobCandidate) {
+  if (normalizeJobText(left.company) !== normalizeJobText(right.company) || normalizeJobText(left.title) !== normalizeJobText(right.title)) return false;
+  const leftLocation = normalizeJobText(left.location ?? left.country);
+  const rightLocation = normalizeJobText(right.location ?? right.country);
+  if (!leftLocation || !rightLocation || leftLocation !== rightLocation) return false;
+  const leftDay = left.postedAt?.slice(0, 10);
+  const rightDay = right.postedAt?.slice(0, 10);
+  if (leftDay && rightDay && leftDay === rightDay) return true;
+  const leftFingerprint = jobDescriptionFingerprint(left.description);
+  return Boolean(leftFingerprint && leftFingerprint === jobDescriptionFingerprint(right.description));
 }
 
 export function deduplicateJobs(jobs: CanonicalJobCandidate[], now = new Date()) {
-  const byKey = new Map<string, CanonicalJobCandidate>();
+  const deduplicated: CanonicalJobCandidate[] = [];
   for (const candidate of jobs) {
     const applicationUrl = canonicalizeJobUrl(candidate.applicationUrl);
     const sourceUrl = canonicalizeJobUrl(candidate.sourceUrl);
     if (!applicationUrl || !sourceUrl) continue;
     const normalized = {
       ...candidate,
+      company: candidate.company.trim(),
+      companyNormalized: normalizeJobText(candidate.company),
       applicationUrl,
       sourceUrl,
       normalizedTitle: normalizeJobText(candidate.title),
@@ -70,22 +115,23 @@ export function deduplicateJobs(jobs: CanonicalJobCandidate[], now = new Date())
     const expiration = normalized.expiresAt ? Date.parse(normalized.expiresAt) : Number.NaN;
     if (Number.isFinite(expiration) && expiration <= now.getTime()) continue;
 
-    const key = canonicalJobKey(normalized);
-    normalized.canonicalKey = key;
-    const existing = byKey.get(key);
+    normalized.canonicalKey = canonicalJobKey(normalized);
+    const existingIndex = deduplicated.findIndex((existing) => existing.canonicalKey === normalized.canonicalKey || sameSourceIdentity(existing, normalized) || conservativeCrossSourceIdentity(existing, normalized));
+    const existing = existingIndex >= 0 ? deduplicated[existingIndex] : undefined;
     if (!existing) {
-      byKey.set(key, { ...normalized, sourceQueries: [...new Set([candidate.sourceQuery, ...candidate.sourceQueries])].filter(Boolean), sources: candidate.sources });
+      deduplicated.push({ ...normalized, sourceQueries: [...new Set([candidate.sourceQuery, ...candidate.sourceQueries])].filter(Boolean), sources: candidate.sources });
       continue;
     }
     const preferred = quality(normalized) > quality(existing) ? normalized : existing;
-    byKey.set(key, {
+    const merged = {
       ...preferred,
-      canonicalKey: key,
       sourceQueries: [...new Set([...existing.sourceQueries, existing.sourceQuery, ...normalized.sourceQueries, normalized.sourceQuery])].filter(Boolean),
       sources: [...new Map([...existing.sources, ...normalized.sources].map((source) => [`${source.provider}|${source.sourceUrl}|${source.sourceQuery}`, source])).values()],
-    });
+    };
+    merged.canonicalKey = canonicalJobKey(merged);
+    deduplicated[existingIndex] = merged;
   }
-  return [...byKey.values()];
+  return deduplicated;
 }
 
 export function assessFreshness(job: Pick<CanonicalJobCandidate, "postedAt" | "expiresAt">, now = new Date()): { status: JobFreshnessStatus; reason: string | null } {

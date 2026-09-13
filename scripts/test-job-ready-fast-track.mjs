@@ -8,7 +8,7 @@ const fastTrack = fs.readFileSync("src/app/(account)/job-search-mode/page.tsx", 
 const accountLayout = fs.readFileSync("src/app/(account)/layout.tsx", "utf8");
 const guidedTour = fs.readFileSync("src/components/onboarding/FirstVisitGuidedTour.tsx", "utf8");
 const cvAnalyzer = fs.readFileSync("src/components/cv-analyzer/CVAnalyzerClient.tsx", "utf8");
-const migration = fs.readFileSync("supabase/migrations/20260824120300_user_journey_mode.sql", "utf8");
+const migration = fs.readFileSync("supabase/migrations/20260824121402_user_journey_mode.sql", "utf8");
 
 for (const token of ["Learn & Build", "Ready to Apply", "learn_and_build", "ready_to_apply"]) if (!onboarding.includes(token)) throw new Error(`Onboarding path missing: ${token}`);
 for (const token of ["journey_mode", "/job-search-mode?welcome=1", "/#career-universe", "journey_mode_changed"]) if (!actions.includes(token)) throw new Error(`Journey routing missing: ${token}`);

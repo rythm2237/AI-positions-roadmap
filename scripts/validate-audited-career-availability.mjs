@@ -22,7 +22,7 @@ if (availableCount !== active.length) throw new Error(`Expected ${active.length}
 const files = [
   "src/components/career/CareerWorkspace.tsx",
   "src/components/career/CareerCloudSyncBridge.tsx",
-  "supabase/migrations/202608240001_career_user_state_sync.sql",
+  "supabase/migrations/20260824110042_career_user_state_sync.sql",
   "src/components/career/CareerReadinessPanel.tsx",
   "src/components/career/PurchaseActivationPanel.tsx",
   "src/components/career/RetentionProgressPanel.tsx",

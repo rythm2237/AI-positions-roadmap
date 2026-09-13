@@ -7,6 +7,10 @@ const providerGatewayDeadlineMs = 120_000;
 
 type ProviderOutcome = Awaited<ReturnType<JobProvider["search"]>>;
 
+function providerDetails(provider: JobProvider) {
+  return provider.metadata ?? { providerType: "SEARCH_API" as const, stage: "PRIMARY" as const, priority: 50, supportedSources: [] };
+}
+
 function boundedDuration(value: number | undefined, fallback: number, maximum: number) {
   if (!Number.isFinite(value)) return fallback;
   return Math.max(1, Math.min(value ?? fallback, maximum));
@@ -277,31 +281,75 @@ export async function orchestrateProviderSearch(input: {
   continuityJobs?: CanonicalJobCandidate[];
   requestTimeoutMs?: number;
   gatewayDeadlineMs?: number;
+  mode?: "legacy" | "shadow" | "primary";
+  minimumBeforeFallback?: number;
+  maxApifyRuns?: number;
 }): Promise<SearchGatewayResult> {
   const maxRequests = Math.max(1, Math.min(input.maxRequests ?? 36, 60));
   const requestTimeoutMs = boundedDuration(input.requestTimeoutMs, providerRequestTimeoutMs, 60_000);
   const gatewayDeadlineMs = boundedDuration(input.gatewayDeadlineMs, providerGatewayDeadlineMs, 180_000);
   const deadlineAt = Date.now() + gatewayDeadlineMs;
-  const requests = input.countries.flatMap((country) => input.queries.flatMap((query) => input.providers.map((provider) => ({ provider, country, query })))).slice(0, maxRequests);
   const outcomes: Array<{ country: string; query: string; outcome: Awaited<ReturnType<JobProvider["search"]>> }> = [];
-  for (let index = 0; index < requests.length; index += 8) {
-    const batch = requests.slice(index, index + 8);
-    const remainingMs = deadlineAt - Date.now();
-    if (remainingMs <= 0) {
-      outcomes.push(...requests.slice(index).map(({ provider, country, query }) => ({ country, query, outcome: timeoutOutcome(provider, "GATEWAY_DEADLINE_EXCEEDED", 0) })));
-      break;
-    }
-    outcomes.push(...await Promise.all(batch.map(async ({ provider, country, query }) => {
-      try {
-        const rawOutcome = await searchProviderWithin(provider, { country: providerCountry(provider, country), query, location: input.location, limit: input.limitPerRequest ?? 10, correlationId: input.correlationId }, Math.min(requestTimeoutMs, remainingMs));
-        return { country, query, outcome: restoreRequestedCountry(rawOutcome, country) };
-      } catch (error) {
-        return { country, query, outcome: { provider: provider.name, status: "provider_error" as const, jobs: [], latencyMs: 0, requestCount: 0, rateLimitState: {}, errorCode: "UNHANDLED_ADAPTER_ERROR", errorMessage: error instanceof Error ? error.message.slice(0, 240) : "Unknown provider adapter error" } };
+  let requestsUsed = 0;
+  let apifyRunsUsed = 0;
+  const runProviders = async (providers: JobProvider[]) => {
+    const candidates = input.countries.flatMap((country) => input.queries.flatMap((query) => providers.filter((provider) => provider.countrySupport(country)).map((provider) => ({ provider, country, query }))));
+    const requests = candidates.filter(({ provider }) => {
+      if (providerDetails(provider).providerType !== "APIFY") return true;
+      if (apifyRunsUsed >= Math.max(0, input.maxApifyRuns ?? 2)) return false;
+      apifyRunsUsed += 1;
+      return true;
+    }).slice(0, Math.max(0, maxRequests - requestsUsed));
+    requestsUsed += requests.length;
+    const stageOutcomes: typeof outcomes = [];
+    for (let index = 0; index < requests.length; index += 8) {
+      const batch = requests.slice(index, index + 8);
+      const remainingMs = deadlineAt - Date.now();
+      if (remainingMs <= 0) {
+        stageOutcomes.push(...requests.slice(index).map(({ provider, country, query }) => ({ country, query, outcome: timeoutOutcome(provider, "GATEWAY_DEADLINE_EXCEEDED", 0) })));
+        break;
       }
-    })));
+      stageOutcomes.push(...await Promise.all(batch.map(async ({ provider, country, query }) => {
+        try {
+          const rawOutcome = await searchProviderWithin(provider, { country: providerCountry(provider, country), query, location: input.location, limit: input.limitPerRequest ?? 10, correlationId: input.correlationId }, Math.min(requestTimeoutMs, remainingMs));
+          return { country, query, outcome: restoreRequestedCountry(rawOutcome, country) };
+        } catch (error) {
+          return { country, query, outcome: { provider: provider.name, status: "provider_error" as const, jobs: [], latencyMs: 0, requestCount: 0, rateLimitState: {}, errorCode: "UNHANDLED_ADAPTER_ERROR", errorMessage: error instanceof Error ? error.message.slice(0, 240) : "Unknown provider adapter error" } };
+        }
+      })));
+    }
+    outcomes.push(...stageOutcomes);
+    return stageOutcomes;
+  };
+
+  const orderedProviders = [...input.providers].sort((left, right) => providerDetails(left).priority - providerDetails(right).priority || left.name.localeCompare(right.name));
+  const fallbackProviders = orderedProviders.filter((provider) => providerDetails(provider).fallbackOnly || providerDetails(provider).stage === "FALLBACK");
+  const primaryProviders = orderedProviders.filter((provider) => !fallbackProviders.includes(provider));
+  const directProviders = primaryProviders.filter((provider) => providerDetails(provider).providerType === "DIRECT");
+  const secondaryProviders = primaryProviders.filter((provider) => !directProviders.includes(provider));
+  const mode = input.mode ?? "legacy";
+  const minimumBeforeFallback = Math.max(0, Math.min(input.minimumBeforeFallback ?? 20, 200));
+  let fallbackTriggered = false;
+  let authoritativeOutcomes: typeof outcomes;
+  let multisourceOutcomes: typeof outcomes;
+
+  if (mode === "legacy") {
+    await runProviders(orderedProviders);
+    authoritativeOutcomes = [...outcomes];
+    multisourceOutcomes = [...outcomes];
+  } else {
+    const directOutcomes = await runProviders(directProviders);
+    const directJobs = deduplicateJobs(directOutcomes.flatMap((item) => item.outcome.jobs));
+    const secondaryOutcomes = mode === "shadow" || directJobs.length < minimumBeforeFallback ? await runProviders(secondaryProviders) : [];
+    const primaryOutcomes = [...directOutcomes, ...secondaryOutcomes];
+    const primaryJobs = deduplicateJobs(primaryOutcomes.flatMap((item) => item.outcome.jobs));
+    fallbackTriggered = primaryJobs.length < minimumBeforeFallback;
+    const fallbackOutcomes = mode === "shadow" || fallbackTriggered ? await runProviders(fallbackProviders) : [];
+    multisourceOutcomes = fallbackTriggered ? [...primaryOutcomes, ...fallbackOutcomes] : primaryOutcomes;
+    authoritativeOutcomes = mode === "shadow" ? [...primaryOutcomes, ...fallbackOutcomes] : multisourceOutcomes;
   }
 
-  const primaryJobs = deduplicateJobs(outcomes.flatMap((item) => item.outcome.jobs));
+  const primaryJobs = deduplicateJobs(authoritativeOutcomes.flatMap((item) => item.outcome.jobs));
   const rateLimitedAdzunaAttempts = new Set(
     outcomes
       .filter(({ outcome }) => outcome.provider === "Adzuna" && outcome.status === "rate_limit" && outcome.jobs.length === 0)
@@ -314,12 +362,38 @@ export async function orchestrateProviderSearch(input: {
   });
 
   const recoveryInputJobs = deduplicateJobs([...continuitySeeds, ...primaryJobs]);
-  const recoveryOutcomes = await recoverIncompleteAdzunaVacancies({ providers: input.providers, jobs: recoveryInputJobs, correlationId: input.correlationId, deadlineAt, requestTimeoutMs });
+  const recoveryProviders = mode === "primary" && !fallbackTriggered ? primaryProviders : input.providers;
+  const recoveryOutcomes = await recoverIncompleteAdzunaVacancies({ providers: recoveryProviders, jobs: recoveryInputJobs, correlationId: input.correlationId, deadlineAt, requestTimeoutMs });
   const recoveredJobs = deduplicateJobs(recoveryOutcomes.flatMap((item) => item.outcome.jobs));
   outcomes.push(...recoveryOutcomes);
 
+  const finalJobs = deduplicateJobs([...recoveredJobs, ...primaryJobs]);
+  const providerByName = new Map(input.providers.map((provider) => [provider.name, provider]));
+  const providerCounts = Object.fromEntries(["DIRECT", "APIFY", "SEARCH_API"].map((providerType) => [providerType, finalJobs.filter((job) => job.sources.some((source) => { const sourceProvider = providerByName.get(source.provider); return sourceProvider ? providerDetails(sourceProvider).providerType === providerType : false; })).length]));
+  const multisourceJobs = deduplicateJobs(multisourceOutcomes.flatMap((item) => item.outcome.jobs));
+  const legacyKeys = new Set(finalJobs.map((job) => job.canonicalKey));
+  const multisourceKeys = new Set(multisourceJobs.map((job) => job.canonicalKey));
+  const shadowComparison = mode === "shadow" ? {
+    mode: "shadow" as const,
+    legacyCount: finalJobs.length,
+    multisourceCount: multisourceJobs.length,
+    overlapCount: [...legacyKeys].filter((key) => multisourceKeys.has(key)).length,
+    legacyOnlyCount: [...legacyKeys].filter((key) => !multisourceKeys.has(key)).length,
+    multisourceOnlyCount: [...multisourceKeys].filter((key) => !legacyKeys.has(key)).length,
+    directOnlyCount: multisourceJobs.filter((job) => job.sources.every((source) => { const sourceProvider = providerByName.get(source.provider); return sourceProvider ? providerDetails(sourceProvider).providerType === "DIRECT" : false; })).length,
+    apifyOnlyCount: multisourceJobs.filter((job) => job.sources.every((source) => { const sourceProvider = providerByName.get(source.provider); return sourceProvider ? providerDetails(sourceProvider).providerType === "APIFY" : false; })).length,
+    fallbackOnlyCount: multisourceJobs.filter((job) => job.sources.every((source) => { const sourceProvider = providerByName.get(source.provider); return sourceProvider ? providerDetails(sourceProvider).stage === "FALLBACK" : false; })).length,
+  } : undefined;
+
   return {
-    jobs: deduplicateJobs([...recoveredJobs, ...primaryJobs]),
-    attempts: outcomes.map(({ country, query, outcome }) => ({ provider: outcome.provider, query, country, location: input.location ?? null, status: outcome.status, recordsReceived: outcome.jobs.length, requestCount: outcome.requestCount, rateLimitState: outcome.rateLimitState, latencyMs: outcome.latencyMs, errorCode: outcome.errorCode, errorMessage: outcome.errorMessage })),
+    jobs: finalJobs,
+    fallbackTriggered,
+    providerCounts,
+    shadowComparison,
+    attempts: outcomes.map(({ country, query, outcome }) => {
+      const provider = providerByName.get(outcome.provider);
+      const details = provider ? providerDetails(provider) : undefined;
+      return { provider: outcome.provider, providerType: details?.providerType, providerStage: details?.stage, query, country, location: input.location ?? null, status: outcome.status, recordsReceived: outcome.jobs.length, requestCount: outcome.requestCount, rawCount: outcome.rawCount, normalizedCount: outcome.normalizedCount, costUsd: outcome.costUsd, metadata: outcome.metadata, rateLimitState: outcome.rateLimitState, latencyMs: outcome.latencyMs, errorCode: outcome.errorCode, errorMessage: outcome.errorMessage };
+    }),
   };
 }

@@ -138,6 +138,7 @@ export interface JobOpportunity {
   eligibility_status: JobEligibilityStatus; eligibility_reasons: string[]; eligibility_checked_at: string | null; eligibility_version: string;
   submission_method: string | null; submission_receipt: string | null; discovered_at: string; updated_at: string;
   canonical_key?: string | null; normalized_title?: string | null; source_query?: string | null; workplace_model?: JobWorkplaceModel;
+  company_normalized?: string | null; city?: string | null; region?: string | null; salary_period?: "hour" | "day" | "week" | "month" | "year" | null;
   employment_types?: string[]; seniority?: string | null; required_skills?: string[]; preferred_skills?: string[];
   education_requirements?: string[]; certification_requirements?: string[]; visa_sponsorship?: string | null;
   posted_at?: string | null; expires_at?: string | null; application_url?: string | null; source_url?: string | null;
