@@ -122,15 +122,23 @@ The protected endpoint `GET /api/admin/job-agent/providers` reports configured h
 | O zero results | empty aggregate test | PASS |
 | P scheduled search | code/type/build contract; live cron not run | BLOCKED |
 | Q user filters | existing intent/search tests | PASS |
-| R tenant isolation | existing RLS contract; new migration not yet Preview-applied | BLOCKED |
+| R tenant isolation | Preview migration applied and automated RLS contract exists; cross-user Preview test not run | BLOCKED |
 | S secret exposure | executed Authorization/no-query-token test + static public-env test | PASS |
 | T cost/fallback threshold | threshold, cap, and fallback suppression test | PASS |
 
 ## Current evidence and limitations
 
-The repository environment available during implementation contains no configured `APIFY_API_TOKEN`, approved Actor configuration, provider keys, or Supabase credentials. Therefore no real Actor run, Preview migration, scheduled discovery, authenticated real vacancy, shadow comparison, or application preparation claim is made. IKEA, Microsoft, and Amazon do not have dedicated adapters in this phase; they can be reached through configured official ATS endpoints or fallback coverage, and dedicated adapters require a stable documented public endpoint before addition.
+An isolated Supabase Preview project received the additive migration, and an authenticated Vercel Preview completed two real shadow searches. The second run (`20493044-a770-4481-a54a-aedf1c0bbf88`) invoked Direct, Apify, Adzuna, and SerpApi tiers, received 31 search-provider records, preserved all 31 canonical records after deduplication, and classified 9 as unverified and 22 as blocked. Provider failures were isolated: seven attempts succeeded, two returned no results, one was rate-limited, and three timed out; fallback still completed the cycle.
 
-Production classification remains **NOT READY** until a real canonical vacancy completes Discovery → Verification → Eligibility → Ranking → Detail/Application preparation, the application content is proven grounded, the handoff URL is valid, and tracker evidence is recorded.
+The shadow comparison recorded 31 legacy/search results, 22 multi-source results, 22 overlaps, 9 legacy-only results, and 10 fallback-only observations. Verified-vacancy percentage was 9.7%, invalid-vacancy percentage was 32.3%, and duplicate percentage was 0%. No application was submitted.
+
+The approved public LinkedIn Actor completed successfully twice and its Dataset was retrieved, proving token handling, Actor start/polling, timeout bounds, and Dataset access. It returned zero rows for both realistic searches, however, so live Apify data yield is **BLOCKED** and the provider must not be promoted. The first run still proved the downstream Discovery → Verification → Eligibility → Ranking → Job Detail/Application preparation path using a live BCG vacancy on its official canonical URL. Direct provider output was zero because no matching configured Greenhouse, Lever, or Workday board produced results. A Master CV was not present for the synthetic Preview identity, so CV-grounded application content was not claimed.
+
+Apify pricing modes do not always expose `usageTotalUsd` in the run payload. When exact usage is absent, telemetry now records the configured `maxTotalChargeUsd` as a conservative accounted amount, marks the basis as `configured_max_charge`, and preserves `chargedEventCounts`; it never reports the unknown actual charge as zero.
+
+IKEA, Microsoft, and Amazon do not have dedicated adapters in this phase; they can be reached through configured official ATS endpoints or fallback coverage, and dedicated adapters require a stable documented public endpoint before addition. Scheduled cron execution and a non-zero live Apify result remain unproven.
+
+Production classification remains **NOT READY**. Promotion requires a proven non-zero Apify/direct result, acceptable source-quality metrics, a live scheduled run, and a CV-grounded application-preparation validation. SerpApi remains the rollback-safe fallback.
 
 ## Rollback
 
