@@ -10,6 +10,7 @@ type ApifyRun = {
   status?: string;
   defaultDatasetId?: string;
   usageTotalUsd?: number;
+  chargedEventCounts?: Record<string, number>;
   stats?: Record<string, unknown>;
 };
 
@@ -184,7 +185,28 @@ export class ApifyJobProvider implements JobProvider {
       requestCount += 1;
       const raw = await apifyFetch<unknown[]>(`/datasets/${encodeURIComponent(run.defaultDatasetId)}/items?clean=true&limit=${maxItems}`, { method: "GET" }, 15_000, 1);
       const jobs = raw.map((item) => normalizeApifyItem(item, this.name, input)).filter((job): job is CanonicalJobCandidate => Boolean(job));
-      return { provider: this.name, status: jobs.length ? "success" : "no_results", jobs, latencyMs: Date.now() - started, requestCount, rawCount: raw.length, normalizedCount: jobs.length, costUsd: numberValue(run.usageTotalUsd) ?? 0, rateLimitState: { known: false }, metadata: { actorSource: this.config.source, actorRunId: runId, datasetId: run.defaultDatasetId, runStatus: run.status } };
+      const reportedCostUsd = numberValue(run.usageTotalUsd);
+      const accountedCostUsd = reportedCostUsd ?? this.config.maxChargeUsd ?? undefined;
+      return {
+        provider: this.name,
+        status: jobs.length ? "success" : "no_results",
+        jobs,
+        latencyMs: Date.now() - started,
+        requestCount,
+        rawCount: raw.length,
+        normalizedCount: jobs.length,
+        costUsd: accountedCostUsd,
+        rateLimitState: { known: false },
+        metadata: {
+          actorSource: this.config.source,
+          actorRunId: runId,
+          datasetId: run.defaultDatasetId,
+          runStatus: run.status,
+          costBasis: reportedCostUsd == null ? this.config.maxChargeUsd == null ? "unavailable" : "configured_max_charge" : "apify_usage_total",
+          reportedCostUsd,
+          chargedEventCounts: run.chargedEventCounts ?? {},
+        },
+      };
     } catch (error) {
       const message = error instanceof Error ? error.message : "APIFY_PROVIDER_ERROR";
       const status = message === "APIFY_AUTH_FAILURE" ? "auth_failure" as const : "provider_error" as const;
