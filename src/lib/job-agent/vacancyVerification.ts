@@ -226,6 +226,12 @@ export async function verifyVacancy(job: CanonicalJobCandidate): Promise<Vacancy
     const pageText = contentType.includes("html") ? textFromHtml(body) : body;
     const posting = contentType.includes("html") ? extractJobPosting(body) : (() => { try { return findJobPosting(JSON.parse(body)); } catch { return null; } })();
     const looksClosed = /\b(job (?:is )?no longer available|position (?:has been )?filled|applications? closed|posting (?:has )?expired)\b/i.test(pageText);
+    const requiresLogin = /\/(?:login|sign-?in|auth)(?:\/|$)/i.test(new URL(finalUrl).pathname)
+      || /\b(?:sign in|log in) (?:to|in order to) (?:view|continue|access|apply)\b/i.test(pageText.slice(0, 3000));
+
+    if (!posting && requiresLogin) {
+      return { status: "failed", job, provenance: { method: "source_page", httpStatus: response.status, sourceUrl: finalUrl, verifiedAt: new Date().toISOString(), reason: "Vacancy destination requires authentication and cannot be independently verified." }, errorCode: "SOURCE_REQUIRES_LOGIN" };
+    }
 
     if (posting) {
       const title = stringValue(posting.title) ?? job.title;

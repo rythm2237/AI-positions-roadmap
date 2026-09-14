@@ -3,6 +3,7 @@ import { approveJob, rejectJob, snoozeJob } from "@/app/(account)/job-agent/deci
 import { dismissInboxItem, markInboxRead } from "@/app/(account)/job-agent/inboxActions";
 import type { ApplicationRecord, FitExplanation, JobAgent, JobAgentDashboardStats, JobAgentInboxItem, JobOpportunity } from "@/types/jobAgent";
 import { groupCurrentJobResults } from "@/lib/job-agent/resultGroups";
+import { userFacingJobSource } from "@/lib/job-agent/sourceLabel";
 
 const activityStats: Array<[keyof JobAgentDashboardStats, string]> = [
   ["jobsFound", "Active jobs"],
@@ -80,7 +81,7 @@ function JobResult({ job, now }: { job: JobOpportunity; now: number }) {
       <div className="grid gap-4 lg:grid-cols-2">
         <div className="rounded-xl border border-white/[.06] bg-white/[.02] p-3">
           <p className="text-[11px] font-semibold uppercase tracking-[.14em] text-slate-500">Vacancy snapshot</p>
-          <dl className="mt-2 grid grid-cols-[auto_1fr] gap-x-3 gap-y-1 text-xs leading-5"><dt className="text-slate-500">Source</dt><dd className="text-slate-300">{job.source} · {age(job)}</dd><dt className="text-slate-500">Verification</dt><dd className="text-slate-300">{badge(job.verification_status)}</dd><dt className="text-slate-500">Execution</dt><dd className="text-slate-300">{badge(job.execution_capability)}</dd><dt className="text-slate-500">Salary</dt><dd className="text-slate-300">{pay ?? "Not disclosed"}</dd></dl>
+          <dl className="mt-2 grid grid-cols-[auto_1fr] gap-x-3 gap-y-1 text-xs leading-5"><dt className="text-slate-500">Source</dt><dd className="text-slate-300">{userFacingJobSource(job.source)} · {age(job)}</dd><dt className="text-slate-500">Verification</dt><dd className="text-slate-300">{badge(job.verification_status)}</dd><dt className="text-slate-500">Execution</dt><dd className="text-slate-300">{badge(job.execution_capability)}</dd><dt className="text-slate-500">Salary</dt><dd className="text-slate-300">{pay ?? "Not disclosed"}</dd></dl>
         </div>
         <div className="rounded-xl border border-white/[.06] bg-white/[.02] p-3">
           <p className="text-[11px] font-semibold uppercase tracking-[.14em] text-slate-500">Why this result</p>

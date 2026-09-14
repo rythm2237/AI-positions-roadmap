@@ -21,7 +21,7 @@ assert.deepEqual(
   "every site Career must belong to an occupation family",
 );
 
-const migration = fs.readFileSync("supabase/migrations/202608120001_sync_admin_career_and_occupation_catalogs.sql", "utf8");
+const migration = fs.readFileSync("supabase/migrations/20260812164734_sync_admin_career_and_occupation_catalogs.sql", "utf8");
 for (const family of OCCUPATION_FAMILY_CATALOG) assert.match(migration, new RegExp(`'${family.slug}'`));
 for (const career of CAREER_CATALOG) assert.match(migration, new RegExp(`'${career.slug}'`));
 assert.match(migration, /on conflict \(slug\) do nothing/);

@@ -9,6 +9,7 @@ import { saveJobAgent, setJobAgentStatus } from "./actions";
 import { countProviderIssues, groupCurrentJobResults } from "@/lib/job-agent/resultGroups";
 
 const errorMessages: Record<string, string> = {
+  "rate-limit": "A Job Agent search was started very recently. Wait a moment before starting another run.",
   criteria: "Add at least one target role and one search country before running the Agent.",
   country: "None of the configured countries are supported by the current job provider. Review the country names in Job Agent settings.",
   provider: "The live job provider is not configured for this environment.",

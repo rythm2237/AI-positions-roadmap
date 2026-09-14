@@ -1,5 +1,7 @@
 # Job Acquisition System
 
+> 2026-09-11 roadmap update: the provider layer is being upgraded behind rollout modes to the config-driven Direct → Apify/coverage → SerpApi fallback architecture documented in [Multi-Source Job Discovery v2](./MULTISOURCE_JOB_DISCOVERY_V2.md). Production remains on the safe rollout path and is not classified READY until shadow and real-vacancy E2E evidence exists.
+
 ## Current-state audit (2026-09-03)
 
 The audited Job Agent was an early MVP and was not production-ready. Search was coupled directly to Adzuna and SerpApi, provider errors could become an indistinguishable empty result, and the production deployment lagged behind the Save & Search fix. Search snippets were treated as if they were complete descriptions, zero-skill profiles could be scored, and duplicate provider/query records produced PostgreSQL `21000` upsert failures. `UNVERIFIED` vacancies were effectively prevented from progressing, while the application tracker in the UI was partly disconnected from persisted lifecycle state.
@@ -50,14 +52,16 @@ Every layer returns typed data or a classified error. Hard constraints are never
 
 | Integration | Supported mechanism | Configuration | Runtime behavior |
 |---|---|---|---|
-| SerpApi | Official Google Search/Google Jobs API | `SERPAPI_API_KEY`; optional per-search cost estimate | Broad country fallback; request count and typed errors recorded |
-| Adzuna | Official Search API | `ADZUNA_APP_ID`, `ADZUNA_APP_KEY` | Supported-country map; snippets remain incomplete/unverified |
+| SerpApi | Official Google Search/Google Jobs API | `SERPAPI_API_KEY`; optional per-search cost estimate | Fallback in v2 primary mode; broad coverage, request count and typed errors recorded |
+| Adzuna | Official Search API | `ADZUNA_APP_ID`, `ADZUNA_APP_KEY` | Optional v2 coverage provider; snippets remain incomplete/unverified |
+| Apify | Official Actor Runs and Dataset APIs | `APIFY_API_TOKEN`, server-side Actor allowlist | Source-specific public discovery; bounded polling, cost/run caps, no private sessions |
 | Greenhouse | Public Job Board GET API | Comma-separated `JOB_AGENT_GREENHOUSE_BOARDS` | Discovery/details only; submission remains manual without employer API key |
 | Lever | Public Postings GET API | Comma-separated `JOB_AGENT_LEVER_SITES` | Discovery/details only; hosted application is preferred/manual |
+| Workday | Public CXS search endpoint | Allowlisted `JOB_DISCOVERY_WORKDAY_SITES` JSON | Structured direct discovery on approved `*.myworkdayjobs.com` hosts |
 | Direct career pages | Server verification allowlist | `JOB_AGENT_VERIFICATION_HOSTS` | Verification only after URL and DNS safety checks |
 | Resend | Server-side email API | `RESEND_API_KEY`, `EMAIL_FROM` | Queued email deliveries; failures remain inspectable/retryable |
 | Cron | Vercel Cron + secret authorization | `CRON_SECRET` | Hourly scheduler enforces each user's local report hour |
-| LinkedIn | No unapproved scraping or submission | No integration configured | Link/manual workflow only |
+| LinkedIn | Approved Apify public-listing Actor only | Actor allowlist; disabled without token/config | Discovery only; no login, account automation, private session, or submission |
 
 ## Release and rollback
 
@@ -75,11 +79,11 @@ The migration must first pass in an isolated Preview database, followed by an au
 - Migration: the complete SQL migration executed successfully against the current Production schema inside `BEGIN … ROLLBACK`; a follow-up query confirmed that no new table or function remained.
 - RLS/function transaction test: two existing authenticated identities were used without exposing their data. Repeated learning signals produced `sample_size = 2`, while the second identity saw zero rows owned by the first. The test transaction was rolled back.
 - Supabase Preview branch: blocked before creation with `PaymentRequiredException`; database branching requires the organization to upgrade from its current plan. No charge or branch was created.
-- Authenticated desktop/mobile Preview E2E: not executed because the isolated database branch and migrated Preview runtime do not exist yet.
+- Authenticated Preview E2E: executed against an isolated migrated Supabase project and the branch-scoped Vercel Preview. Two real shadow searches completed; provider failures remained isolated, fallback returned canonical vacancies, and one official BCG vacancy reached verification, eligibility, ranking, and Job Detail/Application preparation. No application was submitted. The configured Apify Actor completed twice but returned zero Dataset rows, so live Apify yield remains blocked.
 - Production: inspected and tested non-destructively only. The migration and application code were not promoted.
 - Production smoke: the protected `/job-agent` path resolves to the OAuth sign-in page for an anonymous request, and the cron endpoint rejects an unsigned request with HTTP 401. Seven-day runtime telemetry contains the previously reproduced duplicate-upsert `21000` group and no new-code evidence because the feature branch is not deployed.
 
-Current release classification: **NOT READY**. The remaining release gate is environmental, not a claimed pass: provision a Supabase Preview branch (or another isolated staging project), apply the migration, configure provider/email credentials there, deploy the feature branch, and complete the authenticated desktop/mobile journey through a real vacancy and manual application action.
+Current release classification: **NOT READY**. The remaining gates are a non-zero live Apify/direct result, acceptable source-quality metrics, a live scheduled run, and CV-grounded application preparation. The feature branch must remain in shadow mode and SerpApi must remain available as fallback until those gates pass.
 
 ## Evidence coverage boundary
 

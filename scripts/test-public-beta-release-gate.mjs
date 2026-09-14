@@ -20,7 +20,7 @@ const requiredFiles = [
   "scripts/test-public-beta-authenticated-state.mjs",
   "docs/PUBLIC_BETA_AUTHENTICATED_GATE.md",
   "supabase/migrations/20260824100346_beta_ai_usage_limits.sql",
-  "supabase/migrations/202608240001_career_user_state_sync.sql",
+  "supabase/migrations/20260824110042_career_user_state_sync.sql",
 ];
 
 for (const file of requiredFiles) {
@@ -34,7 +34,7 @@ const projectReview = read("src/app/api/project-review/route.ts");
 const interviewReview = read("src/app/api/interview-review/route.ts");
 const quota = read("src/lib/betaAiQuota.ts");
 const quotaMigration = read("supabase/migrations/20260824100346_beta_ai_usage_limits.sql");
-const cloudMigration = read("supabase/migrations/202608240001_career_user_state_sync.sql");
+const cloudMigration = read("supabase/migrations/20260824110042_career_user_state_sync.sql");
 const authGate = read("scripts/test-public-beta-authenticated-state.mjs");
 
 const contracts = [
