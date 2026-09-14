@@ -79,11 +79,11 @@ The migration must first pass in an isolated Preview database, followed by an au
 - Migration: the complete SQL migration executed successfully against the current Production schema inside `BEGIN … ROLLBACK`; a follow-up query confirmed that no new table or function remained.
 - RLS/function transaction test: two existing authenticated identities were used without exposing their data. Repeated learning signals produced `sample_size = 2`, while the second identity saw zero rows owned by the first. The test transaction was rolled back.
 - Supabase Preview branch: blocked before creation with `PaymentRequiredException`; database branching requires the organization to upgrade from its current plan. No charge or branch was created.
-- Authenticated desktop/mobile Preview E2E: not executed because the isolated database branch and migrated Preview runtime do not exist yet.
+- Authenticated Preview E2E: executed against an isolated migrated Supabase project and the branch-scoped Vercel Preview. Two real shadow searches completed; provider failures remained isolated, fallback returned canonical vacancies, and one official BCG vacancy reached verification, eligibility, ranking, and Job Detail/Application preparation. No application was submitted. The configured Apify Actor completed twice but returned zero Dataset rows, so live Apify yield remains blocked.
 - Production: inspected and tested non-destructively only. The migration and application code were not promoted.
 - Production smoke: the protected `/job-agent` path resolves to the OAuth sign-in page for an anonymous request, and the cron endpoint rejects an unsigned request with HTTP 401. Seven-day runtime telemetry contains the previously reproduced duplicate-upsert `21000` group and no new-code evidence because the feature branch is not deployed.
 
-Current release classification: **NOT READY**. The remaining release gate is environmental, not a claimed pass: provision a Supabase Preview branch (or another isolated staging project), apply the migration, configure provider/email credentials there, deploy the feature branch, and complete the authenticated desktop/mobile journey through a real vacancy and manual application action.
+Current release classification: **NOT READY**. The remaining gates are a non-zero live Apify/direct result, acceptable source-quality metrics, a live scheduled run, and CV-grounded application preparation. The feature branch must remain in shadow mode and SerpApi must remain available as fallback until those gates pass.
 
 ## Evidence coverage boundary
 
