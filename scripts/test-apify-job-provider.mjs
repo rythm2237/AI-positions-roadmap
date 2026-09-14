@@ -44,9 +44,22 @@ test("Apify public job payload normalizes and credentials stay in Authorization"
   globalThis.fetch = async (url, init) => {
     requests.push({ url: String(url), headers: init?.headers });
     if (String(url).includes("/datasets/")) return Response.json([{ id: "li-1", title: "AI Solutions Consultant", companyName: "Example GmbH", location: "Berlin, Germany", jobUrl: "https://www.linkedin.com/jobs/view/123", descriptionText: "A complete public vacancy description with enterprise AI discovery, workshops, automation design, stakeholder delivery and measurable business outcomes for customers." }]);
-    return Response.json({ data: { id: "run-ok", status: "SUCCEEDED", defaultDatasetId: "dataset-ok", usageTotalUsd: 0.02 } });
+    return Response.json({ data: { id: "run-ok", status: "SUCCEEDED", defaultDatasetId: "dataset-ok", usageTotalUsd: 0.02, chargedEventCounts: { "actor-start": 1, "job-result": 1 } } });
   };
   const result = await new ApifyJobProvider(actor).search(input);
   assert.equal(result.status, "success"); assert.equal(result.jobs[0].company, "Example GmbH"); assert.equal(result.costUsd, 0.02);
+  assert.equal(result.metadata.costBasis, "apify_usage_total"); assert.deepEqual(result.metadata.chargedEventCounts, { "actor-start": 1, "job-result": 1 });
   assert.ok(requests.every((request) => !request.url.includes("test-token"))); assert.ok(requests.every((request) => request.headers.Authorization === "Bearer test-token-never-logged"));
+});
+
+test("Apify PPE runs reserve the configured charge cap when exact usage is unavailable", { concurrency: false }, async () => {
+  globalThis.fetch = async (url) => String(url).includes("/datasets/")
+    ? Response.json([])
+    : Response.json({ data: { id: "run-ppe", status: "SUCCEEDED", defaultDatasetId: "dataset-ppe", chargedEventCounts: { "actor-start": 1 } } });
+  const result = await new ApifyJobProvider(actor).search(input);
+  assert.equal(result.status, "no_results");
+  assert.equal(result.costUsd, actor.maxChargeUsd);
+  assert.equal(result.metadata.costBasis, "configured_max_charge");
+  assert.equal(result.metadata.reportedCostUsd, null);
+  assert.deepEqual(result.metadata.chargedEventCounts, { "actor-start": 1 });
 });
