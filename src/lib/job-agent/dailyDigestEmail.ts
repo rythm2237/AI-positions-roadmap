@@ -87,7 +87,7 @@ export function renderDailyJobDigestEmail(input: {
     <div style="background:#fff;border:1px solid #e5e7eb;border-radius:20px;padding:26px">
       <div style="font-size:12px;font-weight:700;letter-spacing:1.2px;color:#315efb;text-transform:uppercase">AI Role Path · Job Agent</div>
       <div style="font-size:29px;line-height:35px;font-weight:800;margin:7px 0 8px">Your Daily Job Digest</div>
-      <div style="font-size:14px;line-height:22px;color:#64748b">${greeting}here are all valid job opportunities your Job Agent found during ${esc(input.periodLabel)}. This is your single daily job email.</div>
+      <div style="font-size:14px;line-height:22px;color:#64748b">${greeting}here are all valid opportunities found since your previous daily digest. They are grouped into one email, with no 12-job display cap.</div>
       <table role="presentation" width="100%" style="border-collapse:collapse;margin-top:18px"><tr>
         <td width="25%" style="padding:3px"><div style="background:#f8fafc;border:1px solid #e5e7eb;border-radius:14px;padding:12px;text-align:center"><strong style="display:block;font-size:21px">${input.jobs.length}</strong><span style="font-size:11px;color:#64748b">Jobs found</span></div></td>
         <td width="25%" style="padding:3px"><div style="background:#f8fafc;border:1px solid #e5e7eb;border-radius:14px;padding:12px;text-align:center"><strong style="display:block;font-size:21px">${eligible}</strong><span style="font-size:11px;color:#64748b">Verified</span></div></td>
@@ -96,7 +96,7 @@ export function renderDailyJobDigestEmail(input: {
       </tr></table>
     </div>
     ${input.savedJobs.length ? `<div style="margin-top:14px"><div style="font-size:15px;font-weight:800;color:#111827;padding:0 4px 9px">Saved Jobs</div>${saved}</div>` : ""}
-    <div style="margin-top:14px"><div style="font-size:15px;font-weight:800;color:#111827;padding:0 4px 9px">All jobs found today · ${esc(input.periodLabel)}</div>${jobs || `<div style="background:#fff;border:1px solid #e5e7eb;border-radius:16px;padding:20px;color:#64748b;font-size:13px">No valid new jobs were found today.</div>`}</div>
+    <div style="margin-top:14px"><div style="font-size:15px;font-weight:800;color:#111827;padding:0 4px 9px">All jobs in this daily digest · ${esc(input.periodLabel)}</div>${jobs || `<div style="background:#fff;border:1px solid #e5e7eb;border-radius:16px;padding:20px;color:#64748b;font-size:13px">No valid new jobs were found in this daily window.</div>`}</div>
     <div style="font-size:11px;line-height:18px;color:#94a3b8;text-align:center;padding:20px 14px">Save and Not Relevant use secure signed links and require confirmation.<br><a href="${esc(input.site)}/job-agent" style="color:#64748b">Open Job Agent dashboard</a></div>
   </div></div></body></html>`;
 }
