@@ -75,8 +75,9 @@ The migration must first pass in an isolated Preview database, followed by an au
 - Multi-source, Apify, Workday, and scheduled-discovery suites: 21/21 passing; combined focused feature evidence is 51/51.
 - Existing hard-eligibility suite: passing for language, source confidence, geography and workplace rules.
 - TypeScript: `tsc --noEmit` passing.
-- Production build: Next.js 16.2.12 compiled, type-checked and generated 97/97 static pages; all Job Agent, Inbox-supporting API and cron routes were emitted.
+- Production build: Next.js 16.3.5 compiled, type-checked and generated 98/98 static pages; all Job Agent, Inbox-supporting API and cron routes were emitted.
 - Repository lint: ESLint 9 flat configuration replaces the removed Next.js 16 `next lint` command; `npm run lint` completes with zero errors. Existing React Compiler migration findings remain visible as warnings.
+- Runtime dependency audit: `npm audit --omit=dev --audit-level=high` reports zero vulnerabilities after the security patch update to Next.js 16.3.5 and aligned transitive dependencies.
 - Migration: the complete SQL migration executed successfully against the current Production schema inside `BEGIN … ROLLBACK`; a follow-up query confirmed that no new table or function remained.
 - RLS/function transaction test: two existing authenticated identities were used without exposing their data. Repeated learning signals produced `sample_size = 2`, while the second identity saw zero rows owned by the first. The test transaction was rolled back.
 - Supabase Preview branch: blocked before creation with `PaymentRequiredException`; database branching requires the organization to upgrade from its current plan. No charge or branch was created.
