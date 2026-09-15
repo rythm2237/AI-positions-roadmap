@@ -10,6 +10,8 @@ export async function GET(request: Request) {
 
   try {
     const followUps = await enqueueDueJobFollowUps();
+    // Job-linked email notifications are consumed into one daily digest.
+    // Non-job notifications remain independent and are not suppressed here.
     const batchedEmailDeliveries = await batchPendingJobEmailDeliveries();
     const dailyDigest = await sendDueDailyJobDigests();
     return NextResponse.json({ followUps, batchedEmailDeliveries, dailyDigest });
