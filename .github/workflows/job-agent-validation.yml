@@ -5,9 +5,16 @@ on:
     paths:
       - "src/lib/job-agent/**"
       - "src/lib/cvAnalyzer/masterCvEvidence.ts"
+      - "src/lib/publishedCareerRepository.ts"
       - "src/app/(account)/job-agent/**"
+      - "src/app/careers/**"
       - "src/components/job-agent/**"
       - "scripts/test-job-acquisition-system.mjs"
+      - "scripts/test-multisource-job-discovery.mjs"
+      - "scripts/test-apify-job-provider.mjs"
+      - "scripts/test-workday-job-provider.mjs"
+      - "scripts/test-scheduled-job-discovery.mjs"
+      - "scripts/test-published-career-repository.mjs"
       - "scripts/test-job-agent-evidence-provenance.mjs"
       - "scripts/test-job-agent-search-ux.mjs"
       - "scripts/test-job-agent-trusted-source-recovery.mjs"
@@ -17,6 +24,7 @@ on:
       - "supabase/migrations/**job**"
       - "vercel.json"
       - "package.json"
+      - "package-lock.json"
       - ".github/workflows/job-agent-validation.yml"
   push:
     branches:
@@ -24,9 +32,16 @@ on:
     paths:
       - "src/lib/job-agent/**"
       - "src/lib/cvAnalyzer/masterCvEvidence.ts"
+      - "src/lib/publishedCareerRepository.ts"
       - "src/app/(account)/job-agent/**"
+      - "src/app/careers/**"
       - "src/components/job-agent/**"
       - "scripts/test-job-acquisition-system.mjs"
+      - "scripts/test-multisource-job-discovery.mjs"
+      - "scripts/test-apify-job-provider.mjs"
+      - "scripts/test-workday-job-provider.mjs"
+      - "scripts/test-scheduled-job-discovery.mjs"
+      - "scripts/test-published-career-repository.mjs"
       - "scripts/test-job-agent-evidence-provenance.mjs"
       - "scripts/test-job-agent-search-ux.mjs"
       - "scripts/test-job-agent-trusted-source-recovery.mjs"
@@ -36,6 +51,7 @@ on:
       - "supabase/migrations/**job**"
       - "vercel.json"
       - "package.json"
+      - "package-lock.json"
       - ".github/workflows/job-agent-validation.yml"
 
 permissions:
@@ -44,7 +60,7 @@ permissions:
 jobs:
   validate-job-agent:
     runs-on: ubuntu-latest
-    timeout-minutes: 15
+    timeout-minutes: 30
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -57,6 +73,18 @@ jobs:
 
       - name: Install dependencies
         run: npm ci
+
+      - name: Runtime dependency audit
+        run: npm audit --omit=dev --audit-level=high
+
+      - name: Lint
+        run: npm run lint
+
+      - name: Typecheck
+        run: npm run typecheck
+
+      - name: Managed-content outage regressions
+        run: node --conditions=react-server --experimental-strip-types --test --test-concurrency=1 scripts/test-published-career-repository.mjs
 
       - name: Evidence provenance regressions
         run: node --experimental-strip-types --test --test-concurrency=1 scripts/test-job-agent-evidence-provenance.mjs
@@ -77,7 +105,22 @@ jobs:
         run: node --experimental-strip-types --test --test-concurrency=1 scripts/test-job-agent-recovery-relevance-ranking.mjs
 
       - name: Job Acquisition System suite
-        run: node --experimental-strip-types --test --test-concurrency=1 scripts/test-job-acquisition-system.mjs
+        run: npm run test:job-acquisition
 
-      - name: Typecheck
-        run: npm run typecheck
+      - name: Multi-source discovery suite
+        run: npm run test:multisource-discovery
+
+      - name: Apify provider suite
+        run: npm run test:apify-provider
+
+      - name: Workday provider suite
+        run: npm run test:workday-provider
+
+      - name: Scheduled discovery suite
+        run: npm run test:scheduled-discovery
+
+      - name: Production build with unavailable managed-content database
+        env:
+          NEXT_PUBLIC_SUPABASE_URL: https://managed-content-unavailable.invalid
+          NEXT_PUBLIC_SUPABASE_ANON_KEY: synthetic-anon-key
+        run: npm run build

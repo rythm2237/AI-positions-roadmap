@@ -1,56 +1,70 @@
-import "server-only";
-import { cache } from "react";
-import type { ManagedCareer } from "@/types/adminStudio";
-import type { CareerWorkspaceData } from "@/types/careerWorkspace";
-import { applyCareerAssessmentPolicy } from "@/content/assessments/assessmentBank";
-import { validateCareerWorkspaceData } from "@/lib/careerContentValidation";
+import 'server-only';
 
-function config() {
-  const url = process.env.SUPABASE_URL;
-  const key =
-    process.env.SUPABASE_ANON_KEY ??
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+import type { Career } from '@/data/careers';
 
-  return url && key ? { url, key } : null;
+type PublishedCareerRow = {
+  content_json: unknown;
+  published_at: string | null;
+};
+
+const PUBLISHED_CAREER_REQUEST_TIMEOUT_MS = 4_000;
+
+function getPublicSupabaseConfig(): { url: string; anonKey: string } | null {
+  const url = process.env.NEXT_PUBLIC_SUPABASE_URL?.trim();
+  const anonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY?.trim();
+
+  if (!url || !anonKey) {
+    return null;
+  }
+
+  return {
+    url: url.replace(/\/+$/, ''),
+    anonKey,
+  };
 }
 
-export const getPublishedCareer = cache(async (slug: string) => {
-  const settings = config();
-  if (!settings) return null;
+function isCareer(value: unknown): value is Career {
+  if (!value || typeof value !== 'object') {
+    return false;
+  }
 
-  const columns =
-    "id,slug,title,short_title,summary,status,taxonomy,default_country_codes,workspace_data,content_version,published_at,updated_at";
-
-  const response = await fetch(
-    `${settings.url}/rest/v1/careers?slug=eq.${encodeURIComponent(
-      slug
-    )}&status=eq.published&select=${columns}&limit=1`,
-    {
-      headers: {
-        apikey: settings.key,
-        Authorization: `Bearer ${settings.key}`,
-      },
-      next: { revalidate: 300, tags: [`career:${slug}`] },
-    }
+  const candidate = value as Partial<Career>;
+  return (
+    typeof candidate.slug === 'string' &&
+    typeof candidate.title === 'string' &&
+    typeof candidate.shortDescription === 'string' &&
+    Array.isArray(candidate.skills)
   );
+}
 
-  if (!response.ok) return null;
+export async function getPublishedCareer(slug: string): Promise<Career | null> {
+  const config = getPublicSupabaseConfig();
+  if (!config) {
+    return null;
+  }
 
-  const career = (await response.json() as ManagedCareer[])[0];
-  if (!career) return null;
-
-  const migratedWorkspace = applyCareerAssessmentPolicy(
-    career.workspace_data as CareerWorkspaceData
-  );
-  const validation = validateCareerWorkspaceData(
-    migratedWorkspace,
-    career.slug
-  );
-
-  return validation.valid
-    ? {
-        record: { ...career, workspace_data: migratedWorkspace },
-        data: validation.data,
+  try {
+    const response = await fetch(
+      `${config.url}/rest/v1/careers?slug=eq.${encodeURIComponent(slug)}&status=eq.published&select=content_json,published_at&limit=1`,
+      {
+        method: 'GET',
+        headers: {
+          apikey: config.anonKey,
+          Authorization: `Bearer ${config.anonKey}`,
+        },
+        cache: 'no-store',
+        signal: AbortSignal.timeout(PUBLISHED_CAREER_REQUEST_TIMEOUT_MS),
       }
-    : null;
-});
+    );
+
+    if (!response.ok) {
+      return null;
+    }
+
+    const rows = (await response.json()) as PublishedCareerRow[];
+    const content = rows[0]?.content_json;
+    return isCareer(content) ? content : null;
+  } catch {
+    return null;
+  }
+}
