@@ -290,6 +290,26 @@ test("Layer 11 — readiness returns a structured checklist", () => {
   assert.ok(result.checks.some((item) => item.key === "eligibility" && item.status === "unknown"));
 });
 
+test("Layer 11b — synthetic CV evidence reaches eligibility, ranking and safe application preparation", () => {
+  const job = candidate();
+  const evidence = evidenceFromMasterCv(
+    "synthetic-resume",
+    "Implemented Power BI and SQL automation for 8 operational workflows. Reduced weekly reporting time by 10 hours. Delivered stakeholder workshops in English.",
+  ).map((item, index) => ({ ...item, id: `synthetic-evidence-${index + 1}` }));
+  const eligibility = evaluateHardEligibility({ job, profile, agent, intent, evidence, expired: false });
+  const fit = calculateEvidenceGroundedFit(job, intent, evidence);
+  const readiness = assessApplicationReadiness({ job, eligibility: eligibility.status, hasMasterCv: true, evidence });
+  const execution = determineExecutionCapability({ mode: agent.automation_mode, eligibility: eligibility.status, applicationUrl: job.applicationUrl });
+
+  assert.equal(eligibility.status, "eligible");
+  assert.ok(fit.score >= agent.auto_prepare_threshold);
+  assert.equal(fit.confidence, "high");
+  assert.notEqual(readiness.status, "blocked");
+  assert.ok(readiness.checks.some((item) => item.key === "master_cv" && item.status === "ready"));
+  assert.ok(fit.explanation.strongestEvidence.every((item) => item.evidenceId?.startsWith("synthetic-evidence-")));
+  assert.equal(execution.capability, "manual_only");
+});
+
 test("Layer 12 — generated claims require valid evidence IDs", () => {
   assert.doesNotThrow(() => assertGroundedContent([{ text: "Built automation", evidenceIds: ["e1"] }], new Set(["e1"])));
   assert.throws(() => assertGroundedContent([{ text: "Invented", evidenceIds: [] }], new Set()), /UNGROUNDED/);

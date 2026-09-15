@@ -120,7 +120,7 @@ The protected endpoint `GET /api/admin/job-agent/providers` reports configured h
 | M Apify Actor failed state | executed failed-state test | PASS |
 | N SerpApi rate limit | typed isolated outcome test | PASS |
 | O zero results | empty aggregate test | PASS |
-| P scheduled search | code/type/build contract; live cron not run | BLOCKED |
+| P scheduled search | bounded runner and isolated per-user failure tests pass; live Production cron not run | PARTIAL |
 | Q user filters | existing intent/search tests | PASS |
 | R tenant isolation | live Preview RLS transaction with two authenticated identities; all six Job Agent tables hid foreign rows | PASS |
 | S secret exposure | executed Authorization/no-query-token test + static public-env test | PASS |
@@ -136,11 +136,13 @@ The third run (`8d1e9e37-3e6e-4d26-800a-7c42dc84aa81`, correlation `6304ff0e-c79
 
 Across the three approved live runs, the public LinkedIn Actors started, polled, completed, and exposed their Datasets correctly, proving token handling and the reusable adapter contract. All three returned zero rows for the realistic searches, however, so live Apify data yield is **BLOCKED** and the provider must not be promoted. The first run still proved the downstream Discovery → Verification → Eligibility → Ranking → Job Detail/Application preparation path using a live BCG vacancy on its official canonical URL. Direct provider output was zero because no matching configured Greenhouse, Lever, or Workday board produced results. A Master CV was not present for the synthetic Preview identity, so CV-grounded application content was not claimed.
 
+The repository now uses the ESLint 9 flat configuration required by Next.js 16 instead of the removed `next lint` command. Lint completes with zero errors; React Compiler migration diagnostics for existing legacy components remain visible as warnings. Focused feature validation is 51/51 passing, including a synthetic, non-personal CV vertical slice that reaches hard eligibility, evidence-grounded ranking, application readiness, and the safe manual-only execution boundary. The scheduled-discovery runner has separate tests for the 1..5 user cost bound, empty/success batches, and isolated per-user failures. These tests do not substitute for a live Production cron or a live CV-backed Preview application pack.
+
 Live tenant isolation was exercised in rollback-only authenticated transactions using two distinct Preview identities. The synthetic test user could see its own three search runs and the latest run; the second identity could not see that run. Foreign-row counts were zero for `job_search_runs`, `job_provider_attempts`, `job_opportunity_sources`, `job_verifications`, `job_opportunities`, and `applications`.
 
 Apify pricing modes do not always expose `usageTotalUsd` in the run payload. When exact usage is absent, telemetry now records the configured `maxTotalChargeUsd` as a conservative accounted amount, marks the basis as `configured_max_charge`, and preserves `chargedEventCounts`; it never reports the unknown actual charge as zero.
 
-IKEA, Microsoft, and Amazon do not have dedicated adapters in this phase; they can be reached through configured official ATS endpoints or fallback coverage, and dedicated adapters require a stable documented public endpoint before addition. Scheduled cron execution and a non-zero live Apify result remain unproven.
+IKEA, Microsoft, and Amazon do not have dedicated adapters in this phase; they can be reached through configured official ATS endpoints or fallback coverage, and dedicated adapters require a stable documented public endpoint before addition. Scheduled runner behavior is tested, but a live Production cron, a non-zero live Apify result, and a live CV-grounded application pack remain unproven.
 
 Production classification remains **NOT READY**. Promotion requires a proven non-zero Apify/direct result, acceptable source-quality metrics, a live scheduled run, and a CV-grounded application-preparation validation. SerpApi remains the rollback-safe fallback.
 

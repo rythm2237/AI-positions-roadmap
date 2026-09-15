@@ -98,9 +98,9 @@ export default function CareerPositionsSection() {
                       <span className="shrink-0 rounded-full border border-white/[0.07] px-2 py-1 text-[10px] font-semibold uppercase tracking-wide text-slate-500">Planned</span>
                     </div>
                     <p className="mt-2 text-sm leading-6 text-slate-400">{career.description}</p>
-                    <a href="/#waitlist" className="mt-3 inline-flex min-h-11 items-center rounded-lg text-sm font-semibold text-indigo-300 hover:text-indigo-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-400" aria-label={`Register interest in ${career.title}`}>
+                    <Link href="/#waitlist" className="mt-3 inline-flex min-h-11 items-center rounded-lg text-sm font-semibold text-indigo-300 hover:text-indigo-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-400" aria-label={`Register interest in ${career.title}`}>
                       Register interest <span className="ml-1" aria-hidden="true">→</span>
-                    </a>
+                    </Link>
                   </li>
                 ))}
               </ul>

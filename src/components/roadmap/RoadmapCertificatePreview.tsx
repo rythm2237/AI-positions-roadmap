@@ -7,6 +7,7 @@
 import { Roadmap, ProgressState } from "@/types/roadmap";
 import { calculateProgress } from "@/lib/roadmapUtils";
 import { useRef } from "react";
+import Link from "next/link";
 
 interface RoadmapCertificatePreviewProps {
   roadmap: Roadmap;
@@ -200,12 +201,12 @@ export default function RoadmapCertificatePreview({
             </svg>
             Print / Save as PDF
           </button>
-          <a
+          <Link
             href="/"
             className="inline-flex items-center gap-2 rounded-xl border border-gray-300 bg-white px-5 py-3 text-sm font-bold text-gray-700 hover:bg-gray-50 transition-colors focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 print:hidden"
           >
             Explore More Roadmaps
-          </a>
+          </Link>
         </div>
       </div>
     </section>

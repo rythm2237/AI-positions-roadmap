@@ -85,8 +85,7 @@ function AmbientCanvas() {
       }
     };
 
-    let onResize: () => void;
-    onResize = () => { resize(); populate(); };
+    const onResize = () => { resize(); populate(); };
     window.addEventListener("resize", onResize, { passive: true });
     resize();
     populate();

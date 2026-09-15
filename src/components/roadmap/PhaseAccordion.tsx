@@ -3,6 +3,7 @@
 // Collapsible phase cards with sections, notes, and phase final test.
 
 import { useState } from "react";
+import Link from "next/link";
 import { RoadmapPhase, ProgressState, TestResultStatus } from "@/types/roadmap";
 import { savePhaseNote, savePhaseTestResult } from "@/lib/roadmapProgress";
 import SectionCard from "./SectionCard";
@@ -232,12 +233,12 @@ export default function PhaseAccordion({
                 Full roadmap access is available with Single Roadmap Access or
                 All Access subscription.
               </p>
-              <a
+              <Link
                 href="/#pricing"
                 className="inline-block rounded-lg bg-indigo-600 px-4 py-2 text-sm font-bold text-white hover:bg-indigo-700 transition-colors focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2"
               >
                 View Plans
-              </a>
+              </Link>
             </div>
           </div>
         )}

@@ -69,13 +69,14 @@ The migration must first pass in an isolated Preview database, followed by an au
 
 `READY` is prohibited unless a real authenticated search reaches a live relevant vacancy and a validated application action. A successful build or mocked provider test is not equivalent to release readiness.
 
-## Validation evidence (2026-09-03)
+## Validation evidence (updated 2026-09-15)
 
-- Focused layer suite: 21/21 passing, covering all twenty layers plus explicit authorization/responsive contracts.
+- Focused layer suite: 30/30 passing, covering all twenty layers, explicit authorization/responsive contracts, and a synthetic CV vertical slice through eligibility, ranking, readiness, and safe manual-only preparation.
+- Multi-source, Apify, Workday, and scheduled-discovery suites: 21/21 passing; combined focused feature evidence is 51/51.
 - Existing hard-eligibility suite: passing for language, source confidence, geography and workplace rules.
 - TypeScript: `tsc --noEmit` passing.
 - Production build: Next.js 16.2.12 compiled, type-checked and generated 97/97 static pages; all Job Agent, Inbox-supporting API and cron routes were emitted.
-- Repository lint command: not runnable because the existing `npm run lint` invokes the removed Next.js 16 `next lint` subcommand. This is a pre-existing tooling defect; it is not reported as a lint pass.
+- Repository lint: ESLint 9 flat configuration replaces the removed Next.js 16 `next lint` command; `npm run lint` completes with zero errors. Existing React Compiler migration findings remain visible as warnings.
 - Migration: the complete SQL migration executed successfully against the current Production schema inside `BEGIN … ROLLBACK`; a follow-up query confirmed that no new table or function remained.
 - RLS/function transaction test: two existing authenticated identities were used without exposing their data. Repeated learning signals produced `sample_size = 2`, while the second identity saw zero rows owned by the first. The test transaction was rolled back.
 - Supabase Preview branch: blocked before creation with `PaymentRequiredException`; database branching requires the organization to upgrade from its current plan. No charge or branch was created.
@@ -83,7 +84,7 @@ The migration must first pass in an isolated Preview database, followed by an au
 - Production: inspected and tested non-destructively only. The migration and application code were not promoted.
 - Production smoke: the protected `/job-agent` path resolves to the OAuth sign-in page for an anonymous request, and the cron endpoint rejects an unsigned request with HTTP 401. Seven-day runtime telemetry contains the previously reproduced duplicate-upsert `21000` group and no new-code evidence because the feature branch is not deployed.
 
-Current release classification: **NOT READY**. The remaining gates are a non-zero live Apify/direct result, acceptable source-quality metrics, a live scheduled run, and CV-grounded application preparation. The feature branch must remain in shadow mode and SerpApi must remain available as fallback until those gates pass.
+Current release classification: **NOT READY**. The scheduled runner and synthetic CV vertical slice now have automated evidence, but the remaining live gates are a non-zero Apify/direct result, acceptable source-quality metrics, a live Production scheduled run, and a live CV-grounded application pack. The feature branch must remain in shadow mode and SerpApi must remain available as fallback until those gates pass.
 
 ## Evidence coverage boundary
 
