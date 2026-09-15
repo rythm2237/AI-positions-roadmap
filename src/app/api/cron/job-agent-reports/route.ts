@@ -4,6 +4,12 @@ import { enqueueDueJobFollowUps, sendDueJobAgentReports, sendPendingJobInboxEmai
 
 export async function GET(request: Request) {
   if (!authorized(request)) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+
+  // Production already exposes the canonical Supabase URL as NEXT_PUBLIC_SUPABASE_URL.
+  // The reporting service expects SUPABASE_URL, so normalize the alias at runtime
+  // instead of requiring a duplicate Vercel environment variable.
+  process.env.SUPABASE_URL ??= process.env.NEXT_PUBLIC_SUPABASE_URL;
+
   try {
     const followUps = await enqueueDueJobFollowUps();
     const inbox = await sendPendingJobInboxEmails();
