@@ -7,6 +7,7 @@ on:
       - "src/lib/job-agent/**"
       - "src/lib/cvAnalyzer/masterCvEvidence.ts"
       - "src/lib/publishedCareerRepository.ts"
+      - "src/lib/publishedCareerFetch.ts"
       - "src/app/(account)/job-agent/**"
       - "src/app/careers/**"
       - "src/components/job-agent/**"
@@ -36,6 +37,7 @@ on:
       - "src/lib/job-agent/**"
       - "src/lib/cvAnalyzer/masterCvEvidence.ts"
       - "src/lib/publishedCareerRepository.ts"
+      - "src/lib/publishedCareerFetch.ts"
       - "src/app/(account)/job-agent/**"
       - "src/app/careers/**"
       - "src/components/job-agent/**"
@@ -123,11 +125,11 @@ jobs:
       - name: Scheduled discovery suite
         run: npm run test:scheduled-discovery
 
-      - name: Live no-cost Direct provider smoke test
-        run: node --conditions=react-server --experimental-strip-types scripts/test-live-direct-provider.mjs
-
       - name: Production build with unavailable managed-content database
         env:
           NEXT_PUBLIC_SUPABASE_URL: https://managed-content-unavailable.invalid
           NEXT_PUBLIC_SUPABASE_ANON_KEY: synthetic-anon-key
         run: npm run build
+
+      - name: Live no-cost Direct provider smoke test
+        run: node --conditions=react-server --experimental-strip-types scripts/test-live-direct-provider.mjs
