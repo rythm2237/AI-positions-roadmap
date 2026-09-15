@@ -1,13 +1,15 @@
 import "server-only";
 
 import type { JobAgent } from "@/types/jobAgent";
-import { jobReportDue, localScheduleParts } from "@/lib/job-agent/notificationSchedule";
+import { jobReportDue } from "@/lib/job-agent/notificationSchedule";
 import { renderDailyJobDigestEmail, type DailyDigestJob } from "@/lib/job-agent/dailyDigestEmail";
 
 type ServiceAgent = JobAgent & { user_id: string };
 type ServiceProfile = { id: string; email: string; name: string | null };
 type SavedRow = { user_id: string; job_id: string; saved_at: string };
 type DeliveryRow = { id: string };
+
+type ReportRow = { id: string; status: string; sent_at?: string | null };
 
 const jobSelect = "id,user_id,fit_score,status,recommendation,eligibility_status,decision_status,company,role,location,country,salary_min,salary_max,salary_currency,job_url,discovered_at";
 
@@ -59,10 +61,6 @@ async function sendEmail(input: { to: string; subject: string; html: string }) {
   return payload.id ?? null;
 }
 
-function localDate(iso: string, timezone: string) {
-  return localScheduleParts(new Date(iso), timezone || "UTC").date;
-}
-
 async function fetchSavedJobs(userId: string) {
   const saved = await serviceFetch<SavedRow[]>(`job_saved_jobs?user_id=eq.${userId}&select=user_id,job_id,saved_at&order=saved_at.desc`);
   const ids = [...new Set(saved.map((row) => row.job_id))];
@@ -105,7 +103,7 @@ export async function sendDueDailyJobDigests(now = new Date()) {
   let skippedAlreadySent = 0;
 
   for (const { agent, schedule } of dueAgents) {
-    const existing = await serviceFetch<Array<{ id: string; status: string }>>(`job_agent_reports?agent_id=eq.${agent.id}&report_type=eq.daily&period_key=eq.${encodeURIComponent(schedule.periodKey)}&delivery_channel=eq.email&select=id,status&limit=1`);
+    const existing = await serviceFetch<ReportRow[]>(`job_agent_reports?agent_id=eq.${agent.id}&report_type=eq.daily&period_key=eq.${encodeURIComponent(schedule.periodKey)}&delivery_channel=eq.email&select=id,status,sent_at&limit=1`);
     if (existing[0]?.status === "sent") {
       skippedAlreadySent++;
       continue;
@@ -113,10 +111,10 @@ export async function sendDueDailyJobDigests(now = new Date()) {
     const profile = profileMap.get(agent.user_id);
     if (!profile?.email) continue;
 
-    const lookback = new Date(now.getTime() - 36 * 60 * 60 * 1000).toISOString();
-    const recent = await serviceFetch<DailyDigestJob[]>(`job_opportunities?user_id=eq.${agent.user_id}&discovered_at=gte.${encodeURIComponent(lookback)}&select=${jobSelect}&order=discovered_at.desc&limit=1000`);
+    const previous = await serviceFetch<ReportRow[]>(`job_agent_reports?agent_id=eq.${agent.id}&report_type=eq.daily&delivery_channel=eq.email&status=eq.sent&sent_at=not.is.null&select=id,status,sent_at&order=sent_at.desc&limit=1`);
+    const since = previous[0]?.sent_at ?? new Date(now.getTime() - 26 * 60 * 60 * 1000).toISOString();
+    const recent = await serviceFetch<DailyDigestJob[]>(`job_opportunities?user_id=eq.${agent.user_id}&discovered_at=gt.${encodeURIComponent(since)}&discovered_at=lte.${encodeURIComponent(now.toISOString())}&select=${jobSelect}&order=discovered_at.desc&limit=1000`);
     const jobs = recent
-      .filter((job) => localDate(job.discovered_at, agent.timezone || "UTC") === schedule.periodKey)
       .filter((job) => job.status !== "skipped" && job.recommendation !== "skip" && job.decision_status !== "rejected" && job.decision_status !== "approved")
       .sort((a, b) => (b.fit_score ?? -1) - (a.fit_score ?? -1) || Date.parse(b.discovered_at) - Date.parse(a.discovered_at));
 
@@ -127,6 +125,8 @@ export async function sendDueDailyJobDigests(now = new Date()) {
       unverified: jobs.filter((job) => job.eligibility_status === "unverified").length,
       strongMatches: jobs.filter((job) => (job.fit_score ?? 0) >= agent.strong_match_threshold).length,
       saved: savedJobs.length,
+      windowStartedAt: since,
+      windowEndedAt: now.toISOString(),
     };
     const site = (process.env.NEXT_PUBLIC_SITE_URL ?? "https://www.airolepath.com").replace(/\/$/, "");
     const html = renderDailyJobDigestEmail({
@@ -158,7 +158,7 @@ export async function sendDueDailyJobDigests(now = new Date()) {
     try {
       const providerId = await sendEmail({
         to: profile.email,
-        subject: `${jobs.length} jobs found today — AI Role Path`,
+        subject: `${jobs.length} jobs found in your daily Job Agent run — AI Role Path`,
         html,
       });
       if (ledgerId) {
