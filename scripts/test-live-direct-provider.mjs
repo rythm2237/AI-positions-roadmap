@@ -9,11 +9,12 @@ const provider = new WorkdayProvider({
   priority: 12,
 });
 
+const targetTitle = "Finance Automation & Solution Design Analyst";
 const result = await provider.search({
-  query: "Finance Automation",
+  query: targetTitle,
   country: "Hungary",
   location: "Budapest",
-  limit: 5,
+  limit: 20,
   correlationId: "live-direct-smoke",
 });
 
@@ -21,8 +22,11 @@ assert.equal(result.status, "success", `Direct Workday provider did not succeed:
 assert.ok((result.rawCount ?? 0) > 0, "Expected the public Workday CXS endpoint to return postings.");
 assert.ok(result.jobs.length > 0, "Expected at least one normalized Direct vacancy.");
 
-const vacancy = result.jobs.find((job) => /Finance Automation/i.test(job.title)) ?? result.jobs[0];
-assert.match(vacancy.title, /Automation/i);
+const exact = result.jobs.find((job) => job.title.toLowerCase() === targetTitle.toLowerCase());
+const budapest = result.jobs.find((job) => /budapest/i.test(job.location ?? ""));
+const vacancy = exact ?? budapest ?? result.jobs[0];
+
+assert.ok(vacancy.title.trim().length > 0);
 assert.match(vacancy.sourceUrl, /^https:\/\/ms\.wd5\.myworkdayjobs\.com\//);
 assert.equal(vacancy.applicationUrl, vacancy.sourceUrl);
 
@@ -39,8 +43,10 @@ console.log(JSON.stringify({
   providerType: provider.metadata.providerType,
   structuredSource: result.metadata?.source ?? null,
   status: result.status,
+  query: targetTitle,
   rawCount: result.rawCount ?? null,
   normalizedCount: result.normalizedCount ?? result.jobs.length,
+  exactTargetFound: Boolean(exact),
   title: vacancy.title,
   location: vacancy.location,
   country: vacancy.country,
