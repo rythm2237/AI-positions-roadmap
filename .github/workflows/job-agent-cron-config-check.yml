@@ -1,0 +1,17 @@
+name: Job Agent cron config check
+
+on:
+  pull_request:
+    paths:
+      - 'src/app/api/cron/job-agent-reports/route.ts'
+      - 'scripts/test-job-agent-cron-config.mjs'
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+      - run: node scripts/test-job-agent-cron-config.mjs
