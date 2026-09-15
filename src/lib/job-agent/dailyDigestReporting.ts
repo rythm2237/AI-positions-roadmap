@@ -1,7 +1,7 @@
 import "server-only";
 
 import type { JobAgent } from "@/types/jobAgent";
-import { jobReportDue, localScheduleParts } from "@/lib/job-agent/notificationSchedule";
+import { localScheduleParts } from "@/lib/job-agent/notificationSchedule";
 import { renderDailyJobDigestEmail, type DailyDigestJob } from "@/lib/job-agent/dailyDigestEmail";
 
 type ServiceAgent = JobAgent & { user_id: string };
@@ -100,8 +100,14 @@ export async function batchPendingJobEmailDeliveries() {
 export async function sendDueDailyJobDigests(now = new Date()) {
   const agents = await serviceFetch<ServiceAgent[]>("job_agents?status=eq.active&select=*");
   const dueAgents = agents.flatMap((agent) => {
-    const schedule = jobReportDue(agent, now);
-    return schedule?.type === "daily" ? [{ agent, schedule }] : [];
+    if (agent.report_frequency !== "daily" || !agent.notification_channels.includes("email")) return [];
+    let periodKey: string;
+    try {
+      periodKey = localScheduleParts(now, agent.timezone || "UTC").date;
+    } catch {
+      return [];
+    }
+    return [{ agent, schedule: { type: "daily" as const, periodKey } }];
   });
   if (!dueAgents.length) return { checked: agents.length, due: 0, sent: 0, failed: 0, skippedAlreadySent: 0 };
 
