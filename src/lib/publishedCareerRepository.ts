@@ -1,10 +1,18 @@
 import 'server-only';
 
-import type { Career } from '@/data/careers';
+import type { CareerWorkspaceData } from '@/types/careerWorkspace';
 
 type PublishedCareerRow = {
   content_json: unknown;
   published_at: string | null;
+};
+
+type PublishedCareer = {
+  slug: string;
+  title: string;
+  shortDescription: string;
+  skills: unknown[];
+  data: CareerWorkspaceData;
 };
 
 const PUBLISHED_CAREER_REQUEST_TIMEOUT_MS = 4_000;
@@ -23,21 +31,25 @@ function getPublicSupabaseConfig(): { url: string; anonKey: string } | null {
   };
 }
 
-function isCareer(value: unknown): value is Career {
+function isPublishedCareer(value: unknown): value is PublishedCareer {
   if (!value || typeof value !== 'object') {
     return false;
   }
 
-  const candidate = value as Partial<Career>;
+  const candidate = value as Partial<PublishedCareer>;
+  const data = candidate.data as Partial<CareerWorkspaceData> | undefined;
   return (
     typeof candidate.slug === 'string' &&
     typeof candidate.title === 'string' &&
     typeof candidate.shortDescription === 'string' &&
-    Array.isArray(candidate.skills)
+    Array.isArray(candidate.skills) &&
+    Boolean(data && typeof data === 'object') &&
+    typeof data?.slug === 'string' &&
+    typeof data?.title === 'string'
   );
 }
 
-export async function getPublishedCareer(slug: string): Promise<Career | null> {
+export async function getPublishedCareer(slug: string): Promise<PublishedCareer | null> {
   const config = getPublicSupabaseConfig();
   if (!config) {
     return null;
@@ -63,7 +75,7 @@ export async function getPublishedCareer(slug: string): Promise<Career | null> {
 
     const rows = (await response.json()) as PublishedCareerRow[];
     const content = rows[0]?.content_json;
-    return isCareer(content) ? content : null;
+    return isPublishedCareer(content) ? content : null;
   } catch {
     return null;
   }
