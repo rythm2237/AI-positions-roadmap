@@ -7,7 +7,8 @@ import { renderDailyJobDigestEmail, type DailyDigestJob } from "@/lib/job-agent/
 type ServiceAgent = JobAgent & { user_id: string };
 type ServiceProfile = { id: string; email: string; name: string | null };
 type SavedRow = { user_id: string; job_id: string; saved_at: string };
-type DeliveryRow = { id: string };
+type DeliveryRow = { id: string; inbox_item_id: string | null };
+type InboxRef = { id: string; job_id: string | null };
 
 const jobSelect = "id,user_id,fit_score,status,recommendation,eligibility_status,decision_status,company,role,location,country,salary_min,salary_max,salary_currency,job_url,discovered_at";
 
@@ -38,15 +39,16 @@ async function serviceFetch<T>(path: string, init: RequestInit = {}) {
 
 async function sendEmail(input: { to: string; subject: string; html: string }) {
   const apiKey = process.env.RESEND_API_KEY;
-  const from = process.env.RESEND_FROM_EMAIL;
-  if (!apiKey || !from) throw new Error("RESEND_NOT_CONFIGURED");
+  const from = process.env.JOB_AGENT_FROM_EMAIL ?? "AI Role Path Job Agent <jobs@rythm-os.com>";
+  const replyTo = process.env.JOB_AGENT_REPLY_TO ?? process.env.NEXT_PUBLIC_SUPPORT_EMAIL ?? "career-support@rythm-os.com";
+  if (!apiKey) throw new Error("RESEND_NOT_CONFIGURED");
   const response = await fetch("https://api.resend.com/emails", {
     method: "POST",
     headers: { Authorization: `Bearer ${apiKey}`, "Content-Type": "application/json" },
     body: JSON.stringify({
       from,
       to: [input.to],
-      reply_to: process.env.JOB_AGENT_REPLY_TO ?? process.env.NEXT_PUBLIC_SUPPORT_EMAIL ?? undefined,
+      reply_to: replyTo,
       subject: input.subject.replace(/[\r\n]+/g, " ").slice(0, 180),
       html: input.html,
     }),
@@ -77,16 +79,22 @@ async function fetchSavedJobs(userId: string) {
 }
 
 export async function batchPendingJobEmailDeliveries() {
-  const rows = await serviceFetch<DeliveryRow[]>("job_notification_deliveries?channel=eq.email&status=eq.pending&select=id&limit=1000");
+  const deliveries = await serviceFetch<DeliveryRow[]>("job_notification_deliveries?channel=eq.email&status=eq.pending&select=id,inbox_item_id&limit=1000");
+  const inboxIds = [...new Set(deliveries.map((row) => row.inbox_item_id).filter((id): id is string => Boolean(id)))];
+  const inboxRows = inboxIds.length
+    ? await serviceFetch<InboxRef[]>(`job_agent_inbox?id=in.(${inboxIds.join(",")})&select=id,job_id`)
+    : [];
+  const jobInboxIds = new Set(inboxRows.filter((row) => Boolean(row.job_id)).map((row) => row.id));
   let batched = 0;
-  for (const row of rows) {
+  for (const row of deliveries) {
+    if (!row.inbox_item_id || !jobInboxIds.has(row.inbox_item_id)) continue;
     await serviceFetch(`job_notification_deliveries?id=eq.${row.id}`, {
       method: "PATCH",
       body: JSON.stringify({ status: "skipped", error_code: "BATCHED_IN_DAILY_DIGEST" }),
     });
     batched++;
   }
-  return { pending: rows.length, batched };
+  return { pending: deliveries.length, batched };
 }
 
 export async function sendDueDailyJobDigests(now = new Date()) {
