@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import test from "node:test";
-import { getPublishedCareer } from "../src/lib/publishedCareerRepository.ts";
+import { getPublishedCareer } from "../src/lib/publishedCareerFetch.ts";
 
 const originalUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
 const originalAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
