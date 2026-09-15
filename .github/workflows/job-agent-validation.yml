@@ -16,6 +16,7 @@ on:
       - "scripts/test-workday-job-provider.mjs"
       - "scripts/test-scheduled-job-discovery.mjs"
       - "scripts/test-published-career-repository.mjs"
+      - "scripts/test-live-direct-provider.mjs"
       - "scripts/test-job-agent-evidence-provenance.mjs"
       - "scripts/test-job-agent-search-ux.mjs"
       - "scripts/test-job-agent-trusted-source-recovery.mjs"
@@ -30,6 +31,7 @@ on:
   push:
     branches:
       - main
+      - feat/multisource-job-discovery-v2
     paths:
       - "src/lib/job-agent/**"
       - "src/lib/cvAnalyzer/masterCvEvidence.ts"
@@ -43,6 +45,7 @@ on:
       - "scripts/test-workday-job-provider.mjs"
       - "scripts/test-scheduled-job-discovery.mjs"
       - "scripts/test-published-career-repository.mjs"
+      - "scripts/test-live-direct-provider.mjs"
       - "scripts/test-job-agent-evidence-provenance.mjs"
       - "scripts/test-job-agent-search-ux.mjs"
       - "scripts/test-job-agent-trusted-source-recovery.mjs"
@@ -119,6 +122,9 @@ jobs:
 
       - name: Scheduled discovery suite
         run: npm run test:scheduled-discovery
+
+      - name: Live no-cost Direct provider smoke test
+        run: node --conditions=react-server --experimental-strip-types scripts/test-live-direct-provider.mjs
 
       - name: Production build with unavailable managed-content database
         env:
