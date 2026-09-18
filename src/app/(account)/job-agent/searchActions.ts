@@ -1,6 +1,7 @@
 "use server";
 
-import { randomUUID } from "node:crypto";
+import { randomUUID, timingSafeEqual } from "node:crypto";
+import { createClient as createServiceSupabaseClient } from "@supabase/supabase-js";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { requireUser } from "@/lib/auth/session";
@@ -138,6 +139,14 @@ function continuityCandidate(row: ContinuityOpportunityRow): CanonicalJobCandida
 export async function searchCurrentUserJobs(): Promise<SearchResult> {
   const user = await requireUser("/job-agent");
   const supabase = await createClient();
+  return executeJobSearch(user, supabase, true);
+}
+
+async function executeJobSearch(
+  user: { id: string },
+  supabase: Awaited<ReturnType<typeof createClient>>,
+  shouldRevalidate: boolean,
+): Promise<SearchResult> {
   const providers = configuredJobProviders();
   if (!providers.length) return { error: "provider" };
 
@@ -306,10 +315,33 @@ export async function searchCurrentUserJobs(): Promise<SearchResult> {
   await supabase.from("job_search_runs").update({ status, provider_records: gateway.jobs.length, deduplicated_count: searched, eligible_count: eligible, unverified_count: unverified, blocked_count: blocked, recommended_count: recommended, expired_count: expired, provider_summary: { attemptsByStatus, evidenceWarnings: evidenceResult.warnings, persistenceErrors }, api_usage: { requests: gateway.attempts.reduce((sum, attempt) => sum + attempt.requestCount, 0) }, estimated_cost: estimatedCost, latency_ms: Date.now() - started, error_code: allFailed ? "ALL_PROVIDERS_FAILED" : persistenceErrors.length ? "SECONDARY_PERSISTENCE_PARTIAL" : null, completed_at: new Date().toISOString() }).eq("id", searchRun.data.id).eq("user_id", user.id);
 
   await supabase.from("user_activity").insert({ user_id: user.id, action: "job_agent_search_run_v2", metadata: { correlation_id: correlationId, intent_version: intentRecord.version, searched, eligible, unverified, blocked, expired, recommended, provider_errors: providerFailures.length, providers: providers.map((provider) => provider.name), queries: queries.map((query) => query.query), latency_ms: Date.now() - started } });
-  revalidatePath("/job-agent");
+  if (shouldRevalidate) revalidatePath("/job-agent");
 
   if (allFailed && !processed.length) return { error: "provider-failure" };
   return { searched, eligible, unverified, blocked, expired, expanded: queries.length, providerErrors: providerFailures.length, outcome: searched ? providerFailures.length || persistenceErrors.length ? "partial" : "completed" : "no_results", correlationId };
+}
+
+function validSchedulerSecret(value: string) {
+  const expected = process.env.CRON_SECRET;
+  if (!expected) return false;
+  const actualBytes = Buffer.from(value);
+  const expectedBytes = Buffer.from(expected);
+  return actualBytes.length === expectedBytes.length && timingSafeEqual(actualBytes, expectedBytes);
+}
+
+export async function searchJobsForScheduledUser(userId: string, schedulerSecret: string): Promise<SearchResult> {
+  const validUserId = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(userId);
+  if (!validSchedulerSecret(schedulerSecret) || !validUserId) return { error: "profile" };
+
+  const url = process.env.SUPABASE_URL ?? process.env.NEXT_PUBLIC_SUPABASE_URL;
+  const key = process.env.SUPABASE_SECRET_KEY ?? process.env.SUPABASE_SERVICE_KEY;
+  if (!url || !key) return { error: "search-save" };
+
+  const serviceClient = createServiceSupabaseClient(url, key, {
+    auth: { persistSession: false, autoRefreshToken: false },
+  }) as unknown as Awaited<ReturnType<typeof createClient>>;
+
+  return executeJobSearch({ id: userId }, serviceClient, false);
 }
 
 export async function runJobSearch() {
