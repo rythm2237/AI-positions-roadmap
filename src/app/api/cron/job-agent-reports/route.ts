@@ -19,7 +19,7 @@ export async function GET(request: Request) {
   } catch (error) {
     console.error("Job Agent scheduled discovery failed", error);
     discovery = {
-      status: "failed",
+      status: "partial",
       attempted: 0,
       completed: 0,
       failed: 1,
