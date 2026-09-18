@@ -6,6 +6,7 @@ on:
       - "src/lib/job-agent/**"
       - "src/lib/cvAnalyzer/masterCvEvidence.ts"
       - "src/app/(account)/job-agent/**"
+      - "src/app/api/cron/job-agent-reports/**"
       - "src/components/job-agent/**"
       - "scripts/test-job-acquisition-system.mjs"
       - "scripts/test-job-agent-evidence-provenance.mjs"
@@ -14,6 +15,7 @@ on:
       - "scripts/test-job-agent-rate-limit-continuity.mjs"
       - "scripts/test-job-agent-recovery-priority.mjs"
       - "scripts/test-job-agent-recovery-relevance-ranking.mjs"
+      - "scripts/test-scheduled-job-discovery.mjs"
       - "supabase/migrations/**job**"
       - "vercel.json"
       - "package.json"
@@ -78,6 +80,9 @@ jobs:
 
       - name: Job Acquisition System suite
         run: node --experimental-strip-types --test --test-concurrency=1 scripts/test-job-acquisition-system.mjs
+
+      - name: Scheduled discovery regressions
+        run: node --experimental-strip-types --test --test-concurrency=1 scripts/test-scheduled-job-discovery.mjs
 
       - name: Typecheck
         run: npm run typecheck
