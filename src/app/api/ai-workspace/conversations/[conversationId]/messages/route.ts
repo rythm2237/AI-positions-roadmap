@@ -21,6 +21,7 @@ export async function GET(request: Request, context: Context) {
 
     let query = service.from("aiw_messages").select("id,role,content,request_id,metadata,created_at")
       .eq("owner_id", ownerId).eq("conversation_id", conversationId)
+      .not("metadata", "cs", '{"internal":true}')
       .order("created_at", { ascending: false }).limit(limit + 1);
     if (before) {
       const parsed = Date.parse(before);

@@ -44,13 +44,32 @@ export function createSupabaseExecutionStore(options: {
   const client = options.client ?? createServiceClient();
   const deviceHash = options.deviceHash ?? null;
 
+  async function reserveStage(input: Parameters<ExecutionStore["reserveStage"]>[0]) {
+    const { data, error } = await client.rpc("aiw_reserve_stage", {
+      p_owner: input.ownerId,
+      p_project: input.projectId,
+      p_conversation: input.conversationId,
+      p_request: input.requestId,
+      p_content: input.content,
+      p_mode: input.mode,
+      p_route: input.route,
+      p_skill: input.skill,
+      p_request_kind: input.requestKind,
+      p_parent_request: input.parentRequestId ?? null,
+      p_metadata: input.metadata ?? {},
+      p_device_hash: deviceHash,
+    });
+    if (error) fail(error, "RESERVATION_FAILED");
+    return data === true;
+  }
+
   return {
     async load(ownerId, projectId, conversationId): Promise<ExecutionSnapshot> {
       const [accountResult, projectResult, conversationResult, messagesResult, skillsResult, modelsResult, preferencesResult, balanceResult] = await Promise.all([
         client.from("aiw_accounts").select("id,status,expires_at,entitlements").eq("id", ownerId).maybeSingle(),
         client.from("aiw_projects").select("id,owner_id,instructions,archived").eq("id", projectId).eq("owner_id", ownerId).maybeSingle(),
         client.from("aiw_conversations").select("id,owner_id,project_id,archived").eq("id", conversationId).eq("owner_id", ownerId).eq("project_id", projectId).maybeSingle(),
-        client.from("aiw_messages").select("role,content,created_at").eq("owner_id", ownerId).eq("conversation_id", conversationId).order("created_at", { ascending: false }).limit(120),
+        client.from("aiw_messages").select("role,content,metadata,created_at").eq("owner_id", ownerId).eq("conversation_id", conversationId).order("created_at", { ascending: false }).limit(160),
         client.from("aiw_skills").select("id,version,owner_id,project_id,name,description,category,instructions,enabled,allowed_tools").eq("enabled", true),
         client.from("aiw_models").select("config"),
         client.from("aiw_account_preferences").select("custom_instructions").eq("owner_id", ownerId).maybeSingle(),
@@ -69,8 +88,10 @@ export function createSupabaseExecutionStore(options: {
         throw new WorkspaceError("ACCESS_DISABLED", 403);
       }
 
-      const history = ((messagesResult.data ?? []) as Array<{ role: string; content: string }>).reverse()
-        .filter((row): row is { role: "user" | "assistant"; content: string } => row.role === "user" || row.role === "assistant")
+      const history = ((messagesResult.data ?? []) as Array<{ role: string; content: string; metadata?: Record<string, unknown> | null }>).reverse()
+        .filter(row => row.metadata?.internal !== true)
+        .filter((row): row is { role: "user" | "assistant"; content: string; metadata?: Record<string, unknown> | null } => row.role === "user" || row.role === "assistant")
+        .slice(-120)
         .map(({ role, content }): WorkspaceMessage => ({ role, content }));
 
       const skills = ((skillsResult.data ?? []) as Array<Record<string, unknown>>)
@@ -101,20 +122,10 @@ export function createSupabaseExecutionStore(options: {
     },
 
     async reserve(input) {
-      const { data, error } = await client.rpc("aiw_reserve", {
-        p_owner: input.ownerId,
-        p_project: input.projectId,
-        p_conversation: input.conversationId,
-        p_request: input.requestId,
-        p_content: input.content,
-        p_mode: input.mode,
-        p_route: input.route,
-        p_skill: input.skill,
-        p_device_hash: deviceHash,
-      });
-      if (error) fail(error, "RESERVATION_FAILED");
-      return data === true;
+      return reserveStage({ ...input, requestKind: "answer", parentRequestId: null, metadata: { promptProfile: "normal" } });
     },
+
+    reserveStage,
 
     async markProviderStarted(ownerId, requestId, providerRequestId) {
       const { data, error } = await client.rpc("aiw_mark_provider_started", {

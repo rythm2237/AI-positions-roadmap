@@ -6,7 +6,9 @@ on:
       - "src/lib/ai-workspace/**"
       - "src/lib/supabase/admin.ts"
       - "src/app/api/ai-workspace/**"
-      - "scripts/test-ai-workspace.mjs"
+      - "src/app/ai/**"
+      - "src/components/ai-workspace/**"
+      - "scripts/test-ai-workspace*.mjs"
       - "supabase/migrations/**ai_workspace**"
       - "package.json"
       - ".github/workflows/ai-workspace-validation.yml"
@@ -18,7 +20,9 @@ on:
       - "src/lib/ai-workspace/**"
       - "src/lib/supabase/admin.ts"
       - "src/app/api/ai-workspace/**"
-      - "scripts/test-ai-workspace.mjs"
+      - "src/app/ai/**"
+      - "src/components/ai-workspace/**"
+      - "scripts/test-ai-workspace*.mjs"
       - "supabase/migrations/**ai_workspace**"
       - "package.json"
       - ".github/workflows/ai-workspace-validation.yml"
@@ -45,6 +49,9 @@ jobs:
 
       - name: AI Workspace unit suite
         run: npm run test:ai-workspace
+
+      - name: Professional prompt-mode suite
+        run: node --experimental-strip-types --test scripts/test-ai-workspace-professional.mjs
 
       - name: Typecheck
         run: npm run typecheck

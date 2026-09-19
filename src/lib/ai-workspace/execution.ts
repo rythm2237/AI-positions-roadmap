@@ -1,4 +1,4 @@
-import { WorkspaceError, type Entitlements, type ExecutionRoute, type ModelConfiguration, type ProviderUsage, type SkillVersion, type WorkspaceMessage, type WorkspaceMode } from "./contracts.ts";
+import { WorkspaceError, type Entitlements, type ExecutionRoute, type ModelConfiguration, type ProviderUsage, type SkillVersion, type WorkspaceMessage, type WorkspaceMode, type WorkspaceRequestKind } from "./contracts.ts";
 import { buildContext, selectSkill } from "./context.ts";
 import { costForUsage, micros } from "./money.ts";
 import { chooseRoute, classifyIntent } from "./routing.ts";
@@ -19,10 +19,13 @@ export interface ExecutionSnapshot {
 export interface ExecutionStore {
   /** Authenticate externally; verify ownership and active device before returning data. */
   load(ownerId: string, projectId: string, conversationId: string): Promise<ExecutionSnapshot>;
-  /** MUST atomically check identity, limits, rate limits, conversation lock and idempotency,
-   * reserve funds, create request, and append user message. False means no provider call. */
+  /** Normal visible answer reservation. */
   reserve(input: { ownerId: string; projectId: string; conversationId: string; requestId: string;
     content: string; route: ExecutionRoute; skill: SkillVersion | null; mode: WorkspaceMode }): Promise<boolean>;
+  /** Stage-aware reservation used by multi-stage workflows such as Professional prompt enhancement. */
+  reserveStage(input: { ownerId: string; projectId: string; conversationId: string; requestId: string;
+    content: string; route: ExecutionRoute; skill: SkillVersion | null; mode: WorkspaceMode;
+    requestKind: WorkspaceRequestKind; parentRequestId?: string | null; metadata?: Record<string, unknown> }): Promise<boolean>;
   /** Persist the fact that provider execution is about to begin before starting network execution. */
   markProviderStarted(ownerId: string, requestId: string, providerRequestId?: string): Promise<boolean>;
   /** Release only a reservation that is still provably pre-provider. */
@@ -86,7 +89,7 @@ export async function executeWorkspaceRequest(input: {
   let complete: Extract<ProviderEvent, { type: "complete" }> | undefined;
   let providerRequestId: string | undefined;
   try {
-    dependencies.emit({ type: "route", mode: input.mode, skill: skill ? { name: skill.name, version: skill.version } : null,
+    dependencies.emit({ type: "route", mode: input.mode, promptProfile: "normal", skill: skill ? { name: skill.name, version: skill.version } : null,
       historyTruncated: context.historyTruncated, currentInformationVerified: false, requestId: input.requestId });
     for await (const event of dependencies.provider.stream({ route, context, requestId: input.requestId, signal: input.signal })) {
       if (event.type === "text") {
@@ -110,6 +113,5 @@ export async function executeWorkspaceRequest(input: {
       error instanceof WorkspaceError ? error.code : "EXECUTION_INTERRUPTED", providerRequestId);
     throw error;
   }
-  // A client disconnect after settlement must not change the financial outcome.
-  dependencies.emit({ type: "done", requestId: input.requestId, incomplete: complete.incomplete });
+  dependencies.emit({ type: "done", requestId: input.requestId, promptProfile: "normal", incomplete: complete.incomplete });
 }

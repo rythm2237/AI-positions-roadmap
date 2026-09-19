@@ -1,6 +1,8 @@
 /** Financial amounts are decimal strings of USD micro-units (1 USD = 1,000,000). */
 export type Micros = string;
 export type WorkspaceMode = "auto" | "fast" | "best";
+export type PromptProfile = "normal" | "professional";
+export type WorkspaceRequestKind = "answer" | "prompt_enhancement";
 export type Reasoning = "none" | "low" | "medium" | "high";
 export type Permission = "read" | "write" | "send" | "delete" | "execute";
 
