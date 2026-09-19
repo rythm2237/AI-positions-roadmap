@@ -10,6 +10,16 @@ import { createServerClient } from "@supabase/ssr";
 
 export async function proxy(request: NextRequest) {
   const pathname = request.nextUrl.pathname;
+  const hostname = (request.headers.get("host") ?? "").split(":")[0].toLowerCase();
+
+  // The AI workspace lives in the existing AI Role Path deployment. Once DNS is attached,
+  // ai.airolepath.com opens the workspace without creating a second Vercel project.
+  if (hostname === "ai.airolepath.com" && pathname === "/") {
+    const destination = request.nextUrl.clone();
+    destination.pathname = "/ai";
+    return NextResponse.rewrite(destination);
+  }
+
   const protectedAccountRoute = pathname === "/dashboard" || pathname.startsWith("/profile") || pathname.startsWith("/onboarding");
   const isPublicIntelligenceRoute =
     pathname.startsWith("/career-intelligence") ||
@@ -82,17 +92,14 @@ export async function proxy(request: NextRequest) {
   }
 
   const secure = process.env.NODE_ENV === "production";
-  response.cookies.set(
-    ADMIN_ACCESS_COOKIE,
-    session.access_token,
-    sessionCookieOptions(secure, session.expires_in ?? 3600),
-  );
+  response.cookies.set(ADMIN_ACCESS_COOKIE, session.access_token, sessionCookieOptions(secure, session.expires_in ?? 3600));
   response.cookies.set(ADMIN_REFRESH_COOKIE, session.refresh_token, sessionCookieOptions(secure));
   return response;
 }
 
 export const config = {
   matcher: [
+    "/",
     "/admin/:path*",
     "/career-intelligence/:path*",
     "/api/career-intelligence/:path*",
