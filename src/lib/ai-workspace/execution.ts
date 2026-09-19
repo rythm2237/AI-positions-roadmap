@@ -1,0 +1,91 @@
+import { WorkspaceError, type Entitlements, type ExecutionRoute, type ModelConfiguration, type ProviderUsage, type SkillVersion, type WorkspaceMessage, type WorkspaceMode } from "./contracts.ts";
+import { buildContext, selectSkill } from "./context.ts";
+import { costForUsage, micros } from "./money.ts";
+import { chooseRoute, classifyIntent } from "./routing.ts";
+
+export interface ExecutionSnapshot {
+  ownerId: string;
+  projectId: string;
+  conversationId: string;
+  projectInstructions: string;
+  customInstructions: string;
+  history: WorkspaceMessage[];
+  skills: SkillVersion[];
+  models: ModelConfiguration[];
+  entitlements: Entitlements;
+  availableMicros: string;
+}
+
+export interface ExecutionStore {
+  /** Authenticate externally; verify ownership and active device before returning data. */
+  load(ownerId: string, projectId: string, conversationId: string): Promise<ExecutionSnapshot>;
+  /** MUST atomically check identity, limits, rate limits, conversation lock and idempotency,
+   * reserve funds, create request, and append user message. False means no provider call. */
+  reserve(input: { ownerId: string; projectId: string; conversationId: string; requestId: string;
+    content: string; route: ExecutionRoute; skill: SkillVersion | null; mode: WorkspaceMode }): Promise<boolean>;
+  /** MUST atomically append ledger, persist assistant output, and release unused reservation. */
+  settle(input: { ownerId: string; requestId: string; content: string; usage: ProviderUsage;
+    actualMicros: string; providerRequestId: string; incomplete: boolean }): Promise<void>;
+  /** Unknown provider usage retains the reservation; never silently refunds a possibly billed request. */
+  markUncertain(ownerId: string, requestId: string, code: string): Promise<void>;
+}
+
+export type ProviderEvent = { type: "text"; delta: string }
+  | { type: "complete"; usage: ProviderUsage; providerRequestId: string; incomplete: boolean };
+
+export interface WorkspaceProvider {
+  stream(input: { route: ExecutionRoute; context: ReturnType<typeof buildContext>; requestId: string; signal: AbortSignal }): AsyncIterable<ProviderEvent>;
+}
+
+export async function executeWorkspaceRequest(input: {
+  ownerId: string; projectId: string; conversationId: string; requestId: string;
+  content: string; mode: WorkspaceMode; skillId?: string; signal: AbortSignal;
+}, dependencies: {
+  store: ExecutionStore; provider: WorkspaceProvider;
+  emit: (event: { type: string; [key: string]: unknown }) => void;
+}) {
+  if (!/^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(input.requestId)) {
+    throw new WorkspaceError("INVALID_REQUEST_ID");
+  }
+  if (input.signal.aborted) throw new WorkspaceError("CANCELLED", 499);
+  if (typeof input.content !== "string" || !input.content.trim() || input.content.length > 24000) throw new WorkspaceError("INVALID_MESSAGE");
+  const snapshot = await dependencies.store.load(input.ownerId, input.projectId, input.conversationId);
+  if (snapshot.ownerId !== input.ownerId || snapshot.projectId !== input.projectId
+    || snapshot.conversationId !== input.conversationId) throw new WorkspaceError("NOT_FOUND", 404);
+  const intent = classifyIntent(input.content);
+  const skill = selectSkill(snapshot.skills, intent.category, input.ownerId, input.projectId, input.skillId);
+  const context = buildContext({ projectInstructions: snapshot.projectInstructions, customInstructions: snapshot.customInstructions,
+    skill, history: snapshot.history, currentMessage: input.content, maxInputTokens: snapshot.entitlements.maxContextTokens });
+  const route = chooseRoute({ intent, mode: input.mode, models: snapshot.models, entitlements: snapshot.entitlements,
+    inputTokenBound: context.inputTokenBound, availableMicros: snapshot.availableMicros });
+  const reserved = await dependencies.store.reserve({ ...input, route, skill });
+  if (!reserved) throw new WorkspaceError("REQUEST_ALREADY_EXISTS_OR_LIMIT_REACHED", 409);
+  let content = "";
+  let complete: Extract<ProviderEvent, { type: "complete" }> | undefined;
+  try {
+    dependencies.emit({ type: "route", mode: input.mode, skill: skill ? { name: skill.name, version: skill.version } : null,
+      historyTruncated: context.historyTruncated, currentInformationVerified: false, requestId: input.requestId });
+    for await (const event of dependencies.provider.stream({ route, context, requestId: input.requestId, signal: input.signal })) {
+      if (event.type === "text") {
+        if (complete) throw new WorkspaceError("INVALID_PROVIDER_STREAM", 502);
+        content += event.delta;
+        if (content.length > 500000) throw new WorkspaceError("PROVIDER_OUTPUT_LIMIT", 502);
+        dependencies.emit(event);
+      } else {
+        if (complete) throw new WorkspaceError("INVALID_PROVIDER_STREAM", 502);
+        complete = event;
+      }
+    }
+    if (!complete) throw new WorkspaceError("PROVIDER_USAGE_UNKNOWN", 502);
+    const actualMicros = costForUsage(route.model, complete.usage);
+    if (micros(actualMicros) > micros(route.reservationMicros)) throw new WorkspaceError("COST_BOUND_EXCEEDED", 502);
+    await dependencies.store.settle({ ownerId: input.ownerId, requestId: input.requestId, content,
+      usage: complete.usage, actualMicros, providerRequestId: complete.providerRequestId, incomplete: complete.incomplete });
+  } catch (error) {
+    await dependencies.store.markUncertain(input.ownerId, input.requestId,
+      error instanceof WorkspaceError ? error.code : "EXECUTION_INTERRUPTED");
+    throw error;
+  }
+  // A client disconnect after settlement must not change the financial outcome.
+  dependencies.emit({ type: "done", requestId: input.requestId, incomplete: complete.incomplete });
+}
