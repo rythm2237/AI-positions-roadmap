@@ -21,10 +21,11 @@ export async function GET() {
     if (dailyError) throw new WorkspaceError("USAGE_READ_FAILED", 503);
 
     const byDay = new Map<string, bigint>();
+    const zero = BigInt(0);
     for (const row of dailyRows ?? []) {
       const day = String(row.created_at).slice(0, 10);
       const amount = BigInt(String(row.amount));
-      byDay.set(day, (byDay.get(day) ?? 0n) + (amount < 0n ? -amount : 0n));
+      byDay.set(day, (byDay.get(day) ?? zero) + (amount < zero ? -amount : zero));
     }
 
     return noStoreJson({
