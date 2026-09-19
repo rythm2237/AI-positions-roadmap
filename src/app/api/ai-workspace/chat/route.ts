@@ -16,7 +16,7 @@ export async function POST(request: Request) {
   const correlationId = crypto.randomUUID();
   try {
     assertSameOrigin(request);
-    const { ownerId, service } = await requireRegisteredWorkspacePrincipal();
+    const { ownerId, service, deviceHash } = await requireRegisteredWorkspacePrincipal();
     await enforceWorkspaceRateLimit(service, `chat:http:${ownerId}`, 30);
     const body = await readJson<{
       projectId?: unknown;
@@ -43,7 +43,7 @@ export async function POST(request: Request) {
     const key = process.env.OPENAI_API_KEY;
     if (!key) throw new WorkspaceError("PROVIDER_NOT_CONFIGURED", 503);
     const provider = createOpenAIProvider(key);
-    const store = createSupabaseExecutionStore({ client: service });
+    const store = createSupabaseExecutionStore({ client: service, deviceHash });
     const controller = new AbortController();
     const abort = () => controller.abort();
     request.signal.addEventListener("abort", abort, { once: true });

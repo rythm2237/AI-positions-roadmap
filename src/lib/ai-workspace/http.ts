@@ -1,23 +1,48 @@
 import { NextResponse } from "next/server";
+import { cookies } from "next/headers";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { createClient } from "@/lib/supabase/server";
 import { createServiceClient } from "@/lib/supabase/admin";
 import { ensureRegisteredWorkspaceOwner } from "./supabaseStore";
+import { GUEST_COOKIE, parseGuestCookie } from "./guestCredentials";
 import { WorkspaceError } from "./contracts";
 
-export interface RegisteredWorkspacePrincipal {
-  userId: string;
+export interface WorkspacePrincipal {
+  userId: string | null;
   ownerId: string;
   service: SupabaseClient;
+  kind: "registered" | "guest";
+  deviceHash: string | null;
+  sessionHash: string | null;
 }
 
-export async function requireRegisteredWorkspacePrincipal(): Promise<RegisteredWorkspacePrincipal> {
-  const auth = await createClient();
-  const { data, error } = await auth.auth.getUser();
-  if (error || !data.user) throw new WorkspaceError("UNAUTHENTICATED", 401);
+/** Historical name kept for route compatibility; now accepts either a registered account or a valid guest session. */
+export async function requireRegisteredWorkspacePrincipal(): Promise<WorkspacePrincipal> {
   const service = createServiceClient();
-  const ownerId = await ensureRegisteredWorkspaceOwner(data.user.id, service);
-  return { userId: data.user.id, ownerId, service };
+  const auth = await createClient();
+  const { data } = await auth.auth.getUser();
+  if (data.user) {
+    const ownerId = await ensureRegisteredWorkspaceOwner(data.user.id, service);
+    return { userId: data.user.id, ownerId, service, kind: "registered", deviceHash: null, sessionHash: null };
+  }
+
+  const cookieStore = await cookies();
+  let guest: ReturnType<typeof parseGuestCookie>;
+  try {
+    guest = parseGuestCookie(cookieStore.get(GUEST_COOKIE)?.value);
+  } catch {
+    throw new WorkspaceError("UNAUTHENTICATED", 401);
+  }
+  const { data: ownerId, error } = await service.rpc("aiw_validate_guest_session", {
+    p_session_hash: guest.sessionHash,
+    p_device_hash: guest.deviceHash,
+  });
+  if (error || typeof ownerId !== "string") throw new WorkspaceError("UNAUTHENTICATED", 401);
+  return { userId: null, ownerId, service, kind: "guest", deviceHash: guest.deviceHash, sessionHash: guest.sessionHash };
+}
+
+export async function requireWorkspacePrincipal(): Promise<WorkspacePrincipal> {
+  return requireRegisteredWorkspacePrincipal();
 }
 
 export function assertSameOrigin(request: Request): void {

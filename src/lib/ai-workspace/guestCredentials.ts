@@ -26,6 +26,34 @@ export function hashDeviceCredential(credential: string) {
   return createHash("sha256").update(`ai-career:device:v1:${credential}`).digest("hex");
 }
 
+export function generateGuestSessionCredential() {
+  const credential = randomBytes(32).toString("base64url");
+  return { credential, hash: hashGuestSessionCredential(credential) };
+}
+
+export function hashGuestSessionCredential(credential: string) {
+  if (!/^[A-Za-z0-9_-]{43}$/.test(credential)) throw new WorkspaceError("INVALID_GUEST_SESSION", 401);
+  return createHash("sha256").update(`ai-career:guest-session:v1:${credential}`).digest("hex");
+}
+
+export function serializeGuestCookie(deviceCredential: string, sessionCredential: string) {
+  hashDeviceCredential(deviceCredential);
+  hashGuestSessionCredential(sessionCredential);
+  return `${deviceCredential}.${sessionCredential}`;
+}
+
+export function parseGuestCookie(value: string | undefined | null) {
+  if (!value) throw new WorkspaceError("UNAUTHENTICATED", 401);
+  const [deviceCredential, sessionCredential, extra] = value.split(".");
+  if (!deviceCredential || !sessionCredential || extra) throw new WorkspaceError("UNAUTHENTICATED", 401);
+  return {
+    deviceCredential,
+    sessionCredential,
+    deviceHash: hashDeviceCredential(deviceCredential),
+    sessionHash: hashGuestSessionCredential(sessionCredential),
+  };
+}
+
 export function matchesDeviceCredential(credential: string, storedHash: string) {
   if (!/^[a-f0-9]{64}$/.test(storedHash)) return false;
   try {
