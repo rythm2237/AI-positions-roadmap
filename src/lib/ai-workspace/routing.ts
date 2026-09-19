@@ -57,7 +57,8 @@ export function chooseRoute(input: {
     const reasoning = model.reasoning.includes(desired) ? desired
       : model.reasoning.includes("low") ? "low" : model.reasoning[0];
     if (!reasoning) continue;
-    routes.push({ model, reasoning, maxOutputTokens: output, reservationMicros: reservation, intent });
+    routes.push({ model, reasoning, inputTokenBound: input.inputTokenBound,
+      maxOutputTokens: output, reservationMicros: reservation, intent });
   }
   routes.sort((a, b) => {
     if (mode === "best" || (mode === "auto" && intent.complexity === "complex")) {

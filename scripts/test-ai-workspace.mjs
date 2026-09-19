@@ -43,6 +43,9 @@ test('best mode downgrades to an affordable authorized route', () => {
   assert.equal(chooseRoute({ ...routeInput, mode: 'best', models: [expensive, model],
     entitlements: { ...entitlements, models: [model.id, expensive.id] } }).model.id, model.id);
 });
+test('route persists the exact bounded input used for financial reservation', () => {
+  assert.equal(chooseRoute(routeInput).inputTokenBound, routeInput.inputTokenBound);
+});
 test('complex tasks request reasoning; greetings avoid it', () => {
   assert.equal(chooseRoute(routeInput).reasoning, 'none');
   assert.equal(chooseRoute({ ...routeInput, intent: classifyIntent('Debug a distributed system error') }).reasoning, 'high');
@@ -78,18 +81,25 @@ test('tool approvals bind action, arguments, connection, owner, project and expi
 });
 
 function harness(options = {}) {
-  const calls = { provider: 0, reserve: 0, settled: [], uncertain: [] };
+  const calls = { provider: 0, reserve: 0, providerStarted: [], released: [], settled: [], uncertain: [] };
+  const controller = new AbortController();
   const snapshot = { ownerId: 'owner', projectId: 'project', conversationId: 'conversation', projectInstructions: '',
     customInstructions: '', history: [], skills: [], models: [model], entitlements, availableMicros: '100000', ...options.snapshot };
-  const store = { load: async () => snapshot, reserve: async () => { calls.reserve++; return options.reserved ?? true; },
-    settle: async value => { calls.settled.push(value); }, markUncertain: async (...args) => { calls.uncertain.push(args); } };
+  const store = {
+    load: async () => snapshot,
+    reserve: async () => { calls.reserve++; if (options.abortAfterReserve) controller.abort(); return options.reserved ?? true; },
+    markProviderStarted: async (...args) => { calls.providerStarted.push(args); return options.providerStartAccepted ?? true; },
+    releaseUnstarted: async (...args) => { calls.released.push(args); return true; },
+    settle: async value => { calls.settled.push(value); },
+    markUncertain: async (...args) => { calls.uncertain.push(args); },
+  };
   const provider = { async *stream() { calls.provider++; yield { type: 'text', delta: 'Hello' };
     if (options.fail) throw new Error('Disconnected');
     yield { type: 'complete', providerRequestId: 'resp-test', incomplete: false,
       usage: { inputTokens: 100, cachedInputTokens: 0, outputTokens: 10 } }; } };
   const input = { ownerId: 'owner', projectId: 'project', conversationId: 'conversation', requestId: randomUUID(),
-    content: 'Hello', mode: 'auto', signal: new AbortController().signal };
-  return { calls, store, provider, input };
+    content: 'Hello', mode: 'auto', signal: controller.signal };
+  return { calls, store, provider, input, controller };
 }
 test('gateway never calls provider after budget exhaustion, ownership mismatch or reservation refusal', async () => {
   for (const options of [{ snapshot: { availableMicros: '0' } }, { snapshot: { ownerId: 'other' } }, { reserved: false }]) {
@@ -101,6 +111,7 @@ test('gateway never calls provider after budget exhaustion, ownership mismatch o
 test('gateway records final usage before emitting completion', async () => {
   const h = harness();
   await executeWorkspaceRequest(h.input, { ...h, emit(event) { if (event.type === 'done') assert.equal(h.calls.settled.length, 1); } });
+  assert.equal(h.calls.providerStarted.length, 1);
   assert.equal(h.calls.settled[0].actualMicros, '120');
   assert.equal(h.calls.settled[0].content, 'Hello');
   assert.equal(h.calls.uncertain.length, 0);
@@ -111,12 +122,28 @@ test('provider interruption retains a reconciliation record, with no automatic r
   assert.equal(h.calls.provider, 1);
   assert.equal(h.calls.settled.length, 0);
   assert.equal(h.calls.uncertain.length, 1);
+  assert.equal(h.calls.released.length, 0);
 });
 test('request cancellation before reservation causes no spending', async () => {
   const h = harness();
   await assert.rejects(executeWorkspaceRequest({ ...h.input, signal: AbortSignal.abort() }, { ...h, emit() {} }), /CANCELLED/);
   assert.equal(h.calls.reserve, 0);
   assert.equal(h.calls.provider, 0);
+});
+test('request cancellation after reservation but before provider start releases the reservation', async () => {
+  const h = harness({ abortAfterReserve: true });
+  await assert.rejects(executeWorkspaceRequest(h.input, { ...h, emit() {} }), /CANCELLED/);
+  assert.equal(h.calls.reserve, 1);
+  assert.equal(h.calls.providerStarted.length, 0);
+  assert.equal(h.calls.provider, 0);
+  assert.equal(h.calls.released.length, 1);
+  assert.equal(h.calls.uncertain.length, 0);
+});
+test('provider start rejection releases only the provably unstarted reservation', async () => {
+  const h = harness({ providerStartAccepted: false });
+  await assert.rejects(executeWorkspaceRequest(h.input, { ...h, emit() {} }), /REQUEST_STATE_CHANGED/);
+  assert.equal(h.calls.provider, 0);
+  assert.equal(h.calls.released.length, 1);
 });
 test('provider adapter handles split UTF-8/SSE and ignores hidden reasoning events', async () => {
   const events = [ { type: 'response.reasoning.delta', delta: 'private' }, { type: 'response.output_text.delta', delta: 'سلام' },
@@ -137,7 +164,6 @@ test('provider adapter handles split UTF-8/SSE and ignores hidden reasoning even
   assert.equal(result.length, 2);
   assert.equal(result[1].usage.cachedInputTokens, 50);
 });
-
 
 test('guest invitation and device credentials have distinct hashes and reject malformed inputs', async () => {
   const { generateGuestCode, hashGuestCode, generateDeviceCredential, matchesDeviceCredential, GUEST_COOKIE_OPTIONS } = await import('../src/lib/ai-workspace/guestCredentials.ts');

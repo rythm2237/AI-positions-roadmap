@@ -60,6 +60,7 @@ export interface WorkspaceMessage {
 export interface ExecutionRoute {
   model: ModelConfiguration;
   reasoning: Reasoning;
+  inputTokenBound: number;
   maxOutputTokens: number;
   reservationMicros: Micros;
   intent: Intent;

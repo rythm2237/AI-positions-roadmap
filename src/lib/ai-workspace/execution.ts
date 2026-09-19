@@ -23,11 +23,15 @@ export interface ExecutionStore {
    * reserve funds, create request, and append user message. False means no provider call. */
   reserve(input: { ownerId: string; projectId: string; conversationId: string; requestId: string;
     content: string; route: ExecutionRoute; skill: SkillVersion | null; mode: WorkspaceMode }): Promise<boolean>;
+  /** Persist the fact that provider execution is about to begin before starting network execution. */
+  markProviderStarted(ownerId: string, requestId: string, providerRequestId?: string): Promise<boolean>;
+  /** Release only a reservation that is still provably pre-provider. */
+  releaseUnstarted(ownerId: string, requestId: string, code: string): Promise<boolean>;
   /** MUST atomically append ledger, persist assistant output, and release unused reservation. */
   settle(input: { ownerId: string; requestId: string; content: string; usage: ProviderUsage;
     actualMicros: string; providerRequestId: string; incomplete: boolean }): Promise<void>;
   /** Unknown provider usage retains the reservation; never silently refunds a possibly billed request. */
-  markUncertain(ownerId: string, requestId: string, code: string): Promise<void>;
+  markUncertain(ownerId: string, requestId: string, code: string, providerRequestId?: string): Promise<void>;
 }
 
 export type ProviderEvent = { type: "text"; delta: string }
@@ -60,8 +64,27 @@ export async function executeWorkspaceRequest(input: {
     inputTokenBound: context.inputTokenBound, availableMicros: snapshot.availableMicros });
   const reserved = await dependencies.store.reserve({ ...input, route, skill });
   if (!reserved) throw new WorkspaceError("REQUEST_ALREADY_EXISTS_OR_LIMIT_REACHED", 409);
+
+  if (input.signal.aborted) {
+    await dependencies.store.releaseUnstarted(input.ownerId, input.requestId, "CLIENT_CANCELLED_PRE_PROVIDER");
+    throw new WorkspaceError("CANCELLED", 499);
+  }
+
+  let started = false;
+  try {
+    started = await dependencies.store.markProviderStarted(input.ownerId, input.requestId);
+  } catch (error) {
+    await dependencies.store.releaseUnstarted(input.ownerId, input.requestId, "PROVIDER_START_PERSISTENCE_FAILED").catch(() => false);
+    throw error;
+  }
+  if (!started) {
+    await dependencies.store.releaseUnstarted(input.ownerId, input.requestId, "PROVIDER_START_REJECTED").catch(() => false);
+    throw new WorkspaceError("REQUEST_STATE_CHANGED", 409);
+  }
+
   let content = "";
   let complete: Extract<ProviderEvent, { type: "complete" }> | undefined;
+  let providerRequestId: string | undefined;
   try {
     dependencies.emit({ type: "route", mode: input.mode, skill: skill ? { name: skill.name, version: skill.version } : null,
       historyTruncated: context.historyTruncated, currentInformationVerified: false, requestId: input.requestId });
@@ -74,6 +97,7 @@ export async function executeWorkspaceRequest(input: {
       } else {
         if (complete) throw new WorkspaceError("INVALID_PROVIDER_STREAM", 502);
         complete = event;
+        providerRequestId = event.providerRequestId;
       }
     }
     if (!complete) throw new WorkspaceError("PROVIDER_USAGE_UNKNOWN", 502);
@@ -83,7 +107,7 @@ export async function executeWorkspaceRequest(input: {
       usage: complete.usage, actualMicros, providerRequestId: complete.providerRequestId, incomplete: complete.incomplete });
   } catch (error) {
     await dependencies.store.markUncertain(input.ownerId, input.requestId,
-      error instanceof WorkspaceError ? error.code : "EXECUTION_INTERRUPTED");
+      error instanceof WorkspaceError ? error.code : "EXECUTION_INTERRUPTED", providerRequestId);
     throw error;
   }
   // A client disconnect after settlement must not change the financial outcome.
