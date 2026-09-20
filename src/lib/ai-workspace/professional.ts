@@ -3,7 +3,7 @@ import { WorkspaceError, type PromptProfile, type WorkspaceMode, type WorkspaceM
 import { PLATFORM_POLICY, buildContext, selectSkill, textTokenBound } from "./context.ts";
 import { costForUsage, micros } from "./money.ts";
 import { chooseRoute, classifyIntent } from "./routing.ts";
-import type { ExecutionSnapshot, ExecutionStore, ProviderEvent, WorkspaceProvider } from "./execution.ts";
+import { retrieveExecutionKnowledge, type ExecutionSnapshot, type ExecutionStore, type ProviderEvent, type WorkspaceProvider } from "./execution.ts";
 
 const MAX_ENHANCED_PROMPT_BYTES = 6000;
 const ENHANCEMENT_OVERHEAD = 512;
@@ -147,7 +147,7 @@ export async function executeProfessionalWorkspaceRequest(input: {
   const snapshot = await dependencies.store.load(input.ownerId, input.projectId, input.conversationId);
   const intent = classifyIntent(input.content);
   const skill = selectSkill(snapshot.skills, intent.category, input.ownerId, input.projectId, input.skillId);
-  const knowledge = await dependencies.store.retrieveKnowledge(input.ownerId, input.projectId, input.content);
+  const knowledge = await retrieveExecutionKnowledge(dependencies.store, input.ownerId, input.projectId, input.content);
   const knowledgeContext = knowledge.map(item => ({ id: item.id, text: item.text }));
 
   const conservativeMessage = "P".repeat(MAX_ENHANCED_PROMPT_BYTES);
