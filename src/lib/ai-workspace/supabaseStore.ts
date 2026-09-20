@@ -1,6 +1,6 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { WorkspaceError, type Entitlements, type ModelConfiguration, type SkillVersion, type WorkspaceMessage } from "./contracts.ts";
-import type { ExecutionSnapshot, ExecutionStore } from "./execution.ts";
+import type { ExecutionSnapshot, ExecutionStore, RetrievedKnowledge } from "./execution.ts";
 import { createServiceClient } from "@/lib/supabase/admin";
 
 function fail(error: unknown, code = "WORKSPACE_STORAGE_UNAVAILABLE", status = 503): never {
@@ -28,6 +28,21 @@ function asModel(value: unknown): ModelConfiguration | null {
     || typeof v.quality !== "number" || typeof v.latency !== "number" || !Array.isArray(v.reasoning)
     || typeof v.vision !== "boolean" || typeof v.tools !== "boolean" || typeof v.pricingVerifiedAt !== "string") return null;
   return v as ModelConfiguration;
+}
+
+function asKnowledge(value: unknown): RetrievedKnowledge[] {
+  if (!Array.isArray(value)) return [];
+  return value.flatMap((raw): RetrievedKnowledge[] => {
+    if (!raw || typeof raw !== "object") return [];
+    const item = raw as Record<string, unknown>;
+    const sourceType = item.sourceType;
+    const id = item.sourceId;
+    const content = item.content;
+    const fileId = item.fileId;
+    if ((sourceType !== "file" && sourceType !== "memory") || typeof id !== "string" || typeof content !== "string") return [];
+    if (content.length < 1 || content.length > 8000) return [];
+    return [{ id, text: content, sourceType, fileId: typeof fileId === "string" ? fileId : null }];
+  });
 }
 
 export async function ensureRegisteredWorkspaceOwner(userId: string, client: SupabaseClient = createServiceClient()): Promise<string> {
@@ -119,6 +134,17 @@ export function createSupabaseExecutionStore(options: {
         entitlements: asEntitlements(account.entitlements),
         availableMicros: balance.availableMicros,
       };
+    },
+
+    async retrieveKnowledge(ownerId, projectId, query) {
+      const { data, error } = await client.rpc("aiw_retrieve_project_context", {
+        p_owner: ownerId,
+        p_project: projectId,
+        p_query: query.slice(0, 2000),
+        p_limit: 8,
+      });
+      if (error) fail(error, "KNOWLEDGE_RETRIEVAL_FAILED");
+      return asKnowledge(data);
     },
 
     async reserve(input) {
