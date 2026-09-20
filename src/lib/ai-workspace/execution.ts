@@ -26,8 +26,8 @@ export interface RetrievedKnowledge {
 export interface ExecutionStore {
   /** Authenticate externally; verify ownership and active device before returning data. */
   load(ownerId: string, projectId: string, conversationId: string): Promise<ExecutionSnapshot>;
-  /** Retrieve only owner/project-scoped reference data. Returned text is untrusted context, never authorization. */
-  retrieveKnowledge(ownerId: string, projectId: string, query: string): Promise<RetrievedKnowledge[]>;
+  /** Optional capability for stores that support owner/project-scoped knowledge retrieval. */
+  retrieveKnowledge?(ownerId: string, projectId: string, query: string): Promise<RetrievedKnowledge[]>;
   /** Normal visible answer reservation. */
   reserve(input: { ownerId: string; projectId: string; conversationId: string; requestId: string;
     content: string; route: ExecutionRoute; skill: SkillVersion | null; mode: WorkspaceMode }): Promise<boolean>;
@@ -57,6 +57,10 @@ function publicKnowledgeSources(items: RetrievedKnowledge[]) {
   return items.map(({ id, sourceType, fileId }) => ({ id, sourceType, fileId }));
 }
 
+export async function retrieveExecutionKnowledge(store: ExecutionStore, ownerId: string, projectId: string, query: string): Promise<RetrievedKnowledge[]> {
+  return store.retrieveKnowledge ? store.retrieveKnowledge(ownerId, projectId, query) : [];
+}
+
 export async function executeWorkspaceRequest(input: {
   ownerId: string; projectId: string; conversationId: string; requestId: string;
   content: string; mode: WorkspaceMode; skillId?: string; signal: AbortSignal;
@@ -74,7 +78,7 @@ export async function executeWorkspaceRequest(input: {
     || snapshot.conversationId !== input.conversationId) throw new WorkspaceError("NOT_FOUND", 404);
   const intent = classifyIntent(input.content);
   const skill = selectSkill(snapshot.skills, intent.category, input.ownerId, input.projectId, input.skillId);
-  const knowledge = await dependencies.store.retrieveKnowledge(input.ownerId, input.projectId, input.content);
+  const knowledge = await retrieveExecutionKnowledge(dependencies.store, input.ownerId, input.projectId, input.content);
   const context = buildContext({ projectInstructions: snapshot.projectInstructions, customInstructions: snapshot.customInstructions,
     skill, history: snapshot.history, currentMessage: input.content, maxInputTokens: snapshot.entitlements.maxContextTokens,
     knowledge: knowledge.map(item => ({ id: item.id, text: item.text })) });
