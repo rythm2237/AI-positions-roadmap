@@ -147,6 +147,8 @@ export async function executeProfessionalWorkspaceRequest(input: {
   const snapshot = await dependencies.store.load(input.ownerId, input.projectId, input.conversationId);
   const intent = classifyIntent(input.content);
   const skill = selectSkill(snapshot.skills, intent.category, input.ownerId, input.projectId, input.skillId);
+  const knowledge = await dependencies.store.retrieveKnowledge(input.ownerId, input.projectId, input.content);
+  const knowledgeContext = knowledge.map(item => ({ id: item.id, text: item.text }));
 
   const conservativeMessage = "P".repeat(MAX_ENHANCED_PROMPT_BYTES);
   const conservativeContext = buildContext({
@@ -156,6 +158,7 @@ export async function executeProfessionalWorkspaceRequest(input: {
     history: snapshot.history,
     currentMessage: conservativeMessage,
     maxInputTokens: snapshot.entitlements.maxContextTokens,
+    knowledge: knowledgeContext,
   });
   const answerRoute = chooseRoute({
     intent,
@@ -235,6 +238,7 @@ export async function executeProfessionalWorkspaceRequest(input: {
     history: snapshot.history,
     currentMessage: enhancement.enhanced,
     maxInputTokens: snapshot.entitlements.maxContextTokens,
+    knowledge: knowledgeContext,
   });
   if (finalContext.inputTokenBound > answerRoute.inputTokenBound) {
     await dependencies.store.releaseUnstarted(input.ownerId, input.requestId, "ENHANCED_CONTEXT_EXCEEDED_RESERVATION").catch(() => false);
@@ -248,6 +252,11 @@ export async function executeProfessionalWorkspaceRequest(input: {
     enhancementCostMicros: enhancement.actualMicros,
     enhancementModel: enhancement.model,
     message: "Professional mode enhanced the prompt before generating the answer and may use more AI budget.",
+    requestId: input.requestId,
+  });
+  if (knowledge.length) dependencies.emit({
+    type: "knowledge",
+    sources: knowledge.map(({ id, sourceType, fileId }) => ({ id, sourceType, fileId })),
     requestId: input.requestId,
   });
 
