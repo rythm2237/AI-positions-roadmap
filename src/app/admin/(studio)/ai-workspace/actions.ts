@@ -26,7 +26,7 @@ function usdMicros(value: unknown) {
   const raw = String(value ?? "").trim();
   if (!/^\d{1,7}(?:\.\d{1,6})?$/.test(raw)) throw new Error("INVALID_USD_AMOUNT");
   const [whole, fraction = ""] = raw.split(".");
-  return (BigInt(whole) * 1_000_000n + BigInt((fraction + "000000").slice(0, 6))).toString();
+  return (BigInt(whole) * BigInt(1000000) + BigInt((fraction + "000000").slice(0, 6))).toString();
 }
 
 export async function createGuestCodeAction(form: FormData) {
@@ -51,7 +51,7 @@ export async function createGuestCodeAction(form: FormData) {
   const { code, hash } = generateGuestCode();
   const expiresAt = new Date(Date.now() + expiryDays * 86400000).toISOString();
   const entitlements = {
-    enabled: BigInt(initialCredit) > 0n,
+    enabled: BigInt(initialCredit) > BigInt(0),
     modes,
     models: enabledIds,
     tools: [],
@@ -102,9 +102,9 @@ export async function adjustCreditAction(form: FormData) {
   const admin = adminOrThrow(await requireAdmin());
   const ownerId = text(form, "ownerId", 100);
   const reason = text(form, "reason", 500);
-  const sign = String(form.get("direction")) === "debit" ? -1n : 1n;
+  const sign = String(form.get("direction")) === "debit" ? BigInt(-1) : BigInt(1);
   const amount = BigInt(usdMicros(form.get("amountUsd"))) * sign;
-  if (amount === 0n) throw new Error("ZERO_ADJUSTMENT");
+  if (amount === BigInt(0)) throw new Error("ZERO_ADJUSTMENT");
   const service = createServiceClient();
   const { error } = await service.rpc("aiw_admin_credit", { p_actor: admin.user.id, p_owner: ownerId, p_amount: amount.toString(), p_reason: reason });
   if (error) throw new Error("CREDIT_ADJUST_FAILED");
