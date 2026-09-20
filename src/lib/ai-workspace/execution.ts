@@ -16,9 +16,18 @@ export interface ExecutionSnapshot {
   availableMicros: string;
 }
 
+export interface RetrievedKnowledge {
+  id: string;
+  text: string;
+  sourceType: "file" | "memory";
+  fileId: string | null;
+}
+
 export interface ExecutionStore {
   /** Authenticate externally; verify ownership and active device before returning data. */
   load(ownerId: string, projectId: string, conversationId: string): Promise<ExecutionSnapshot>;
+  /** Retrieve only owner/project-scoped reference data. Returned text is untrusted context, never authorization. */
+  retrieveKnowledge(ownerId: string, projectId: string, query: string): Promise<RetrievedKnowledge[]>;
   /** Normal visible answer reservation. */
   reserve(input: { ownerId: string; projectId: string; conversationId: string; requestId: string;
     content: string; route: ExecutionRoute; skill: SkillVersion | null; mode: WorkspaceMode }): Promise<boolean>;
@@ -44,6 +53,10 @@ export interface WorkspaceProvider {
   stream(input: { route: ExecutionRoute; context: ReturnType<typeof buildContext>; requestId: string; signal: AbortSignal }): AsyncIterable<ProviderEvent>;
 }
 
+function publicKnowledgeSources(items: RetrievedKnowledge[]) {
+  return items.map(({ id, sourceType, fileId }) => ({ id, sourceType, fileId }));
+}
+
 export async function executeWorkspaceRequest(input: {
   ownerId: string; projectId: string; conversationId: string; requestId: string;
   content: string; mode: WorkspaceMode; skillId?: string; signal: AbortSignal;
@@ -61,8 +74,10 @@ export async function executeWorkspaceRequest(input: {
     || snapshot.conversationId !== input.conversationId) throw new WorkspaceError("NOT_FOUND", 404);
   const intent = classifyIntent(input.content);
   const skill = selectSkill(snapshot.skills, intent.category, input.ownerId, input.projectId, input.skillId);
+  const knowledge = await dependencies.store.retrieveKnowledge(input.ownerId, input.projectId, input.content);
   const context = buildContext({ projectInstructions: snapshot.projectInstructions, customInstructions: snapshot.customInstructions,
-    skill, history: snapshot.history, currentMessage: input.content, maxInputTokens: snapshot.entitlements.maxContextTokens });
+    skill, history: snapshot.history, currentMessage: input.content, maxInputTokens: snapshot.entitlements.maxContextTokens,
+    knowledge: knowledge.map(item => ({ id: item.id, text: item.text })) });
   const route = chooseRoute({ intent, mode: input.mode, models: snapshot.models, entitlements: snapshot.entitlements,
     inputTokenBound: context.inputTokenBound, availableMicros: snapshot.availableMicros });
   const reserved = await dependencies.store.reserve({ ...input, route, skill });
@@ -91,6 +106,7 @@ export async function executeWorkspaceRequest(input: {
   try {
     dependencies.emit({ type: "route", mode: input.mode, promptProfile: "normal", skill: skill ? { name: skill.name, version: skill.version } : null,
       historyTruncated: context.historyTruncated, currentInformationVerified: false, requestId: input.requestId });
+    if (knowledge.length) dependencies.emit({ type: "knowledge", sources: publicKnowledgeSources(knowledge), requestId: input.requestId });
     for await (const event of dependencies.provider.stream({ route, context, requestId: input.requestId, signal: input.signal })) {
       if (event.type === "text") {
         if (complete) throw new WorkspaceError("INVALID_PROVIDER_STREAM", 502);
