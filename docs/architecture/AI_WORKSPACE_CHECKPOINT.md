@@ -1,79 +1,69 @@
 # AI Workspace implementation checkpoint
 
-Date: 2026-09-19. Status: **active implementation; not yet ready for production merge**.
+Date: 2026-09-20. Status: **staging implementation substantially complete; production release still gated**.
 
 The complete requirements remain in `docs/requirements/ai-workspace-platform.md`.
 
-## Verified current state
+## Current implementation
 
-- Repository: `rythm2237/AI-positions-roadmap`.
-- Branch: `feat/ai-workspace-platform`.
-- PR: `#146`.
-- Isolated Supabase staging project: `cspsideklljlbdusjasg` (`ai-roadmap-preview`) is `ACTIVE_HEALTHY`.
-- Production Supabase and the unrelated RYTHM project have not been modified by this implementation phase.
-- The staging database contains the AI Workspace financial/guest/domain migrations through `20260919203122_ai_workspace_financial_state_hardening`.
-- `anon` and `authenticated` do not have direct CRUD access to `aiw_*` financial/domain tables; financial RPCs are service-role-only.
+- Repository `rythm2237/AI-positions-roadmap`, branch `feat/ai-workspace-platform`, Draft PR `#146`.
+- Isolated Supabase staging `cspsideklljlbdusjasg` is in use. Production Supabase has not been migrated by this branch.
+- Persistent registered/guest workspace accounts, Projects, Conversations, Messages, settings, immutable Skill versions, Saved Prompts, Memories, private Files/Chunks, Plans, model registry, plugin/tool policy state, guest devices/sessions, budget reservations, immutable usage ledger and audit records.
+- Atomic micro-USD financial lifecycle: hard-limit reserve, persisted provider-start, idempotent settle, uncertain-spend retention and safe pre-provider release.
+- Protected same-origin APIs and shared registered/guest Workspace principal.
+- Responsive `/ai` experience with Projects/Conversations, streaming, Stop, Auto/Fast/Best, Skills, Saved Prompts, Usage and Guest Code access.
+- User-selectable `Normal` and `Professional` prompt profiles. Professional reserves both enhancement and final-answer maximum cost before the first provider call, meters the enhancement separately, hides the internal enhancement from visible conversation history and explains the additional budget use in UI.
+- Official model registry entries for `gpt-5.6-luna`, `gpt-5.6-terra` and `gpt-5.6-sol`; the synthetic `test-concurrency` model remains disabled.
+- Stripe synchronization hardened with event-ID idempotency, ordering protection and one AI-credit grant per subscription period. No commercial AI plan or allowance is invented automatically.
+- Private Knowledge & Memory center at `/ai/knowledge`: PDF/DOCX/TXT/MD/CSV up to 10 MB, bounded extraction/chunking, SHA-256 dedupe, private Storage, project-scoped file retrieval, owner-level user memory, project memory, provenance and deletion/archive lifecycle.
+- Retrieved text is lower-trust reference data only and cannot grant tool permissions or override platform policy. Professional enhancement does not receive retrieved project knowledge; the final answer does, and its cost is included in the pre-provider reservation bound.
+- Fail-closed Plugins & Tools center at `/ai/plugins`. No connector is presented as connected without actual provider configuration; the staging catalog is currently empty.
+- Admin AI Control Center at `/admin/ai-workspace` reuses existing admin authentication. It provides guest-code creation with one-time plaintext display, code/device revocation, account credit adjustments, uncertain-spend reconciliation, model enable/disable, plan/plugin visibility and immutable audit visibility.
+- Explicit plan administration at `/admin/ai-workspace/plans`; subscription price and provider-cost allowance remain independent and must be configured deliberately.
 
-## Implemented
+## Verification evidence
 
-- Integer micro-USD accounting, verified-price routing, bounded context, immutable/scoped skills, OpenAI Responses streaming adapter, tool policy, guest credential primitives.
-- Persistent workspace principals, projects, conversations, messages, model registry, immutable skill versions, project instruction versions, saved prompts, memory, file metadata, plan entitlements, plugin catalog/connections, project plugin permissions, tool approvals/executions, guest sessions, budget reservations and audit records.
-- Atomic budget lifecycle: reserve, provider-start state, settle, uncertain reconciliation state, release only when provider is provably unstarted, administrator reconciliation for unknown spend.
-- Supabase execution-store adapter wired to the orchestration layer.
-- Protected same-origin APIs for Projects, Conversations, Messages, Usage and streaming Chat.
-- Skills API with immutable version creation instead of destructive overwrite.
-- Saved Prompts API.
-- Dedicated `AI Workspace validation` GitHub workflow.
-
-## Verified
-
-- Latest feature commit before this checkpoint: `11e34ecb192aa346f645ed6113492dcb5ca809bc`.
-- `AI Workspace validation`: success.
-- `Job Agent validation`: success.
-- AI Workspace unit suite: `19/19` passing.
+- Latest functional head before this checkpoint: `5b1e17429f0d7e4c5a82f0b44d671f4153efec99`.
+- `AI Workspace validation`: success on that head.
+- `Job Agent validation`: success on that head.
+- Core AI Workspace unit suite: `19/19` passing.
+- Professional prompt-mode suite: `4/4` passing, including Knowledge reservation/isolation behavior.
 - TypeScript no-emit typecheck: passing.
-- Real staging PostgreSQL rollback-based tests passed for reserve, duplicate rejection, settlement idempotency, hard budget enforcement, uncertain spend retention, no refund after provider start, safe pre-provider release, billing-period expiry, guest activation/session/device limits and one-time exact tool approval consumption.
-- Synthetic staging model `test-concurrency` is disabled and must never be treated as a production model.
+- Vercel Preview builds are succeeding for the stabilized Knowledge/Admin implementation; `/ai` was fetched from Preview with HTTP 200 and `noindex` headers.
+- Staging transactional tests passed for budget reservation/idempotent settlement, hard limits, uncertain spend, safe release, guest activation/session/device limits, exact one-time tool approvals, Professional two-stage reservation/accounting, Stripe event dedupe/ordering/period grants, and owner/project Knowledge isolation.
+- Knowledge isolation rollback test confirmed: user memory is available across Projects for the same owner; project memory and file chunks do not cross Project boundaries.
+- Security regression audit: every `aiw_*` table has RLS enabled and no direct anon/authenticated CRUD grants; every `aiw_*` RPC has no anon/authenticated execute grant and is executable by service role only. Private Storage bucket has no public object policy.
+- Preview deployment protection prevents unauthenticated external automation from reaching protected Admin/API routes; this is Vercel SSO protection, not an application failure.
 
-## Product change approved on 2026-09-19
+## Known release gates / blockers
 
-Prompt enhancement must be optional. The workspace will expose two user-selectable prompt modes:
+1. **True multi-connection concurrency test remains unverified.** `dblink` is available in staging but PostgreSQL correctly refuses a second connection without database credentials/GSSAPI. Do not claim the race test passed. A real independent DB client or approved staging connection credential is needed.
+2. **Authenticated registered/guest/admin browser E2E remains required.** Current connector can fetch Preview but cannot maintain the full interactive authenticated browser journey through Vercel Deployment Protection.
+3. **Live OpenAI provider test remains required.** It must use an environment-configured credential and stay within the user's approved cumulative test-spend ceiling of USD 0.10. Do not request the API key in chat.
+4. **Preview environment parity must be confirmed** (staging Supabase + required server secrets). Environment secret values were not exposed through available tooling.
+5. **Commercial plan values remain intentionally unset.** Admin tooling exists, but pricing/allowance is a product-owner decision.
+6. **Actual OAuth/plugin provider setup remains external.** The application framework is fail-closed until real connector credentials/scopes are configured.
+7. **Production domain/provider action:** `ai.airolepath.com` still requires Vercel/DNS configuration after merge; the available Vercel connector does not expose domain attachment or environment-secret mutation.
 
-- `Normal`: execute the user's prompt directly through the normal routing/context pipeline.
-- `Professional`: first transform the user's request into a structured, higher-quality professional prompt using a bounded prompt-engineering stage, then execute that transformed prompt. The UI must explain temporarily when this mode is selected that the request is enhanced before answering and that this can consume more AI budget.
+## Release sequence from here
 
-Requirements for Professional mode:
+1. Complete the independent-connection concurrency test and authenticated Preview E2E.
+2. Confirm Preview uses staging infrastructure and configure/verify the live provider credential without exposing it in chat.
+3. Run one bounded real-provider Normal request and one minimal Professional request only if their combined worst-case test spend stays below the remaining USD 0.10 authorization; record provider request IDs and actual ledger cost.
+4. Review security/runtime logs and resolve any regressions. Keep unconfigured connectors disabled.
+5. Product owner defines any commercial plan/AI allowance if paid access is part of the launch; otherwise keep paid AI entitlements inactive.
+6. Mark PR ready, review and merge `#146` once.
+7. Apply the already-tested AI Workspace migrations to production deliberately, configure production server secrets and `ai.airolepath.com`, wait for Vercel Production READY, and verify registered/guest/admin journeys.
+8. Restore the intentionally paused unrelated RYTHM Supabase project only after AI Workspace no longer needs its temporary free-project slot.
 
-- opt-in per request or user preference; never silently forced;
-- preserve the user's actual intent and constraints; do not invent goals, facts, permissions or consequential actions;
-- the enhancement stage is separately metered/reserved/settled and visible in cost/usage records;
-- hard account/request limits still apply to the combined workflow before provider calls;
-- if the enhancement step becomes financially or technically unavailable, fail closed or allow an explicit user-selected fallback to Normal; never silently spend beyond limits;
-- the original user prompt and the enhanced prompt must be distinguishable in request metadata for audit/debugging, without exposing hidden model reasoning;
-- the UI must clearly communicate the higher-cost nature of Professional mode without dark patterns.
+## Classification
 
-## Remaining release sequence
+**IMPLEMENTED:** core Workspace, persistent domain, financial guard/ledger, Normal/Professional execution, registered/guest principal, responsive UI, Skills/Saved Prompts, private Files/Knowledge/Memory, usage, billing idempotency foundation, fail-closed plugin framework, Admin AI Control Center and plan administration.
 
-1. Implement and test Professional/Normal prompt mode end-to-end, including budget accounting and UI explanation.
-2. Finish Guest HTTP activation/session/logout plus admin reset/revocation and guest-to-account conversion.
-3. Build the responsive branded Workspace UI: chat, projects, conversations, skills, saved prompts, usage, loading/error/limit/mobile states and accessibility.
-4. Finish plans/entitlements and idempotent Stripe webhook/period synchronization without inventing commercial pricing.
-5. Implement private file upload/ingestion/retrieval and memory lifecycle with ownership, MIME/size limits, provenance and deletion.
-6. Expose only actually available connectors; enforce project permissions and atomic consequential-action approvals.
-7. Build Admin AI Control Center for guests/codes/devices, account budgets/credits, plans, model registry/pricing, skills, usage, health and audits.
-8. Run multi-connection database concurrency tests, security/adversarial tests, registered/guest/admin E2E, mobile checks, secret-leak checks, and real provider test with verified configured pricing.
-9. Review PR, merge once only after all gates pass, apply migrations/configuration to production deliberately, deploy once, configure/verify `ai.airolepath.com`, and verify real production journeys.
+**VERIFIED:** unit/typecheck CI, Preview build/shell, real staging financial/guest/Professional/billing/Knowledge transaction tests, RLS/grant audit and Knowledge isolation as listed above.
 
-## Current classifications
+**PARTIALLY VERIFIED:** end-to-end interactive Preview behavior because Vercel Deployment Protection and authenticated browser state are outside the current connector's interactive capabilities.
 
-**IMPLEMENTED:** persistent domain/financial foundation, execution store, protected core APIs, skills and saved prompts.
+**REQUIRES HUMAN/PROVIDER ACTION:** staging DB connection for a true independent concurrency test, Preview/Production environment secret configuration, authenticated browser/provider E2E, commercial plan decisions if applicable, OAuth connector setup, and final Vercel/DNS domain attachment.
 
-**VERIFIED:** 19-unit-test suite, typecheck, current GitHub validations, staging transactional database tests listed above.
-
-**PARTIALLY IMPLEMENTED:** chat gateway, guest system, entitlements, files/memory, connector/tool framework.
-
-**REQUIRES HUMAN ACTION:** only provider/DNS/payment actions that cannot be performed through connected tooling when reached. The user has approved required implementation actions, but secrets/passwords/MFA must still be entered only in provider UI when necessary.
-
-**REQUIRES PROVIDER ACTION:** live AI credential/model availability, OAuth integrations, Stripe configuration and DNS/domain operations where provider-side setup is required.
-
-**NOT YET RELEASED:** no production merge, no production AI Workspace migration/configuration and no verified `ai.airolepath.com` release yet.
+**NOT RELEASED:** PR remains unmerged; Production database/domain have not been changed by this branch.
