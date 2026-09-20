@@ -16,7 +16,7 @@ const entitlements = {
 };
 
 function professionalHarness(options = {}) {
-  const calls = { reserveStage: [], provider: [], started: [], released: [], settled: [], uncertain: [] };
+  const calls = { reserveStage: [], provider: [], started: [], released: [], settled: [], uncertain: [], retrieval: [] };
   const snapshot = {
     ownerId: 'owner', projectId: 'project', conversationId: 'conversation',
     projectInstructions: '', customInstructions: '', history: [], skills: [],
@@ -24,6 +24,10 @@ function professionalHarness(options = {}) {
   };
   const store = {
     load: async () => snapshot,
+    retrieveKnowledge: async (...args) => {
+      calls.retrieval.push(args);
+      return options.knowledge ?? [];
+    },
     reserve: async () => { throw new Error('normal reserve must not be used in professional mode'); },
     reserveStage: async value => { calls.reserveStage.push(value); return options.reserveStageAccepted ?? true; },
     markProviderStarted: async (...args) => { calls.started.push(args); return true; },
@@ -68,11 +72,23 @@ test('professional mode pre-reserves both stages and emits only the final answer
   assert.equal(h.calls.provider.length, 2);
   assert.equal(h.calls.settled.length, 2);
   assert.equal(h.calls.uncertain.length, 0);
+  assert.equal(h.calls.retrieval.length, 1);
   assert.equal(events.filter(event => event.type === 'text').map(event => event.delta).join(''), 'Professional answer');
   const profile = events.find(event => event.type === 'prompt_profile');
   assert.equal(profile?.promptProfile, 'professional');
   assert.equal(profile?.enhancementApplied, true);
   assert.match(profile?.message ?? '', /more AI budget/i);
+});
+
+test('professional mode reserves answer cost with retrieved knowledge before either provider call', async () => {
+  const h = professionalHarness({ knowledge: [{ id: 'memory-1', text: 'Project deadline is Friday.', sourceType: 'memory', fileId: null }] });
+  const events = [];
+  await executeProfessionalWorkspaceRequest(h.input, { store: h.store, provider: h.provider, emit: event => events.push(event) });
+  assert.equal(h.calls.retrieval.length, 1);
+  assert.ok(h.calls.reserveStage[0].route.inputTokenBound > 6000);
+  assert.equal(events.find(event => event.type === 'knowledge')?.sources[0].id, 'memory-1');
+  assert.ok(!h.calls.provider[0].context.messages.some(message => message.content.includes('Project deadline is Friday.')), 'enhancer must not receive project knowledge');
+  assert.ok(h.calls.provider[1].context.messages.at(-1).content.includes('Project deadline is Friday.'), 'answer must receive retrieved reference data');
 });
 
 test('professional mode never calls a provider when combined budget cannot be routed', async () => {
