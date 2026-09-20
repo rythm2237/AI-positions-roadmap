@@ -105,10 +105,12 @@ export async function POST(request: Request) {
     return noStoreJson({ file: ready, duplicate: false, requestId }, { status: 201 });
   } catch (error) {
     if (service && rowId) {
-      await service.from("aiw_file_chunks").delete().eq("file_id", rowId).catch(() => undefined);
-      await service.from("aiw_files").delete().eq("id", rowId).catch(() => undefined);
+      try { await service.from("aiw_file_chunks").delete().eq("file_id", rowId); } catch { /* best-effort cleanup */ }
+      try { await service.from("aiw_files").delete().eq("id", rowId); } catch { /* best-effort cleanup */ }
     }
-    if (service && storagePath) await service.storage.from(AIW_FILE_BUCKET).remove([storagePath]).catch(() => undefined);
+    if (service && storagePath) {
+      try { await service.storage.from(AIW_FILE_BUCKET).remove([storagePath]); } catch { /* best-effort cleanup */ }
+    }
     return apiError(error, requestId);
   }
 }
