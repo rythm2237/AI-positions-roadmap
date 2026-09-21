@@ -145,7 +145,7 @@ test("Layer 4b — provider gateway times out a stalled adapter and returns a pa
 test("Layer 4c — a new search reconciles stale runs left by a serverless timeout", () => {
   const action = source("src/app/(account)/job-agent/searchActions.ts");
   assert.match(action, /STALE_RUNTIME_TIMEOUT/);
-  assert.match(action, /\.eq\("status", "running"\)\.lt\("created_at", staleRunCutoff\)/);
+  assert.match(action, /\.eq\("status", "running"\)\.lt\("started_at", staleRunCutoff\)/);
 });
 
 test("Layer 5 — canonical normalization rejects unsafe URLs", () => {
