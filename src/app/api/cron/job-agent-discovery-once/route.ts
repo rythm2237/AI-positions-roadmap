@@ -5,8 +5,8 @@ import { runScheduledJobDiscovery } from "@/lib/job-agent/scheduledDiscovery";
 
 export const maxDuration = 300;
 
-const oneTimeTokenHash = "7676909c9ea71819b41a165dfbc00db9c465e93f7cfd6f0243e9d1ee5700742d";
-const oneTimeExpiresAt = Date.parse("2026-09-21T11:10:00Z");
+const oneTimeTokenHash = "d95374a4760f28067d0cc02bebbecb0d9d19363237ed4a53751e16eb263ad06f";
+const oneTimeExpiresAt = Date.parse("2026-09-21T12:15:00Z");
 
 function oneTimeAuthorized(request: Request) {
   if (Date.now() > oneTimeExpiresAt) return false;
