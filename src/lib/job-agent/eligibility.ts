@@ -41,6 +41,20 @@ const languagePatterns: Array<[string, RegExp]> = [
 const requirementWords = /\b(required|requirement|must|mandatory|fluent|fluency|professional|proficien(?:t|cy)|b1|b2|c1|c2|native|excellent|very good|written and spoken|written communication|spoken communication|kenntnisse|erforderlich|vorausgesetzt|fließend|fliessend|verhandlungssicher)\b/i;
 const noSponsorship = /\b(no|not)\s+(?:visa\s+)?sponsorship\b|\b(?:must|need to)\s+(?:already\s+)?(?:have|hold)\s+(?:the\s+)?(?:right|authorization)\s+to\s+work\b/i;
 const normalize = (value: string) => value.trim().toLowerCase().replace(/[_-]+/g, " ").replace(/\s+/g, " ");
+const normalizeCountry = (value: string) => {
+  const normalized = normalize(value);
+  const aliases: Record<string, string> = {
+    de: "germany", deutschland: "germany", germany: "germany",
+    fr: "france", france: "france",
+    hu: "hungary", hungary: "hungary", magyarorszag: "hungary",
+    nl: "netherlands", netherlands: "netherlands", holland: "netherlands",
+    at: "austria", austria: "austria", osterreich: "austria",
+    ch: "switzerland", switzerland: "switzerland", schweiz: "switzerland",
+    be: "belgium", belgium: "belgium",
+    lu: "luxembourg", luxembourg: "luxembourg",
+  };
+  return aliases[normalized] ?? normalized;
+};
 
 export function extractRequiredLanguages(text: string): string[] {
   const found = new Set<string>();
@@ -106,10 +120,10 @@ export function evaluateJobEligibility(job: EligibilityJobInput, profile: Profil
   if (agent.excluded_roles.some((role) => normalize(job.title).includes(normalize(role)))) blockers.push("Role matches an explicit exclusion.");
 
   const country = job.country?.trim() || null;
-  if (country && agent.excluded_countries.some((value) => normalize(value) === normalize(country))) blockers.push(`Country is excluded: ${country}.`);
+  if (country && agent.excluded_countries.some((value) => normalizeCountry(value) === normalizeCountry(country))) blockers.push(`Country is excluded: ${country}.`);
   if (agent.search_countries.length) {
     if (!country) unverified.push("Job country could not be verified.");
-    else if (!agent.search_countries.some((value) => normalize(value) === normalize(country))) blockers.push(`Country is outside the configured search scope: ${country}.`);
+    else if (!agent.search_countries.some((value) => normalizeCountry(value) === normalizeCountry(country))) blockers.push(`Country is outside the configured search scope: ${country}.`);
   }
 
   if (agent.cities_regions.length && job.workplaceModel !== "remote") {
@@ -130,6 +144,7 @@ export function evaluateJobEligibility(job: EligibilityJobInput, profile: Profil
   if (agent.employment_types.length) {
     const detectedEmployment = (job.employmentTypes ?? []).map(normalize);
     if (!detectedEmployment.length) unverified.push("Employment type could not be verified.");
+    else if (detectedEmployment.every((value) => value === "permanent")) unverified.push("Working-hours type could not be verified from a permanent-contract label.");
     else if (!agent.employment_types.some((value) => detectedEmployment.includes(normalize(value)))) blockers.push(`Employment type is outside the configured filter: ${job.employmentTypes?.join(", ")}.`);
   }
 
