@@ -36,7 +36,9 @@ export async function runScheduledJobDiscovery() {
       const response = await fetch(
         `${database.url}/rest/v1/job_agents?status=eq.active&select=user_id,updated_at&order=updated_at.asc&limit=${limit}`,
         {
-          headers: { apikey: database.key, Authorization: `Bearer ${database.key}` },
+          // Modern sb_secret_* keys are API keys, not user JWTs. Sending them as
+          // Authorization: Bearer can make Supabase reject the request with 401.
+          headers: { apikey: database.key },
           cache: "no-store",
           signal: AbortSignal.timeout(10_000),
         },
