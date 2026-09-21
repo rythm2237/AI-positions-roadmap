@@ -110,8 +110,6 @@ function continuityCandidate(row: ContinuityOpportunityRow): CanonicalJobCandida
     sourceUrl,
     applicationUrl,
     description: row.job_description ?? "",
-    // Persisted Adzuna search descriptions are continuity hints only. Never promote a cached
-    // snippet to complete evidence; the independent recovery result must still be verified.
     descriptionComplete: false,
     workplaceModel,
     employmentTypes: stringArray(row.employment_types),
@@ -179,7 +177,7 @@ async function executeJobSearch(
     status: "failed",
     error_code: "STALE_RUNTIME_TIMEOUT",
     completed_at: new Date().toISOString(),
-  }).eq("user_id", user.id).eq("status", "running").lt("created_at", staleRunCutoff);
+  }).eq("user_id", user.id).eq("status", "running").lt("started_at", staleRunCutoff);
   if (staleRunRecovery.error) {
     console.warn("Job Agent stale search-run recovery failed", { correlationId, userId: user.id, code: staleRunRecovery.error.code });
   }
