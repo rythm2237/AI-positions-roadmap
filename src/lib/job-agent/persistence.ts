@@ -14,11 +14,11 @@ export function preserveOpportunityConflictUrls<T extends OpportunityIdentity>(r
       return key ? [[key, row.job_url] as const] : [];
     }),
   );
-  return rows.map((row) => {
+  return dedupeOpportunityPersistenceRows(rows.map((row) => {
     const key = externalKey(row);
     const stableJobUrl = key ? stableUrlByExternalKey.get(key) : null;
     return stableJobUrl && stableJobUrl !== row.job_url ? { ...row, job_url: stableJobUrl } : row;
-  });
+  }));
 }
 
 export function dedupeOpportunityPersistenceRows<T extends OpportunityIdentity>(rows: T[]): T[] {
