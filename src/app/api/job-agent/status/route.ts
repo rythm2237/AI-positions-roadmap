@@ -15,7 +15,7 @@ async function serviceProbe<T>(path: string) {
   if (!db) return { ok: false, status: null as number | null, data: null as T | null };
   try {
     const response = await fetch(`${db.url}/rest/v1/${path}`, {
-      headers: { apikey: db.key, Authorization: `Bearer ${db.key}` },
+      headers: { apikey: db.key },
       cache: "no-store",
       signal: AbortSignal.timeout(8_000),
     });
