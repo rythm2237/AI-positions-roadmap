@@ -15,15 +15,22 @@ function config() {
 }
 
 export async function runScheduledJobDiscovery() {
-  if (process.env.JOB_DISCOVERY_SCHEDULED_ENABLED !== "true") {
+  const enabled = process.env.JOB_DISCOVERY_SCHEDULED_ENABLED === "true";
+  const database = config();
+  const maxUsers = scheduledDiscoveryMaxUsers(process.env.JOB_DISCOVERY_SCHEDULED_MAX_USERS);
+
+  console.info("Job Agent scheduled discovery readiness", {
+    enabled,
+    databaseConfigured: Boolean(database),
+    maxUsers,
+  });
+
+  if (!enabled) {
     return { status: "disabled", attempted: 0, completed: 0, failed: 0, outcomes: [] };
   }
-
-  const database = config();
   if (!database) throw new Error("SCHEDULED_DISCOVERY_NOT_CONFIGURED");
 
-  const maxUsers = scheduledDiscoveryMaxUsers(process.env.JOB_DISCOVERY_SCHEDULED_MAX_USERS);
-  return executeScheduledJobDiscovery({
+  const result = await executeScheduledJobDiscovery({
     maxUsers,
     async loadAgents(limit) {
       const response = await fetch(
@@ -45,4 +52,13 @@ export async function runScheduledJobDiscovery() {
       return "error" in result ? { ok: false, code: result.error } : { ok: true, code: result.outcome };
     },
   });
+
+  console.info("Job Agent scheduled discovery outcome", {
+    status: result.status,
+    attempted: result.attempted,
+    completed: result.completed,
+    failed: result.failed,
+    codes: result.outcomes.map((outcome) => outcome.code),
+  });
+  return result;
 }
