@@ -19,16 +19,22 @@ function dbConfig() {
   return url && key ? { url: url.replace(/\/$/, ""), key } : null;
 }
 
+function databaseHeaders(key: string) {
+  return {
+    apikey: key,
+    ...(key.startsWith("sb_secret_") ? {} : { Authorization: `Bearer ${key}` }),
+    "Content-Type": "application/json",
+    Prefer: "return=representation",
+  };
+}
+
 async function serviceFetch<T>(path: string, init: RequestInit = {}) {
   const db = dbConfig();
   if (!db) throw new Error("JOB_AGENT_DATABASE_NOT_CONFIGURED");
   const response = await fetch(`${db.url}/rest/v1/${path}`, {
     ...init,
     headers: {
-      apikey: db.key,
-      Authorization: `Bearer ${db.key}`,
-      "Content-Type": "application/json",
-      Prefer: "return=representation",
+      ...databaseHeaders(db.key),
       ...init.headers,
     },
     cache: "no-store",
