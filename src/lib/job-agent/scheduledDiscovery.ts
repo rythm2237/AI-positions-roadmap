@@ -14,20 +14,20 @@ function config() {
   return url && key && secret ? { url: url.replace(/\/$/, ""), key, secret } : null;
 }
 
+export function scheduledDiscoveryEnabled() {
+  if (process.env.JOB_DISCOVERY_SCHEDULED_KILL_SWITCH === "true") return false;
+  if (process.env.JOB_DISCOVERY_SCHEDULED_ENABLED === "true") return true;
+  return process.env.VERCEL_ENV === "production";
+}
+
 export async function runScheduledJobDiscovery() {
-  const enabled = process.env.JOB_DISCOVERY_SCHEDULED_ENABLED === "true";
+  const enabled = scheduledDiscoveryEnabled();
   const database = config();
   const maxUsers = scheduledDiscoveryMaxUsers(process.env.JOB_DISCOVERY_SCHEDULED_MAX_USERS);
 
-  console.info("Job Agent scheduled discovery readiness", {
-    enabled,
-    databaseConfigured: Boolean(database),
-    maxUsers,
-  });
+  console.info("Job Agent scheduled discovery readiness", { enabled, databaseConfigured: Boolean(database), maxUsers });
 
-  if (!enabled) {
-    return { status: "disabled", attempted: 0, completed: 0, failed: 0, outcomes: [] };
-  }
+  if (!enabled) return { status: "disabled", attempted: 0, completed: 0, failed: 0, outcomes: [] };
   if (!database) throw new Error("SCHEDULED_DISCOVERY_NOT_CONFIGURED");
 
   const result = await executeScheduledJobDiscovery({
@@ -36,10 +36,7 @@ export async function runScheduledJobDiscovery() {
       const response = await fetch(
         `${database.url}/rest/v1/job_agents?status=eq.active&select=user_id,updated_at&order=updated_at.asc&limit=${limit}`,
         {
-          headers: {
-            apikey: database.key,
-            Authorization: `Bearer ${database.key}`,
-          },
+          headers: { apikey: database.key, Authorization: `Bearer ${database.key}` },
           cache: "no-store",
           signal: AbortSignal.timeout(10_000),
         },
