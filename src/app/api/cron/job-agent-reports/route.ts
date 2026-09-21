@@ -13,8 +13,6 @@ export async function GET(request: Request) {
 
   let discovery: Awaited<ReturnType<typeof runScheduledJobDiscovery>>;
   try {
-    // Discovery runs before the digest so jobs found in this cycle can be included in the same email.
-    // Failures are isolated so an upstream provider outage does not suppress the daily report.
     discovery = await runScheduledJobDiscovery();
   } catch (error) {
     console.error("Job Agent scheduled discovery failed", error);
@@ -27,10 +25,16 @@ export async function GET(request: Request) {
     };
   }
 
+  let followUps: unknown = { due: 0, enqueued: 0, error: null };
   try {
-    const followUps = await enqueueDueJobFollowUps();
-    // Job-linked email notifications are consumed into one daily digest.
-    // Non-job notifications remain independent and are not suppressed here.
+    followUps = await enqueueDueJobFollowUps();
+  } catch (error) {
+    console.error("Job Agent follow-up enqueue failed", error);
+    followUps = { due: 0, enqueued: 0, error: error instanceof Error ? error.message.slice(0, 120) : "FOLLOW_UP_FAILED" };
+  }
+
+  try {
+    // A failure in legacy follow-up processing must never suppress the daily digest.
     const batchedEmailDeliveries = await batchPendingJobEmailDeliveries();
     const dailyDigest = await sendDueDailyJobDigests();
     return NextResponse.json({ discovery, followUps, batchedEmailDeliveries, dailyDigest });
@@ -39,6 +43,7 @@ export async function GET(request: Request) {
     return NextResponse.json(
       {
         discovery,
+        followUps,
         error: error instanceof Error ? error.message : "Job Agent daily digest failed",
       },
       { status: 503 },
