@@ -1,5 +1,6 @@
 import "server-only";
 
+import { createClient as createServiceSupabaseClient } from "@supabase/supabase-js";
 import { searchJobsForScheduledUser } from "@/app/(account)/job-agent/searchActions";
 import {
   executeScheduledJobDiscovery,
@@ -30,21 +31,25 @@ export async function runScheduledJobDiscovery() {
   if (!enabled) return { status: "disabled", attempted: 0, completed: 0, failed: 0, outcomes: [] };
   if (!database) throw new Error("SCHEDULED_DISCOVERY_NOT_CONFIGURED");
 
+  const serviceClient = createServiceSupabaseClient(database.url, database.key, {
+    auth: { persistSession: false, autoRefreshToken: false },
+  });
+
   const result = await executeScheduledJobDiscovery({
     maxUsers,
     async loadAgents(limit) {
-      const response = await fetch(
-        `${database.url}/rest/v1/job_agents?status=eq.active&select=user_id,updated_at&order=updated_at.asc&limit=${limit}`,
-        {
-          // Modern sb_secret_* keys are API keys, not user JWTs. Sending them as
-          // Authorization: Bearer can make Supabase reject the request with 401.
-          headers: { apikey: database.key },
-          cache: "no-store",
-          signal: AbortSignal.timeout(10_000),
-        },
-      );
-      if (!response.ok) throw new Error(`SCHEDULED_DISCOVERY_DATABASE_${response.status}`);
-      return response.json() as Promise<ScheduledDiscoveryAgent[]>;
+      const query = await serviceClient
+        .from("job_agents")
+        .select("user_id,updated_at")
+        .eq("status", "active")
+        .order("updated_at", { ascending: true })
+        .limit(limit)
+        .returns<ScheduledDiscoveryAgent[]>();
+      if (query.error) {
+        console.error("Job Agent scheduled discovery agent lookup failed", { code: query.error.code });
+        throw new Error(`SCHEDULED_DISCOVERY_DATABASE_${query.error.code || "ERROR"}`);
+      }
+      return query.data ?? [];
     },
     async searchUser(userId) {
       const result = await searchJobsForScheduledUser(userId, database.secret);
