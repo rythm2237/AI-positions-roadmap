@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { createClient as createServiceSupabaseClient } from "@supabase/supabase-js";
 import { configuredJobProviders } from "@/lib/job-agent/providers/gateway";
 import { scheduledDiscoveryEnabled } from "@/lib/job-agent/scheduledDiscovery";
 
@@ -31,29 +32,28 @@ const keyKind = (value: string | undefined) => {
   return "unknown";
 };
 
-async function serviceProbe<T>(path: string) {
-  const db = dbConfig();
-  if (!db) return { ok: false, status: null as number | null, data: null as T | null };
-  try {
-    const response = await fetch(`${db.url}/rest/v1/${path}`, {
-      headers: { apikey: db.key },
-      cache: "no-store",
-      signal: AbortSignal.timeout(8_000),
-    });
-    if (!response.ok) return { ok: false, status: response.status, data: null as T | null };
-    return { ok: true, status: response.status, data: await response.json() as T };
-  } catch {
-    return { ok: false, status: 0, data: null as T | null };
-  }
-}
-
 export async function GET() {
   const providers = configuredJobProviders();
   const db = dbConfig();
-  const [agentsProbe, runsProbe] = await Promise.all([
-    serviceProbe<Array<{ user_id: string }>>("job_agents?status=eq.active&select=user_id&limit=20"),
-    serviceProbe<Array<{ started_at: string; status: string; error_code: string | null }>>("job_search_runs?select=started_at,status,error_code&order=started_at.desc&limit=1"),
-  ]);
+
+  let agentsData: Array<{ user_id: string }> | null = null;
+  let runsData: Array<{ started_at: string; status: string; error_code: string | null }> | null = null;
+  let agentsError: string | null = null;
+  let runsError: string | null = null;
+
+  if (db) {
+    const serviceClient = createServiceSupabaseClient(db.url, db.key, {
+      auth: { persistSession: false, autoRefreshToken: false },
+    });
+    const [agents, runs] = await Promise.all([
+      serviceClient.from("job_agents").select("user_id").eq("status", "active").limit(20).returns<Array<{ user_id: string }>>(),
+      serviceClient.from("job_search_runs").select("started_at,status,error_code").order("started_at", { ascending: false }).limit(1).returns<Array<{ started_at: string; status: string; error_code: string | null }>>(),
+    ]);
+    agentsData = agents.data;
+    runsData = runs.data;
+    agentsError = agents.error?.code ?? null;
+    runsError = runs.error?.code ?? null;
+  }
 
   return NextResponse.json({
     ok: true,
@@ -63,8 +63,11 @@ export async function GET() {
       killSwitch: process.env.JOB_DISCOVERY_SCHEDULED_KILL_SWITCH === "true",
     },
     databaseConfigured: Boolean(db),
-    databaseReachable: agentsProbe.ok && runsProbe.ok,
-    databaseStatus: { agents: agentsProbe.status, runs: runsProbe.status },
+    databaseReachable: Boolean(db) && !agentsError && !runsError,
+    databaseStatus: {
+      agents: agentsError ?? "ok",
+      runs: runsError ?? "ok",
+    },
     databaseEnvironment: {
       selectedProjectRef: projectRef(db?.url ?? null),
       serverProjectRef: projectRef(db?.serverUrl ?? null),
@@ -74,7 +77,7 @@ export async function GET() {
     },
     providers: providers.map((provider) => provider.name),
     providerCount: providers.length,
-    activeAgentCount: agentsProbe.data?.length ?? null,
-    latestSearchRun: runsProbe.data?.[0] ?? null,
+    activeAgentCount: agentsData?.length ?? null,
+    latestSearchRun: runsData?.[0] ?? null,
   });
 }
