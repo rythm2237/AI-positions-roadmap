@@ -4,6 +4,7 @@ import { canonicalJobKey, normalizeJobText, safeExternalUrl } from "../normaliza
 import { orchestrateProviderSearch } from "../providerOrchestration";
 import type { CanonicalJobCandidate, JobProvider, ProviderSearchInput, ProviderSearchOutcome, SearchGatewayResult } from "../contracts";
 import { adzunaConfigured, JobProviderRequestError, resolveAdzunaCountry, searchAdzunaJobs, searchSerpApiJobsDetailed, serpApiConfigured, type JobProviderResult } from "./adzuna";
+import { publicFeedProviders } from "./publicFeeds";
 
 const providerFetchTimeoutMs = 12_000;
 
@@ -130,6 +131,7 @@ const configuredTokens = (value: string | undefined) => [...new Set((value ?? ""
 
 export function configuredJobProviders(): JobProvider[] {
   return [
+    ...publicFeedProviders(),
     ...(serpApiConfigured() ? [new ExistingProvider("SerpApi")] : []),
     ...(adzunaConfigured() ? [new ExistingProvider("Adzuna")] : []),
     ...configuredTokens(process.env.JOB_AGENT_GREENHOUSE_BOARDS).map((board) => new GreenhouseProvider(board)),
