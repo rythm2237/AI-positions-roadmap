@@ -1,0 +1,63 @@
+name: AI Workspace validation
+
+on:
+  pull_request:
+    paths:
+      - "src/lib/ai-workspace/**"
+      - "src/lib/supabase/admin.ts"
+      - "src/app/api/ai-workspace/**"
+      - "src/app/ai/**"
+      - "src/components/ai-workspace/**"
+      - "src/app/admin/(studio)/ai-workspace/**"
+      - "src/components/admin/AIWorkspaceGuestCodeForm.tsx"
+      - "src/components/admin/AdminNavigation.tsx"
+      - "scripts/test-ai-workspace*.mjs"
+      - "supabase/migrations/**ai_workspace**"
+      - "package.json"
+      - ".github/workflows/ai-workspace-validation.yml"
+  push:
+    branches:
+      - main
+      - feat/ai-workspace-platform
+    paths:
+      - "src/lib/ai-workspace/**"
+      - "src/lib/supabase/admin.ts"
+      - "src/app/api/ai-workspace/**"
+      - "src/app/ai/**"
+      - "src/components/ai-workspace/**"
+      - "src/app/admin/(studio)/ai-workspace/**"
+      - "src/components/admin/AIWorkspaceGuestCodeForm.tsx"
+      - "src/components/admin/AdminNavigation.tsx"
+      - "scripts/test-ai-workspace*.mjs"
+      - "supabase/migrations/**ai_workspace**"
+      - "package.json"
+      - ".github/workflows/ai-workspace-validation.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  validate-ai-workspace:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: AI Workspace unit suite
+        run: npm run test:ai-workspace
+
+      - name: Professional prompt-mode suite
+        run: node --experimental-strip-types --test scripts/test-ai-workspace-professional.mjs
+
+      - name: Typecheck
+        run: npm run typecheck

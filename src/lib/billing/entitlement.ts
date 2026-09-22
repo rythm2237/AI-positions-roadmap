@@ -35,6 +35,38 @@ export async function updateBillingMetadata(
   if (updated.error) throw new Error(updated.error.message);
 }
 
+export async function syncAiWorkspaceBillingEvent(input: {
+  userId: string;
+  eventId: string;
+  eventCreated: number;
+  eventType: string;
+  status: BillingStatus;
+  subscriptionId: string;
+  customerId: string;
+  currentPeriodStart?: number | null;
+  currentPeriodEnd?: number | null;
+  cancelAtPeriodEnd?: boolean;
+}) {
+  const supabase = adminClient();
+  const planKey = planForSubscriptionStatus(input.status);
+  const toIso = (seconds: number | null | undefined) => typeof seconds === "number" ? new Date(seconds * 1000).toISOString() : null;
+  const { data, error } = await supabase.rpc("aiw_sync_subscription_event", {
+    p_user: input.userId,
+    p_event_id: input.eventId,
+    p_event_created: new Date(input.eventCreated * 1000).toISOString(),
+    p_event_type: input.eventType,
+    p_status: input.status,
+    p_subscription: input.subscriptionId,
+    p_customer: input.customerId,
+    p_period_start: toIso(input.currentPeriodStart),
+    p_period_end: toIso(input.currentPeriodEnd),
+    p_cancel_at_end: Boolean(input.cancelAtPeriodEnd),
+    p_plan_key: planKey,
+  });
+  if (error) throw new Error(`AI Workspace billing sync failed: ${error.message}`);
+  return data;
+}
+
 export function planForSubscriptionStatus(status: BillingStatus): "pro" | "free" {
   // Keep access during Stripe's retry window; revoke only after terminal/non-pro states.
   return status === "active" || status === "trialing" || status === "past_due" ? "pro" : "free";
