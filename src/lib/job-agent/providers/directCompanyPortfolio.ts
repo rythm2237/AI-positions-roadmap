@@ -3,8 +3,8 @@ import "server-only";
 import { canonicalJobKey, normalizeJobText, safeExternalUrl } from "../normalization";
 import type { CanonicalJobCandidate, JobProvider, ProviderSearchInput, ProviderSearchOutcome } from "../contracts";
 
-const timeoutMs = 10_000;
-const portfolioConcurrency = 8;
+const timeoutMs = 4_000;
+const portfolioConcurrency = 16;
 
 export type DirectPortfolioSource = {
   company: string;
@@ -17,6 +17,7 @@ export type DirectPortfolioSource = {
 };
 
 const targetCountries = ["Germany", "France", "Hungary"];
+const priorityRank: Record<DirectPortfolioSource["priority"], number> = { top: 0, high: 1, normal: 2 };
 
 // Exactly 50 technology-first employers. Public ATS endpoints are preferred.
 // Large strategic employers with proprietary career systems are monitored directly
@@ -296,7 +297,7 @@ class DirectCompanyPortfolioProvider implements JobProvider {
 
     const sources = directCompanyPortfolioRegistry
       .filter((source) => source.countries.includes(input.country))
-      .sort((a, b) => ({ top: 0, high: 1, normal: 2 }[a.priority] - { top: 0, high: 1, normal: 2 }[b.priority]);
+      .sort((a, b) => priorityRank[a.priority] - priorityRank[b.priority]);
     const jobs: CanonicalJobCandidate[] = [];
     let requestCount = 0;
     let failedSources = 0;
