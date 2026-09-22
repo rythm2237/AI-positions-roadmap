@@ -15,7 +15,7 @@ export type DirectCompanySource = {
 };
 
 // Seed only sources that have been verified to expose public ATS vacancies.
-// Keep this registry deliberately small and high-confidence; expansion can be incremental.
+// Technology and digital-first employers are prioritized for direct monitoring.
 export const directCompanySourceRegistry: DirectCompanySource[] = [
   {
     company: "Celonis",
@@ -47,6 +47,62 @@ export const directCompanySourceRegistry: DirectCompanySource[] = [
     tenant: "qonto",
     countries: ["France", "Germany"],
     careerUrl: "https://qonto.com/en/careers",
+    priority: "high",
+  },
+  {
+    company: "Dataiku",
+    ats: "greenhouse",
+    tenant: "dataiku",
+    countries: ["France", "Germany"],
+    careerUrl: "https://job-boards.greenhouse.io/dataiku",
+    priority: "high",
+  },
+  {
+    company: "Raisin",
+    ats: "greenhouse",
+    tenant: "raisin",
+    countries: ["Germany"],
+    careerUrl: "https://job-boards.greenhouse.io/raisin",
+    priority: "high",
+  },
+  {
+    company: "GetYourGuide",
+    ats: "greenhouse",
+    tenant: "getyourguide",
+    countries: ["Germany"],
+    careerUrl: "https://job-boards.greenhouse.io/getyourguide",
+    priority: "high",
+  },
+  {
+    company: "Contentful",
+    ats: "greenhouse",
+    tenant: "contentful",
+    countries: ["Germany"],
+    careerUrl: "https://job-boards.greenhouse.io/contentful",
+    priority: "high",
+  },
+  {
+    company: "Contentsquare",
+    ats: "lever",
+    tenant: "contentsquare",
+    countries: ["France", "Germany"],
+    careerUrl: "https://jobs.lever.co/contentsquare",
+    priority: "high",
+  },
+  {
+    company: "BlaBlaCar",
+    ats: "lever",
+    tenant: "blablacar",
+    countries: ["France"],
+    careerUrl: "https://jobs.lever.co/blablacar",
+    priority: "high",
+  },
+  {
+    company: "Back Market",
+    ats: "lever",
+    tenant: "backmarket",
+    countries: ["France"],
+    careerUrl: "https://jobs.lever.co/backmarket",
     priority: "high",
   },
 ];

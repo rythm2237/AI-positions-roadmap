@@ -7,14 +7,18 @@ const source = (path) => readFileSync(new URL(path, root), "utf8");
 const direct = source("src/lib/job-agent/providers/directCompanySources.ts");
 const feeds = source("src/lib/job-agent/providers/publicFeeds.ts");
 
-test("direct company registry seeds verified Germany, France and Hungary sources", () => {
-  for (const company of ["Celonis", "Yext", "Pigment", "Qonto"]) {
+test("direct company registry covers a technology-first Germany, France and Hungary portfolio", () => {
+  for (const company of [
+    "Celonis", "Yext", "Pigment", "Qonto", "Dataiku", "Raisin", "GetYourGuide",
+    "Contentful", "Contentsquare", "BlaBlaCar", "Back Market",
+  ]) {
     assert.match(direct, new RegExp(`company: \\"${company}\\"`));
   }
   assert.match(direct, /countries: \["Germany", "France"\]/);
   assert.match(direct, /countries: \["Hungary"\]/);
   assert.match(direct, /ats: "greenhouse"/);
   assert.match(direct, /ats: "lever"/);
+  assert.ok((direct.match(/company: "/g) ?? []).length >= 11);
 });
 
 test("direct providers use public ATS APIs and cache one payload per provider instance", () => {
