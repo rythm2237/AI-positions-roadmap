@@ -16,6 +16,7 @@ on:
       - "scripts/test-job-agent-recovery-priority.mjs"
       - "scripts/test-job-agent-recovery-relevance-ranking.mjs"
       - "scripts/test-scheduled-job-discovery.mjs"
+      - "scripts/test-direct-company-sources.mjs"
       - "supabase/migrations/**job**"
       - "vercel.json"
       - "package.json"
@@ -35,6 +36,7 @@ on:
       - "scripts/test-job-agent-rate-limit-continuity.mjs"
       - "scripts/test-job-agent-recovery-priority.mjs"
       - "scripts/test-job-agent-recovery-relevance-ranking.mjs"
+      - "scripts/test-direct-company-sources.mjs"
       - "supabase/migrations/**job**"
       - "vercel.json"
       - "package.json"
@@ -83,6 +85,9 @@ jobs:
 
       - name: Scheduled discovery regressions
         run: node --experimental-strip-types --test --test-concurrency=1 scripts/test-scheduled-job-discovery.mjs
+
+      - name: Direct company source regressions
+        run: node --test --test-concurrency=1 scripts/test-direct-company-sources.mjs
 
       - name: Typecheck
         run: npm run typecheck

@@ -4,6 +4,7 @@ import { canonicalJobKey, normalizeJobText, safeExternalUrl } from "../normaliza
 import type { CanonicalJobCandidate, JobProvider, ProviderSearchInput, ProviderSearchOutcome } from "../contracts";
 import { RemotiveProvider } from "./remotive";
 import { Nomado24Provider } from "./nomado24";
+import { directCompanyProviders } from "./directCompanySources";
 
 const timeoutMs = 12_000;
 const stripHtml = (value: string) => value.replace(/<br\s*\/?>/gi, "\n").replace(/<[^>]+>/g, " ").replace(/&nbsp;/gi, " ").replace(/&amp;/gi, "&").replace(/\s+/g, " ").trim();
@@ -166,5 +167,5 @@ class ArbeitnowProvider implements JobProvider {
 }
 
 export function publicFeedProviders(): JobProvider[] {
-  return [new ArbeitnowProvider(), new RemotiveProvider(), new Nomado24Provider()];
+  return [new ArbeitnowProvider(), new RemotiveProvider(), new Nomado24Provider(), ...directCompanyProviders()];
 }
