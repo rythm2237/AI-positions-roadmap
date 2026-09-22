@@ -4,38 +4,49 @@ import test from "node:test";
 
 const root = new URL("..", import.meta.url);
 const source = (path) => readFileSync(new URL(path, root), "utf8");
-const direct = source("src/lib/job-agent/providers/directCompanySources.ts");
+const portfolio = source("src/lib/job-agent/providers/directCompanyPortfolio.ts");
 const feeds = source("src/lib/job-agent/providers/publicFeeds.ts");
 
-test("direct company registry covers a technology-first Germany, France and Hungary portfolio", () => {
+test("direct company portfolio contains exactly 50 technology-first employers", () => {
+  assert.equal((portfolio.match(/company: "/g) ?? []).length, 50);
   for (const company of [
-    "Celonis", "Yext", "Pigment", "Qonto", "Dataiku", "Raisin", "GetYourGuide",
-    "Contentful", "Contentsquare", "BlaBlaCar", "Back Market",
+    "Microsoft", "Google", "Apple", "Amazon", "Meta", "NVIDIA", "IBM", "Oracle", "SAP", "Salesforce",
+    "Celonis", "Dataiku", "Datadog", "Cloudflare", "Grafana Labs", "Figma", "Anthropic", "OpenAI",
+    "Databricks", "MongoDB", "Snyk", "Palantir", "Stripe", "GitLab", "Elastic", "Mistral AI",
   ]) {
-    assert.match(direct, new RegExp(`company: \\"${company}\\"`));
+    assert.match(portfolio, new RegExp(`company: \\"${company}\\"`));
   }
-  assert.match(direct, /countries: \["Germany", "France"\]/);
-  assert.match(direct, /countries: \["Hungary"\]/);
-  assert.match(direct, /ats: "greenhouse"/);
-  assert.match(direct, /ats: "lever"/);
-  assert.ok((direct.match(/company: "/g) ?? []).length >= 11);
 });
 
-test("direct providers use public ATS APIs and cache one payload per provider instance", () => {
-  assert.match(direct, /boards-api\.greenhouse\.io\/v1\/boards/);
-  assert.match(direct, /api\.lever\.co\/v0\/postings/);
-  assert.match(direct, /this\.payloadPromise \?\?=/);
-  assert.match(direct, /networkRequest \? 1 : 0/);
+test("portfolio prefers direct public ATS feeds and supports official career pages for strategic employers", () => {
+  assert.match(portfolio, /kind: "greenhouse"/);
+  assert.match(portfolio, /kind: "lever"/);
+  assert.match(portfolio, /kind: "career_page"/);
+  assert.match(portfolio, /boards-api\.greenhouse\.io\/v1\/boards/);
+  assert.match(portfolio, /api\.lever\.co\/v0\/postings/);
+  assert.match(portfolio, /official-search-page/);
 });
 
-test("direct company results preserve source trust metadata and conservative country filtering", () => {
-  assert.match(direct, /sourceConfidence: "high"/);
-  assert.match(direct, /directCompany: true/);
-  assert.match(direct, /locationMatchesCountry/);
-  assert.match(direct, /\.filter\(\(job\) => locationMatchesCountry/);
+test("top ten strategic IT employers are direct sources rather than third-party aggregators", () => {
+  for (const company of ["Microsoft", "Google", "Apple", "Amazon", "Meta", "NVIDIA", "IBM", "Oracle", "SAP", "Salesforce"]) {
+    const index = portfolio.indexOf(`company: "${company}"`);
+    assert.ok(index >= 0, `${company} missing`);
+    const slice = portfolio.slice(index, index + 600);
+    assert.match(slice, /kind: "career_page"/);
+    assert.match(slice, /priority: "top"/);
+  }
 });
 
-test("direct source layer is registered by default with an emergency kill switch", () => {
-  assert.match(feeds, /\.\.\.directCompanyProviders\(\)/);
-  assert.match(direct, /JOB_AGENT_DIRECT_COMPANY_ENABLED === "false"/);
+test("portfolio remains one gateway provider so fifty companies do not exhaust provider request slots", () => {
+  assert.match(portfolio, /readonly name = "DirectCompanyPortfolio"/);
+  assert.match(portfolio, /return \[new DirectCompanyPortfolioProvider\(\)\]/);
+  assert.match(feeds, /\.\.\.directCompanyPortfolioProviders\(\)/);
+  assert.doesNotMatch(feeds, /\.\.\.directCompanyProviders\(\)/);
+});
+
+test("direct results retain high-confidence provenance, country filtering and emergency kill switch", () => {
+  assert.match(portfolio, /sourceConfidence: "high"/);
+  assert.match(portfolio, /directCompany: true/);
+  assert.match(portfolio, /locationMatchesCountry/);
+  assert.match(portfolio, /JOB_AGENT_DIRECT_COMPANY_ENABLED === "false"/);
 });
