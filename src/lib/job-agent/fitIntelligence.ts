@@ -56,13 +56,14 @@ export function calculateEvidenceGroundedFit(job: CanonicalJobCandidate, intent:
   const workplace = intent.hard.workplaceModels.includes(job.workplaceModel) ? 3 : job.workplaceModel === "unknown" ? 1 : 0;
   const salary = job.salaryMax !== null && intent.hard.salary.minimum !== null && job.currency === intent.hard.salary.currency ? (job.salaryMax >= intent.hard.salary.minimum ? 3 : 0) : 1;
   const trajectory = roleSimilarity >= 0.5 && demonstratedMatches.length ? 4 : 1;
-  const score = Math.max(0, Math.min(100, role + demonstratedScore + requiredScore + preferredScore + experience + seniority + industry + languages + geography + workplace + salary + trajectory));
+  const sponsorship = job.visaSponsorship === "available" ? 5 : 0;
+  const score = Math.max(0, Math.min(100, role + demonstratedScore + requiredScore + preferredScore + experience + seniority + industry + languages + geography + workplace + salary + trajectory + sponsorship));
   const completeness = [job.descriptionComplete, job.country, job.workplaceModel !== "unknown", job.requiredSkills.length > 0, evidence.length > 0, demonstrated.length > 0].filter(Boolean).length;
   const confidence: FitConfidence = completeness >= 5 ? "high" : completeness >= 3 ? "medium" : "low";
   const classification: JobClassification = score >= 82 ? "strong_match" : score >= 68 ? "good_match" : score >= 52 ? "worth_reviewing" : "stretch";
   const strongest = demonstratedMatches.sort((a, b) => b.confidence - a.confidence).slice(0, 5);
   const missingEvidence = requiredMatches.filter((match) => !match.evidence).map((match) => match.skill);
-  const strengths = [role >= 20 ? "Strong target-role alignment" : null, strongest.length ? `Demonstrated evidence: ${strongest.map((item) => item.label).join(", ")}` : null, requiredMatches.some((match) => match.evidence) ? "Required skills supported by profile evidence" : null].filter((item): item is string => Boolean(item));
+  const strengths = [role >= 20 ? "Strong target-role alignment" : null, strongest.length ? `Demonstrated evidence: ${strongest.map((item) => item.label).join(", ")}` : null, requiredMatches.some((match) => match.evidence) ? "Required skills supported by profile evidence" : null, sponsorship ? "Visa/work-permit sponsorship explicitly available" : null].filter((item): item is string => Boolean(item));
   const gaps = [role < 12 ? "Role alignment is limited" : null, !demonstratedMatches.length ? "No demonstrated implementation evidence matched" : null, ...missingEvidence.map((skill) => `Missing evidence: ${skill}`)].filter((item): item is string => Boolean(item));
   return {
     score, confidence, classification, strengths, gaps,
@@ -71,8 +72,8 @@ export function calculateEvidenceGroundedFit(job: CanonicalJobCandidate, intent:
       strongestEvidence: strongest.map((item) => ({ evidenceId: item.id, label: item.label, source: item.sourceType, contribution: item.evidenceType === "quantified_achievement" ? 6 : 4 })),
       missingEvidence,
       transferableEvidence: strongest.filter((item) => item.evidenceType === "project_implementation" || item.evidenceType === "portfolio_artifact" || item.provenance.transferableCapability === true).map((item) => ({ evidenceId: item.id, label: item.label, source: item.sourceType })),
-      whyRankedHere: [role >= 20 ? "The vacancy title aligns with a confirmed target role." : "The vacancy has partial semantic overlap with target roles.", demonstratedMatches.length ? `${demonstratedMatches.length} demonstrated evidence item(s) matched the vacancy.` : "Title similarity was not treated as professional evidence.", confidence === "low" ? "Incomplete vacancy or profile evidence limits confidence." : "The ranking uses multiple verified dimensions."],
-      scoringVersion: "evidence-fit-v2",
+      whyRankedHere: [role >= 20 ? "The vacancy title aligns with a confirmed target role." : "The vacancy has partial semantic overlap with target roles.", demonstratedMatches.length ? `${demonstratedMatches.length} demonstrated evidence item(s) matched the vacancy.` : "Title similarity was not treated as professional evidence.", sponsorship ? "The vacancy explicitly states sponsorship support and received a positive ranking boost." : "Unknown sponsorship is neutral and does not reduce the score.", confidence === "low" ? "Incomplete vacancy or profile evidence limits confidence." : "The ranking uses multiple verified dimensions."],
+      scoringVersion: "evidence-fit-v3-sponsorship-signal",
     },
   };
 }
