@@ -5,6 +5,7 @@ import type { CanonicalJobCandidate, JobProvider, ProviderSearchInput, ProviderS
 import { RemotiveProvider } from "./remotive";
 import { Nomado24Provider } from "./nomado24";
 import { directCompanyPortfolioProviders } from "./directCompanyPortfolio";
+import { directCompanyExpansionProviders } from "./directCompanyExpansion";
 
 const timeoutMs = 12_000;
 const stripHtml = (value: string) => value.replace(/<br\s*\/?>/gi, "\n").replace(/<[^>]+>/g, " ").replace(/&nbsp;/gi, " ").replace(/&amp;/gi, "&").replace(/\s+/g, " ").trim();
@@ -167,5 +168,5 @@ class ArbeitnowProvider implements JobProvider {
 }
 
 export function publicFeedProviders(): JobProvider[] {
-  return [new ArbeitnowProvider(), new RemotiveProvider(), new Nomado24Provider(), ...directCompanyPortfolioProviders()];
+  return [new ArbeitnowProvider(), new RemotiveProvider(), new Nomado24Provider(), ...directCompanyPortfolioProviders(), ...directCompanyExpansionProviders()];
 }
