@@ -181,9 +181,11 @@ export function evaluateJobEligibility(job: EligibilityJobInput, profile: Profil
     else if ((job.salaryMax === null || job.salaryMax === undefined) && agent.salary_negotiable === false) unverified.push("Salary is undisclosed and the configured minimum cannot be verified.");
   }
 
-  if (needsSponsorship(agent)) {
-    if (job.visaSponsorship === "not_available" || noSponsorship.test(text)) blockers.push("Vacancy states that sponsorship/right-to-work support is unavailable.");
-    else if (job.visaSponsorship !== "available") unverified.push("Sponsorship availability could not be verified.");
+  // Sponsorship is treated as a positive signal, not a hard completeness gate. Many employers
+  // simply omit sponsorship from otherwise valid postings. We only block when the vacancy
+  // explicitly states that sponsorship/right-to-work support is unavailable.
+  if (needsSponsorship(agent) && (job.visaSponsorship === "not_available" || noSponsorship.test(text))) {
+    blockers.push("Vacancy states that sponsorship/right-to-work support is unavailable.");
   }
 
   if (blockers.length) return { status: "blocked", reasons: blockers, requiredLanguages, postingLanguage };
