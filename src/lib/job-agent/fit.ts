@@ -11,6 +11,7 @@ export type FitJobInput = {
   salaryMax?: number | null;
   currency?: string | null;
   workplaceModel?: "remote" | "hybrid" | "on_site" | "unknown";
+  visaSponsorship?: string | null;
 };
 
 export type FitResult = {
@@ -91,6 +92,13 @@ function experienceScore(job: FitJobInput, profile: Profile) {
   return { score: Math.round(ratio * 7), explanation: `Detected experience requirement is about ${required} years; profile currently records ${profile.years_experience}.` };
 }
 
+function sponsorshipBonus(job: FitJobInput, agent: JobAgent) {
+  const wantsSponsorship = /need|required|yes|sponsor/i.test(agent.sponsorship_requirement ?? "") && !/no|not needed|do not need/i.test(agent.sponsorship_requirement ?? "");
+  if (!wantsSponsorship) return { score: 0, explanation: "Sponsorship is not a configured preference." };
+  if (job.visaSponsorship === "available") return { score: 5, explanation: "The vacancy explicitly indicates visa/work-permit sponsorship support." };
+  return { score: 0, explanation: "Sponsorship is not explicitly stated; no penalty is applied." };
+}
+
 export function calculateJobFit(job: FitJobInput, profile: Profile, agent: JobAgent): FitResult {
   const title = titleScore(job, agent);
   const skills = skillScore(job, profile);
@@ -98,7 +106,8 @@ export function calculateJobFit(job: FitJobInput, profile: Profile, agent: JobAg
   const geography = geographyScore(job, agent);
   const salary = salaryScore(job, agent);
   const experience = experienceScore(job, profile);
-  const raw = title.score + skills.score + languages.score + geography.score + salary.score + experience.score;
+  const sponsorship = sponsorshipBonus(job, agent);
+  const raw = title.score + skills.score + languages.score + geography.score + salary.score + experience.score + sponsorship.score;
   const fitScore = Math.max(0, Math.min(100, raw));
   const strengths: string[] = [];
   const gaps: string[] = [];
@@ -107,6 +116,7 @@ export function calculateJobFit(job: FitJobInput, profile: Profile, agent: JobAg
   if (languages.missing.length) gaps.push(`Language gap: ${languages.missing.join(", ")}`); else strengths.push("Language requirements compatible or unspecified");
   if (geography.score >= 10) strengths.push("Geography/work-style fit"); else gaps.push("Geography/work-style mismatch or ambiguity");
   if (salary.score === 0) gaps.push("Salary below configured minimum");
+  if (sponsorship.score > 0) strengths.push("Visa/work-permit sponsorship explicitly available");
 
   const recommendation = fitScore >= agent.strong_match_threshold ? "strong"
     : fitScore >= agent.auto_prepare_threshold ? "prepare"
@@ -124,6 +134,7 @@ export function calculateJobFit(job: FitJobInput, profile: Profile, agent: JobAg
       { factor: "Geography", score: geography.score, maxScore: 15, explanation: geography.explanation },
       { factor: "Salary", score: salary.score, maxScore: 10, explanation: salary.explanation },
       { factor: "Experience", score: experience.score, maxScore: 10, explanation: experience.explanation },
+      { factor: "Sponsorship", score: sponsorship.score, maxScore: 5, explanation: sponsorship.explanation },
     ],
   };
 }
