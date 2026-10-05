@@ -13,6 +13,7 @@ type StudioWindow = Window & { CareerAtelier?: {
 export function ApplicationStudio({ career }: { career?: CareerWorkspaceData }) {
   const frame = useRef<HTMLIFrameElement>(null);
   const [open, setOpen] = useState(false);
+  const [fullPage, setFullPage] = useState(true);
   const [loaded, setLoaded] = useState(false);
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState("");
@@ -41,20 +42,23 @@ export function ApplicationStudio({ career }: { career?: CareerWorkspaceData }) 
     <h3 className="mt-2 font-display text-2xl font-semibold text-white">Your application studio</h3>
     <p className="mt-3 max-w-3xl text-sm leading-6 text-slate-400">Build your master CV, match a real vacancy, review suggested changes, write cover and motivation letters, and export PDFs in your browser. Import your profile and completed learning as a draft you review first.</p>
     <div className="mt-4 flex flex-wrap gap-3">
-      <button type="button" onClick={() => { setLoaded(true); setOpen(!open); }} aria-expanded={open} className="btn-primary min-h-11">{open ? "Close Application Studio" : "Open CV & Application Studio"}</button>
+      <button type="button" onClick={() => { setLoaded(true); if (!open) setFullPage(true); setOpen(!open); }} aria-expanded={open} className="btn-primary min-h-11">{open ? "Close Application Studio" : "Open CV & Application Studio"}</button>
       <Link href="/profile" className="btn-secondary min-h-11">Update my profile</Link>
       <Link href="/cv-analyzer" className="btn-secondary min-h-11">Career CV analysis</Link>
     </div>
-    {loaded ? <div className={`mt-5 ${open ? "" : "hidden"}`}>
-      <div className="mb-3 flex flex-wrap gap-3">
+    {loaded && open ? <div className={fullPage ? "fixed inset-0 z-[100] flex flex-col overflow-hidden bg-slate-950 p-2 sm:p-3" : "mt-5"} style={fullPage ? { height: "100dvh" } : undefined}>
+      <div className="mb-2 flex shrink-0 flex-wrap items-center gap-2">
+        {fullPage ? <span className="mr-auto text-sm font-semibold text-white">CV & Application Studio</span> : null}
         <button type="button" disabled={busy} onClick={() => void importSource("profile")} style={{ maxWidth: "100%", whiteSpace: "normal" }} className="btn-secondary min-h-11">Import my profile & completed learning</button>
         <button type="button" disabled={busy} onClick={() => void importSource("cv")} className="btn-secondary min-h-11">Import my saved CV</button>
         <Link href={`/login?next=${encodeURIComponent(career ? `/careers/${career.slug}?section=jobs` : "/application-studio")}`} className="min-h-11 px-3 py-3 text-sm text-cyan-200">Sign in for AI & profile import</Link>
+        <button type="button" onClick={() => setFullPage(value => !value)} className="btn-secondary min-h-11">{fullPage ? "Exit full screen" : "Full screen"}</button>
+        {fullPage ? <button type="button" onClick={() => setOpen(false)} className="btn-secondary min-h-11">Close</button> : null}
       </div>
-      <p className="mb-3 text-xs leading-5 text-slate-400">You can load a fictional sample to explore the workflow. For your own assessment, sign in, upload your CV and add the real vacancy. AI analysis runs only when you request it. Completed learning is never presented as work experience or a verified certificate.</p>
-      {message ? <p role="status" className="mb-3 rounded-xl border border-white/10 p-3 text-sm text-slate-200">{message}</p> : null}
-      <iframe ref={frame} src="/application-studio/index.html" title="CV and job application editor" className="h-[85vh] min-h-[650px] w-full rounded-xl border border-white/10 bg-white" />
-      <p className="mt-3 text-xs text-slate-500">Documents and drafts stay in this editor. Use Account & privacy to save on this device or download an editable backup.</p>
+      {!fullPage ? <p className="mb-3 shrink-0 text-xs leading-5 text-slate-400">You can load a fictional sample to explore the workflow. For your own assessment, sign in, upload your CV and add the real vacancy. AI analysis runs only when you request it. Completed learning is never presented as work experience or a verified certificate.</p> : null}
+      {message ? <p role="status" className="mb-2 shrink-0 rounded-xl border border-white/10 p-3 text-sm text-slate-200">{message}</p> : null}
+      <iframe ref={frame} src="/application-studio/index.html" title="CV and job application editor" className={fullPage ? "min-h-0 w-full flex-1 rounded-xl border border-white/10 bg-white" : "h-[85vh] min-h-[650px] w-full rounded-xl border border-white/10 bg-white"} />
+      {!fullPage ? <p className="mt-3 shrink-0 text-xs text-slate-500">Documents and drafts stay in this editor. Use Account & privacy to save on this device or download an editable backup.</p> : null}
     </div> : null}
   </section>;
 }
