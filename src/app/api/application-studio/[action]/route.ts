@@ -73,13 +73,20 @@ export async function POST(request: Request, { params }: { params: Promise<{ act
     if (error instanceof ServiceError) return json({ error: error.message }, error.status);
     // Keep the diagnostic useful without logging candidate text, vacancy content, URLs or provider credentials.
     const requestId = crypto.randomUUID();
+    const errorName = error instanceof Error ? error.name : "UnknownError";
+    const providerStatus = typeof error === "object" && error && "statusCode" in error
+      && typeof error.statusCode === "number" ? error.statusCode : undefined;
     console.error("Application Studio request failed", {
       requestId,
       action,
-      errorName: error instanceof Error ? error.name : "UnknownError",
+      errorName,
+      providerStatus,
     });
+    const gatewayMessage = errorName === "GatewayInternalServerError"
+      ? " The AI Gateway returned an internal error; this can be temporary or caused by a configured spend limit."
+      : "";
     return json({
-      error: `AI Career could not complete this request right now. Your draft is preserved. Please try again shortly. If it continues, contact support with reference ${requestId}.`,
+      error: `AI Career could not complete this request right now.${gatewayMessage} Your draft is preserved. Please try again shortly. If it continues, contact support with reference ${requestId}.`,
       requestId,
     }, 503);
   }
