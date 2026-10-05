@@ -52,15 +52,24 @@ assert.match(studioHost, /Exit full screen/);
 assert.match(studioHtml, /top:16px;bottom:auto/);
 assert.match(studioHtml, /id="jobSalary"/);
 assert.match(studioHtml, /id="validThrough"/);
+assert.match(studioHtml, /id="jobCategory"/);
+assert.match(studioHtml, /id="jobSkills"/);
+assert.match(studioHtml, /id="jobQualifications"/);
 const jobPosting = extractJobPosting(`<html><script type="application/ld+json">${JSON.stringify({
   "@context": "https://schema.org",
-  "@type": "JobPosting",
+  "@type": "https://schema.org/JobPosting",
   title: "Production Planner",
   hiringOrganization: { name: "Example Manufacturing Ltd" },
   jobLocationType: "TELECOMMUTE",
   jobLocation: { address: { addressLocality: "Berlin", addressCountry: { name: "Germany" } } },
   employmentType: ["FULL_TIME"],
   experienceRequirements: "Two years of planning experience",
+  occupationalCategory: "Production Planning",
+  industry: "Manufacturing",
+  skills: ["ERP", "scheduling"],
+  qualifications: "Bachelor's degree or equivalent experience",
+  responsibilities: "Coordinate weekly production plans",
+  workHours: "40 hours per week",
   baseSalary: { currency: "EUR", value: { minValue: 55000, maxValue: 62000, unitText: "YEAR" } },
   datePosted: "2026-09-01",
   validThrough: "2026-10-31",
@@ -73,6 +82,12 @@ assert.equal(jobPosting.job.workplaceType, "Remote");
 assert.equal(jobPosting.job.employmentType, "FULL_TIME");
 assert.equal(jobPosting.job.salary, "55000–62000 EUR YEAR");
 assert.equal(jobPosting.job.validThrough, "2026-10-31");
+assert.equal(jobPosting.job.category, "Production Planning");
+assert.equal(jobPosting.job.industry, "Manufacturing");
+assert.equal(jobPosting.job.skills, "ERP, scheduling");
+assert.equal(jobPosting.job.qualifications, "Bachelor's degree or equivalent experience");
+assert.equal(jobPosting.job.responsibilities, "Coordinate weekly production plans");
+assert.equal(jobPosting.job.workHours, "40 hours per week");
 assert.match(jobPosting.description, /Plan daily production schedules/);
 console.log("Application studio: provenance, course completion, project qualification, fabricated claims and private URL guards passed.");
 
