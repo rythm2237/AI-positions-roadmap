@@ -32,7 +32,7 @@ export function ApplicationStudio({ career }: { career?: CareerWorkspaceData }) 
         studio.importProfile(buildStudioProfileDraft(data.profile, career, data.progress, data.projects), data.userId);
       }
       setMessage("Imported as an editable draft. Check every fact, add missing details, then choose Confirm master profile in the editor.");
-    } catch (error) { setMessage(error instanceof Error ? error.message : "Import failed. Your editor contents are preserved."); }
+    } catch (error) { setMessage(error && typeof error === "object" && "message" in error && typeof error.message === "string" ? error.message : "Import failed. Your editor contents are preserved."); }
     finally { setBusy(false); }
   }
 
