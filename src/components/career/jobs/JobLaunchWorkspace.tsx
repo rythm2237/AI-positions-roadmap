@@ -1,5 +1,6 @@
 "use client";
 
+import { ApplicationStudio } from "./ApplicationStudio";
 import { useEffect, useMemo, useState } from "react";
 import { analyzeJobMatch, jobMatchStorageKey, type JobMatchInput, type JobMatchResult } from "@/lib/jobMatch";
 import { getJobReadinessReport } from "@/lib/jobReadiness";
@@ -48,6 +49,7 @@ export function JobLaunchWorkspace({ career, progress }: { career: CareerWorkspa
 
   return (
     <div className="space-y-6">
+      <ApplicationStudio career={career} />
       <section className="rounded-2xl border border-white/10 bg-white/[0.03] p-5">
         <div className="flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
           <div>

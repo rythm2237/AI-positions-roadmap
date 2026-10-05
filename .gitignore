@@ -29,3 +29,7 @@ yarn-error.log*
 
 # Supabase CLI local state
 /supabase/.temp/
+
+# Reproducible browser document assets
+/public/application-studio/assets/
+/public/application-studio/fonts/

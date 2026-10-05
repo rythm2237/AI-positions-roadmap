@@ -5,6 +5,7 @@ const LEGACY_PUBLIC_HOST = "career.rythm-os.com";
 const PRIMARY_PUBLIC_ORIGIN = "https://www.airolepath.com";
 
 const privateRoutePatterns = [
+  "/application-studio/:path*",
   "/admin/:path*",
   "/api/:path*",
   "/auth/:path*",
