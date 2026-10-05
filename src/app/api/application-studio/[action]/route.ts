@@ -49,10 +49,12 @@ export async function POST(request: Request, { params }: { params: Promise<{ act
       if (!Array.isArray(context.cv) || !context.cv.length || context.cv.length > 100 || context.cv.some((s: unknown) => !s || typeof s !== "object" || typeof (s as Record<string, unknown>).text !== "string" || typeof (s as Record<string, unknown>).title !== "string") || submittedCV(context).length > 100_000) return json({ error: "Invalid CV sections." }, 400);
     } else if (typeof body.url !== "string" || body.url.length > 2048) return json({ error: "Enter a public HTTPS URL." }, 400);
 
-    // Reuse the existing durable beta review allowance. No new account, key or quota table is required.
-    const quota = await consumeBetaAiQuota(user.id, "project_review");
-    if (!quota.allowed) return json({ error: `Daily beta AI review allowance reached (${quota.limit}). Try again tomorrow UTC.`, quota }, 429);
+    // Public page retrieval does not call AI and must not consume the user's AI review allowance.
     if (action === "fetch") return json(await fetchPublic(body.url!));
+
+    // Reuse the existing durable review allowance to keep AI usage bounded.
+    const quota = await consumeBetaAiQuota(user.id, "project_review");
+    if (!quota.allowed) return json({ error: `Daily AI review limit reached (${quota.limit}). It resets at 00:00 UTC. Your draft is unchanged.`, quota }, 429);
     const sources = aiAction === "analysis" ? sourceMap(submittedCV(context!)) : sourceMap(String(context!.candidate), String(context!.linkedin || ""));
     const prompt: Record<string, unknown> = { ...context, sources };
     delete prompt.candidate; delete prompt.linkedin;

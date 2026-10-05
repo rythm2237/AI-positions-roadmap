@@ -42,6 +42,8 @@ assert.doesNotMatch(studioHtml, /Open CV editor & test demo|Try the NEURA demo|A
 assert.match(studioHtml, /outdated practice sample that contained personal details was removed/);
 assert.match(studioHtml, /function leaveSampleForRealProfile\(\).*j\.vacancy='';.*j\.job=\{\}.*j\.analysis=null/s);
 assert.doesNotMatch(studioRoute, /test the demo/i);
+assert.ok(studioRoute.indexOf('if (action === "fetch") return json(await fetchPublic(body.url!));') < studioRoute.indexOf('consumeBetaAiQuota(user.id, "project_review")'), "Public vacancy retrieval must not consume the AI review quota.");
+assert.ok(studioRoute.includes("Daily AI review limit reached"));
 assert.match(studioRoute, /requestId/);
 assert.match(studioRoute, /const errorName = error instanceof Error \? error\.name/);
 assert.match(studioRoute, /configured spend limit/);
