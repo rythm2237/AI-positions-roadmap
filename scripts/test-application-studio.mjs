@@ -49,6 +49,7 @@ assert.match(studioHost, /useState\(true\)/);
 assert.match(studioHost, /createPortal/);
 assert.match(studioHost, /fixed .*z-\[1000\]/);
 assert.match(studioHost, /Exit full screen/);
+assert.match(studioHost, /setOpen\(false\)/);
 assert.match(studioHtml, /top:16px;bottom:auto/);
 assert.match(studioHtml, /id="jobSalary"/);
 assert.match(studioHtml, /id="validThrough"/);
