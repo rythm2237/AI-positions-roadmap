@@ -2,7 +2,7 @@
 
 The shared Job Preparation workspace opens the application editor after learning and portfolio work. Resume/profile/job-search roadmap stations also link to this workspace. `/application-studio` is a direct browser test entry point; no Python installation is needed.
 
-The editor preserves the original CV, keeps separate vacancy drafts, proposes reviewable changes, generates distinct letters, supports version history, and exports local PDFs and an application ZIP. The synthetic NEURA demonstration works without AI requests. It is not a verified vacancy or a real candidate history.
+The editor preserves the original CV, keeps separate vacancy drafts, proposes reviewable changes, generates distinct letters, supports version history, and exports local PDFs and an application ZIP. The optional sample workspace uses a fully fictional CV, employer and vacancy without AI requests. It contains no user profile or real employer vacancy. Replacing it with a confirmed CV clears the sample vacancy, letters, match and application history before the real workflow continues.
 
 ## Profile and learning import
 

@@ -41,7 +41,7 @@ export function ApplicationStudio({ career }: { career?: CareerWorkspaceData }) 
     <h3 className="mt-2 font-display text-2xl font-semibold text-white">Your application studio</h3>
     <p className="mt-3 max-w-3xl text-sm leading-6 text-slate-400">Build your master CV, match a real vacancy, review suggested changes, write cover and motivation letters, and export PDFs in your browser. Import your profile and completed learning as a draft you review first.</p>
     <div className="mt-4 flex flex-wrap gap-3">
-      <button type="button" onClick={() => { setLoaded(true); setOpen(!open); }} aria-expanded={open} className="btn-primary min-h-11">{open ? "Close editor" : "Open CV editor & test demo"}</button>
+      <button type="button" onClick={() => { setLoaded(true); setOpen(!open); }} aria-expanded={open} className="btn-primary min-h-11">{open ? "Close Application Studio" : "Open CV & Application Studio"}</button>
       <Link href="/profile" className="btn-secondary min-h-11">Update my profile</Link>
       <Link href="/cv-analyzer" className="btn-secondary min-h-11">Career CV analysis</Link>
     </div>
@@ -51,7 +51,7 @@ export function ApplicationStudio({ career }: { career?: CareerWorkspaceData }) 
         <button type="button" disabled={busy} onClick={() => void importSource("cv")} className="btn-secondary min-h-11">Import my saved CV</button>
         <Link href={`/login?next=${encodeURIComponent(career ? `/careers/${career.slug}?section=jobs` : "/application-studio")}`} className="min-h-11 px-3 py-3 text-sm text-cyan-200">Sign in for AI & profile import</Link>
       </div>
-      <p className="mb-3 text-xs leading-5 text-slate-400">Try the NEURA demo in Candidate for a synthetic test without an AI request. Your own documents use the signed-in site AI service. Course completion never becomes employment or a verified certificate.</p>
+      <p className="mb-3 text-xs leading-5 text-slate-400">You can load a fictional sample to explore the workflow. For your own assessment, sign in, upload your CV and add the real vacancy. AI analysis runs only when you request it. Completed learning is never presented as work experience or a verified certificate.</p>
       {message ? <p role="status" className="mb-3 rounded-xl border border-white/10 p-3 text-sm text-slate-200">{message}</p> : null}
       <iframe ref={frame} src="/application-studio/index.html" title="CV and job application editor" className="h-[85vh] min-h-[650px] w-full rounded-xl border border-white/10 bg-white" />
       <p className="mt-3 text-xs text-slate-500">Documents and drafts stay in this editor. Use Account & privacy to save on this device or download an editable backup.</p>
