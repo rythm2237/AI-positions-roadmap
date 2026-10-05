@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { buildStudioProfileDraft } from "../src/lib/applicationStudio/profileDraft.ts";
-import { sourceMap, validate, fetchPublic } from "../src/lib/applicationStudio/validation.mjs";
+import { sourceMap, validate, fetchPublic, extractJobPosting } from "../src/lib/applicationStudio/validation.mjs";
 
 const course = { id: "course", title: "SQL foundations", provider: "Course provider" };
 const career = { journeyStages: [{ resources: [course] }], roadmap: [], projects: [{ id: "pass", title: "Reviewed project" }, { id: "fail", title: "Failed project" }, { id: "fallback", title: "Fallback project" }, { id: "empty", title: "No artifact" }] };
@@ -34,6 +34,7 @@ await assert.rejects(fetchPublic("https://private.example", async () => [{ addre
 await assert.rejects(fetchPublic("https://linkedin.com/in/example"), /LinkedIn/);
 const studioHtml = await (await import("node:fs/promises")).readFile(new URL("../public/application-studio/index.html", import.meta.url), "utf8");
 const studioRoute = await (await import("node:fs/promises")).readFile(new URL("../src/app/api/application-studio/[action]/route.ts", import.meta.url), "utf8");
+const studioHost = await (await import("node:fs/promises")).readFile(new URL("../src/components/career/jobs/ApplicationStudio.tsx", import.meta.url), "utf8");
 assert.match(studioHtml, /Taylor Example/);
 assert.match(studioHtml, /Example Supply Co\. \(fictional\)/);
 assert.match(studioHtml, /NOT A REAL JOB POSTING/);
@@ -42,7 +43,36 @@ assert.match(studioHtml, /outdated practice sample that contained personal detai
 assert.match(studioHtml, /function leaveSampleForRealProfile\(\).*j\.vacancy='';.*j\.job=\{\}.*j\.analysis=null/s);
 assert.doesNotMatch(studioRoute, /test the demo/i);
 assert.match(studioRoute, /requestId/);
-assert.match(studioRoute, /errorName: error instanceof Error \? error\.name/);
+assert.match(studioRoute, /const errorName = error instanceof Error \? error\.name/);
+assert.match(studioRoute, /configured spend limit/);
+assert.match(studioHost, /useState\(true\)/);
+assert.match(studioHost, /fixed inset-0 z-\[100\]/);
+assert.match(studioHost, /Exit full screen/);
+assert.match(studioHtml, /top:16px;bottom:auto/);
+assert.match(studioHtml, /id="jobSalary"/);
+assert.match(studioHtml, /id="validThrough"/);
+const jobPosting = extractJobPosting(`<html><script type="application/ld+json">${JSON.stringify({
+  "@context": "https://schema.org",
+  "@type": "JobPosting",
+  title: "Production Planner",
+  hiringOrganization: { name: "Example Manufacturing Ltd" },
+  jobLocationType: "TELECOMMUTE",
+  jobLocation: { address: { addressLocality: "Berlin", addressCountry: { name: "Germany" } } },
+  employmentType: ["FULL_TIME"],
+  experienceRequirements: "Two years of planning experience",
+  baseSalary: { currency: "EUR", value: { minValue: 55000, maxValue: 62000, unitText: "YEAR" } },
+  datePosted: "2026-09-01",
+  validThrough: "2026-10-31",
+  description: "<p>Plan daily production schedules and coordinate material availability across teams.</p>" + " Details.".repeat(12),
+})}</script></html>`);
+assert.equal(jobPosting.job.title, "Production Planner");
+assert.equal(jobPosting.job.company, "Example Manufacturing Ltd");
+assert.equal(jobPosting.job.location, "Berlin, Germany");
+assert.equal(jobPosting.job.workplaceType, "Remote");
+assert.equal(jobPosting.job.employmentType, "FULL_TIME");
+assert.equal(jobPosting.job.salary, "55000–62000 EUR YEAR");
+assert.equal(jobPosting.job.validThrough, "2026-10-31");
+assert.match(jobPosting.description, /Plan daily production schedules/);
 console.log("Application studio: provenance, course completion, project qualification, fabricated claims and private URL guards passed.");
 
 // A high average must not mask explicit screening gaps or unknown eligibility.
