@@ -33,12 +33,16 @@ assert.equal(changes.changes.length, 0);
 await assert.rejects(fetchPublic("https://private.example", async () => [{ address: "127.0.0.1", family: 4 }]), /blocked/);
 await assert.rejects(fetchPublic("https://linkedin.com/in/example"), /LinkedIn/);
 const studioHtml = await (await import("node:fs/promises")).readFile(new URL("../public/application-studio/index.html", import.meta.url), "utf8");
+const studioRoute = await (await import("node:fs/promises")).readFile(new URL("../src/app/api/application-studio/[action]/route.ts", import.meta.url), "utf8");
 assert.match(studioHtml, /Taylor Example/);
 assert.match(studioHtml, /Example Supply Co\. \(fictional\)/);
 assert.match(studioHtml, /NOT A REAL JOB POSTING/);
 assert.doesNotMatch(studioHtml, /Open CV editor & test demo|Try the NEURA demo|Alex Example|Fulfilment Operations Flow Planner — IKEA/);
 assert.match(studioHtml, /outdated practice sample that contained personal details was removed/);
 assert.match(studioHtml, /function leaveSampleForRealProfile\(\).*j\.vacancy='';.*j\.job=\{\}.*j\.analysis=null/s);
+assert.doesNotMatch(studioRoute, /test the demo/i);
+assert.match(studioRoute, /requestId/);
+assert.match(studioRoute, /errorName: error instanceof Error \? error\.name/);
 console.log("Application studio: provenance, course completion, project qualification, fabricated claims and private URL guards passed.");
 
 // A high average must not mask explicit screening gaps or unknown eligibility.
