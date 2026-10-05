@@ -1,6 +1,6 @@
 import {createHash} from 'node:crypto';
 import https from 'node:https';import dns from 'node:dns/promises';import net from 'node:net';
-const WEIGHTS={experience:30,technical:20,responsibilities:20,education:10,industry:8,tools:5,languages:4,softSkills:3},LEVELS={'Strong Match':1,'Partial Match':.6,'Transferable Skill':.4,Missing:0,Unknown:0};
+import { CATEGORIES, LEVEL_POINTS, recruiterAssessment } from './recruiter.mjs';
 export class ServiceError extends Error{constructor(message,status=400){super(message);this.status=status}}
 export function sourceMap(cv,linkedin=''){const out={};for(const [p,text] of [['CV',cv],['LI',linkedin]])text.split('\n').forEach((line,i)=>{if(line.trim())out[p+(i+1)]=line.trim()});return out}
 const refs=(ids,source)=>Array.isArray(ids)?[...new Set(ids.filter(id=>typeof id==='string'&&Object.hasOwn(source,id)))]:[];
@@ -8,9 +8,17 @@ const numbers=s=>new Set(s.match(/\b\d+(?:[.,]\d+)?%?\b/g)||[]);
 export function validate(action,result,context,sources){
  if(!result||typeof result!=='object'||Array.isArray(result))throw new ServiceError('AI returned an invalid object.');
  if(action==='analysis'){
-  if(!Array.isArray(result.matrix)||!result.matrix.length||!result.job||typeof result.job!=='object')throw new ServiceError('AI returned an invalid analysis.');
-  for(const r of result.matrix){if(!r||!r.requirement||!Object.hasOwn(WEIGHTS,r.category)||!Object.hasOwn(LEVELS,r.level)||!['Mandatory','Preferred','Nice to Have'].includes(r.priority))throw new ServiceError('AI returned an invalid requirement row.');r.evidenceIds=refs(r.evidenceIds,sources);r.evidence=r.evidenceIds.map(id=>sources[id]);if(['Strong Match','Partial Match','Transferable Skill'].includes(r.level)&&!r.evidenceIds.length){r.level='Unknown';r.explanation='No valid candidate evidence. Needs user confirmation.'}}
-  const active=Object.keys(WEIGHTS).filter(c=>result.matrix.some(r=>r.category===c)),total=active.reduce((sum,c)=>sum+WEIGHTS[c],0),p={Mandatory:3,Preferred:2,'Nice to Have':1};let score=0;result.categories=active.map(category=>{const rows=result.matrix.filter(r=>r.category===category),value=rows.reduce((sum,r)=>sum+LEVELS[r.level]*p[r.priority],0)/rows.reduce((sum,r)=>sum+p[r.priority],0),weight=WEIGHTS[category]/total*100;score+=value*weight;return{category,weight:Math.round(weight*100)/100,score:Math.round(value*100)}});result.score=Math.round(score);result.scoreNote='Weighted semantic evidence assessment; not hiring probability. Mandatory gaps override readiness.';
+  if(!Array.isArray(result.matrix)||!result.matrix.length||result.matrix.length>100||!result.job||typeof result.job!=='object')throw new ServiceError('AI returned an invalid analysis.');
+  for(const r of result.matrix){if(!r||!r.requirement||!CATEGORIES.includes(r.category)||!Object.hasOwn(LEVEL_POINTS,r.level)||!['Mandatory','Preferred','Nice to Have'].includes(r.priority))throw new ServiceError('AI returned an invalid requirement row.');r.evidenceIds=refs(r.evidenceIds,sources);r.evidence=r.evidenceIds.map(id=>sources[id]);if(['Strong Match','Partial Match','Transferable Skill'].includes(r.level)&&!r.evidenceIds.length){r.level='Unknown';r.explanation='No valid candidate evidence. Needs user confirmation.'}}
+  const seen=new Set();result.matrix=result.matrix.filter(r=>{const key=String(r.requirement).toLowerCase().replace(/[^\p{L}\p{N}]/gu,'');if(seen.has(key))return false;seen.add(key);return true;});
+  const normalized=t=>String(t).replace(/\s+/g,' ').trim().toLowerCase();
+  for(const r of result.matrix){
+   const quote=typeof r.vacancyQuote==='string'?r.vacancyQuote.trim():'';
+   r.vacancyQuote=quote&&normalized(context.vacancy||'').includes(normalized(quote))?quote:'';
+   if(!r.vacancyQuote)throw new ServiceError('A requirement could not be traced to the vacancy. Retry with the complete job advert.');
+   r.screeningGate=r.screeningGate===true&&r.priority==='Mandatory'&&['eligibility','languages','education','seniority'].includes(r.category);
+  }
+  const review=recruiterAssessment(result.matrix);result.recruiter=review;result.score=review.score;result.categories=review.categories;result.scoreNote=review.scoreNote;
   if(!Array.isArray(result.gaps))result.gaps=[];for(const r of result.matrix)if(r.priority==='Mandatory'&&['Missing','Unknown'].includes(r.level)&&!result.gaps.some(g=>g.requirement===r.requirement&&g.type==='Critical Gap'))result.gaps.push({requirement:r.requirement,type:'Critical Gap',why:'Mandatory requirement lacks confirmed evidence.',questions:[]});
  }else if(action==='changes'){
   if(!Array.isArray(result.changes))throw new ServiceError('Invalid proposal list.');const valid=[],blocked=[];

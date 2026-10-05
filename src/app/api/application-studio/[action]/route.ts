@@ -1,3 +1,4 @@
+import { submittedCV } from "@/lib/applicationStudio/recruiter.mjs";
 import { generateText } from "ai";
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
@@ -45,16 +46,17 @@ export async function POST(request: Request, { params }: { params: Promise<{ act
         if (typeof (context[key] || "") !== "string" || String(context[key] || "").length > 100_000) return json({ error: "Invalid or oversized source text." }, 400);
       }
       if (!String(context.candidate || "").trim() || !String(context.vacancy || "").trim()) return json({ error: "Confirm your CV and add the vacancy first." }, 400);
-      if (!Array.isArray(context.cv) || context.cv.length > 100) return json({ error: "Invalid CV sections." }, 400);
+      if (!Array.isArray(context.cv) || !context.cv.length || context.cv.length > 100 || context.cv.some((s: unknown) => !s || typeof s !== "object" || typeof (s as Record<string, unknown>).text !== "string" || typeof (s as Record<string, unknown>).title !== "string") || submittedCV(context).length > 100_000) return json({ error: "Invalid CV sections." }, 400);
     } else if (typeof body.url !== "string" || body.url.length > 2048) return json({ error: "Enter a public HTTPS URL." }, 400);
 
     // Reuse the existing durable beta review allowance. No new account, key or quota table is required.
     const quota = await consumeBetaAiQuota(user.id, "project_review");
     if (!quota.allowed) return json({ error: `Daily beta AI review allowance reached (${quota.limit}). Try again tomorrow UTC.`, quota }, 429);
     if (action === "fetch") return json(await fetchPublic(body.url!));
-    const sources = sourceMap(String(context!.candidate), String(context!.linkedin || ""));
+    const sources = aiAction === "analysis" ? sourceMap(submittedCV(context!)) : sourceMap(String(context!.candidate), String(context!.linkedin || ""));
     const prompt: Record<string, unknown> = { ...context, sources };
     delete prompt.candidate; delete prompt.linkedin;
+    if (aiAction === "analysis") { delete prompt.previousApplications; delete prompt.chat; delete prompt.approved; delete prompt.analysis; }
     const result = await generateText({
       model: process.env.APPLICATION_STUDIO_MODEL || process.env.JOB_AGENT_MODEL || "openai/gpt-5.4-mini",
       system: `${SYSTEM}\nCourse completion and profile fields may be self-reported. Preserve that provenance. Never promote completed learning to employment, expertise, or verified certification.\n${SCHEMAS[aiAction]}`,
