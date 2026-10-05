@@ -71,7 +71,16 @@ export async function POST(request: Request, { params }: { params: Promise<{ act
     return json(validate(aiAction, parsed, context!, sources));
   } catch (error) {
     if (error instanceof ServiceError) return json({ error: error.message }, error.status);
-    // No candidate text, storage URLs or provider credentials are logged.
-    return json({ error: "The site AI service is temporarily unavailable. Your draft is preserved. You can still test the demo, edit locally and export PDFs." }, 503);
+    // Keep the diagnostic useful without logging candidate text, vacancy content, URLs or provider credentials.
+    const requestId = crypto.randomUUID();
+    console.error("Application Studio request failed", {
+      requestId,
+      action,
+      errorName: error instanceof Error ? error.name : "UnknownError",
+    });
+    return json({
+      error: `AI Career could not complete this request right now. Your draft is preserved. Please try again shortly. If it continues, contact support with reference ${requestId}.`,
+      requestId,
+    }, 503);
   }
 }
