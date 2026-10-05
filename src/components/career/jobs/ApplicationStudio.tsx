@@ -47,7 +47,7 @@ export function ApplicationStudio({ career }: { career?: CareerWorkspaceData }) 
     </div>
     {loaded ? <div className={`mt-5 ${open ? "" : "hidden"}`}>
       <div className="mb-3 flex flex-wrap gap-3">
-        <button type="button" disabled={busy} onClick={() => void importSource("profile")} className="btn-secondary min-h-11">Import my profile & completed learning</button>
+        <button type="button" disabled={busy} onClick={() => void importSource("profile")} style={{ maxWidth: "100%", whiteSpace: "normal" }} className="btn-secondary min-h-11">Import my profile & completed learning</button>
         <button type="button" disabled={busy} onClick={() => void importSource("cv")} className="btn-secondary min-h-11">Import my saved CV</button>
         <Link href={`/login?next=${encodeURIComponent(career ? `/careers/${career.slug}?section=jobs` : "/application-studio")}`} className="min-h-11 px-3 py-3 text-sm text-cyan-200">Sign in for AI & profile import</Link>
       </div>
