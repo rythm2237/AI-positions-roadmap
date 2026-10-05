@@ -7,6 +7,7 @@ import CareerJourneyEngine from "@/components/career/journey-engine/CareerJourne
 import LearningWorkspace from "@/components/career/learning/LearningWorkspace";
 import CareerTitleAliasPanel from "@/components/career/CareerTitleAliasPanel";
 import ReferenceLearningChooser from "@/components/career/resources/ReferenceLearningChooser";
+import { ApplicationStudio } from "@/components/career/jobs/ApplicationStudio";
 import { EffortEstimate } from "@/components/career/EffortEstimate";
 import { aiEngineerCareer } from "@/data/careers/ai-engineer";
 import { CAREER_NAV_ITEMS, careerWorkspaceSectionHref } from "@/lib/careerNavigation";
@@ -1729,6 +1730,7 @@ function JobsModule({
   ];
   return (
     <div className="space-y-8">
+      <ApplicationStudio career={career} />
       <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_minmax(280px,.75fr)]">
         <div>
           <p className="label-sm text-cyber-300">Job preparation</p>
@@ -1876,6 +1878,7 @@ function StationDetailsModal({
               <div className="space-y-4">
                 <PanelCard>
                   <h3 className="text-lg font-semibold text-white">Overview</h3>
+                  {["resume", "profile", "job-search", "jobs"].includes(stage.type) ? <Link href={`/careers/${career.slug}?section=jobs#application-studio`} className="btn-primary mt-3 inline-flex min-h-11">Open CV & application studio</Link> : null}
                   <p className="mt-2 text-sm leading-6 text-slate-400">{stage.summary}</p>
                   <div className="mt-3 flex flex-wrap gap-2">
                     {stage.lessons.map((lesson) => <span key={lesson} className="tag">{lesson}</span>)}
