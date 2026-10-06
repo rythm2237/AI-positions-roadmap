@@ -5,7 +5,7 @@ import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { consumeBetaAiQuota, refundRejectedBetaAiQuota } from "@/lib/betaAiQuota";
 import { SYSTEM, SCHEMAS } from "@/lib/applicationStudio/prompts.mjs";
-import { limitedText, sourceMap, validate, fetchPublic, ServiceError } from "@/lib/applicationStudio/validation.mjs";
+import { limitedText, sourceMap, vacancySourceMap, validate, fetchPublic, ServiceError } from "@/lib/applicationStudio/validation.mjs";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -60,7 +60,7 @@ export async function POST(request: Request, { params }: { params: Promise<{ act
     if (!quota.allowed) return json({ error: `Daily AI review limit reached (${quota.limit}). It resets at 00:00 UTC. Your draft is unchanged.`, quota }, 429);
     if (quota.usageDate) reservedQuota = {userId: user.id, usageDate: quota.usageDate};
     const sources = aiAction === "analysis" ? sourceMap(submittedCV(context!)) : sourceMap(String(context!.candidate), String(context!.linkedin || ""));
-    const prompt: Record<string, unknown> = { ...context, sources };
+    const prompt: Record<string, unknown> = { ...context, sources, ...(aiAction === "analysis" ? {vacancySources: vacancySourceMap(String(context!.vacancy))} : {}) };
     delete prompt.candidate; delete prompt.linkedin;
     if (aiAction === "analysis") { delete prompt.previousApplications; delete prompt.chat; delete prompt.approved; delete prompt.analysis; }
     const model = process.env.APPLICATION_STUDIO_MODEL || "openai/gpt-4.1-mini";

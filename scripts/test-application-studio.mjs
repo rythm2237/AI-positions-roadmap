@@ -129,3 +129,12 @@ assert.equal(classifyStudioGatewayError({...denied,statusCode:500}).refundQuota,
 assert.equal(classifyStudioGatewayError(new Error("sensitive candidate text")).refundQuota,false);
 assert.ok(!classifyStudioGatewayError(new Error("sensitive candidate text")).message.includes("sensitive"));
 console.log("Gateway: free-tier fallback, budget/access policy preservation, pre-inference refunds and safe errors passed.");
+
+const {vacancySourceMap} = await import("../src/lib/applicationStudio/validation.mjs");
+const ad="Required: Excel, production scheduling. Preferred: SQL.";
+assert.deepEqual(vacancySourceMap(ad),{VAC1:"Required: Excel, production scheduling.",VAC2:"Preferred: SQL."});
+const row={requirement:"production scheduling",priority:"Mandatory",category:"experience",level:"Unknown",evidenceIds:[],vacancySourceId:"VAC1",vacancyQuote:"Required: production scheduling"};
+const anchored=validate("analysis",{job:{},matrix:[{...row}]},{vacancy:ad},{});
+assert.equal(anchored.matrix[0].vacancyQuote,"Required: Excel, production scheduling.");
+assert.throws(()=>validate("analysis",{job:{},matrix:[{...row,vacancySourceId:"VAC99",vacancyQuote:"SQL"}]},{vacancy:ad,vacancySources:{VAC99:"invented requirement"}},{}),/invalid vacancy source reference/);
+console.log("Vacancy source anchors: exact original sentences and forged source rejection passed.");

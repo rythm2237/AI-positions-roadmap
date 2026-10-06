@@ -3,6 +3,7 @@ import https from 'node:https';import dns from 'node:dns/promises';import net fr
 import { CATEGORIES, LEVEL_POINTS, recruiterAssessment } from './recruiter.mjs';
 export class ServiceError extends Error{constructor(message,status=400){super(message);this.status=status}}
 export function sourceMap(cv,linkedin=''){const out={};for(const [p,text] of [['CV',cv],['LI',linkedin]])text.split('\n').forEach((line,i)=>{if(line.trim())out[p+(i+1)]=line.trim()});return out}
+export function vacancySourceMap(text){const out={};String(text).split(/\n+|(?<=[.!?])\s+/).filter(part=>part.trim()).forEach((part,i)=>{out['VAC'+(i+1)]=part.trim()});return out}
 const refs=(ids,source)=>Array.isArray(ids)?[...new Set(ids.filter(id=>typeof id==='string'&&Object.hasOwn(source,id)))]:[];
 const numbers=s=>new Set(s.match(/\b\d+(?:[.,]\d+)?%?\b/g)||[]);
 export function validate(action,result,context,sources){
@@ -11,9 +12,11 @@ export function validate(action,result,context,sources){
   if(!Array.isArray(result.matrix)||!result.matrix.length||result.matrix.length>100||!result.job||typeof result.job!=='object')throw new ServiceError('AI returned an invalid analysis.');
   for(const r of result.matrix){if(!r||!r.requirement||!CATEGORIES.includes(r.category)||!Object.hasOwn(LEVEL_POINTS,r.level)||!['Mandatory','Preferred','Nice to Have'].includes(r.priority))throw new ServiceError('AI returned an invalid requirement row.');r.evidenceIds=refs(r.evidenceIds,sources);r.evidence=r.evidenceIds.map(id=>sources[id]);if(['Strong Match','Partial Match','Transferable Skill'].includes(r.level)&&!r.evidenceIds.length){r.level='Unknown';r.explanation='No valid candidate evidence. Needs user confirmation.'}}
   const seen=new Set();result.matrix=result.matrix.filter(r=>{const key=String(r.requirement).toLowerCase().replace(/[^\p{L}\p{N}]/gu,'');if(seen.has(key))return false;seen.add(key);return true;});
+  const vacancySources=vacancySourceMap(context.vacancy||'');
   const normalized=t=>String(t).replace(/\s+/g,' ').trim().toLowerCase();
   for(const r of result.matrix){
-   const quote=typeof r.vacancyQuote==='string'?r.vacancyQuote.trim():'';
+   if(r.vacancySourceId!==undefined&&(typeof r.vacancySourceId!=='string'||!Object.hasOwn(vacancySources,r.vacancySourceId)))throw new ServiceError('AI returned an invalid vacancy source reference.');
+   const quote=r.vacancySourceId?vacancySources[r.vacancySourceId]:typeof r.vacancyQuote==='string'?r.vacancyQuote.trim():'';
    r.vacancyQuote=quote&&normalized(context.vacancy||'').includes(normalized(quote))?quote:'';
    if(!r.vacancyQuote)throw new ServiceError('A requirement could not be traced to the vacancy. Retry with the complete job advert.');
    r.screeningGate=r.screeningGate===true&&r.priority==='Mandatory'&&['eligibility','languages','education','seniority'].includes(r.category);

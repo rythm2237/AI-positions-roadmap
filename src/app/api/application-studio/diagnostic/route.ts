@@ -1,7 +1,7 @@
 import {generateText} from "ai";
 import {NextResponse} from "next/server";
 import {SYSTEM,SCHEMAS} from "@/lib/applicationStudio/prompts.mjs";
-import {sourceMap,validate} from "@/lib/applicationStudio/validation.mjs";
+import {sourceMap,validate,vacancySourceMap} from "@/lib/applicationStudio/validation.mjs";
 import {submittedCV} from "@/lib/applicationStudio/recruiter.mjs";
 let ran=false;
 export const runtime="nodejs";
@@ -11,7 +11,7 @@ export async function GET(request:Request) {
  const context={candidate:"Taylor Example\nSkills: SQL, Excel\nExperience: Two years of production scheduling at Example Manufacturing.",linkedin:"",cv:[{id:"skills",title:"Skills",text:"SQL, Excel"},{id:"experience",title:"Experience",text:"Two years of production scheduling at Example Manufacturing."}],vacancy:"Production Planner at Example Supply Co. in Berlin. Required: Excel, production scheduling. Preferred: SQL.",job:{title:"Production Planner",company:"Example Supply Co.",location:"Berlin"},language:"English"};
  const sources=sourceMap(submittedCV(context)); const {candidate,linkedin,...prompt}=context;
  let rawMatrix:unknown;
- try { const result=await generateText({model:"openai/gpt-4.1-mini",system:SYSTEM+"\n"+SCHEMAS.analysis,prompt:JSON.stringify({...prompt,sources}),maxOutputTokens:6500,maxRetries:0,abortSignal:AbortSignal.timeout(100000)});
+ try { const result=await generateText({model:"openai/gpt-4.1-mini",system:SYSTEM+"\n"+SCHEMAS.analysis,prompt:JSON.stringify({...prompt,sources,vacancySources:vacancySourceMap(context.vacancy)}),maxOutputTokens:6500,maxRetries:0,abortSignal:AbortSignal.timeout(100000)});
  const parsed=JSON.parse(result.text.replace(/^\`\`\`(?:json)?\s*/i,"").replace(/\s*\`\`\`$/,"")); rawMatrix=parsed.matrix; const validated=validate("analysis",parsed,context,sources) as {score:number;matrix:unknown[]};
  return NextResponse.json({ok:true,finishReason:result.finishReason,score:validated.score,requirements:validated.matrix.length,usage:result.usage},{headers:{"Cache-Control":"no-store"}}); }
  catch(error){return NextResponse.json({ok:false,name:(error as Error).name,message:(error as Error).message,rawMatrix},{status:500});}
