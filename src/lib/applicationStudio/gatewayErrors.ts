@@ -12,7 +12,7 @@ export function classifyStudioGatewayError(error: unknown): GatewayFailure {
   const message = typeof value.message === "string" ? value.message.toLowerCase() : "";
   const gateway = name.startsWith("Gateway");
   const base = {providerStatus: status, errorName: name, refundQuota: gateway && [401,402,403,429].includes(status ?? 0)};
-  if (gateway && /free tier.*(?:access|model)|model.*(?:not available|not allowed).*free tier/.test(message)) return {...base,code:"AI_MODEL_ACCESS_DENIED",message:"The configured AI model is unavailable on this site's current plan. Your draft is preserved."};
+  if (gateway && status === 403 && /free tier.*(?:access|model)|model.*(?:not available|not allowed).*free tier/.test(message)) return {...base,code:"AI_MODEL_ACCESS_DENIED",message:"The configured AI model is unavailable on this site's current plan. Your draft is preserved."};
   if (gateway && (/budget|spend limit|quota.*exceed/.test(message) || status === 402)) return {...base,code:"AI_GATEWAY_BUDGET_EXCEEDED",message:"The site's AI spending limit has been reached. The site administrator must review the AI Gateway budget. Your draft is preserved."};
   if (gateway && /credit|balance|fund/.test(message)) return {...base,code:"AI_GATEWAY_CREDITS_UNAVAILABLE",message:"The site's AI credit balance is unavailable. The site administrator must review AI Gateway credits. Your draft is preserved."};
   if (gateway && status === 403) return {...base,code:"AI_GATEWAY_ACCESS_DENIED",message:"AI Gateway has denied this site's request. The site administrator must review Gateway access settings. Your draft is preserved."};
