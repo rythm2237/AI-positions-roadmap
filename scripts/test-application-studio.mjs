@@ -111,7 +111,7 @@ const arbitraryGate=validate('analysis',{job:{},matrix:[row('Strong Match',{scre
 assert.equal(arbitraryGate.matrix[0].screeningGate,false);
 assert.equal(TEMPLATES.length,8);assert.equal(new Set(TEMPLATES.map(t=>[t.layout,t.header,t.font,t.size,t.margin].join('|'))).size,8);
 assert.equal(designFor('Modern',{accent:'url(javascript:x)',layout:'fake',size:100}).accent,'#344778');
-assert.equal(designFor('Modern',{size:100}).size,11);
+assert.equal(designFor('Modern',{size:100}).size,12);
 const content=[{title:'Header',text:'Candidate'},{title:'Experience',text:'Real work'},{title:'Skills',text:'SQL'},{title:'Custom',text:'User section'}];
 const split=splitSections(content);assert.equal(split.side[0].text,'SQL');assert.deepEqual([...split.main,...split.side].map(s=>s.text).sort(),content.slice(1).map(s=>s.text).sort());
 console.log('Structured recruiter rubric, explicit gates, unknowns, vacancy traceability, submitted CV sources, design sanitization and content preservation passed.');
@@ -146,3 +146,9 @@ assert.equal(lowEvidence.score,13);
 assert.equal(lowEvidence.probability,null);
 assert.equal(recruiterAssessment([row('Transferable Skill')]).score,38);
 console.log('Score transparency: the 13/100 example is reproducible; invalid references are flagged and transferable evidence earns separate credit.');
+
+const {pageText}=await import('../src/lib/applicationStudio/pdfText.mjs');
+const pdfItem=(str,x,y,width=100,size=10)=>({str,width,transform:[size,0,0,size,x,y]});
+const ordered=pageText([pdfItem('1',540,23),pdfItem('Contact',35,760),pdfItem('email@example.com',35,740),pdfItem('Skills',35,700),pdfItem('Excel',35,680),pdfItem('Planning',35,660),pdfItem('Alex Example',230,760,220,24),pdfItem('Planner',230,730),pdfItem('Summary',230,690),pdfItem('Operational experience',230,670,230),pdfItem('Experience',230,640),pdfItem('Coordinated inventory',230,620,220),pdfItem('Education',230,590)],595,842);
+assert(ordered.startsWith('Alex Example\nPlanner\nContact'));assert(!ordered.includes('\n1'));assert(ordered.includes('Coordinated inventory'));
+console.log('PDF import: masthead-first column order and footer exclusion passed.');

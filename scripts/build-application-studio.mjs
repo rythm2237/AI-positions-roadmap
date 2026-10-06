@@ -5,6 +5,6 @@ await fs.mkdir(`${root}/assets`,{recursive:true});
 await fs.mkdir(`${root}/fonts`,{recursive:true});
 await build({entryPoints:['src/lib/applicationStudio/documents.js'],bundle:true,format:'esm',platform:'browser',target:'es2022',outfile:`${root}/assets/documents.js`,minify:true,legalComments:'linked'});
 await fs.copyFile('node_modules/pdfjs-dist/build/pdf.worker.min.mjs',`${root}/assets/pdf.worker.min.mjs`);
-await Promise.all(['DejaVuSans.ttf','DejaVuSans-Bold.ttf','DejaVuSerif.ttf','DejaVuSerif-Bold.ttf'].map(name=>fs.copyFile(`node_modules/dejavu-fonts-ttf/ttf/${name}`,`${root}/fonts/${name}`)));
+await Promise.all(['DejaVuSans.ttf','DejaVuSans-Bold.ttf','DejaVuSerif.ttf','DejaVuSerif-Bold.ttf','DejaVuSansCondensed.ttf','DejaVuSansCondensed-Bold.ttf','DejaVuSerifCondensed.ttf','DejaVuSerifCondensed-Bold.ttf','DejaVuSansMono.ttf','DejaVuSansMono-Bold.ttf'].map(name=>fs.copyFile(`node_modules/dejavu-fonts-ttf/ttf/${name}`,`${root}/fonts/${name}`)));
 await fs.copyFile('node_modules/dejavu-fonts-ttf/LICENSE',`${root}/fonts/LICENSE.txt`);
 console.log('Application Studio browser assets built.');
