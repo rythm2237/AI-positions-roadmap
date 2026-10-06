@@ -1,8 +1,9 @@
+import { classifyStudioGatewayError, studioModelFallback } from "@/lib/applicationStudio/gatewayErrors";
 import { submittedCV } from "@/lib/applicationStudio/recruiter.mjs";
 import { generateText } from "ai";
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
-import { consumeBetaAiQuota } from "@/lib/betaAiQuota";
+import { consumeBetaAiQuota, refundRejectedBetaAiQuota } from "@/lib/betaAiQuota";
 import { SYSTEM, SCHEMAS } from "@/lib/applicationStudio/prompts.mjs";
 import { limitedText, sourceMap, validate, fetchPublic, ServiceError } from "@/lib/applicationStudio/validation.mjs";
 
@@ -29,6 +30,8 @@ export async function POST(request: Request, { params }: { params: Promise<{ act
   const origin = request.headers.get("origin");
   if (origin && origin !== new URL(request.url).origin) return json({ error: "Untrusted request origin." }, 403);
   if (!request.headers.get("content-type")?.startsWith("application/json")) return json({ error: "JSON required." }, 400);
+  const requestId = crypto.randomUUID();
+  let reservedQuota: {userId: string; usageDate: string} | undefined;
   try {
     const supabase = await createClient();
     const { data: { user }, error } = await supabase.auth.getUser();
@@ -55,17 +58,26 @@ export async function POST(request: Request, { params }: { params: Promise<{ act
     // Reuse the existing durable review allowance to keep AI usage bounded.
     const quota = await consumeBetaAiQuota(user.id, "project_review");
     if (!quota.allowed) return json({ error: `Daily AI review limit reached (${quota.limit}). It resets at 00:00 UTC. Your draft is unchanged.`, quota }, 429);
+    if (quota.usageDate) reservedQuota = {userId: user.id, usageDate: quota.usageDate};
     const sources = aiAction === "analysis" ? sourceMap(submittedCV(context!)) : sourceMap(String(context!.candidate), String(context!.linkedin || ""));
     const prompt: Record<string, unknown> = { ...context, sources };
     delete prompt.candidate; delete prompt.linkedin;
     if (aiAction === "analysis") { delete prompt.previousApplications; delete prompt.chat; delete prompt.approved; delete prompt.analysis; }
-    const result = await generateText({
-      model: process.env.APPLICATION_STUDIO_MODEL || process.env.JOB_AGENT_MODEL || "openai/gpt-5.4-mini",
+    const model = process.env.APPLICATION_STUDIO_MODEL || "openai/gpt-4.1-mini";
+    const settings = {
       system: `${SYSTEM}\nCourse completion and profile fields may be self-reported. Preserve that provenance. Never promote completed learning to employment, expertise, or verified certification.\n${SCHEMAS[aiAction]}`,
       prompt: JSON.stringify(prompt),
       maxOutputTokens: 6500,
       abortSignal: AbortSignal.timeout(100_000),
-    });
+    };
+    let result;
+    try { result = await generateText({...settings, model}); }
+    catch (error) {
+      const fallback = studioModelFallback(error, model);
+      if (!fallback) throw error;
+      console.warn("Application Studio model access fallback", {requestId, model, fallback});
+      result = await generateText({...settings, model: fallback});
+    }
     if (result.finishReason === "length") return json({ error: "AI output was incomplete. Your draft is preserved; try a shorter input." }, 502);
     let parsed: unknown;
     try { parsed = JSON.parse(result.text.replace(/^```(?:json)?\s*/i, "").replace(/\s*```$/, "")); }
@@ -73,23 +85,16 @@ export async function POST(request: Request, { params }: { params: Promise<{ act
     return json(validate(aiAction, parsed, context!, sources));
   } catch (error) {
     if (error instanceof ServiceError) return json({ error: error.message }, error.status);
-    // Keep the diagnostic useful without logging candidate text, vacancy content, URLs or provider credentials.
-    const requestId = crypto.randomUUID();
-    const errorName = error instanceof Error ? error.name : "UnknownError";
-    const providerStatus = typeof error === "object" && error && "statusCode" in error
-      && typeof error.statusCode === "number" ? error.statusCode : undefined;
-    console.error("Application Studio request failed", {
-      requestId,
-      action,
-      errorName,
-      providerStatus,
-    });
-    const gatewayMessage = errorName === "GatewayInternalServerError"
-      ? " The AI Gateway returned an internal error; this can be temporary or caused by a configured spend limit."
-      : "";
-    return json({
-      error: `AI Career could not complete this request right now.${gatewayMessage} Your draft is preserved. Please try again shortly. If it continues, contact support with reference ${requestId}.`,
-      requestId,
-    }, 503);
+    const failure = classifyStudioGatewayError(error);
+    let quotaRefunded = false;
+    if (failure.refundQuota && reservedQuota) {
+      try {
+        await refundRejectedBetaAiQuota(reservedQuota.userId, "project_review", reservedQuota.usageDate, requestId);
+        quotaRefunded = true;
+      } catch { console.error("Application Studio quota refund failed", {requestId}); }
+    }
+    // Log only fixed classifications, never prompts, responses, URLs or credentials.
+    console.error("Application Studio request failed", {requestId, action, code:failure.code, errorName:failure.errorName, providerStatus:failure.providerStatus, quotaRefunded});
+    return json({error: `${failure.message}${quotaRefunded ? " This rejected request did not consume your daily AI allowance." : ""} Reference: ${requestId}.`,code:failure.code,requestId},503);
   }
 }

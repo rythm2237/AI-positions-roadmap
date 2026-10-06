@@ -6,6 +6,7 @@ export type BetaAiQuotaResult = {
   allowed: boolean;
   used: number;
   limit: number;
+  usageDate?: string;
 };
 
 function adminClient() {
@@ -34,6 +35,7 @@ export async function consumeBetaAiQuota(userId: string, kind: BetaAiQuotaKind):
 
   const limit = dailyLimit(kind);
   const supabase = adminClient();
+  const usageDate = new Date().toISOString().slice(0, 10);
   const { data, error } = await supabase.rpc("consume_beta_ai_quota", {
     p_user_id: userId,
     p_kind: kind,
@@ -43,8 +45,16 @@ export async function consumeBetaAiQuota(userId: string, kind: BetaAiQuotaKind):
 
   const row = Array.isArray(data) ? data[0] : data;
   return {
+    // Omit the date across midnight rather than risk refunding another day.
+    usageDate: usageDate === new Date().toISOString().slice(0, 10) ? usageDate : undefined,
     allowed: Boolean(row?.allowed),
     used: Number(row?.used ?? 0),
     limit: Number(row?.quota_limit ?? limit),
   };
+}
+
+export async function refundRejectedBetaAiQuota(userId: string, kind: BetaAiQuotaKind, usageDate: string, requestId: string): Promise<void> {
+  if (process.env.NEXT_PUBLIC_ROLE_PATH_BILLING_ENABLED === "true") return;
+  const { data, error } = await adminClient().rpc("refund_rejected_beta_ai_quota", {p_user_id:userId,p_kind:kind,p_usage_date:usageDate,p_request_id:requestId});
+  if (error || data !== true) throw new Error("Rejected AI request quota could not be refunded.");
 }
