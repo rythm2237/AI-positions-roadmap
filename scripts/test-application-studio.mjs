@@ -133,8 +133,8 @@ console.log("Gateway: free-tier fallback, budget/access policy preservation, pre
 const {vacancySourceMap} = await import("../src/lib/applicationStudio/validation.mjs");
 const ad="Required: Excel, production scheduling. Preferred: SQL.";
 assert.deepEqual(vacancySourceMap(ad),{VAC1:"Required: Excel, production scheduling.",VAC2:"Preferred: SQL."});
-const row={requirement:"production scheduling",priority:"Mandatory",category:"experience",level:"Unknown",evidenceIds:[],vacancySourceId:"VAC1",vacancyQuote:"Required: production scheduling"};
-const anchored=validate("analysis",{job:{},matrix:[{...row}]},{vacancy:ad},{});
+const anchoredRow={requirement:"production scheduling",priority:"Mandatory",category:"experience",level:"Unknown",evidenceIds:[],vacancySourceId:"VAC1",vacancyQuote:"Required: production scheduling"};
+const anchored=validate("analysis",{job:{},matrix:[{...anchoredRow}]},{vacancy:ad},{});
 assert.equal(anchored.matrix[0].vacancyQuote,"Required: Excel, production scheduling.");
-assert.throws(()=>validate("analysis",{job:{},matrix:[{...row,vacancySourceId:"VAC99",vacancyQuote:"SQL"}]},{vacancy:ad,vacancySources:{VAC99:"invented requirement"}},{}),/invalid vacancy source reference/);
+assert.throws(()=>validate("analysis",{job:{},matrix:[{...anchoredRow,vacancySourceId:"VAC99",vacancyQuote:"SQL"}]},{vacancy:ad,vacancySources:{VAC99:"invented requirement"}},{}),/invalid vacancy source reference/);
 console.log("Vacancy source anchors: exact original sentences and forged source rejection passed.");
