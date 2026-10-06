@@ -54,3 +54,13 @@ The previous default `openai/gpt-5.4-mini` returned HTTP 403 with “Free tier u
 Gateway failures are logged as fixed error codes, upstream status, request reference, and refund outcome. Candidate data, prompts, provider error bodies, and credentials are not logged. The refund ledger is RLS-protected and accessible only to `service_role`; its RPC uses `SECURITY INVOKER`. Duplicate refund references cannot decrement the counter twice. Across a midnight reservation boundary the server conservatively omits the refund date to avoid changing a different day's allowance.
 
 Analysis also receives numbered `VAC` source sentences derived by the server from the submitted vacancy. The model selects `vacancySourceId`, and validation resolves its exact original sentence independently. Forged source identifiers are rejected; older responses with literal quotes retain their existing validation. This avoids treating a paraphrased quotation as a broken application while preserving traceability.
+
+## Guided CV workflow
+
+Candidate → Learning & evidence → Vacancy → Match → Review CV changes → CV Design → CV Preview → optional Cover Letter → optional Motivation Letter → Final Review → Export PDF. Next confirms the reviewed candidate CV, retrieves/analyzes a vacancy when needed, and requests proposals before the review step. Pending proposals must be accepted or rejected before design. Back and sidebar transitions commit the current form. Applying a design opens a full CV preview; CV PDF and backup downloads do not require either letter.
+
+Source replacement updates the active application's CV after preserving its previous version. Existing tailored edits require explicit confirmation before replacement. Other applications retain their CV content. Legacy stage indices migrate to workflow version 2. Completed learning is an explicit user-selected, self-reported professional-development entry; planned learning and reference URLs do not become skills or credentials.
+
+The match page displays the exact analyzed CV snapshot and weighted points. Positive AI matches with unresolved source IDs become Unknown with a visible citation warning. A 13/100 score can result from education at 62.5% with a 20% weight and zero in the other categories; it is not hiring probability. Semantic assessment should consider related inventory/flow coordination as transferable evidence while preserving industry-specific gaps.
+
+Validation: `npm run test:application-studio` includes DOM interaction tests with fixed synthetic AI responses, source replacement/history, proposal gates, Back/Next, planned/completed learning, independent CV preview/export and optional letters. This does not test an authenticated user's real AI assessment.
