@@ -7,7 +7,7 @@ export function visualStyle(canvas){
  for(let y=0;y<h;y+=2)for(let x=0;x<w;x+=2){const i=(y*w+x)*4,r=data[i],g=data[i+1],b=data[i+2],dark=Math.min(r,g,b)<205,chroma=Math.max(r,g,b)-Math.min(r,g,b);if(y>h*.22&&y<h*.91&&dark){ink[x]++;ink[Math.min(w-1,x+1)]++;}if(chroma>12&&Math.min(r,g,b)<205&&Math.max(r,g,b)>50){const key=[r,g,b].map(v=>Math.min(255,Math.round(v/16)*16)).join(',');bins.set(key,(bins.get(key)||0)+1);if(y<h*.2)topColor++;if(y>h*.22&&x<w*.32)leftColor++;if(y>h*.22&&x>w*.68)rightColor++;}}
  let accent='#234b55';const common=[...bins].sort((a,b)=>b[1]-a[1])[0];if(common)accent='#'+common[0].split(',').map(v=>(+v).toString(16).padStart(2,'0')).join('');
  // Find a real vertical gutter in the body; a wide name masthead must not hide it.
- let run=0,best=null;for(let x=Math.floor(w*.2);x<w*.8;x++){if(ink[x]<h*.014){run++;if(run>=w*.025){const center=x-run/2,li=ink.slice(0,Math.floor(center)).reduce((a,b)=>a+b,0),ri=ink.slice(Math.ceil(center)).reduce((a,b)=>a+b,0);if(li>w*h*.006&&ri>w*h*.006&&(!best||run>best.run))best={run,center};}}else run=0;}
+ let run=0,best=null;for(let x=Math.floor(w*.2);x<w*.8;x++){if(ink[x]<h*.003){run++;if(run>=w*.025){const center=x-run/2,li=ink.slice(0,Math.floor(center)).reduce((a,b)=>a+b,0),ri=ink.slice(Math.ceil(center)).reduce((a,b)=>a+b,0);if(li>w*h*.0015&&ri>w*h*.0015&&(!best||run>best.run))best={run,center};}}else run=0;}
  const rail=Math.max(leftColor,rightColor)>w*h*.025;
  const layout=rail?(leftColor>=rightColor?'sidebar-left':'sidebar-right'):best?(best.center<w*.5?'sidebar-left':'sidebar-right'):'single';
  return {accent,layout,header:topColor>w*h*.012?'banner':'plain'};
