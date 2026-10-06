@@ -138,3 +138,11 @@ const anchored=validate("analysis",{job:{},matrix:[{...anchoredRow}]},{vacancy:a
 assert.equal(anchored.matrix[0].vacancyQuote,"Required: Excel, production scheduling.");
 assert.throws(()=>validate("analysis",{job:{},matrix:[{...anchoredRow,vacancySourceId:"VAC99",vacancyQuote:"SQL"}]},{vacancy:ad,vacancySources:{VAC99:"invented requirement"}},{}),/invalid vacancy source reference/);
 console.log("Vacancy source anchors: exact original sentences and forged source rejection passed.");
+
+assert.equal(analysis.matrix[0].evidenceReferenceInvalid,true);
+assert.match(analysis.qualityWarnings[0],/SAP PP/);
+const lowEvidence=recruiterAssessment([row('Unknown',{category:'experience'}),row('Partial Match',{category:'education'}),row('Unknown',{category:'tools'}),row('Unknown',{category:'softSkills',requirement:'Communication'}),row('Unknown',{category:'softSkills',requirement:'Teamwork'})]);
+assert.equal(lowEvidence.score,13);
+assert.equal(lowEvidence.probability,null);
+assert.equal(recruiterAssessment([row('Transferable Skill')]).score,38);
+console.log('Score transparency: the 13/100 example is reproducible; invalid references are flagged and transferable evidence earns separate credit.');
