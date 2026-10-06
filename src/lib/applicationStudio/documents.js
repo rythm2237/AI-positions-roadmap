@@ -3,7 +3,7 @@ import mammoth from 'mammoth/mammoth.browser.js';
 import {PDFDocument,rgb,PDFName,PDFString} from 'pdf-lib';
 import fontkit from '@pdf-lib/fontkit';
 import JSZip from 'jszip';
-import {TEMPLATES,FONTS,designFor,splitSections} from './design.mjs';
+import {TEMPLATES,FONTS,designFor,splitSections,flowText} from './design.mjs';
 import {inspectDesign} from './designImport.js';
 import {pageText} from './pdfText.mjs';
 import {recruiterAssessment} from './recruiter.mjs';
@@ -38,10 +38,10 @@ export async function pdf(doc){
  if(header){const [name,...rest]=header.text.split('\n');const headerHeight=wrap(name,bold,27,mast.w).length*33+wrap(rest.join('\n'),normal,d.size,mast.w).length*d.size*1.48+35;if(headerHeight>height/2)throw Error('Header is too long. Move experience and skills into separate sections before exporting.');if(d.header==='banner'){const nameLines=wrap(name,bold,27,mast.w),contactLines=wrap(rest.join('\n'),normal,d.size,mast.w),block=nameLines.length*33+contactLines.length*d.size*1.48+35;if(block>height/2)throw Error('Header is too long for a banner. Choose another layout or move details to a section.');pages[0].drawRectangle({x:margin-12,y:mast.y-block,width:mast.w+24,height:block+12,color:accent});}write(mast,name,{font:bold,size:27,leading:33,color:d.header==='banner'?white:accent,align:d.header==='centered'?'center':'left',after:9});write(mast,rest.join('\n'),{leading:d.size*1.4,color:d.header==='banner'?white:ink,align:d.header==='centered'?'center':'left',after:20});}
  const startY=mast.y;
  if(columns)pages[0].drawRectangle({x:sideX-10,y:bottom-8,width:sideWidth+20,height:Math.max(0,startY-bottom+8),color:rgb(.94,.95,.97)});
- function sections(list,x,w){const f={i:0,x,y:startY,w};if(doc.kind!=='cv')write(f,doc.title||'Letter',{font:bold,size:12,color:accent,after:15});for(const s of list){if(!s.text?.trim())continue;if(s.title&&s.title!=='Header'){if(f.y-55<bottom){f.i++;pageAt(f.i);f.y=tops[f.i];}f.y-=10;write(f,d.heading==='uppercase'?s.title.toUpperCase():s.title,{font:bold,size:d.size+1,leading:d.size*1.5,color:accent,after:7});if(d.heading==='rule')pageAt(f.i).drawLine({start:{x,y:f.y+3},end:{x:x+w,y:f.y+3},thickness:.5,color:accent});}write(f,s.text,{leading:d.size*1.4,after:7});} }
+ function sections(list,x,w){const f={i:0,x,y:startY,w};if(doc.kind!=='cv')write(f,doc.title||'Letter',{font:bold,size:12,color:accent,after:15});for(const s of list){if(!s.text?.trim())continue;if(s.title&&s.title!=='Header'){if(f.y-55<bottom){f.i++;pageAt(f.i);f.y=tops[f.i];}f.y-=10;write(f,d.heading==='uppercase'?s.title.toUpperCase():s.title,{font:bold,size:d.size+1,leading:d.size*1.5,color:accent,after:7});if(d.heading==='rule')pageAt(f.i).drawLine({start:{x,y:f.y+3},end:{x:x+w,y:f.y+3},thickness:.5,color:accent});}write(f,flowText(s),{leading:d.size*1.4,after:7});} }
  if(columns){sections(group.main,mainX,mainWidth);sections(group.side,sideX,sideWidth);}else sections(header?doc.sections.slice(1):doc.sections,margin,width-2*margin);
  return new Blob([await document.save()],{type:'application/pdf'});
 }
 export async function applicationPackage(documents){if(!documents.length)throw Error('No documents to export.');const zip=new JSZip();for(let i=0;i<documents.length;i++)zip.file(documents[i].kind==='cv'?'CV.pdf':documents[i].kind==='cover'?'Cover-Letter.pdf':'Motivation-Letter.pdf',await (await pdf(documents[i])).arrayBuffer());return zip.generateAsync({type:'blob'});}
-window.CareerDocs={extract,pdf,applicationPackage,inspectDesign,TEMPLATES,FONTS,designFor,splitSections};
+window.CareerDocs={extract,pdf,applicationPackage,inspectDesign,TEMPLATES,FONTS,designFor,splitSections,flowText};
 window.CareerRecruiter={assess:recruiterAssessment};

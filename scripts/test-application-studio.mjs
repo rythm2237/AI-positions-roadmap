@@ -152,3 +152,5 @@ const pdfItem=(str,x,y,width=100,size=10)=>({str,width,transform:[size,0,0,size,
 const ordered=pageText([pdfItem('1',540,23),pdfItem('Contact',35,760),pdfItem('email@example.com',35,740),pdfItem('Skills',35,700),pdfItem('Excel',35,680),pdfItem('Planning',35,660),pdfItem('Alex Example',230,760,220,24),pdfItem('Planner',230,730),pdfItem('Summary',230,690),pdfItem('Operational experience',230,670,230),pdfItem('Experience',230,640),pdfItem('Coordinated inventory',230,620,220),pdfItem('Education',230,590)],595,842);
 assert(ordered.startsWith('Alex Example\nPlanner\nContact'));assert(!ordered.includes('\n1'));assert(ordered.includes('Coordinated inventory'));
 console.log('PDF import: masthead-first column order and footer exclusion passed.');
+
+const {flowText}=await import('../src/lib/applicationStudio/design.mjs');assert.equal(flowText({title:'Summary',text:'Business operations\nwith analytics.'}),'Business operations with analytics.');assert.equal(flowText({title:'Experience',text:'Role\n2024–2026'}),'Role\n2024–2026');
