@@ -45,8 +45,8 @@ assert.doesNotMatch(studioRoute, /test the demo/i);
 assert.ok(studioRoute.indexOf('if (action === "fetch") return json(await fetchPublic(body.url!));') < studioRoute.indexOf('consumeBetaAiQuota(user.id, "project_review")'), "Public vacancy retrieval must not consume the AI review quota.");
 assert.ok(studioRoute.includes("Daily AI review limit reached"));
 assert.match(studioRoute, /requestId/);
-assert.match(studioRoute, /const errorName = error instanceof Error \? error\.name/);
-assert.match(studioRoute, /configured spend limit/);
+
+
 assert.match(studioHost, /useState\(true\)/);
 assert.match(studioHost, /createPortal/);
 assert.match(studioHost, /fixed .*z-\[1000\]/);
@@ -115,3 +115,26 @@ assert.equal(designFor('Modern',{size:100}).size,11);
 const content=[{title:'Header',text:'Candidate'},{title:'Experience',text:'Real work'},{title:'Skills',text:'SQL'},{title:'Custom',text:'User section'}];
 const split=splitSections(content);assert.equal(split.side[0].text,'SQL');assert.deepEqual([...split.main,...split.side].map(s=>s.text).sort(),content.slice(1).map(s=>s.text).sort());
 console.log('Structured recruiter rubric, explicit gates, unknowns, vacancy traceability, submitted CV sources, design sanitization and content preservation passed.');
+
+const {classifyStudioGatewayError,studioModelFallback} = await import("../src/lib/applicationStudio/gatewayErrors.ts");
+const denied={name:"GatewayInternalServerError",statusCode:403,message:"Free tier users do not have access to this model."};
+assert.equal(studioModelFallback(denied,"openai/gpt-5.4-mini"),"openai/gpt-4.1-mini");
+assert.equal(classifyStudioGatewayError(denied).refundQuota,true);
+for(const message of ["Configured spend limit reached","Forbidden by model allowlist","Insufficient credit balance"]) {
+  assert.equal(studioModelFallback({...denied,message},"openai/gpt-5.4-mini"),undefined);
+}
+assert.equal(classifyStudioGatewayError({...denied,message:"Configured spend limit reached"}).code,"AI_GATEWAY_BUDGET_EXCEEDED");
+assert.equal(classifyStudioGatewayError({...denied,message:"Insufficient credit balance"}).code,"AI_GATEWAY_CREDITS_UNAVAILABLE");
+assert.equal(classifyStudioGatewayError({...denied,statusCode:500}).refundQuota,false);
+assert.equal(classifyStudioGatewayError(new Error("sensitive candidate text")).refundQuota,false);
+assert.ok(!classifyStudioGatewayError(new Error("sensitive candidate text")).message.includes("sensitive"));
+console.log("Gateway: free-tier fallback, budget/access policy preservation, pre-inference refunds and safe errors passed.");
+
+const {vacancySourceMap} = await import("../src/lib/applicationStudio/validation.mjs");
+const ad="Required: Excel, production scheduling. Preferred: SQL.";
+assert.deepEqual(vacancySourceMap(ad),{VAC1:"Required: Excel, production scheduling.",VAC2:"Preferred: SQL."});
+const anchoredRow={requirement:"production scheduling",priority:"Mandatory",category:"experience",level:"Unknown",evidenceIds:[],vacancySourceId:"VAC1",vacancyQuote:"Required: production scheduling"};
+const anchored=validate("analysis",{job:{},matrix:[{...anchoredRow}]},{vacancy:ad},{});
+assert.equal(anchored.matrix[0].vacancyQuote,"Required: Excel, production scheduling.");
+assert.throws(()=>validate("analysis",{job:{},matrix:[{...anchoredRow,vacancySourceId:"VAC99",vacancyQuote:"SQL"}]},{vacancy:ad,vacancySources:{VAC99:"invented requirement"}},{}),/invalid vacancy source reference/);
+console.log("Vacancy source anchors: exact original sentences and forged source rejection passed.");
