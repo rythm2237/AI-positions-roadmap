@@ -18,3 +18,5 @@
 @media(max-width:1450px){.design-mode{grid-template-columns:300px minmax(0,1fr)}}
 @media(max-width:750px){.design-mode{display:block}.design-mode .sidebar{height:auto;position:static}.design-mode .design-document{position:static}.sidebar .design-controls .grid{grid-template-columns:1fr 1fr}.sidebar .design-controls .template-gallery{grid-template-columns:repeat(3,minmax(0,1fr))}}
 .template-mini.banner{background:linear-gradient(var(--sample-header) 0 38px,white 38px)}.template-mini.banner .mini-name,.template-mini.banner .mini-role{color:var(--sample-header-ink)}
+
+.content-plan-preview{white-space:pre-wrap;font:12px/1.6 system-ui;max-height:420px;overflow:auto}.content-budget .actions{margin:10px 0}.content-budget select{max-width:430px}.content-budget details{max-height:480px;overflow:auto}

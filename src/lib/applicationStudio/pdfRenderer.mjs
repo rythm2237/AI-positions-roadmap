@@ -1,9 +1,12 @@
 import {PDFDocument,rgb,PDFName,PDFString,pushGraphicsState,popGraphicsState,moveTo,appendBezierCurve,closePath,clip,endPath} from 'pdf-lib';
 import fontkit from '@pdf-lib/fontkit';
 import {FONTS,designFor,splitSections,flowText,photoData,colorInk} from './design.mjs';
+import { isMetaContent, validateCV } from './contentEngine.mjs';
 export async function renderPDF(doc,loadFonts){
  if(!Array.isArray(doc.sections)||!doc.sections.some(s=>s.text?.trim()))throw Error('No document content to export.');
  if(/[\u0600-\u06ff\u0590-\u05ff]/.test(JSON.stringify(doc.sections)))throw Error('RTL PDF shaping is not supported. Use English, German or French.');
+ if(doc.kind==='cv'&&doc.sections.some(s=>s.text.split('\n').some(isMetaContent)))throw Error('Remove analysis comments or page artifacts from the CV before exporting. Your draft is unchanged.');
+ if(doc.cvGenerationVersion===2&&!doc.measure){const qc=validateCV(doc.sections);if(!qc.valid)throw Error(qc.issues.join('. '));}
  const d=designFor(doc.template,doc.design),document=await PDFDocument.create();document.registerFontkit(fontkit);const data=await loadFonts(d.font);
  const normal=await document.embedFont(data[0],{subset:true}),bold=await document.embedFont(data[1],{subset:true});
  document.setTitle(doc.title||'Career document');const width=595.276,height=841.89,margin=d.margin,bottom=40,accent=rgb(...d.accent.slice(1).match(/../g).map(x=>parseInt(x,16)/255)),ink=rgb(.12,.16,.18),white=rgb(1,1,1);
@@ -12,7 +15,18 @@ export async function renderPDF(doc,loadFonts){
  const pages=[],tops=[];
  function pageAt(index){while(pages.length<=index){const p=document.addPage([width,height]);if(columns&&pages.length>0)p.drawRectangle({x:sideX-10,y:bottom-8,width:sideWidth+20,height:height-margin-bottom+8,color:sideColor});if(d.header==='rail')p.drawRectangle({x:margin-15,y:bottom,width:3,height:height-margin-bottom,color:accent});p.drawText(String(pages.length+1),{x:width-margin-12,y:23,size:8,font:normal,color:rgb(.4,.45,.46)});pages.push(p);tops.push(height-margin);}return pages[index];}pageAt(0);
  function wrap(text,font,size,w){const result=[];for(const original of String(text).split('\n')){if(!original.trim()){result.push('');continue;}let line='';for(const word of original.trim().split(/\s+/)){if(font.widthOfTextAtSize(word,size)>w){if(line){result.push(line);line='';}let part='';for(const char of word){if(font.widthOfTextAtSize(part+char,size)>w){result.push(part);part='';}part+=char;}line=part;continue;}if(line&&font.widthOfTextAtSize(line+' '+word,size)>w){result.push(line);line=word;}else line+=(line?' ':'')+word;}if(line)result.push(line);}return result;}
- function write(flow,text,{font=normal,size=d.size,leading=d.size*1.48,color=ink,after=5,align='left'}={}){for(const line of wrap(text,font,size,flow.w)){if(!line.trim()){flow.y-=leading*.28;continue;}if(flow.y-leading<bottom){flow.i++;pageAt(flow.i);flow.y=tops[flow.i];}const p=pageAt(flow.i),x=flow.x+(align==='center'?(flow.w-font.widthOfTextAtSize(line,size))/2:0);if(line){p.drawText(line,{x,y:flow.y-size,size,font,color});for(const match of line.matchAll(/https:\/\/[^\s<>]+|[\w.+-]+@[\w.-]+\.[A-Za-z]{2,}/g)){const linkX=x+font.widthOfTextAtSize(line.slice(0,match.index),size),w=font.widthOfTextAtSize(match[0],size),annotation=document.context.register(document.context.obj({Type:'Annot',Subtype:'Link',Rect:[linkX,flow.y-size-2,linkX+w,flow.y+1],Border:[0,0,0],A:{Type:'Action',S:'URI',URI:PDFString.of(match[0].includes('@')?'mailto:'+match[0]:match[0])}}));let annots=p.node.lookup(PDFName.of('Annots'));if(!annots){annots=document.context.obj([]);p.node.set(PDFName.of('Annots'),annots);}annots.push(annotation);}}flow.y-=leading;}flow.y-=after;}
+ function write(flow,text,{font=normal,size=d.size,leading=d.size*1.48,color=ink,after=5,align='left'}={}){
+  const links=[];
+  const readable=String(text).replace(/https:\/\/[^\s<>]+/g,uri=>{let display=uri.replace(/^https:\/\/(?:www\.)?/,'').replace(/\?.*$/,'').replace(/\/$/,'');if(font.widthOfTextAtSize(display,size)>flow.w)display=display.split('/')[0]+' / link';links.push({display,uri});return display;});
+  for(const line of wrap(readable,font,size,flow.w)){
+   if(!line.trim()){flow.y-=leading*.28;continue;}if(flow.y-leading<bottom){flow.i++;pageAt(flow.i);flow.y=tops[flow.i];}
+   const p=pageAt(flow.i),x=flow.x+(align==='center'?(flow.w-font.widthOfTextAtSize(line,size))/2:0);
+   p.drawText(line,{x,y:flow.y-size,size,font,color});
+   const visibleLinks=[...links.filter(l=>line.includes(l.display)).map(l=>({...l,index:line.indexOf(l.display)})),...[...line.matchAll(/[\w.+-]+@[\w.-]+\.[A-Za-z]{2,}/g)].map(m=>({display:m[0],uri:'mailto:'+m[0],index:m.index}))];
+   for(const l of visibleLinks){const linkX=x+font.widthOfTextAtSize(line.slice(0,l.index),size),w=font.widthOfTextAtSize(l.display,size),annotation=document.context.register(document.context.obj({Type:'Annot',Subtype:'Link',Rect:[linkX,flow.y-size-2,linkX+w,flow.y+1],Border:[0,0,0],A:{Type:'Action',S:'URI',URI:PDFString.of(l.uri)}}));let annots=p.node.lookup(PDFName.of('Annots'));if(!annots){annots=document.context.obj([]);p.node.set(PDFName.of('Annots'),annots);}annots.push(annotation);}
+   flow.y-=leading;
+  }flow.y-=after;
+ }
  const group=splitSections(doc.sections),header=doc.kind==='cv'?group.header:null,bodyTop=height-margin;
  let portrait=null;if(doc.kind==='cv'&&photoData(doc.portrait)){const data=Uint8Array.from(atob(doc.portrait.split(',')[1]),c=>c.charCodeAt(0));portrait=doc.portrait.startsWith('data:image/png')?await document.embedPng(data):await document.embedJpg(data);}
  const sidePortrait=portrait&&columns&&d.photoPlacement==='sidebar';
@@ -23,7 +37,9 @@ export async function renderPDF(doc,loadFonts){
  const startY=mast.y;
  if(columns)pages[0].drawRectangle({x:sideX-10,y:bottom-8,width:sideWidth+20,height:Math.max(0,startY-bottom+8),color:sideColor});
  if(sidePortrait)drawPortrait(sideX+32,startY-64,64);
- function sections(list,x,w,isSide=false){const f={i:0,x,y:startY-(isSide&&sidePortrait?84:0),w};if(doc.kind!=='cv')write(f,doc.title||'Letter',{font:bold,size:12,color:accent,after:15});for(const s of list){if(!s.text?.trim())continue;if(s.title&&s.title!=='Header'){if(f.y-55<bottom){f.i++;pageAt(f.i);f.y=tops[f.i];}f.y-=10;write(f,d.heading==='uppercase'?s.title.toUpperCase():s.title,{font:bold,size:d.size+2,leading:d.size*1.6,color:isSide&&sideDark?white:accent,after:7});if(d.heading==='band')pageAt(f.i).drawRectangle({x,y:f.y+3,width:w,height:2,color:accent});if(d.heading==='timeline'&&!isSide)pageAt(f.i).drawCircle({x:x-7,y:f.y+10,size:2,color:accent});if(d.heading==='rule')pageAt(f.i).drawLine({start:{x,y:f.y+3},end:{x:x+w,y:f.y+3},thickness:.5,color:accent});}write(f,flowText(s),{color:isSide&&sideDark?white:ink,leading:d.size*1.4,after:7});} }
- if(columns){sections(group.main,mainX,mainWidth);sections(group.side,sideX,sideWidth,true);}else sections(header?doc.sections.slice(1):doc.sections,margin,width-2*margin);
+ function sections(list,x,w,isSide=false,existingFlow=null){const f=existingFlow||{i:0,x,y:startY-(isSide&&sidePortrait?84:0),w};if(doc.kind!=='cv')write(f,doc.title||'Letter',{font:bold,size:12,color:accent,after:15});for(const s of list){if(!s.text?.trim())continue;if(s.title&&s.title!=='Header'){if(f.y-55<bottom){f.i++;pageAt(f.i);f.y=tops[f.i];}f.y-=8;write(f,d.heading==='uppercase'?s.title.toUpperCase():s.title,{font:bold,size:d.size+2,leading:d.size*1.6,color:isSide&&sideDark?white:accent,after:4});if(d.heading==='band')pageAt(f.i).drawRectangle({x,y:f.y+3,width:w,height:2,color:accent});if(d.heading==='timeline'&&!isSide)pageAt(f.i).drawCircle({x:x-7,y:f.y+10,size:2,color:accent});if(d.heading==='rule')pageAt(f.i).drawLine({start:{x,y:f.y+3},end:{x:x+w,y:f.y+3},thickness:.5,color:accent});}for(const line of flowText(s).split('\n')){const bodyFont=!/^[•*-]/.test(line)&&/\s[—|–]\s|\s·\s/.test(line)&&line.length<150?bold:normal;const lineHeight=wrap(line,bodyFont,d.size,w).length*d.size*1.4;if(lineHeight<height-margin-bottom-30&&f.y-lineHeight<bottom){f.i++;pageAt(f.i);f.y=tops[f.i];}write(f,line,{font:bodyFont,color:isSide&&sideDark?white:ink,leading:d.size*1.4,after:line?2:1});}f.y-=4;} }
+ if(columns){const mainFlow={i:0,x:mainX,y:startY,w:mainWidth},sideFlow={i:0,x:sideX,y:startY-(sidePortrait?84:0),w:sideWidth};for(const s of doc.sections.filter(s=>s!==header)){const side=group.side.includes(s);sections([s],side?sideX:mainX,side?sideWidth:mainWidth,side,side?sideFlow:mainFlow);}}else sections(header?doc.sections.slice(1):doc.sections,margin,width-2*margin);
+ if(doc.measure)return {pages:pages.length};
+ if(doc.kind==='cv'&&doc.cvGenerationVersion===2&&pages.length>(doc.maxPages||2))throw Error(`This CV is ${pages.length} pages. Optimise for the current template or explicitly allow an extended CV before exporting. Your content has not been removed.`);
  return new Blob([await document.save()],{type:'application/pdf'});
 }

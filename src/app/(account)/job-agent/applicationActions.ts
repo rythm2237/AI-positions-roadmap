@@ -75,7 +75,7 @@ export async function prepareApplication(form: FormData) {
     const { pack, facts, sourceCV } = await generateApplicationPack({ profile: profileResult.data, resume, job });
     const version = Date.now().toString();
     const defaults = await getDesignDefaults(user.id);
-    const documents = designedPack({ source: sourceCV, pack, defaults, name: profileResult.data.name, email: profileResult.data.email, role: job.role });
+    const documents = await designedPack({ source: sourceCV, pack, defaults, name: profileResult.data.name, email: profileResult.data.email, role: job.role, vacancy: job.job_description || '' });
     const assetRows = [
       { asset_type: "cv", structured_content: { document: documents.cv, applicationSummary: pack.applicationSummary, professionalSummary: pack.professionalSummary, selectedSkills: pack.selectedSkills, keyAchievements: pack.keyAchievements, highlights: pack.cvHighlights } },
       { asset_type: "portfolio", structured_content: { cases: pack.portfolioCases, founderPositioning: pack.founderPositioning } },

@@ -45,7 +45,7 @@ async function nextStage(){
  if(S.stage===1&&$('learningTitle')?.value.trim())throw Error('Save this learning item or clear its title before continuing.');
  if(S.stage===2){if(!a.vacancy.trim()&&a.url.trim()){const x=await api('fetch',{url:a.url});a.vacancy=x.text;a.url=x.url;if(x.job)a.job={...a.job,...x.job};}if(!a.vacancy.trim())throw Error('Paste the full vacancy or enter a public vacancy URL.');if(!a.analysis||assessmentStale())await analyze();else S.stage=3;render();window.scrollTo(0,0);return;}
  if(S.stage===3){if(assessmentStale())throw Error('Your CV or vacancy changed. Refresh analysis before requesting proposals.');if(!a.proposalsGenerated){await tailor();a.proposalsGenerated=true;}S.stage=4;render();window.scrollTo(0,0);return;}
- if(S.stage===4){if(a.changes.some(c=>c.status==='pending'))throw Error('Accept, edit or reject each pending proposal before design.');a.contentReviewed=true;}
+ if(S.stage===4){if(a.changes.some(c=>c.status==='pending'))throw Error('Accept, edit or reject each pending proposal before design.');a.contentReviewed=true;await prepareConciseCV(false);}
  if(S.stage===5){a.design=selectedDesign();a.designApplied=true;if(account&&!S.demo)await saveDesignDefaults();}
  if([7,8].includes(S.stage)&&account&&!S.demo)await saveDesignDefaults();
  S.stage=Math.min(S.stage+1,navs.length-1);render();window.scrollTo(0,0);
