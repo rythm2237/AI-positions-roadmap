@@ -28,7 +28,9 @@
     "test:generative-career": "node --experimental-strip-types scripts/test-career-resource-pack-normalization.ts && node --experimental-strip-types scripts/test-generative-career-builder.ts",
     "test:admin-catalogs": "node --experimental-strip-types scripts/test-admin-catalog-inventory.ts",
     "intelligence:refresh": "node --env-file=.env.local scripts/refresh-intelligence.mjs",
-    "test:application-studio": "node --experimental-strip-types scripts/test-application-studio.mjs && node scripts/test-application-studio-flow.cjs"
+    "test:application-studio": "node --experimental-strip-types scripts/test-application-studio.mjs && node scripts/test-application-studio-flow.cjs",
+    "test:application-studio-design": "node scripts/test-application-studio-design.mjs",
+    "test:application-studio-agent": "node scripts/test-application-studio-agent.mjs"
   },
   "dependencies": {
     "@pdf-lib/fontkit": "1.1.1",

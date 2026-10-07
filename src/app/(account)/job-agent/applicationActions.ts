@@ -4,6 +4,8 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { requireUser } from "@/lib/auth/session";
 import { createClient } from "@/lib/supabase/server";
+import { getDesignDefaults } from "@/lib/applicationStudio/defaults";
+import { designedPack, emailDesignedPack } from "@/lib/job-agent/designedPack";
 import { generateApplicationPack } from "@/lib/job-agent/applicationPack";
 import { assessApplicationReadiness } from "@/lib/job-agent/readiness";
 import { loadUnifiedEvidence } from "@/lib/job-agent/unifiedEvidence";
@@ -70,12 +72,14 @@ export async function prepareApplication(form: FormData) {
   ]);
 
   try {
-    const { pack, facts } = await generateApplicationPack({ profile: profileResult.data, resume, job });
+    const { pack, facts, sourceCV } = await generateApplicationPack({ profile: profileResult.data, resume, job });
     const version = Date.now().toString();
+    const defaults = await getDesignDefaults(user.id);
+    const documents = designedPack({ source: sourceCV, pack, defaults, name: profileResult.data.name, email: profileResult.data.email, role: job.role });
     const assetRows = [
-      { asset_type: "cv", structured_content: { applicationSummary: pack.applicationSummary, professionalSummary: pack.professionalSummary, selectedSkills: pack.selectedSkills, keyAchievements: pack.keyAchievements, highlights: pack.cvHighlights } },
+      { asset_type: "cv", structured_content: { document: documents.cv, applicationSummary: pack.applicationSummary, professionalSummary: pack.professionalSummary, selectedSkills: pack.selectedSkills, keyAchievements: pack.keyAchievements, highlights: pack.cvHighlights } },
       { asset_type: "portfolio", structured_content: { cases: pack.portfolioCases, founderPositioning: pack.founderPositioning } },
-      { asset_type: "cover_note", structured_content: { paragraphs: pack.coverNote, recruiterMessage: pack.recruiterMessage } },
+      { asset_type: "cover_note", structured_content: { document: documents.cover, motivationDocument: documents.motivation, motivationParagraphs: pack.motivationNote, paragraphs: pack.coverNote, recruiterMessage: pack.recruiterMessage } },
       { asset_type: "job_snapshot", structured_content: { company: job.company, role: job.role, location: job.location, applicationUrl: job.application_url ?? job.job_url, sourceUrl: job.source_url ?? job.job_url, description: job.job_description ?? null } },
       { asset_type: "fit_analysis", structured_content: { score: job.fit_score, confidence: job.fit_confidence, explanation: job.fit_explanation, recommendation: job.recommendation, strengths: job.strengths, gaps: job.gaps, eligibilityStatus: job.eligibility_status, eligibilityReasons: job.eligibility_reasons, canonicalFactIds: facts.map((fact) => fact.id) } },
       { asset_type: "screening_answers", structured_content: { answers: pack.screeningAnswers, missingUserDecisions: pack.missingUserDecisions } },
@@ -90,6 +94,15 @@ export async function prepareApplication(form: FormData) {
       supabase.from("application_status_events").insert({ user_id: user.id, application_id: applicationId, from_status: "preparing", to_status: "ready_for_review", reason_code: "GROUNDED_PACK_GENERATED", evidence: { version, sourceResumeId: resume.id } }),
       recordInbox(supabase, { userId: user.id, jobId, applicationId, category: "application_ready", title: `Application pack ready for ${job.company}`, body: "A provenance-checked application pack is ready for human review.", priority: "high", recommendedAction: "Review every statement and resolve missing answers before approving the pack.", deepLink: `/job-agent/applications/${applicationId}`, dedupeKey: `application-ready:${applicationId}:${version}` }),
     ]);
+    // Only the authenticated account owner receives these drafts; employer submission is separate.
+    if (agent.notification_channels.includes("email") && user.email) {
+      try {
+        const providerId = await emailDesignedPack({ to: user.email, company: job.company, role: job.role, applicationId, version, documents });
+        await supabase.from("application_events").insert({ user_id: user.id, application_id: applicationId, event_type: "designed_pack_email_sent", metadata: { version, provider_id: providerId } });
+      } catch {
+        await supabase.from("application_events").insert({ user_id: user.id, application_id: applicationId, event_type: "designed_pack_email_failed", metadata: { version, reason: "Email unavailable; documents remain downloadable in your account." } });
+      }
+    }
   } catch (error) {
     const code = error instanceof Error ? error.message.slice(0, 160) : "APPLICATION_PACK_FAILED";
     console.error("prepareApplication failed", { userId: user.id, jobId, code });

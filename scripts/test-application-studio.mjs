@@ -109,7 +109,7 @@ assert.equal(submittedCV({candidate:'Master-only secret fact',cv:[{title:'Skills
 assert.throws(()=>validate('analysis',{job:{},matrix:[row('Strong Match',{vacancyQuote:'Invented requirement'})]},{vacancy:'SQL required'},sources),/traced/);
 const arbitraryGate=validate('analysis',{job:{},matrix:[row('Strong Match',{screeningGate:true})]},{vacancy:'SQL required'},sources);
 assert.equal(arbitraryGate.matrix[0].screeningGate,false);
-assert.equal(TEMPLATES.length,8);assert.equal(new Set(TEMPLATES.map(t=>[t.layout,t.header,t.font,t.size,t.margin].join('|'))).size,8);
+assert(TEMPLATES.length>=10);assert.equal(new Set(TEMPLATES.map(t=>[t.layout,t.header,t.font,t.size,t.margin,t.sideColor,t.heading].join('|'))).size,TEMPLATES.length);
 assert.equal(designFor('Modern',{accent:'url(javascript:x)',layout:'fake',size:100}).accent,'#344778');
 assert.equal(designFor('Modern',{size:100}).size,12);
 const content=[{title:'Header',text:'Candidate'},{title:'Experience',text:'Real work'},{title:'Skills',text:'SQL'},{title:'Custom',text:'User section'}];

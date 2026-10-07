@@ -21,6 +21,7 @@ const privateRoutePatterns = [
 ];
 
 const nextConfig: NextConfig = {
+  outputFileTracingIncludes: { "/job-agent/**/*": ["./public/application-studio/fonts/*.ttf"], "/api/job-agent/**/*": ["./public/application-studio/fonts/*.ttf"] },
   serverExternalPackages: ["pdf-parse", "@napi-rs/canvas"],
   async redirects() {
     return [
