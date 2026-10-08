@@ -1,3 +1,4 @@
+import {canonicalHeading} from './languages.mjs';
 import { designFor } from './design.mjs';
 
 // A selective, reversible view over user sources. Never mutates the source profile.
@@ -27,14 +28,14 @@ const kinds = [
   ['languages', /^(languages|language skills|sprachen|langues)$/i],
   ['additional', /^(additional experience|earlier experience)$/i],
 ];
-export const sectionKind = title => title === 'Header' ? 'header' : kinds.find(([, re]) => re.test(String(title).trim().replace(/:$/, '')))?.[0] || 'other';
+export const sectionKind = title => title === 'Header' ? 'header' : kinds.find(([, re]) => re.test(canonicalHeading(title)))?.[0] || 'other';
 export function parseProfile(text) {
   const sections = []; let current = { id: 'source-0', title: 'Header', text: '' };
   for (const raw of String(text || '').replace(/\r/g, '').split('\n')) {
     const line = raw.trim();
     if (sectionKind(line) !== 'other' && line !== 'Header' && !/^\s*[•*-]/.test(raw)) {
       if (current.text.trim()) sections.push(current);
-      current = { id: `source-${sections.length}`, title: line.replace(/:$/, ''), text: '' };
+      current = { id: `source-${sections.length}`, title: canonicalHeading(line), displayTitle: canonicalHeading(line)!==line.replace(/:$/, '')?line.replace(/:$/, ''):undefined, text: '' };
     } else current.text += (current.text ? '\n' : '') + raw;
   }
   if (current.text.trim()) sections.push(current);
@@ -121,7 +122,7 @@ export function planCV(input, { pressure = 0 } = {}) {
     e.included = true; e.reason = reason; e.output = text; seen.push(text); return text;
   }
   function add(title, lines, ids = []) {
-    const text = lines.filter(Boolean).join('\n'); if (text.trim()) selected.push({ id: `cv2-${selected.length}`, title, text, evidenceIds: ids });
+    const text = lines.filter(Boolean).join('\n'); if (text.trim()) selected.push({ id: `cv2-${selected.length}`, title, displayTitle:source.find(s=>sectionKind(s.title)===sectionKind(title))?.displayTitle, text, evidenceIds: ids });
   }
   const header = source.find(s => sectionKind(s.title) === 'header');
   if (header) add('Header', header.text.split('\n').filter(x => !isMetaContent(x)));

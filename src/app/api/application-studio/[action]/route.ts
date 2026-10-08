@@ -1,3 +1,4 @@
+import {TRANSLATION_SCHEMA,translationContext,validateTranslation} from '@/lib/applicationStudio/translation.mjs';
 import { classifyStudioGatewayError, studioModelFallback } from "@/lib/applicationStudio/gatewayErrors";
 import { submittedCV } from "@/lib/applicationStudio/recruiter.mjs";
 import { generateText } from "ai";
@@ -42,20 +43,22 @@ export async function POST(request: Request, { params }: { params: Promise<{ act
     catch (error) { if (error instanceof ServiceError) throw error; return json({ error: "Invalid JSON." }, 400); }
     if (!body || typeof body !== "object") return json({ error: "Invalid request." }, 400);
     if (body.sessionUserId !== user.id) return json({ error: "Your account changed. Reload the editor before continuing." }, 409);
-    const aiAction = body.action as keyof typeof SCHEMAS | "optimise";
+    const aiAction = body.action as keyof typeof SCHEMAS | "optimise" | "translate";
     const context = body.context;
     if (action === "ai") {
-      if (!Object.hasOwn(SCHEMAS, aiAction) || !context || Array.isArray(context)) return json({ error: "Invalid AI action." }, 400);
+      if ((!Object.hasOwn(SCHEMAS, aiAction)&&aiAction!=='translate') || !context || Array.isArray(context)) return json({ error: "Invalid AI action." }, 400);
       for (const key of ["candidate", "linkedin", "vacancy"]) {
         if (typeof (context[key] || "") !== "string" || String(context[key] || "").length > 100_000) return json({ error: "Invalid or oversized source text." }, 400);
       }
-      if (!String(context.candidate || "").trim() || aiAction !== 'optimise' && !String(context.vacancy || "").trim()) return json({ error: "Confirm your CV and add the vacancy first." }, 400);
+      if (!String(context.candidate || "").trim() || !['optimise','translate'].includes(aiAction) && !String(context.vacancy || "").trim()) return json({ error: "Confirm your CV and add the vacancy first." }, 400);
       if (!Array.isArray(context.cv) || !context.cv.length || context.cv.length > 100 || context.cv.some((s: unknown) => !s || typeof s !== "object" || typeof (s as Record<string, unknown>).text !== "string" || typeof (s as Record<string, unknown>).title !== "string") || submittedCV(context).length > 100_000) return json({ error: "Invalid CV sections." }, 400);
     } else if (typeof body.url !== "string" || body.url.length > 2048) return json({ error: "Enter a public HTTPS URL." }, 400);
 
     // Public page retrieval does not call AI and must not consume the user's AI review allowance.
     if (action === "fetch") return json(await fetchPublic(body.url!));
 
+    let translatedInput: ReturnType<typeof translationContext>|null=null;
+    if(aiAction==='translate'){try{translatedInput=translationContext(context!);}catch(error){return json({error:(error as Error).message},400);}}
     // Reuse the existing durable review allowance to keep AI usage bounded.
     const quota = await consumeBetaAiQuota(user.id, "project_review");
     if (!quota.allowed) return json({ error: `Daily AI review limit reached (${quota.limit}). It resets at 00:00 UTC. Your draft is unchanged.`, quota }, 429);
@@ -68,12 +71,13 @@ export async function POST(request: Request, { params }: { params: Promise<{ act
       for(const key of Object.keys(prompt))delete prompt[key];
       Object.assign(prompt,{language:context!.language,targetRole:contentPlan.targetRole,requirements:contentPlan.requirements,selectedEvidence:contentPlan.evidence.filter(e=>e.included&&e.kind==='experience').map(e=>({id:e.id,text:e.output,roleHeading:e.roleHeading}))});
     }
+    if(translatedInput){for(const key of Object.keys(prompt))delete prompt[key];Object.assign(prompt,translatedInput);}
     if (aiAction === "analysis") { delete prompt.previousApplications; delete prompt.chat; delete prompt.approved; delete prompt.analysis; }
     const model = process.env.APPLICATION_STUDIO_MODEL || "openai/gpt-4.1-mini";
     const settings = {
-      system: `${SYSTEM}\nCourse completion and profile fields may be self-reported. Preserve that provenance. Never promote completed learning to employment, expertise, or verified certification.\n${(SCHEMAS as Record<string,string>)[aiAction]}`,
+      system: `${SYSTEM}\nCourse completion and profile fields may be self-reported. Preserve that provenance. Never promote completed learning to employment, expertise, or verified certification.\n${aiAction==='translate'?TRANSLATION_SCHEMA:(SCHEMAS as Record<string,string>)[aiAction]}`,
       prompt: JSON.stringify(prompt),
-      maxOutputTokens: 6500,
+      maxOutputTokens: aiAction==='translate'?14000:6500,
       abortSignal: AbortSignal.timeout(100_000),
     };
     let result;
@@ -88,6 +92,7 @@ export async function POST(request: Request, { params }: { params: Promise<{ act
     let parsed: unknown;
     try { parsed = JSON.parse(result.text.replace(/^```(?:json)?\s*/i, "").replace(/\s*```$/, "")); }
     catch { return json({ error: "AI returned invalid JSON. Your draft is preserved." }, 502); }
+    if(translatedInput){try{return json(validateTranslation(parsed,context!.cv,translatedInput.targetLanguage));}catch(error){return json({error:(error as Error).message},502);}}
     if(contentPlan){
       const rewrites=validateRewrites(parsed,contentPlan);
       for(const r of rewrites.accepted){const e=contentPlan.evidence.find(e=>e.id===r.evidenceId);const s=contentPlan.sections.find(s=>s.evidenceIds?.includes(r.evidenceId));if(e&&s){s.text=s.text.split('\n').map(line=>line==='• '+r.original?'• '+r.text:line).join('\n');e.output=r.text;}}

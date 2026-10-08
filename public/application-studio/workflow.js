@@ -26,10 +26,10 @@ function confirmCandidate(){
   a.versions.push({id:uid(),name:'Original',at:new Date().toISOString(),cv:clone(a.cv),approved:[]});S.applications.forEach(invalidate);
  }
  if(!a.cv.length){a.cv=clone(p.sections.length?p.sections:sectionize(text));p.sections=clone(a.cv);version('Original');}
- save();
+ if(sourceChanged){a.language=window.CareerDocs?.detectLanguage?.(text)||'en';a.requestedLanguage=a.requestedLanguage||a.language;a.translation=null;a.pendingTranslation=null;}save();
 }
 function canVisit(stage){
- if(stage<0||stage>=navs.length)return false;
+ if(stage<0||stage>=navs.length||!visibleStages().includes(stage))return false;
  if(stage>=2&&!app().cv.length){toast('Add your CV and press Next in Candidate first.',true);return false;}
  if(stage===3&&!app().analysis){toast('Add a vacancy and press Next to analyze it.',true);return false;}
  if(stage>=5&&stage<=8&&!app().contentReviewed){toast('Review your CV changes before choosing a design.',true);return false;}
@@ -37,10 +37,11 @@ function canVisit(stage){
  return true;
 }
 function stepFooter(){
- const last=S.stage===navs.length-1,next=navs[S.stage+1];return `<footer class="step-footer" aria-label="Step navigation"><button id="stepBack" ${S.stage===0?'disabled':''}>Back</button><div class="tiny muted">${last?'Download your documents here.':`Next: ${esc(next)}`}${[7,8].includes(S.stage)?' · Letters are optional.':''}</div>${last?'<button id="finishCV" data-stage="6">Return to CV preview</button>':`<button id="stepNext" class="primary">Next${S.stage===6?' · Cover Letter (optional)':''}</button>`}</footer>`;
+ const stages=visibleStages(),index=stages.indexOf(S.stage),last=index===stages.length-1,next=navs[stages[index+1]];return `<footer class="step-footer" aria-label="Step navigation"><button id="stepBack" ${S.stage===0?'disabled':''}>Back</button><div class="tiny muted">${last?'Download your documents here.':`Next: ${esc(next)}`}${[7,8].includes(S.stage)?' · Letters are optional.':''}</div>${last?'<button id="finishCV" data-stage="6">Return to CV preview</button>':`<button id="stepNext" class="primary">Next${S.stage===6&&!isGeneral()?' · Cover Letter (optional)':''}</button>`}</footer>`;
 }
 async function nextStage(){
  commitStage();const a=app();
+ if(isGeneral()){if(S.stage===0)confirmCandidate();if(S.stage===1){if($('learningTitle')?.value.trim())throw Error('Save or clear your learning draft first.');await prepareConciseCV(false);}if(S.stage===4)a.contentReviewed=true;if(S.stage===5){a.design=selectedDesign();a.designApplied=true;if(account&&!S.demo)await saveDesignDefaults();}const stages=visibleStages();S.stage=stages[Math.min(stages.indexOf(S.stage)+1,stages.length-1)];render();window.scrollTo(0,0);return;}
  if(S.stage===0)confirmCandidate();
  if(S.stage===1&&$('learningTitle')?.value.trim())throw Error('Save this learning item or clear its title before continuing.');
  if(S.stage===2){if(!a.vacancy.trim()&&a.url.trim()){const x=await api('fetch',{url:a.url});a.vacancy=x.text;a.url=x.url;if(x.job)a.job={...a.job,...x.job};}if(!a.vacancy.trim())throw Error('Paste the full vacancy or enter a public vacancy URL.');if(!a.analysis||assessmentStale())await analyze();else S.stage=3;render();window.scrollTo(0,0);return;}
@@ -63,7 +64,7 @@ function scoreExplanation(x){
 function cvPreviewView(){const a=app();return title('07 / CV PREVIEW','Review your designed CV.','You can finish with a CV PDF here. Cover and motivation letters are optional.')+`<div class="card print-target"><div class="pillrow"><h3>${esc(a.template)} · CV preview</h3><span class="badge">${a.final?'Reviewed by you':'Draft · review all claims'}</span></div><div id="livePreview">${preview(a.cv)}</div></div><div class="card"><label class="check"><input id="finalCheckbox" type="checkbox" ${a.final?'checked':''}>I have reviewed this CV, its claims, dates and contact details.</label><div class="actions"><button data-pdf="cv" class="primary">Download CV PDF</button><button id="downloadHTML">Download CV HTML</button><button id="backup">Download editable backup</button><button data-stage="5">Change design or edit CV</button><button id="cvOnly">Finish with CV · export</button></div><p class="tiny muted">PDF export works without generating any letter. You can return to design and try another layout at any time.</p></div>`;}
 function bindWorkflow(){
  if($('stepNext'))$('stepNext').onclick=()=>run('Next step',nextStage);
- if($('stepBack'))$('stepBack').onclick=()=>go(S.stage-1);
+ if($('stepBack'))$('stepBack').onclick=()=>go(visibleStages()[Math.max(0,visibleStages().indexOf(S.stage)-1)]);
  if($('cvOnly'))$('cvOnly').onclick=()=>go(10);
  if($('saveLearning'))$('saveLearning').onclick=()=>{try{const title=$('learningTitle').value.trim(),details=$('learningDetails').value.trim(),url=$('learningUrl').value.trim();if(!title)throw Error('Enter a learning item name.');if(url&&new URL(url).protocol!=='https:')throw Error('Use an HTTPS reference URL.');if($('learningComplete').checked&&!details)throw Error('Describe what you actually completed.');S.learning.push({id:uid(),title,url,details,completed:$('learningComplete').checked,addedTo:[]});S.learningDraft={};render();}catch(e){toast(e.message,true)}};
  document.querySelectorAll('[data-add-learning]').forEach(b=>b.onclick=()=>{const item=S.learning.find(i=>i.id===b.dataset.addLearning);if(!item?.completed||item.addedTo?.includes(app().id))return;snapshot();const text=`${item.title} — completed learning (self-reported; not verified certification or employment).\n${item.details}${item.url?'\nReference: '+item.url:''}`;app().cv.push({id:uid(),title:'Professional Development',text});S.candidateProfile.text+='\n\nProfessional Development\n'+text;S.candidateProfile.sections=sectionize(S.candidateProfile.text);S.candidateProfile.confirmedText=S.candidateProfile.text;item.addedTo=[...(item.addedTo||[]),app().id];app().profileText=S.candidateProfile.text;invalidate(app());version('Completed learning added');render();});

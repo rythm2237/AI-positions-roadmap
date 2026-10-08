@@ -1,4 +1,4 @@
-export type CVSection = {id?:string;title:string;text:string;evidenceIds?:string[]};
+export type CVSection = {id?:string;title:string;displayTitle?:string;text:string;evidenceIds?:string[]};
 export type CVEvidence = {id:string;text:string;output?:string;kind:string;sectionId?:string;sectionTitle:string;roleHeading:string;total:number;dimensions:Record<string,number>;included:boolean;reason:string};
 export type ContentPlan = {cvGenerationVersion:number;createdAt:string;targetRole:string;vacancy:string;mode:string;sourceSections:CVSection[];sections:CVSection[];evidence:CVEvidence[];requirements:unknown[];capacity:{wordBudget:number};pressure:number;wordCount:number;estimatedPages:number;measuredPages?:number;warnings:string[];approved:boolean};
 export type PlanInput = {sections?:CVSection[]|unknown;source?:string;vacancy?:string|unknown;targetRole?:string;year?:number;template?:string|unknown;design?:unknown;portrait?:unknown};

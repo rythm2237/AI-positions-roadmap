@@ -1,3 +1,4 @@
+import {LANGUAGES,languageFor,detectLanguage,fontsForLanguage,validateTranslation} from './languages.mjs';
 import {renderPDF} from './pdfRenderer.mjs';
 import * as pdfjs from 'pdfjs-dist/build/pdf.mjs';
 import mammoth from 'mammoth/mammoth.browser.js';
@@ -8,7 +9,7 @@ import {TEMPLATES,FONTS,designFor,splitSections,flowText,photoData,colorInk} fro
 import {inspectDesign} from './designImport.js';
 import {pageText} from './pdfText.mjs';
 import {recruiterAssessment} from './recruiter.mjs';
-import {planCV,fitCV,validateCV,approximatePages} from './contentEngine.mjs';
+import {parseProfile,planCV,fitCV,validateCV,approximatePages} from './contentEngine.mjs';
 const ASSET_BASE=window.CAREER_ATELIER_CONFIG?.assetBase||'';
 pdfjs.GlobalWorkerOptions.workerSrc=ASSET_BASE+'/assets/pdf.worker.min.mjs';
 const MAX=10*1024*1024;
@@ -28,5 +29,5 @@ export async function pdf(doc){return renderPDF(doc,fonts);}
 export async function optimiseCV(input){return fitCV(input,async sections=>(await renderPDF({kind:'cv',...input,sections,measure:true},fonts)).pages);}
 export async function measureCV(doc){return (await renderPDF({...doc,measure:true},fonts)).pages;}
 export async function applicationPackage(documents){if(!documents.length)throw Error('No documents to export.');const zip=new JSZip();for(let i=0;i<documents.length;i++)zip.file(documents[i].kind==='cv'?'CV.pdf':documents[i].kind==='cover'?'Cover-Letter.pdf':'Motivation-Letter.pdf',await (await pdf(documents[i])).arrayBuffer());return zip.generateAsync({type:'blob'});}
-window.CareerDocs={extract,pdf,applicationPackage,inspectDesign,TEMPLATES,FONTS,designFor,splitSections,flowText,photoData,colorInk,optimiseCV,measureCV,planCV,validateCV,approximatePages};
+window.CareerDocs={LANGUAGES,languageFor,detectLanguage,fontsForLanguage,validateTranslation,extract,pdf,applicationPackage,inspectDesign,TEMPLATES,FONTS,designFor,splitSections,flowText,photoData,colorInk,optimiseCV,measureCV,parseProfile,planCV,validateCV,approximatePages};
 window.CareerRecruiter={assess:recruiterAssessment};
