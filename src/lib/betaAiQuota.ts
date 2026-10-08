@@ -18,6 +18,7 @@ export type BetaAiQuotaResult = {
   used: number;
   limit: number;
   usageDate?: string;
+  exempt?: boolean;
 };
 
 function adminClient() {
@@ -41,6 +42,10 @@ export async function checkBetaAiQuotaConfiguration(): Promise<{ready:boolean;co
   }
 }
 
+export async function isBetaAiQuotaExempt(userId:string):Promise<boolean>{
+ try{const {data,error}=await adminClient().from('app_user_roles').select('role').eq('user_id',userId).eq('role','admin').limit(1).maybeSingle();return !error&&data?.role==='admin';}catch{return false;}
+}
+
 function dailyLimit(kind: BetaAiQuotaKind): number {
   const raw = kind === "project_review"
     ? process.env.BETA_PROJECT_REVIEW_DAILY_LIMIT
@@ -58,6 +63,8 @@ export async function consumeBetaAiQuota(userId: string, kind: BetaAiQuotaKind):
 
   const limit = dailyLimit(kind);
   const supabase = adminClient();
+  const {data: role,error: roleError}=await supabase.from("app_user_roles").select("role").eq("user_id",userId).eq("role","admin").limit(1).maybeSingle();
+  if(!roleError&&role?.role==="admin")return {allowed:true,used:0,limit:0,exempt:true};
   const usageDate = new Date().toISOString().slice(0, 10);
   const { data, error } = await supabase.rpc("consume_beta_ai_quota", {
     p_user_id: userId,

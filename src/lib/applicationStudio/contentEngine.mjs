@@ -49,6 +49,7 @@ export function normalizeSection(section){
  for(const raw of lines){
   const line=raw.trim();
   if(!line){if(out.at(-1)!=='')out.push('');continue;}
+  if(/^page\s*(?:\d+\s*)?(?:of\s*\d*)?$/i.test(line))continue;
   const prev=out.at(-1)||'';
   const continuation=prev&&!/[.!?]$/.test(prev)&&!/^\s*[•*-]/.test(line)&&!/^\s*\d/.test(line)&&(
    kind==='summary'||kind==='education'&&(/\b(?:degree|diploma|bachelor|master)\b/i.test(line)||/[,(–-]$/.test(prev)||prev.split('(').length>prev.split(')').length)||kind==='certifications'&&(/(?:\b(?:for|of|the|and)|[/-])$/i.test(prev)||/^(?:Level|Business competence)\b/.test(line))||kind==='experience'&&(/^(?:[a-z]|and |or |with |to |for |in )/.test(line)||/\b(?:and|or|with|to|for|in|that|the|of|a)$/i.test(prev)));
