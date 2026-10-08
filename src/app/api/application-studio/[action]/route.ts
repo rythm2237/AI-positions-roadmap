@@ -4,7 +4,7 @@ import { submittedCV } from "@/lib/applicationStudio/recruiter.mjs";
 import { generateText } from "ai";
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
-import { consumeBetaAiQuota, refundRejectedBetaAiQuota } from "@/lib/betaAiQuota";
+import { BetaAiQuotaError, checkBetaAiQuotaConfiguration, consumeBetaAiQuota, refundRejectedBetaAiQuota } from "@/lib/betaAiQuota";
 import { SYSTEM, SCHEMAS } from "@/lib/applicationStudio/prompts.mjs";
 import { limitedText, sourceMap, vacancySourceMap, validate, fetchPublic, ServiceError } from "@/lib/applicationStudio/validation.mjs";
 import {planCV,validateRewrites,validateCV} from '@/lib/applicationStudio/contentEngine.mjs';
@@ -22,7 +22,7 @@ export async function GET(_request: Request, { params }: { params: Promise<{ act
   try {
     const supabase = await createClient();
     const { data: { user }, error } = await supabase.auth.getUser();
-    return json({ user: !error && user && !user.is_anonymous ? { id: user.id } : null, configured: Boolean(process.env.VERCEL || process.env.AI_GATEWAY_API_KEY), authConfigured: true, signInUrl: "/login?next=%2Fapplication-studio" });
+    return json({ user: !error && user && !user.is_anonymous ? { id: user.id } : null, configured: Boolean(process.env.VERCEL || process.env.AI_GATEWAY_API_KEY), quotaService: await checkBetaAiQuotaConfiguration(), authConfigured: true, signInUrl: "/login?next=%2Fapplication-studio" });
   } catch { return json({ user: null, configured: false, authConfigured: false, signInUrl: "/login?next=%2Fapplication-studio" }); }
 }
 
@@ -103,6 +103,10 @@ export async function POST(request: Request, { params }: { params: Promise<{ act
     return json(validate(aiAction, parsed, context!, sources));
   } catch (error) {
     if (error instanceof ServiceError) return json({ error: error.message }, error.status);
+    if (error instanceof BetaAiQuotaError) {
+      console.error("Application Studio quota failed", {requestId,code:error.code});
+      return json({error:`${error.message} Reference: ${requestId}.`,code:error.code,requestId},503);
+    }
     const failure = classifyStudioGatewayError(error);
     let quotaRefunded = false;
     if (failure.refundQuota && reservedQuota) {
