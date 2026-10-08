@@ -11,7 +11,7 @@ export type BetaAiQuotaResult = {
 
 function adminClient() {
   const url = (process.env.SUPABASE_URL || process.env.NEXT_PUBLIC_SUPABASE_URL)?.trim();
-  const secret = process.env.SUPABASE_SECRET_KEY?.trim();
+  const secret = process.env.SUPABASE_SECRET_KEY?.trim() || process.env.SUPABASE_SERVICE_KEY?.trim();
   if (!url || !secret) throw new Error("Supabase admin configuration is incomplete.");
   return createSupabaseClient(url, secret, {
     auth: { autoRefreshToken: false, persistSession: false },
