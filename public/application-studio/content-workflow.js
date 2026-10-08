@@ -20,6 +20,7 @@ async function prepareConciseCV(useAI=false){
 }
 function bindContentWorkflow(){
  const on=(id,fn)=>{if($(id))$(id).onclick=fn;};
+ on('rebuildCV',()=>run('CV understanding',async()=>{await reconstructCandidate(true);await syncCompletedLearning();await prepareConciseCV(false);}));
  on('optimiseCV',()=>run('CV content selection',()=>prepareConciseCV(false)));
  on('rewriteCV',()=>run('Concise AI rewrite',()=>prepareConciseCV(true)));
  on('measureCV',()=>run('CV page check',async()=>{app().measuredPages=await(await documentTools()).measureCV(doc('cv'));}));

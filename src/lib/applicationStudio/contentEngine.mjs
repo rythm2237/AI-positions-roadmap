@@ -24,7 +24,8 @@ const kinds = [
   ['skills', /^(core skills|skills|technical skills|top skills|competencies|kenntnisse|compétences)$/i],
   ['projects', /^(selected projects|key projects|projects|portfolio|achievements|key achievements)$/i],
   ['education', /^(education|academic background|ausbildung|formation)$/i],
-  ['certifications', /^(certifications|certificates|training(?: and courses)?|courses|professional development)$/i],
+  ['certifications', /^(certifications|certificates|training(?: and courses)?|courses)$/i],
+  ['development', /^professional development$/i],
   ['languages', /^(languages|language skills|sprachen|langues)$/i],
   ['additional', /^(additional experience|earlier experience)$/i],
 ];
@@ -39,7 +40,21 @@ export function parseProfile(text) {
     } else current.text += (current.text ? '\n' : '') + raw;
   }
   if (current.text.trim()) sections.push(current);
-  return sections;
+  return sections.map(normalizeSection);
+}
+
+// Extraction wraps are not semantic bullets. Preserve records, rejoin prose only.
+export function normalizeSection(section){
+ const kind=sectionKind(section.title),lines=section.text.split('\n'),out=[];
+ for(const raw of lines){
+  const line=raw.trim();
+  if(!line){if(out.at(-1)!=='')out.push('');continue;}
+  const prev=out.at(-1)||'';
+  const continuation=prev&&!/[.!?]$/.test(prev)&&!/^\s*[•*-]/.test(line)&&!/^\s*\d/.test(line)&&(
+   kind==='summary'||kind==='education'&&(/\b(?:degree|diploma|bachelor|master)\b/i.test(line)||/[,(–-]$/.test(prev)||prev.split('(').length>prev.split(')').length)||kind==='certifications'&&(/(?:\b(?:for|of|the|and)|[/-])$/i.test(prev)||/^(?:Level|Business competence)\b/.test(line))||kind==='experience'&&(/^(?:[a-z]|and |or |with |to |for |in )/.test(line)||/\b(?:and|or|with|to|for|in|that|the|of|a)$/i.test(prev)));
+  if(continuation)out[out.length-1]=prev+' '+line;else out.push(line);
+ }
+ return {...section,text:out.join('\n')};
 }
 
 export function jobRequirements(vacancy = '', targetRole = '') {
@@ -77,7 +92,8 @@ function records(section) {
   const blocks = []; let block = null;
   for (let i = 0; i < lines.length; i++) {
     const line = lines[i], next = lines[i + 1] || '';
-    const heading = !bullet.test(line) && (dates.test(line) || dates.test(next) || /\s[—|–]\s|\s·\s/.test(line) || block?.items.length && bullet.test(next) && wordCount(line)<8) && wordCount(line) < 28;
+    const heading = !bullet.test(line) && (dates.test(line) || dates.test(next) || dates.test(lines[i+2]||'')&&wordCount(line)<8&&wordCount(next)<8&&!bullet.test(next) || /\s[—|–]\s|\s·\s/.test(line) || block?.items.length && bullet.test(next) && wordCount(line)<8) && wordCount(line) < 28;
+    if(heading&&block&&!block.items.length&&!block.heading.some(t=>dates.test(t))){block.heading.push(line);continue;}
     if (heading && !(dates.test(line) && block && !block.items.length && block.heading.length < 3)) {
       if (block) blocks.push(block);
       block = { heading: [line], items: [] };
@@ -102,7 +118,7 @@ export function capacityProfile(template, custom, portrait) {
 }
 
 export function planCV(input, { pressure = 0 } = {}) {
-  const source = copy(input.sections?.length ? input.sections : parseProfile(input.source || ''));
+  const source = copy(input.sections?.length ? input.sections : parseProfile(input.source || '')).map(normalizeSection);
   if (!source.length) throw Error('Confirm a source CV before optimising.');
   const ctx = { vacancy: input.vacancy || '', targetRole: input.targetRole || '', year: input.year || new Date().getUTCFullYear() };
   const capacity = capacityProfile(input.template, input.design, input.portrait);
@@ -125,7 +141,7 @@ export function planCV(input, { pressure = 0 } = {}) {
     const text = lines.filter(Boolean).join('\n'); if (text.trim()) selected.push({ id: `cv2-${selected.length}`, title, displayTitle:source.find(s=>sectionKind(s.title)===sectionKind(title))?.displayTitle, text, evidenceIds: ids });
   }
   const header = source.find(s => sectionKind(s.title) === 'header');
-  if (header) add('Header', header.text.split('\n').filter(x => !isMetaContent(x)));
+  if (header) add('Header', header.text.split('\n').filter(x => !isMetaContent(x)&&!/^Contact$|^\(LinkedIn\)$/i.test(x.trim())));
   const summary = source.filter(s => sectionKind(s.title) === 'summary').flatMap(s => sentences(s.text.replace(/\n/g, ' ')).map(t => item(t, 'summary', s.id, s.title)));
   let summaryWords = 0; const summaryText = [], summaryIds = [];
   for (const e of summary.sort((a, b) => b.total - a.total)) {
@@ -142,7 +158,8 @@ export function planCV(input, { pressure = 0 } = {}) {
   }
   add('Core Skills', skillText, skillIds);
   const roles = source.filter(s => sectionKind(s.title) === 'experience').flatMap(s => records(s).map(r => ({ ...r, section: s, score: relevanceScore(r.heading.join(' ') + ' ' + r.items.join(' '), ctx).total })));
-  roles.sort((a, b) => b.score - a.score);
+  const recency=r=>/present|current|ongoing/i.test(r.heading.join(' '))?9999:Math.max(0,...(r.heading.join(' ').match(/\b(?:19|20)\d{2}\b/g)||[]).map(Number));
+  roles.sort((a,b)=>recency(b)-recency(a)||b.score-a.score);
   const experience = [], experienceIds = [], additional = [], additionalIds = [];
   for (let n = 0; n < roles.length; n++) {
     const r = roles[n], heading = r.heading.filter(t => !isMetaContent(t)).join('\n');
@@ -176,8 +193,9 @@ export function planCV(input, { pressure = 0 } = {}) {
       if (lines.length >= limit) { e.reason = 'Section budget'; continue; }
       const t = take(e,'Concise source qualification or history',25); if (t) { lines.push(t); ids.push(e.id); }
     }
-    if (kind === 'additional') add(title,[...additional,...lines], [...additionalIds,...ids]); else add(title,lines,ids);
+    if (kind === 'additional') add(title,[...additional,...lines], [...additionalIds,...ids]); else add(title,kind==='certifications'?lines.map(t=>'• '+t):lines,ids);
   }
+  for(const s of source.filter(s=>sectionKind(s.title)==='development'))selected.push({...s,id:s.id||'development',text:s.text});
   source.filter(s => sectionKind(s.title) === 'other').forEach(s => s.text.split('\n').filter(Boolean).forEach(t => { const e=item(t,'other',s.id,s.title);e.reason='Unclassified source section; review before adding'; }));
   // Remove the weakest selected facts until the template's content budget is respected.
   const count = () => wordCount(selected.map(s=>s.text).join(' '));

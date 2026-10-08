@@ -41,21 +41,21 @@ function stepFooter(){
 }
 async function nextStage(){
  commitStage();const a=app();
- if(isGeneral()){if(S.stage===0)confirmCandidate();if(S.stage===1){if($('learningTitle')?.value.trim())throw Error('Save or clear your learning draft first.');await prepareConciseCV(false);}if(S.stage===4)a.contentReviewed=true;if(S.stage===5){a.design=selectedDesign();a.designApplied=true;if(account&&!S.demo)await saveDesignDefaults();}const stages=visibleStages();S.stage=stages[Math.min(stages.indexOf(S.stage)+1,stages.length-1)];render();window.scrollTo(0,0);return;}
- if(S.stage===0)confirmCandidate();
+ if(isGeneral()){if(S.stage===0){confirmCandidate();await reconstructCandidate();await syncCompletedLearning();await prepareConciseCV(false);}if(S.stage===1){if($('learningTitle')?.value.trim())throw Error('Save or clear your learning draft first.');await prepareConciseCV(false);}if(S.stage===4)a.contentReviewed=true;if(S.stage===5){a.design=selectedDesign();a.designApplied=true;if(account&&!S.demo)await saveDesignDefaults();}const stages=visibleStages();S.stage=stages[Math.min(stages.indexOf(S.stage)+1,stages.length-1)];render();window.scrollTo(0,0);return;}
+ if(S.stage===0){confirmCandidate();await reconstructCandidate();S.stage=2;render();window.scrollTo(0,0);return;}
  if(S.stage===1&&$('learningTitle')?.value.trim())throw Error('Save this learning item or clear its title before continuing.');
- if(S.stage===2){if(!a.vacancy.trim()&&a.url.trim()){const x=await api('fetch',{url:a.url});a.vacancy=x.text;a.url=x.url;if(x.job)a.job={...a.job,...x.job};}if(!a.vacancy.trim())throw Error('Paste the full vacancy or enter a public vacancy URL.');if(!a.analysis||assessmentStale())await analyze();else S.stage=3;render();window.scrollTo(0,0);return;}
+ if(S.stage===2){if(!a.vacancy.trim()&&a.url.trim()){const x=await api('fetch',{url:a.url});a.vacancy=x.text;a.url=x.url;if(x.job)a.job={...a.job,...x.job};}if(!a.vacancy.trim())throw Error('Paste the full vacancy or enter a public vacancy URL.');await syncCompletedLearning();if(!a.analysis||assessmentStale())await analyze();else S.stage=3;render();window.scrollTo(0,0);return;}
  if(S.stage===3){if(assessmentStale())throw Error('Your CV or vacancy changed. Refresh analysis before requesting proposals.');if(!a.proposalsGenerated){await tailor();a.proposalsGenerated=true;}S.stage=4;render();window.scrollTo(0,0);return;}
  if(S.stage===4){if(a.changes.some(c=>c.status==='pending'))throw Error('Accept, edit or reject each pending proposal before design.');a.contentReviewed=true;await prepareConciseCV(false);}
  if(S.stage===5){a.design=selectedDesign();a.designApplied=true;if(account&&!S.demo)await saveDesignDefaults();}
  if([7,8].includes(S.stage)&&account&&!S.demo)await saveDesignDefaults();
- S.stage=Math.min(S.stage+1,navs.length-1);render();window.scrollTo(0,0);
+ const stages=visibleStages();S.stage=stages[Math.min(stages.indexOf(S.stage)+1,stages.length-1)];render();window.scrollTo(0,0);
 }
 function learningView(){
  const items=S.learning||[],draft=S.learningDraft||{};return title('02 / LEARNING & EVIDENCE','Add what you have actually learned.','Optional: include completed learning and practical work. A profile or course link alone does not prove completion.')+`<div class="card"><h3>Microsoft learning profiles & course references</h3><label for="learningTitle">Course, service or project name</label><input id="learningTitle" placeholder="Microsoft Learn · Power Automate foundations" value="${esc(draft.title)}"><label for="learningUrl">Profile or course URL · optional</label><input id="learningUrl" type="url" placeholder="https://learn.microsoft.com/…" value="${esc(draft.url)}"><label for="learningDetails">What you completed or built · your own words</label><textarea id="learningDetails" placeholder="Describe completed modules or a real practical exercise. Avoid claiming work experience from a course.">${esc(draft.details)}</textarea><label class="check"><input id="learningComplete" type="checkbox" ${draft.completed?'checked':''}>I have completed this learning or practical work.</label><button id="saveLearning">Save learning item</button><p class="tiny muted">Links are saved as references. This editor does not sign in to Microsoft services or verify credentials. Your imported AI Career learning stays in the reviewed source text.</p></div>${items.map(item=>`<div class="card"><h3>${esc(item.title)}</h3><p>${esc(item.details)}</p><p class="tiny muted">${esc(item.url)}</p><span class="badge">${item.completed?'Completed · self-reported':'Planned · not a CV skill'}</span><div class="actions">${item.completed?`<button data-add-learning="${esc(item.id)}" ${item.addedTo?.includes(app().id)?'disabled':''}>${item.addedTo?.includes(app().id)?'Added as professional development':'Add completed learning to CV'}</button>`:''}<button data-remove-learning="${esc(item.id)}">Remove item</button></div></div>`).join('')}<div class="note">Planned learning stays outside the CV. Add an item only after completing it; describe it as learning or a project, rather than expertise or employment.</div>`;
 }
 function learningSuggestions(){
- const gaps=(app().analysis?.gaps||[]).filter(g=>g.type==='Learnable Gap'||g.learn&&!['Interview Gap','CV Visibility Gap'].includes(g.type));return `<div class="card"><h3>Learning suggestions · before claiming a skill</h3><p>These suggestions are a learning plan. They are not added to your CV now.</p>${gaps.length?gaps.map(g=>`<div class="change"><strong>${esc(g.requirement)}</strong><p>${esc(g.learn||g.why)}</p><p class="tiny">${esc(g.depth||'Confirm the scope and practise it with a concrete exercise.')} · ${esc(g.priority||'Review priority')}</p><p class="tiny muted">After completion: return to Learning & evidence, record what you actually completed and choose whether to add it as professional development. A course cannot replace required professional experience.</p></div>`).join(''):'<p class="tiny muted">No specific short learning plan was returned. Use the gaps and confirmation questions in Match before adding any claims.</p>'}</div>`;
+ const gaps=(app().analysis?.gaps||[]).filter(g=>g.type==='Learnable Gap'||g.learn&&!['Interview Gap','CV Visibility Gap'].includes(g.type));return `<div class="card"><h3>Learning suggestions · before claiming a skill</h3><p>These suggestions are a learning plan. They are not added to your CV now.</p>${gaps.length?gaps.map(g=>`<div class="change"><strong>${esc(g.requirement)}</strong><p>${esc(g.learn||g.why)}</p><p class="tiny">${esc(g.depth||'Confirm the scope and practise it with a concrete exercise.')} · ${esc(g.priority||'Review priority')}</p><p class="tiny muted">Completed AI Role Path learning is automatically checked for relevance and listed in your CV review. A course cannot replace required professional experience.</p></div>`).join(''):'<p class="tiny muted">No specific short learning plan was returned. Use the gaps and confirmation questions in Match before adding any claims.</p>'}</div>`;
 }
 function scoreExplanation(x){
  const a=app(),points={'Strong Match':4,'Partial Match':2.5,'Transferable Skill':1.5,Missing:0,Unknown:0},weights={Mandatory:4,Preferred:2,'Nice to Have':1},rows=x.matrix||[],den=rows.reduce((n,r)=>n+weights[r.priority]*4,0),num=rows.reduce((n,r)=>n+weights[r.priority]*points[r.level],0);
@@ -72,4 +72,29 @@ function bindWorkflow(){
  const text=$('candidateText');if(text)text.oninput=()=>{S.candidateProfile.text=text.value;save();};
  if($('linkedinUrl'))$('linkedinUrl').oninput=e=>{S.candidateProfile.linkedinUrl=e.target.value;save();};
  if($('linkedinText'))$('linkedinText').oninput=e=>{S.candidateProfile.linkedinText=e.target.value;save();};
+}
+
+async function reconstructCandidate(force=false){
+ const a=app(),source=S.candidateProfile.confirmedText||S.candidateProfile.text;
+ if(!account||S.demo||!conn.configured||!force&&a.structureSource===source)return;
+ if(!S.consent){if(!confirm('Use AI to understand and rebuild the structure of your CV from its source facts? This uses one AI review allowance.'))throw Error('CV understanding canceled.');S.consent=true;}
+ const response=await api('ai',{action:'structure',context:{candidate:source,cv:sectionize(source)}});
+ if(source!==(S.candidateProfile.confirmedText||S.candidateProfile.text))throw Error('Source changed during reconstruction. Try again.');
+ version('Before CV reconstruction');snapshot();a.cv=clone(response.sections);a.structureSource=source;a.structureReview={warnings:response.warnings,excluded:response.excluded};a.contentReviewed=false;a.pendingCVPlan=null;invalidate(a);version('CV rebuilt from source');save();
+}
+function automaticEvidenceNotice(){const a=app(),review=a.structureReview;return `<div class="note"><strong>CV source & completed learning</strong><p class="tiny">${a.structureSource?'AI rebuilt the CV structure from your source facts. Review role titles, employers and dates.':'Your uploaded source is preserved. Sign in to use AI to rebuild its structure.'}</p>${a.learningStatus?'<p class="tiny">'+esc(a.learningStatus)+'</p>':''}${(a.automaticLearning||[]).map(x=>'<p class="tiny">Added: '+esc(x.title)+' — '+esc(x.provenance)+'</p>').join('')}${review?.warnings?.map(x=>'<p class="tiny warning">'+esc(x)+'</p>').join('')||''}${review?.excluded?.length?'<details><summary>Source fragments not used · '+review.excluded.length+'</summary><p class="tiny">Review these fragments before sending your CV. Source headings and page furniture may also appear here.</p><pre>'+esc(review.excluded.map(x=>x.text).join('\n'))+'</pre></details>':''}${account&&!S.demo?'<button id="rebuildCV">Rebuild CV structure from original source</button>':''}</div>`;}
+async function syncCompletedLearning(){
+ const a=app();if(!account||S.demo)return;
+ const userId=account.id,response=await fetch(API_BASE+'/learning',{cache:'no-store'}),data=await response.json();
+ if(!response.ok)throw Error(data.error||'Completed learning could not load. Try Next again.');
+ if(account?.id!==userId||data.userId!==userId)throw Error('Your account changed. Reload the editor.');
+ const tools=await documentTools(),items=Array.isArray(data.items)?data.items:[];
+ const selected=items.filter(x=>x.completed&&typeof x.title==='string'&&(isGeneral()||tools.relevanceScore(x.title+' '+(x.career||''),{vacancy:a.vacancy,targetRole:a.job.title}).total>=35));
+ const previous=JSON.stringify(a.automaticLearning||[]),next=JSON.stringify(selected);
+ if(previous!==next){
+  a.cv=a.cv.filter(s=>!s.automaticLearning);a.automaticLearning=selected;
+  if(selected.length)a.cv.push({id:'account-learning-'+a.id,title:'Professional Development',automaticLearning:true,text:selected.map(x=>'• '+x.title+' — '+(x.provider||'AI Role Path')+'; '+x.provenance).join('\n')});
+  invalidate(a);a.pendingCVPlan=null;
+ }
+ a.learningStatus=selected.length?`${selected.length} completed learning item(s) included${isGeneral()?'':' for this vacancy'}. Planned learning is excluded.`:items.length?'Completed learning was checked; no sufficiently relevant items were added for this vacancy.':'No completed AI Role Path learning is recorded in your account.';save();
 }

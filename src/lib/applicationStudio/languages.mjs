@@ -20,7 +20,7 @@ export const SCRIPT_FONTS = [
  ...['notosansdevanagari','notoserifdevanagari','mukta','hind','martel'].map((id,i)=>({id,file:id,label:['Noto Sans Devanagari','Noto Serif Devanagari','Mukta','Hind','Martel'][i],family:'CV '+id,script:'devanagari'})),
 ];
 export function fontsForLanguage(fonts,value){const script=languageFor(value).script;return fonts.filter(f=>script==='arabic'||script==='devanagari'?f.script===script:!f.script);}
-const protectedItems=text=>String(text).match(/https:\/\/[^\s<>]+|[\w.+-]+@[\w.-]+\.[A-Za-z]{2,}|\+?\p{Nd}[\p{Nd}.,٪%+/-]*/gu)||[];
+const protectedItems=text=>String(text).match(/https?:\/\/[^\s<>]+|(?:www\.)[^\s<>]+|[\w.+-]+@[\w.-]+\.[A-Za-z]{2,}|\+?\p{Nd}[\p{Nd}.,٪%+/-]*/gu)||[];
 export function validateTranslation(value,sections,target){
  const lang=LANGUAGES.find(l=>l.id===target);
  if(!lang||!value||value.targetLanguage!==target||!Array.isArray(value.sections)||value.sections.length!==sections.length)throw Error('Translation response does not match the requested language or CV structure.');
@@ -32,6 +32,8 @@ export function validateTranslation(value,sections,target){
   if(/the (candidate|applicant) (appears|seems)|chain.of.thought|^\s*page\s*of\s*$/im.test(translated.text))throw Error('Translation contains analysis commentary.');
   return {...source,text:translated.text,displayTitle:source.title==='Header'?'':translated.displayTitle};
  });
+ const prose=sections.filter(s=>s.title!=='Header'&&s.text.trim().split(/\s+/).length>5);
+ if(prose.length&&prose.every(s=>output.find(o=>o.id===s.id)?.text.trim()===s.text.trim()))throw Error('The provider returned untranslated CV text. Your CV is unchanged.');
  const text=output.map(s=>s.text).join('\n');
  const scriptRE={arabic:/[\u0600-\u06ff]/,devanagari:/[\u0900-\u097f]/,cyrillic:/[\u0400-\u04ff]/};
  if(scriptRE[lang.script]&&!scriptRE[lang.script].test(text))throw Error('Translation does not contain the expected writing system.');
