@@ -46,3 +46,5 @@ const {detectLanguage}=await import('../src/lib/applicationStudio/languages.mjs'
 assert.equal(detectLanguage('Prepared accurate operational reports and improved inventory planning by 30٪.'),'en');assert.equal(detectLanguage('تهیه گزارش‌های عملیاتی و برنامه‌ریزی موجودی'),'fa');
 let badNumbers=0;const noAddedFacts=await translateUnits({targetLanguage:'fa',units:[{id:'T0',text:'Improved inventory flow',context:'in 2025'}]},async()=>({targetLanguage:'fa',translations:[{id:'T0',text:badNumbers++?'بهبود جریان موجودی':'بهبود جریان موجودی در 2025'}]}));assert.equal(noAddedFacts.translations[0].text,'بهبود جریان موجودی');assert.equal(badNumbers,2);
 console.log('Language integrity PASS: English with Arabic punctuation stays English, Persian prose detection and context-fact retry.');
+const partialCV=[{id:'s',title:'Professional Summary',text:'Prepared operational reports and improved inventory planning through accurate records and clear team handovers.'}];
+assert.throws(()=>validateTranslation({targetLanguage:'fa',sections:[{id:'s',displayTitle:'خلاصه حرفه‌ای',text:partialCV[0].text+' — عالی'}]},partialCV,'fa'),/most CV prose/);

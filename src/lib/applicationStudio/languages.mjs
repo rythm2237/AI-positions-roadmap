@@ -37,6 +37,7 @@ export function validateTranslation(value,sections,target){
  const text=output.map(s=>s.text).join('\n');
  const scriptRE={arabic:/[\u0600-\u06ff]/,devanagari:/[\u0900-\u097f]/,cyrillic:/[\u0400-\u04ff]/};
  if(scriptRE[lang.script]&&!scriptRE[lang.script].test(text))throw Error('Translation does not contain the expected writing system.');
+ const body=output.filter(s=>s.title!=='Header'&&!/skills|languages|certif/i.test(s.title)).map(s=>s.text).join(' '),letters=body.match(/\p{L}/gu)||[];if(scriptRE[lang.script]&&letters.length>40&&letters.filter(c=>scriptRE[lang.script].test(c)).length/letters.length<.15)throw Error('Translation left most CV prose in another writing system. Your current CV is preserved.');
  return {targetLanguage:target,sections:output};
 }
 
