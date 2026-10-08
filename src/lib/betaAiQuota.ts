@@ -9,8 +9,8 @@ export class BetaAiQuotaError extends Error {
   }
 }
 
-function quotaError(code?: string): BetaAiQuotaError {
-  return new BetaAiQuotaError(code === "42501" ? "AI_QUOTA_ACCESS_DENIED" : code === "PGRST202" ? "AI_QUOTA_FUNCTION_MISSING" : code === "PGRST301" || code === "PGRST303" ? "AI_QUOTA_AUTH_FAILED" : "AI_QUOTA_DATABASE_UNAVAILABLE");
+function quotaError(code?: string, message = ""): BetaAiQuotaError {
+  return new BetaAiQuotaError(code === "42501" ? "AI_QUOTA_ACCESS_DENIED" : code === "PGRST202" ? "AI_QUOTA_FUNCTION_MISSING" : code === "PGRST301" || code === "PGRST303" || /invalid api key|invalid jwt|invalid signature/i.test(message) ? "AI_QUOTA_AUTH_FAILED" : "AI_QUOTA_DATABASE_UNAVAILABLE");
 }
 
 export type BetaAiQuotaResult = {
@@ -21,7 +21,8 @@ export type BetaAiQuotaResult = {
 };
 
 function adminClient() {
-  const url = (process.env.SUPABASE_URL || process.env.NEXT_PUBLIC_SUPABASE_URL)?.trim();
+  // Quota rows reference auth.users: use the same project as the authenticated session.
+  const url = (process.env.NEXT_PUBLIC_SUPABASE_URL || process.env.SUPABASE_URL)?.trim();
   const secret = process.env.SUPABASE_SECRET_KEY?.trim() || process.env.SUPABASE_SERVICE_KEY?.trim();
   if (!url || !secret) throw new BetaAiQuotaError("AI_QUOTA_CONFIG_MISSING");
   return createSupabaseClient(url, secret, {
@@ -33,7 +34,7 @@ function adminClient() {
 export async function checkBetaAiQuotaConfiguration(): Promise<{ready:boolean;code?:string}> {
   try {
     const {error} = await adminClient().from("beta_ai_usage_daily").select("usage_date").limit(0);
-    if (error) return {ready:false,code:quotaError(error.code).code};
+    if (error) return {ready:false,code:quotaError(error.code, error.message).code};
     return {ready:true};
   } catch (error) {
     return {ready:false,code:error instanceof BetaAiQuotaError ? error.code : "AI_QUOTA_DATABASE_UNAVAILABLE"};
@@ -63,7 +64,7 @@ export async function consumeBetaAiQuota(userId: string, kind: BetaAiQuotaKind):
     p_kind: kind,
     p_limit: limit,
   });
-  if (error) throw quotaError(error.code);
+  if (error) throw quotaError(error.code, error.message);
 
   const row = Array.isArray(data) ? data[0] : data;
   return {
