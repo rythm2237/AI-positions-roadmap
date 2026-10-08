@@ -11,7 +11,7 @@ export function validateStructure(value,sources){
    if(!item.sourceIds.length&&(!item.text||item.kind==='gap'))return '';
    const refs=item.sourceIds.map(id=>sources.find(x=>x.id===id));
    if(!refs.length||refs.some(x=>!x)||new Set(item.sourceIds).size!==item.sourceIds.length)throw Error('Reconstructed CV contains unsupported or altered facts. Your source is preserved.');
-   const text=refs.map(x=>x.text.replace(/^\s*[•●▪*-]\s*/, '')).join(' ').replace(/\s+/g,' ').trim();
+   const text=refs.map(x=>x.text.replace(/^\s*[•●▪*-]\s*/, '')).join(s.title==='Header'?'\n':' ').trim();
    if(isMetaContent(text))return '';item.sourceIds.forEach(id=>used.add(id));return (item.kind==='bullet'||s.title==='Certifications'?'• ':'')+text;
   });return {id:'structured-'+i,title:s.title,text:lines.join('\n').trim()};
  }).filter(s=>s.text);

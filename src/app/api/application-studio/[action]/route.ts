@@ -1,5 +1,5 @@
 import {STRUCTURE_SCHEMA,structureSources,validateStructure} from '@/lib/applicationStudio/structure.mjs';
-import {TRANSLATION_SCHEMA,translationContext,validateTranslation,protectTranslation,restoreTranslation} from '@/lib/applicationStudio/translation.mjs';
+import {TRANSLATION_SCHEMA,translationContext,validateTranslation,protectTranslation,restoreTranslation,translateUnits} from '@/lib/applicationStudio/translation.mjs';
 import { classifyStudioGatewayError, studioModelFallback } from "@/lib/applicationStudio/gatewayErrors";
 import { submittedCV } from "@/lib/applicationStudio/recruiter.mjs";
 import { generateText } from "ai";
@@ -84,6 +84,15 @@ export async function POST(request: Request, { params }: { params: Promise<{ act
       maxOutputTokens: ['translate','structure'].includes(aiAction)?14000:6500,
       abortSignal: AbortSignal.timeout(100_000),
     };
+    if(protectedTranslation&&translatedInput){
+      const translated=await translateUnits(protectedTranslation.input,async (batch: Record<string, unknown>)=>{
+        const batchSettings={...settings,system:TRANSLATION_SCHEMA,prompt:JSON.stringify(batch),maxOutputTokens:6500};
+        let response;try{response=await generateText({...batchSettings,model});}catch(error){const fallback=studioModelFallback(error,model);if(!fallback)throw error;response=await generateText({...batchSettings,model:fallback});}
+        if(response.finishReason==='length')throw new ServiceError('Translation output was incomplete. Shorten the application CV and retry.',502);
+        return JSON.parse(response.text.replace(/^```(?:json)?\s*/i,'').replace(/\s*```$/,''));
+      });
+      return json(validateTranslation(restoreTranslation(translated,protectedTranslation),context!.cv,translatedInput.targetLanguage));
+    }
     let result;
     try { result = await generateText({...settings, model}); }
     catch (error) {

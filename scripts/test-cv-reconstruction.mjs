@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import {structureSources,validateStructure} from '../src/lib/applicationStudio/structure.mjs';
 import {parseProfile,planCV} from '../src/lib/applicationStudio/contentEngine.mjs';
-import {translationContext,protectTranslation,restoreTranslation,validateTranslation} from '../src/lib/applicationStudio/translation.mjs';
+import {translationContext,protectTranslation,restoreTranslation,validateTranslation,translateUnits} from '../src/lib/applicationStudio/translation.mjs';
 const source='Taylor Example\ntaylor@example.invalid\nWarehouse Co.\nOperations Planner\nMay 2025 - Present\nI use operational data to\nimprove warehouse flow.\nCertifications\nThe International certificate for\nBusiness competence/ Level A\nCompTIA Network+';
 const lines=structureSources(source);
 const result=validateStructure({sections:[{title:'Header',items:[{sourceIds:['L0'],text:'Taylor Example'},{sourceIds:['L1'],text:'taylor@example.invalid'}]},{title:'Experience',items:[{sourceIds:['L2','L3'],text:'Warehouse Co. Operations Planner'},{sourceIds:['L4'],text:'May 2025 - Present'},{sourceIds:['L5','L6'],text:'• I use operational data to improve warehouse flow.'}]},{title:'Certifications',items:[{sourceIds:['L8','L9'],text:'• The International certificate for Business competence/ Level A'},{sourceIds:['L10'],text:'• CompTIA Network+'}]}]},lines);
@@ -28,3 +28,16 @@ for(const language of ['fa','hu']){
 }
 assert.throws(()=>validateTranslation({targetLanguage:'hu',sections:cv.map(x=>({...x,displayTitle:x.title}))},cv,'hu'),/untranslated/);
 console.log('Reconstruction PASS: wrapped role sentences, company/title/date grouping, separate certificates, grounded source IDs, Persian/Hungarian protected facts and untranslated-output rejection.');
+
+const large={targetLanguage:'fa',units:Array.from({length:125},(_,i)=>({id:'T'+i,text:'Prepared accurate inventory records and supported team handovers.',context:'Inventory experience'}))};
+let calls=0,maxBatch=0;const attempts=new Map();
+const repaired=await translateUnits(large,async input=>{calls++;maxBatch=Math.max(maxBatch,input.units.length);const key=input.units[0].id,n=attempts.get(key)||0;attempts.set(key,n+1);return {targetLanguage:'fa',translations:input.units.slice(n?0:1).map(u=>({id:u.id,text:'تهیه سوابق دقیق موجودی'}))};});
+assert.equal(repaired.translations.length,125);assert(maxBatch<=20);assert(calls<=14);
+await assert.rejects(translateUnits(large,async()=>({targetLanguage:'fa',translations:[]})),/after retry/);
+await assert.rejects(translateUnits(large,async()=>({targetLanguage:'fa',translations:[{id:'UNKNOWN',text:'test'}]})),/Invalid translated unit/);
+const {splitSections}=await import('../src/lib/applicationStudio/design.mjs');
+const collapsed='Taylor Example Fulfilment Operational Flow Planner & Independent AI Product Builder Budapest, Hungary +36123456789 taylor@example.invalid www.linkedin.com/in/taylor';
+const fixed=splitSections([{title:'Header',text:collapsed}]).header.text;
+assert.equal(fixed.split('\n')[0],'Taylor Example');assert(fixed.includes('\ntaylor@example.invalid'));assert(fixed.includes('\n+36123456789'));
+const preserved=validateStructure({sections:[{title:'Header',items:[{sourceIds:['L0','L1'],kind:'heading'}]}]},lines);assert.equal(preserved.sections[0].text,'Taylor Example\ntaylor@example.invalid');
+console.log('Large translation PASS: 125 units, bounded batches, missing-unit repair, strict incomplete/unknown rejection, and source-grounded header line preservation.');
