@@ -14,7 +14,7 @@ export const LANGUAGES = [
  {id:'fa',name:'Persian',label:'فارسی · Persian',script:'arabic',dir:'rtl'},
 ];
 export function languageFor(value){return LANGUAGES.find(l=>l.id===value||l.name===value)||LANGUAGES[0];}
-export function detectLanguage(text){return /[\u0600-\u06ff]/.test(text)?(/[پچژگکی]/.test(text)?'fa':'ar'):/[\u0900-\u097f]/.test(text)?'hi':/[\u0400-\u04ff]/.test(text)?'ru':'en';}
+export function detectLanguage(text){const letters=String(text).match(/\p{L}/gu)||[],total=letters.length||1;const share=re=>letters.filter(c=>re.test(c)).length/total;return share(/[\u0600-\u06ff]/)>.25?(/[پچژگکی]/.test(text)?'fa':'ar'):share(/[\u0900-\u097f]/)>.25?'hi':share(/[\u0400-\u04ff]/)>.25?'ru':'en';}
 export const SCRIPT_FONTS = [
  ...['vazirmatn','notosansarabic','notonaskharabic','amiri','markazitext'].map((id,i)=>({id,file:id,label:['Vazirmatn','Noto Sans Arabic','Noto Naskh Arabic','Amiri','Markazi Text'][i],family:'CV '+id,script:'arabic'})),
  ...['notosansdevanagari','notoserifdevanagari','mukta','hind','martel'].map((id,i)=>({id,file:id,label:['Noto Sans Devanagari','Noto Serif Devanagari','Mukta','Hind','Martel'][i],family:'CV '+id,script:'devanagari'})),

@@ -41,3 +41,8 @@ const fixed=splitSections([{title:'Header',text:collapsed}]).header.text;
 assert.equal(fixed.split('\n')[0],'Taylor Example');assert(fixed.includes('\ntaylor@example.invalid'));assert(fixed.includes('\n+36123456789'));
 const preserved=validateStructure({sections:[{title:'Header',items:[{sourceIds:['L0','L1'],kind:'heading'}]}]},lines);assert.equal(preserved.sections[0].text,'Taylor Example\ntaylor@example.invalid');
 console.log('Large translation PASS: 125 units, bounded batches, missing-unit repair, strict incomplete/unknown rejection, and source-grounded header line preservation.');
+
+const {detectLanguage}=await import('../src/lib/applicationStudio/languages.mjs');
+assert.equal(detectLanguage('Prepared accurate operational reports and improved inventory planning by 30٪.'),'en');assert.equal(detectLanguage('تهیه گزارش‌های عملیاتی و برنامه‌ریزی موجودی'),'fa');
+let badNumbers=0;const noAddedFacts=await translateUnits({targetLanguage:'fa',units:[{id:'T0',text:'Improved inventory flow',context:'in 2025'}]},async()=>({targetLanguage:'fa',translations:[{id:'T0',text:badNumbers++?'بهبود جریان موجودی':'بهبود جریان موجودی در 2025'}]}));assert.equal(noAddedFacts.translations[0].text,'بهبود جریان موجودی');assert.equal(badNumbers,2);
+console.log('Language integrity PASS: English with Arabic punctuation stays English, Persian prose detection and context-fact retry.');

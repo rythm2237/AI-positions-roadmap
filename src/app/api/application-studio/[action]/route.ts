@@ -2,7 +2,8 @@ import {STRUCTURE_SCHEMA,structureSources,validateStructure} from '@/lib/applica
 import {TRANSLATION_SCHEMA,translationContext,validateTranslation,protectTranslation,restoreTranslation,translateUnits} from '@/lib/applicationStudio/translation.mjs';
 import { classifyStudioGatewayError, studioModelFallback } from "@/lib/applicationStudio/gatewayErrors";
 import { submittedCV } from "@/lib/applicationStudio/recruiter.mjs";
-import { generateText } from "ai";
+import { generateText, Output } from "ai";
+import { z } from "zod";
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { BetaAiQuotaError, checkBetaAiQuotaConfiguration, isBetaAiQuotaExempt, consumeBetaAiQuota, refundRejectedBetaAiQuota } from "@/lib/betaAiQuota";
@@ -34,6 +35,7 @@ export async function POST(request: Request, { params }: { params: Promise<{ act
   if (origin && origin !== new URL(request.url).origin) return json({ error: "Untrusted request origin." }, 403);
   if (!request.headers.get("content-type")?.startsWith("application/json")) return json({ error: "JSON required." }, 400);
   const requestId = crypto.randomUUID();
+  let operation = action;
   let reservedQuota: {userId: string; usageDate: string} | undefined;
   try {
     const supabase = await createClient();
@@ -46,6 +48,7 @@ export async function POST(request: Request, { params }: { params: Promise<{ act
     if (body.sessionUserId !== user.id) return json({ error: "Your account changed. Reload the editor before continuing." }, 409);
     const aiAction = body.action as keyof typeof SCHEMAS | "optimise" | "translate" | "structure";
     const context = body.context;
+    operation = body.action || action;
     if (action === "ai") {
       if ((!Object.hasOwn(SCHEMAS, aiAction)&&aiAction!=='translate'&&aiAction!=='structure') || !context || Array.isArray(context)) return json({ error: "Invalid AI action." }, 400);
       for (const key of ["candidate", "linkedin", "vacancy"]) {
@@ -85,13 +88,13 @@ export async function POST(request: Request, { params }: { params: Promise<{ act
       abortSignal: AbortSignal.timeout(100_000),
     };
     if(protectedTranslation&&translatedInput){
-      const translated=await translateUnits(protectedTranslation.input,async (batch: Record<string, unknown>)=>{
-        const batchSettings={...settings,system:TRANSLATION_SCHEMA,prompt:JSON.stringify(batch),maxOutputTokens:6500};
+      let translated;try{translated=await translateUnits(protectedTranslation.input,async (batch: Record<string, unknown>)=>{
+        const batchSettings={...settings,system:TRANSLATION_SCHEMA,prompt:JSON.stringify(batch),maxOutputTokens:6500,output:Output.object({schema:z.object({targetLanguage:z.literal(translatedInput!.targetLanguage),translations:z.array(z.object({id:z.string(),text:z.string()}))})})};
         let response;try{response=await generateText({...batchSettings,model});}catch(error){const fallback=studioModelFallback(error,model);if(!fallback)throw error;response=await generateText({...batchSettings,model:fallback});}
         if(response.finishReason==='length')throw new ServiceError('Translation output was incomplete. Shorten the application CV and retry.',502);
-        return JSON.parse(response.text.replace(/^```(?:json)?\s*/i,'').replace(/\s*```$/,''));
-      });
-      return json(validateTranslation(restoreTranslation(translated,protectedTranslation),context!.cv,translatedInput.targetLanguage));
+        return response.output;
+      });}catch(error){if(error instanceof Error&&/^(Invalid translation response|Invalid translated unit|Translation missed)/.test(error.message)){console.warn("CV translation batch failed",{requestId,stage:"unit-coverage"});throw new ServiceError(error.message,502);}throw error;}
+      try{return json(validateTranslation(restoreTranslation(translated,protectedTranslation),context!.cv,translatedInput.targetLanguage));}catch(error){const reason=(error as Error).message;console.warn('CV translation validation failed',{requestId,stage:reason.includes('numbers')?'protected-facts':reason.includes('writing system')?'script':reason.includes('untranslated')?'untranslated':'sections'});throw new ServiceError(reason,502);} 
     }
     let result;
     try { result = await generateText({...settings, model}); }
@@ -130,7 +133,7 @@ export async function POST(request: Request, { params }: { params: Promise<{ act
       } catch { console.error("Application Studio quota refund failed", {requestId}); }
     }
     // Log only fixed classifications, never prompts, responses, URLs or credentials.
-    console.error("Application Studio request failed", {requestId, action, code:failure.code, errorName:failure.errorName, providerStatus:failure.providerStatus, quotaRefunded});
+    console.error("Application Studio request failed", {requestId, action, operation, code:failure.code, errorName:failure.errorName, providerStatus:failure.providerStatus, quotaRefunded});
     return json({error: `${failure.message}${quotaRefunded ? " This rejected request did not consume your daily AI allowance." : ""} Reference: ${requestId}.`,code:failure.code,requestId},503);
   }
 }

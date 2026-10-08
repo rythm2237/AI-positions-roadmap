@@ -23,7 +23,7 @@ export function protectTranslation(input){
   section.text.split(/(\n)/).forEach((line,index)=>{
    if(line==='\n'||!line.trim()||section.title==='Header'&&(index===0||/@|https?:|www\.|\d/.test(line)||line.trim().split(/\s+/).length<4)){parts.push({literal:line});return;}
    const pattern=new RegExp(immutable.source,'gu');let cursor=0;
-   const prose=text=>{const m=text.match(/^(\s*(?:[•●▪*-]\s*)?)(.*?)(\s*)$/s);if(!m)return;parts.push({literal:m[1]});if(/[\p{L}]/u.test(m[2]))parts.push(unit(m[2],line));else parts.push({literal:m[2]});parts.push({literal:m[3]});};
+   const prose=text=>{const m=text.match(/^(\s*(?:[•●▪*-]\s*)?)(.*?)(\s*)$/s);if(!m)return;parts.push({literal:m[1]});if(/[\p{L}]/u.test(m[2]))parts.push(unit(m[2],line.slice(0,600)));else parts.push({literal:m[2]});parts.push({literal:m[3]});};
    for(const match of line.matchAll(pattern)){prose(line.slice(cursor,match.index));parts.push({literal:match[0]});cursor=match.index+match[0].length;}
    prose(line.slice(cursor));
   });layouts.push({section,heading,parts});
@@ -47,7 +47,7 @@ export async function translateUnits(input,request){
   for(let attempt=0;attempt<2&&missing.length;attempt++){
    const response=await request({...input,units:missing});
    if(response?.targetLanguage!==input.targetLanguage||!Array.isArray(response.translations))throw Error('Invalid translation response. Your CV is preserved.');
-   const seen=new Set();for(const t of response.translations){if(!t||typeof t.id!=='string'||!missing.some(u=>u.id===t.id)||seen.has(t.id)||typeof t.text!=='string'||!t.text.trim())throw Error('Invalid translated unit.');seen.add(t.id);translated.set(t.id,t.text.trim());}
+   const seen=new Set();for(const t of response.translations){if(!t||typeof t.id!=='string'||!missing.some(u=>u.id===t.id)||seen.has(t.id)||typeof t.text!=='string'||!t.text.trim())throw Error('Invalid translated unit.');seen.add(t.id);if(!/\p{Nd}|https?:\/\/|www\.|[\w.+-]+@[\w.-]+\.[A-Za-z]{2,}/u.test(t.text))translated.set(t.id,t.text.trim());}
    missing=missing.filter(u=>!translated.has(u.id));
   }
   if(missing.length)throw Error('Translation missed some CV text after retry. Your current CV is preserved.');
