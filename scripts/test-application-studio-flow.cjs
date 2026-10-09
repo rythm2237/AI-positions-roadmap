@@ -30,7 +30,8 @@ let imageDraw;w.createImageBitmap=async()=>({width:600,height:1000,close(){}});w
 click('togglePreviewEdit');assert.equal(ev('previewEditing'),true);
 const editable=w.document.querySelector('#livePreview [data-cv-edit="summary"][data-cv-field="text"]');assert(editable);assert.equal(editable.contentEditable,'plaintext-only');
 editable.textContent='Prepared reliable reports and inventory plans.';editable.dispatchEvent(new w.Event('input'));assert.equal(ev("app().cv.find(s=>s.id==='summary').text"),editable.textContent);
-ev("previewSelection={id:'summary',field:'text',start:0,end:8}");q('inlineFont').value='serif';q('inlineFont').dispatchEvent(new w.Event('change'));assert.equal(ev("app().cv.find(s=>s.id==='summary').inlineStyles.text[0].font"),'serif');assert.match(q('livePreview').innerHTML,/Atelier Serif/);
+const selected=w.document.createRange();selected.setStart(editable.firstChild,0);selected.setEnd(editable.firstChild,8);w.getSelection().removeAllRanges();w.getSelection().addRange(selected);w.document.dispatchEvent(new w.Event('selectionchange'));assert.equal(ev('previewSelection.end'),8);
+q('inlineFont').value='serif';q('inlineFont').dispatchEvent(new w.Event('change'));assert.equal(ev("app().cv.find(s=>s.id==='summary').inlineStyles.text[0].font"),'serif');assert.match(q('livePreview').innerHTML,/Atelier Serif/);
 q('inlineColor').value='#cc2233';q('inlineColor').dispatchEvent(new w.Event('change'));assert.match(q('livePreview').innerHTML,/#cc2233/);
 click('togglePreviewEdit');assert.equal(ev('previewEditing'),false);assert(!w.document.querySelector('#livePreview [contenteditable]'));
 console.log('DOM flow PASS: navigation, translation state, explicit preview editing, selected-word font/color persistence and read-only mode.');w.close();})();
