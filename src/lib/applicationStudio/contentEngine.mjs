@@ -46,13 +46,18 @@ export function parseProfile(text) {
 // Extraction wraps are not semantic bullets. Preserve records, rejoin prose only.
 export function normalizeSection(section){
  const kind=sectionKind(section.title),lines=section.text.split('\n'),out=[];
+ const heading=String(section.displayTitle||section.title).replace(/:$/, '').trim();
+ if(lines.length){const first=lines[0].replace(/^\s*[•*-]\s*/, '').trim();
+  if(first.toLowerCase()===heading.toLowerCase()||sectionKind(first)===kind&&kind!=='other')lines.shift();
+  else if(first.toLowerCase().startsWith(heading.toLowerCase()+' '))lines[0]=first.slice(heading.length).trim();
+ }
  for(const raw of lines){
   const line=raw.trim();
   if(!line){if(out.at(-1)!=='')out.push('');continue;}
   if(/^page\s*(?:\d+\s*)?(?:of\s*\d*)?$/i.test(line))continue;
   const prev=out.at(-1)||'';
   const continuation=prev&&!/[.!?]$/.test(prev)&&!/^\s*[•*-]/.test(line)&&!/^\s*\d/.test(line)&&(
-   kind==='summary'||kind==='education'&&(/\b(?:degree|diploma|bachelor|master)\b/i.test(line)||/[,(–-]$/.test(prev)||prev.split('(').length>prev.split(')').length)||kind==='certifications'&&(/(?:\b(?:for|of|the|and)|[/-])$/i.test(prev)||/^(?:Level|Business competence)\b/.test(line))||kind==='experience'&&(/^(?:[a-z]|and |or |with |to |for |in )/.test(line)||/\b(?:and|or|with|to|for|in|that|the|of|a)$/i.test(prev)));
+   kind==='summary'||kind==='education'&&(/^(?:degree|diploma|bachelor|master)\b/i.test(line)&&!/\b(?:degree|diploma|bachelor|master|19\d{2}|20\d{2})\b/i.test(prev)||/[,(–-]$/.test(prev)||prev.split('(').length>prev.split(')').length)||kind==='certifications'&&(/(?:\b(?:for|of|the|and)|[/-])$/i.test(prev)||/^(?:Level|Business competence)\b/.test(line))||kind==='experience'&&(/^(?:[a-z]|and |or |with |to |for |in )/.test(line)||/\b(?:and|or|with|to|for|in|that|the|of|a)$/i.test(prev)));
   if(continuation)out[out.length-1]=prev+' '+line;else out.push(line);
  }
  return {...section,text:out.join('\n')};
@@ -93,7 +98,7 @@ function records(section) {
   const blocks = []; let block = null;
   for (let i = 0; i < lines.length; i++) {
     const line = lines[i], next = lines[i + 1] || '';
-    const heading = !bullet.test(line) && (dates.test(line) || dates.test(next) || dates.test(lines[i+2]||'')&&wordCount(line)<8&&wordCount(next)<8&&!bullet.test(next) || /\s[—|–]\s|\s·\s/.test(line) || block?.items.length && bullet.test(next) && wordCount(line)<8) && wordCount(line) < 28;
+    const heading = !bullet.test(line) && (section.headingLines?.includes(line)||sectionKind(section.title)==='projects'&&wordCount(line)<8&&next&&wordCount(next)>8||dates.test(line) || dates.test(next) || dates.test(lines[i+2]||'')&&wordCount(line)<8&&wordCount(next)<8&&!bullet.test(next) || /\s[—|–]\s|\s·\s/.test(line) || block?.items.length && bullet.test(next) && wordCount(line)<8) && wordCount(line) < 28;
     if(heading&&block&&!block.items.length&&!block.heading.some(t=>dates.test(t))){block.heading.push(line);continue;}
     if (heading && !(dates.test(line) && block && !block.items.length && block.heading.length < 3)) {
       if (block) blocks.push(block);
@@ -133,9 +138,8 @@ export function planCV(input, { pressure = 0 } = {}) {
   }
   function take(e, reason, maxWords = Infinity) {
     if (isMetaContent(e.text)) { e.reason = 'Analysis or document artifact; excluded from CV'; return null; }
-    if (seen.some(s => nearDuplicate(s, e.text))) { e.reason = 'Repeated evidence'; return null; }
-    const text = concise(e.text, maxWords);
-    if (!text) { e.reason = 'Too long to shorten safely; edit or rewrite this fact'; return null; }
+    if (ledger.some(s => s!==e&&s.included&&s.sectionId===e.sectionId&&nearDuplicate(s.text, e.text))) { e.reason = 'Repeated evidence within this section'; return null; }
+    const text = concise(e.text, maxWords)||e.text;
     e.included = true; e.reason = reason; e.output = text; seen.push(text); return text;
   }
   function add(title, lines, ids = []) {
@@ -178,33 +182,40 @@ export function planCV(input, { pressure = 0 } = {}) {
     else if (heading || lines.length) experience.push([heading, ...lines].filter(Boolean).join('\n'));
   }
   add('Experience', [experience.join('\n\n')], experienceIds);
+  const experienceSection=selected.find(s=>s.title==='Experience');
+  if(experienceSection)experienceSection.headingLines=roles.flatMap(r=>r.heading);
   const projects = source.filter(s => sectionKind(s.title) === 'projects').flatMap(s => records(s).map(r => ({...r, section: s, score: relevanceScore(r.heading.join(' ') + ' ' + r.items.join(' '), ctx).total })));
   const projectText = [], projectIds = [];
   for (const r of projects.sort((a, b) => b.score - a.score)) {
-    const text = [...r.heading, ...r.items].join(' '), e = item(text, 'project', r.section.id, r.section.title);
+    const text = [...r.heading, ...r.items].join('\n'), e = item(text, 'project', r.section.id, r.section.title);
     if (projectText.length >= Math.max(0, capacity.projectCount - pressure)) { e.reason = 'Selected project budget'; continue; }
     if (ctx.vacancy && e.total < 40) { e.reason = 'Low relevance to target'; continue; }
-    const t = take(e, 'Relevant selected project', 45); if (t) { projectText.push(t); projectIds.push(e.id); }
+    const t = take(e, 'Relevant selected project'); if (t) { projectText.push(t); projectIds.push(e.id); }
   }
   add('Selected Projects', projectText, projectIds);
-  for (const [kind, title, limit] of [['education','Education',6],['certifications','Certifications',5],['languages','Languages',5],['additional','Additional Experience',8]]) {
+  const projectSection=selected.find(s=>s.title==='Selected Projects');
+  if(projectSection)projectSection.headingLines=projects.flatMap(r=>r.heading);
+  for (const [kind, title] of [['education','Education'],['certifications','Certifications'],['languages','Languages'],['additional','Additional Experience']]) {
     const entries = source.filter(s => sectionKind(s.title) === kind).flatMap(s => s.text.split('\n').map(t => t.trim()).filter(Boolean).map(t => item(t.replace(bullet,''),kind,s.id,s.title)));
     const lines = [], ids = [];
     for (const e of (kind==='education'||kind==='languages'?entries:entries.sort((a,b)=>b.total-a.total))) {
-      if (lines.length >= limit) { e.reason = 'Section budget'; continue; }
-      const t = take(e,'Concise source qualification or history',25); if (t) { lines.push(t); ids.push(e.id); }
+      // Credentials, institutions, dates and languages are facts, not a line budget.
+      if(isMetaContent(e.text)){e.reason='Document artifact';continue;}
+      e.included=true;e.output=e.text;e.reason='Protected qualification or history';lines.push(e.text);ids.push(e.id);
     }
     if (kind === 'additional') add(title,[...additional,...lines], [...additionalIds,...ids]); else add(title,kind==='certifications'?lines.map(t=>'• '+t):lines,ids);
   }
   for(const s of source.filter(s=>sectionKind(s.title)==='development'))selected.push({...s,id:s.id||'development',text:s.text});
-  source.filter(s => sectionKind(s.title) === 'other').forEach(s => s.text.split('\n').filter(Boolean).forEach(t => { const e=item(t,'other',s.id,s.title);e.reason='Unclassified source section; review before adding'; }));
-  // Remove the weakest selected facts until the template's content budget is respected.
-  const count = () => wordCount(selected.map(s=>s.text).join(' '));
-  for (const e of ledger.filter(e=>e.included&&!['summary','education','languages'].includes(e.kind)).sort((a,b)=>a.total-b.total)) {
-    if (count() <= budget) break;
-    const s=selected.find(s=>s.evidenceIds?.includes(e.id));if(!s)continue;
-    s.text=s.text.split('\n').filter(line=>line.replace(bullet,'')!==e.output).join('\n');s.evidenceIds=s.evidenceIds.filter(id=>id!==e.id);e.included=false;e.reason='Template page budget';
+  // Unknown sections and sections with no safely concise result stay visible for review.
+  // A layout constraint must never be used as permission to remove a source section.
+  for(const s of source){
+    const kind=sectionKind(s.title);
+    if(kind==='other'||!selected.some(p=>sectionKind(p.title)===kind)){
+      const text=s.text.split('\n').filter(t=>!isMetaContent(t)).join('\n').trim();
+      if(text)selected.push({...s,text,evidenceIds:[]});
+    }
   }
+  const count = () => wordCount(selected.map(s=>s.text).join(' '));
   const sections = selected.filter(s=>s.text.trim());
   if(designFor(input.template,input.design).layout==='single'){const skillsSection=sections.find(s=>s.title==='Core Skills');if(skillsSection)skillsSection.text=skillsSection.text.split('\n').join('; ');}
   return { cvGenerationVersion: GENERATION_VERSION, createdAt: new Date().toISOString(), targetRole: ctx.targetRole, vacancy: ctx.vacancy, mode: ctx.vacancy ? 'targeted' : 'general', sourceSections: source, sections, evidence: ledger, requirements: jobRequirements(ctx.vacancy,ctx.targetRole), capacity, pressure, wordCount: count(), estimatedPages: Math.max(1,Math.ceil(count()/Math.max(220,capacity.wordBudget/2))), warnings: roles.some(r=>!r.heading.length)?['Some employment headings could not be identified. Review role titles and dates.']:[], approved: false };
@@ -239,13 +250,9 @@ export function validateRewrites(value, plan) {
 }
 
 export async function fitCV(input, measure) {
-  let plan;
-  for(let pressure=0;pressure<=5;pressure++) {
-    plan=planCV(input,{pressure});
-    const pages=await measure(plan.sections);
-    if(pages<=2) return {...plan,measuredPages:pages};
-  }
-  throw Error('This CV cannot safely fit two pages. Review long role headings, contact details and qualifications; your source remains unchanged.');
+  const plan=planCV(input),pages=await measure(plan.sections);
+  if(pages<=2)return {...plan,measuredPages:pages};
+  throw Error(`The section-preserving draft needs ${pages} pages. No content was cut to meet the page limit. Choose an extended CV or review individual section wording and layout; your current CV remains unchanged.`);
 }
 
 export function approximatePages(sections, template, design, portrait) {

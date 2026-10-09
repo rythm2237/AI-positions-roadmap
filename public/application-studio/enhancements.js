@@ -81,13 +81,14 @@ const bindLettersBase=bindEnhancements;bindEnhancements=function(){bindLettersBa
 
 // HTML preview and exported HTML use the same record hierarchy as the PDF.
 function structuredCVText(section){
+ section=window.CareerDocs?.normalizeSection?window.CareerDocs.normalizeSection(section):section;
  const text=window.CareerDocs?.flowText?window.CareerDocs.flowText(section):section.text;
- if(!/^(Experience|Education|Certifications|Additional Experience|Professional Development)$/.test(section.title))return cvLinkText(text);
+ if(!section.headingLines?.length&&!/^(Experience|Education|Certifications|Additional Experience|Professional Development|Selected Projects|Projects)$/.test(section.title))return cvLinkText(text);
  const lines=text.split('\n');
  return lines.map((line,i)=>{
   if(!line.trim())return '<div class="cv-record-gap"></div>';
   const bullet=/^\s*[•*-]\s+/.test(line),next=lines[i+1]||'';
-  const title=!bullet&&line.length<150&&(/\b(?:19|20)\d{2}\b/.test(next)||i===0);
+  const title=section.headingLines?.includes(line)||!bullet&&line.length<150&&(/\b(?:19|20)\d{2}\b/.test(next)||i===0);
   return `<div class="${bullet?'cv-record-bullet':title?'cv-record-title':'cv-record-line'}">${title?'<strong>':''}${cvLinkText(line)}${title?'</strong>':''}</div>`;
  }).join('');
 }

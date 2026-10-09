@@ -8,7 +8,7 @@ const result=validateStructure({sections:[{title:'Header',items:[{sourceIds:['L0
 assert.equal(result.sections[1].text.split('\n').length,3);
 assert.equal(result.sections[2].text.split('\n').length,2);
 // Model prose is ignored: only validated source IDs can create CV facts.
-const ignored=validateStructure({sections:[{title:'Header',items:[{sourceIds:['L0'],text:'Taylor Example, senior architect'}]}]},lines);assert.equal(ignored.sections[0].text,'Taylor Example');
+const ignored=validateStructure({sections:[{title:'Header',items:[{sourceIds:['L0'],text:'Taylor Example, senior architect'}]}]},lines.slice(0,1));assert.equal(ignored.sections[0].text,'Taylor Example');
 assert.throws(()=>validateStructure({sections:[{title:'Header',items:[{sourceIds:['FAKE'],kind:'heading'}]}]},lines),/unsupported/);
 
 const parsed=parseProfile('Taylor\nExperience\nWarehouse Co.\nOperations Planner\nMay 2025 - Present\n• I use operational data to\nimprove warehouse flow.\nCertifications\nThe International certificate for\nBusiness competence/ Level A\nCompTIA Network+');
@@ -39,7 +39,7 @@ const {splitSections}=await import('../src/lib/applicationStudio/design.mjs');
 const collapsed='Taylor Example Fulfilment Operational Flow Planner & Independent AI Product Builder Budapest, Hungary +36123456789 taylor@example.invalid www.linkedin.com/in/taylor';
 const fixed=splitSections([{title:'Header',text:collapsed}]).header.text;
 assert.equal(fixed.split('\n')[0],'Taylor Example');assert(fixed.includes('\ntaylor@example.invalid'));assert(fixed.includes('\n+36123456789'));
-const preserved=validateStructure({sections:[{title:'Header',items:[{sourceIds:['L0','L1'],kind:'heading'}]}]},lines);assert.equal(preserved.sections[0].text,'Taylor Example\ntaylor@example.invalid');
+const preserved=validateStructure({sections:[{title:'Header',items:[{sourceIds:['L0','L1'],kind:'heading'}]}]},lines.slice(0,2));assert.equal(preserved.sections[0].text,'Taylor Example\ntaylor@example.invalid');
 console.log('Large translation PASS: 125 units, bounded batches, missing-unit repair, strict incomplete/unknown rejection, and source-grounded header line preservation.');
 
 const {detectLanguage}=await import('../src/lib/applicationStudio/languages.mjs');
