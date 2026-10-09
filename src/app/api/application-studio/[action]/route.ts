@@ -1,4 +1,6 @@
-import {STRUCTURE_SCHEMA,structureSources,validateStructure} from '@/lib/applicationStudio/structure.mjs';
+import {STRUCTURE_SCHEMA,structureSources,validateStructure,recoverStructure} from '@/lib/applicationStudio/structure.mjs';
+import {studioOutputSchema} from '@/lib/applicationStudio/outputSchemas.mjs';
+import {generateStudioObject,isStudioOutputError} from '@/lib/applicationStudio/structuredGeneration.mjs';
 import {TRANSLATION_SCHEMA,translationContext,validateTranslation,protectTranslation,restoreTranslation,translateUnits} from '@/lib/applicationStudio/translation.mjs';
 import { classifyStudioGatewayError, studioModelFallback } from "@/lib/applicationStudio/gatewayErrors";
 import { submittedCV } from "@/lib/applicationStudio/recruiter.mjs";
@@ -117,27 +119,24 @@ export async function POST(request: Request, { params }: { params: Promise<{ act
       });}catch(error){if(error instanceof Error&&/^(Invalid translation response|Invalid translated unit|Translation missed)/.test(error.message)){console.warn("CV translation batch failed",{requestId,stage:"unit-coverage"});throw new ServiceError(error.message,502);}throw error;}
       try{return json(validateTranslation(restoreTranslation(translated,protectedTranslation),context!.cv,translatedInput.targetLanguage));}catch(error){const reason=(error as Error).message;console.warn('CV translation validation failed',{requestId,stage:reason.includes('numbers')?'protected-facts':reason.includes('writing system')?'script':reason.includes('untranslated')?'untranslated':'sections'});throw new ServiceError(reason,502);} 
     }
-    let result;
-    try { result = await generateText({...settings, model}); }
-    catch (error) {
-      const fallback = studioModelFallback(error, model);
-      if (!fallback) throw error;
-      console.warn("Application Studio model access fallback", {requestId, model, fallback});
-      result = await generateText({...settings, model: fallback});
-    }
-    if (result.finishReason === "length") return json({ error: "AI output was incomplete. Your draft is preserved; try a shorter input." }, 502);
-    // A later review failure must not refund an inference that already completed.
-    reservedQuota=undefined;
     let parsed: unknown;
-    try { parsed = JSON.parse(result.text.replace(/^```(?:json)?\s*/i, "").replace(/\s*```$/, "")); }
-    catch { return json({ error: "AI returned invalid JSON. Your draft is preserved." }, 502); }
+    try {
+      const result=await generateStudioObject({settings,model,schema:studioOutputSchema(aiAction),fallbackModel:studioModelFallback,retryInvalid:!structuralSources,onInferenceComplete:()=>{reservedQuota=undefined;}});
+      parsed=result.output;
+    }catch(error){
+      if(!isStudioOutputError(error))throw error;
+      // Structure detection is an enhancement, not a gate that loses the source
+      // or blocks navigation. Never invent a replacement CV when output fails.
+      if(structuralSources)return json(recoverStructure(structuralSources,'AI could not complete section grouping. Your full original CV was retained using source headings. Review titles, employers and qualifications before generating a new CV.'));
+      return json({error:'AI could not complete this structured response. Your document is unchanged. Retry this step.',code:'AI_OUTPUT_INVALID',requestId},502);
+    }
     if(aiAction==='strategy'){try{return json({strategy:validateStrategy(parsed,savedKnowledge!,String(context!.vacancy||''),String(context!.feedback||''))});}catch(error){return json({error:(error as Error).message},502);}}
     if(aiAction==='generate'){
       let draft;try{draft=validateGeneratedCV(parsed,savedKnowledge!,approvedStrategy,context!.cv as any[],context!.rejectedIntelligence as string[]||[]);}catch(error){throw new ServiceError((error as Error).message,502);}
       await reviewEvidence({...groundingReviewInput(draft,savedKnowledge!),targetLanguage:context!.language},model,settings.abortSignal);
       return json({draft});
     }
-    if(structuralSources){try{return json(validateStructure(parsed,structuralSources));}catch(error){return json({error:(error as Error).message},502);}}
+    if(structuralSources){try{return json(validateStructure(parsed,structuralSources));}catch{return json(recoverStructure(structuralSources,'AI section grouping could not be verified. Your full original CV was retained using source headings. Review the grouping before generating a new CV.'));}}
     if(translatedInput){try{return json(validateTranslation(restoreTranslation(parsed,protectedTranslation!),context!.cv,translatedInput.targetLanguage));}catch(error){return json({error:(error as Error).message},502);}}
     if(contentPlan){
       const rewrites=validateRewrites(parsed,contentPlan);

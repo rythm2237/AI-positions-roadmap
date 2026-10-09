@@ -4,6 +4,7 @@ const {JSDOM}=require('jsdom'),fs=require('fs'),vm=require('vm'),assert=require(
  const scripts=[...html.matchAll(/<script(?:\s[^>]*)?>([\s\S]*?)<\/script>/g)].map(m=>m[1]).filter(s=>s.trim()&&!s.includes('import((window'));
  const dom=new JSDOM(html.replace(/<script[\s\S]*?<\/script>/g,''),{url:'https://studio.test/application-studio/index.html?mode=general',runScripts:'outside-only',pretendToBeVisual:true}),w=dom.window;
  const base='../src/lib/applicationStudio/',knowledge=await import(base+'knowledge.mjs'),intel=await import(base+'intelligence.mjs'),engine=await import(base+'contentEngine.mjs');
+ const structure=await import(base+'structure.mjs');
  w.CareerDocs={...engine,...await import(base+'design.mjs'),...await import(base+'languages.mjs'),...await import(base+'inlineStyles.mjs'),measureCV:async()=>1,optimiseCV:async input=>({...engine.planCV(input),measuredPages:1})};
  w.CareerIntelligence={...knowledge,...intel};w.CareerRecruiter={assess:(await import(base+'recruiter.mjs')).recruiterAssessment};w.confirm=()=>true;w.scrollTo=()=>{};
  let user=null,stored=new Map(),calls=[];
@@ -12,8 +13,9 @@ const {JSDOM}=require('jsdom'),fs=require('fs'),vm=require('vm'),assert=require(
  w.fetch=async(url,options={})=>{
   if(url.endsWith('/config'))return reply({user:user?{id:user}:null,configured:true,aiUsage:{exempt:true}});
   if(url.endsWith('/defaults'))return reply({defaults:null});
+  if(url.endsWith('/learning'))return reply({userId:user,items:[]});
   if(url.endsWith('/knowledge')){if(!user)return reply({error:'Sign in'},401);if(!options.method)return reply({userId:user,knowledge:kb()});const b=JSON.parse(options.body);if(b.sessionUserId!==user)return reply({error:'Account changed'},409);if(b.revision!==kb().revision)return reply({error:'Revision changed'},409);let next=b.operation==='learning'?kb():b.operation==='import'?knowledge.importKnowledge(kb(),b):b.operation==='confirm'?knowledge.confirmFact(kb(),b.fact):knowledge.retractFact(kb(),b.claimId);stored.set(user,next);return reply({userId:user,knowledge:next});}
-  if(url.endsWith('/ai')){const b=JSON.parse(options.body);calls.push(b);if(b.action==='strategy')return reply({strategy:intel.validateStrategy({narrative:'Show operational planning and truthful project evidence.',priorities:kb().entities.map(e=>({entityId:e.id,evidenceIds:e.claimIds,treatment:'retain',reason:'Professional evidence'})),questions:[],newFacts:b.context.feedback?.includes('IWS')?[{text:b.context.feedback,entityId:kb().entities.find(e=>e.kind==='experience').id,field:'tools'}]:[]},kb(),b.context.vacancy||'',b.context.feedback||'')});
+  if(url.endsWith('/ai')){const b=JSON.parse(options.body);calls.push(b);if(b.action==='structure')return reply(structure.recoverStructure(structure.structureSources(b.context.candidate),'AI grouping failed; original CV retained.'));if(b.action==='strategy')return reply({strategy:intel.validateStrategy({narrative:'Show operational planning and truthful project evidence.',priorities:kb().entities.map(e=>({entityId:e.id,evidenceIds:e.claimIds,treatment:'retain',reason:'Professional evidence'})),questions:[],newFacts:b.context.feedback?.includes('IWS')?[{text:b.context.feedback,entityId:kb().entities.find(e=>e.kind==='experience').id,field:'tools'}]:[]},kb(),b.context.vacancy||'',b.context.feedback||'')});
    if(b.action==='generate'){const output={sections:kb().entities.map(e=>({title:{header:'Header',summary:'Professional Summary',experience:'Experience',education:'Education',skills:'Skills'}[e.kind]||'Projects',items:e.claimIds.map(id=>({text:kb().claims.find(c=>c.id===id).original,evidenceIds:[id],entityId:e.id,kind:kb().claims.find(c=>c.id===id).anchor?'heading':'body'}))})),warnings:[]};return reply({draft:intel.validateGeneratedCV(output,kb(),b.context.strategy,b.context.cv,b.context.rejectedIntelligence)});}
   }
   throw Error('Unexpected request '+url);
@@ -22,7 +24,13 @@ const {JSDOM}=require('jsdom'),fs=require('fs'),vm=require('vm'),assert=require(
  ev(scripts[0]);for(const file of ['enhancements','workflow','content-workflow','locale-workflow','preview-editor','intelligence-workflow'])ev(fs.readFileSync(dir+file+'.js','utf8'));ev(scripts[1]);await settle();
  assert(q('studioSignIn').href.includes('mode%3Dgeneral'));assert(!q('studioSignIn').hidden);assert(q('saveKnowledge').disabled);assert.equal(ev('candidateKnowledge'),null);
  user='candidate-a';ev("account={id:'candidate-a'};S.demo=false;S.candidateProfile.text='Taylor Morgan\\nProfessional Summary\\nExperienced operations professional.\\nExperience\\nOperations Planner — Example Warehouse\\n2022 - Present\\n• Planned daily inventory replenishment.\\nEducation\\nBachelor of Business — Example University — 2019';S.candidateProfile.confirmedText=S.candidateProfile.text;app().mode='general';app().cv=[{id:'h',title:'Header',text:'Taylor Morgan'}];S.stage=4;render();");
- assert(q('studioSignIn').hidden);const current=ev('JSON.stringify(app().cv)');click('createStrategy');await settle();assert(stored.get(user));assert(q('approveStrategy'));assert.equal(ev('JSON.stringify(app().cv)'),current);assert(q('generateIntelligentCV').disabled);
+ assert(q('studioSignIn').hidden);
+ ev('S.stage=0;render();');click('stepNext');await settle();
+ assert.equal(ev('S.stage'),4,'Invalid AI structure recovery does not block Candidate Next');
+ assert(ev('app().structureRecovered'),'Source recovery is identified honestly');
+ assert(ev("app().cv.some(s=>s.title==='Education')"),'Candidate navigation retains education');
+ assert(w.document.body.textContent.includes('AI grouping failed; original CV retained.'));
+ const current=ev('JSON.stringify(app().cv)');click('createStrategy');await settle();assert(stored.get(user));assert(q('approveStrategy'));assert.equal(ev('JSON.stringify(app().cv)'),current);assert(q('generateIntelligentCV').disabled);
  click('approveStrategy');assert(q('generateIntelligentCV').disabled===false);click('generateIntelligentCV');await settle();assert(ev('app().intelligenceDraft.operations.length')>0);assert.equal(ev('JSON.stringify(app().cv)'),current);
  const pending=[...w.document.querySelectorAll('[data-accept-intelligence]')];for(const b of pending){const id=b.dataset.acceptIntelligence;w.document.querySelector('[data-accept-intelligence="'+id+'"]').click();}
  assert(ev("app().cv.some(s=>s.title==='Education')"));const accepted=ev('JSON.stringify(app().cv)');click('generateIntelligentCV');await settle();assert.equal(ev('JSON.stringify(app().cv)'),accepted);assert.equal(ev('app().intelligenceDraft.operations.length'),0);
