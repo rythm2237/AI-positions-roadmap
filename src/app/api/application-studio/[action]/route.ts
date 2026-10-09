@@ -2,6 +2,7 @@ import {STRUCTURE_SCHEMA,structureSources,validateStructure,recoverStructure} fr
 import {studioOutputSchema} from '@/lib/applicationStudio/outputSchemas.mjs';
 import {generateStudioObject,isStudioOutputError} from '@/lib/applicationStudio/structuredGeneration.mjs';
 import {LETTER_REVIEW_SCHEMA,LetterEvidenceError,generateGroundedLetter} from '@/lib/applicationStudio/letterGeneration.mjs';
+import {strategyEvidenceRecords,generateVerifiedStrategy} from '@/lib/applicationStudio/strategyGeneration.mjs';
 import {TRANSLATION_SCHEMA,translationContext,validateTranslation,protectTranslation,restoreTranslation,translateUnits} from '@/lib/applicationStudio/translation.mjs';
 import { classifyStudioGatewayError, studioModelFallback } from "@/lib/applicationStudio/gatewayErrors";
 import { submittedCV } from "@/lib/applicationStudio/recruiter.mjs";
@@ -111,6 +112,13 @@ export async function POST(request: Request, { params }: { params: Promise<{ act
       maxOutputTokens: ['translate','structure','generate'].includes(aiAction)?14000:6500,
       abortSignal: AbortSignal.any([request.signal,AbortSignal.timeout(100_000)]),
     };
+    if(aiAction==='strategy'){
+        const strategy=await generateVerifiedStrategy({knowledge:savedKnowledge!,vacancy:String(context!.vacancy||''),feedback:String(context!.feedback||''),generate:async repair=>{
+          const result=await generateStudioObject({settings:{...settings,prompt:JSON.stringify({...prompt,strategyEvidenceRecords:strategyEvidenceRecords(savedKnowledge!),...(repair?{strategyRepair:repair}:{})})},model,schema:studioOutputSchema('strategy'),fallbackModel:studioModelFallback,retryInvalid:false,onInferenceComplete:()=>{reservedQuota=undefined;}});
+          return result.output;
+        }});
+        return json({strategy});
+    }
     if(protectedTranslation&&translatedInput){
       let translated;try{translated=await translateUnits(protectedTranslation.input,async (batch: Record<string, unknown>)=>{
         const batchSettings={...settings,system:TRANSLATION_SCHEMA,prompt:JSON.stringify(batch),maxOutputTokens:6500,output:Output.object({schema:z.object({targetLanguage:z.literal(translatedInput!.targetLanguage),translations:z.array(z.object({id:z.string(),text:z.string()}))})})};
@@ -142,7 +150,6 @@ export async function POST(request: Request, { params }: { params: Promise<{ act
       if(structuralSources)return json(recoverStructure(structuralSources,'AI could not complete section grouping. Your full original CV was retained using source headings. Review titles, employers and qualifications before generating a new CV.'));
       return json({error:'AI could not complete this structured response. Your document is unchanged. Retry this step.',code:'AI_OUTPUT_INVALID',requestId},502);
     }
-    if(aiAction==='strategy'){try{return json({strategy:validateStrategy(parsed,savedKnowledge!,String(context!.vacancy||''),String(context!.feedback||''))});}catch(error){return json({error:(error as Error).message},502);}}
     if(aiAction==='generate'){
       let draft;try{draft=validateGeneratedCV(parsed,savedKnowledge!,approvedStrategy,context!.cv as any[],context!.rejectedIntelligence as string[]||[]);}catch(error){throw new ServiceError((error as Error).message,502);}
       await reviewEvidence({...groundingReviewInput(draft,savedKnowledge!),targetLanguage:context!.language},model,settings.abortSignal);
