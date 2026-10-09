@@ -197,7 +197,7 @@ export function planCV(input, { pressure = 0 } = {}) {
   add('Selected Projects', projectText, projectIds);
   const projectSection=selected.find(s=>s.title==='Selected Projects');
   if(projectSection)projectSection.headingLines=projects.flatMap(r=>r.heading);
-  for (const [kind, title] of [['education','Education'],['certifications','Certifications'],['languages','Languages'],['additional','Additional Experience']]) {
+  for (const [kind, title] of [['contact','Contact'],['education','Education'],['certifications','Certifications'],['languages','Languages'],['additional','Additional Experience']]) {
     const entries = source.filter(s => sectionKind(s.title) === kind).flatMap(s => s.text.split('\n').map(t => t.trim()).filter(Boolean).map(t => item(t.replace(bullet,''),kind,s.id,s.title)));
     const lines = [], ids = [];
     for (const e of (kind==='education'||kind==='languages'?entries:entries.sort((a,b)=>b.total-a.total))) {
