@@ -1,0 +1,41 @@
+import assert from 'node:assert/strict';
+import fs from 'node:fs/promises';
+import {PDFDocument,StandardFonts} from 'pdf-lib';
+import * as pdfjs from 'pdfjs-dist/legacy/build/pdf.mjs';
+import {documentText,pageText} from '../src/lib/applicationStudio/pdfText.mjs';
+import {parseProfile} from '../src/lib/applicationStudio/contentEngine.mjs';
+import {renderPDF} from '../src/lib/applicationStudio/pdfRenderer.mjs';
+import {FONTS} from '../src/lib/applicationStudio/design.mjs';
+const source=await PDFDocument.create(),font=await source.embedFont(StandardFonts.Helvetica);
+const write=(page,text,x,y,size=10)=>page.drawText(text,{x,y,size,font});
+const first=source.addPage([595,842]);
+write(first,'Taylor Example Operations Planner',36,780,27);
+write(first,'Operations, reporting and process improvement',36,752);
+write(first,'Contact',36,708,12);write(first,'taylor.long.contact@example.invalid',36,688);
+write(first,'Education',36,640,12);write(first,'Business Management',36,620);write(first,'Example University',36,600);write(first,'2020',36,580);
+write(first,'Certifications',36,540,12);write(first,'Inventory Course',36,520);write(first,'Provider Example',36,500);write(first,'2023',36,480);
+write(first,'Summary',192,640,12);write(first,'Prepared accurate reports and supported planning.',192,620);write(first,'Improved inventory records and operational handovers.',192,600);write(first,'Worked with teams to track daily priorities.',192,580);
+write(first,'Experience',192,540,12);write(first,'Operations Planner',192,520);write(first,'2024 - Present',192,500);write(first,'Maintained accurate inventory records.',192,480);
+const second=source.addPage([595,842]);
+// Deliberately different baselines: inherit the established gutter.
+write(second,'Additional Inventory Course',36,735);write(second,'Provider Two',36,715);write(second,'2025',36,695);
+write(second,'Supported operational team handovers.',192,790);write(second,'Prepared daily inventory reporting.',192,770);write(second,'Tracked replenishment priorities.',192,750);write(second,'Reviewed movement records.',192,730);
+const input=await pdfjs.getDocument({data:await source.save(),isEvalSupported:false,standardFontDataUrl:'node_modules/pdfjs-dist/standard_fonts/'}).promise,pages=[];
+for(let n=1;n<=input.numPages;n++){const page=await input.getPage(n),v=page.getViewport({scale:1}),content=await page.getTextContent();pages.push({items:content.items,width:v.width,height:v.height});}
+const extracted=documentText(pages),sections=parseProfile(extracted);
+assert(!extracted.includes('Education Summary'));
+assert(sections.find(s=>s.title==='Header').text.length<160);
+assert(sections.find(s=>s.title==='Contact').text.includes('taylor.long.contact'));
+assert(sections.find(s=>s.title==='Education').text.includes('Example University'));
+assert(sections.find(s=>s.title==='Certifications').text.includes('Additional Inventory Course'));
+assert(!sections.find(s=>s.title==='Experience').text.includes('Provider Two'));
+assert(sections.find(s=>s.title==='Experience').text.includes('Supported operational team handovers'));
+const originalFacts=pages.flatMap(p=>p.items.filter(i=>i.str?.trim()).map(i=>i.str.trim()));
+for(const fact of originalFacts)assert.equal(extracted.split('\n').filter(x=>x===fact).length,originalFacts.filter(x=>x===fact).length,`Preserve source fragment: ${fact}`);
+const item=(str,x,y,width)=>({str,width,transform:[10,0,0,10,x,y]});
+assert.equal(pageText([item('Taylor',36,780,30),item('Summary:',36,740,65),item('One column text',36,720,430)],595,842),'Taylor\nSummary:\nOne column text');
+assert.equal(parseProfile('Taylor\nSummary:\nPrepared accurate reports.\nEducation:\nExample University')[1].title,'Summary');
+const fonts=async id=>{const f=FONTS.find(f=>f.id===id);return Promise.all(['.ttf','-Bold.ttf'].map(x=>fs.readFile('public/application-studio/fonts/'+f.file+x)));};
+for(const template of ['Harbor','Professional']){const exported=await renderPDF({kind:'cv',template,sections},fonts);assert((await PDFDocument.load(new Uint8Array(await exported.arrayBuffer()))).getPageCount()>=1);}
+await input.destroy();
+console.log('PASS: actual two-column PDF import, spanning masthead/contact, cross-page columns, no lost/duplicate fragments, colon headings, single column and re-export.');

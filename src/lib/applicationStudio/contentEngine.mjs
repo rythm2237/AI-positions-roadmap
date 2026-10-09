@@ -19,6 +19,7 @@ export function nearDuplicate(a, b) {
   return intersection / Math.min(x.size, y.size) >= .88 && Math.min(x.size, y.size) / Math.max(x.size, y.size) >= .65;
 }
 const kinds = [
+  ['contact', /^(contact|contact details|contact information)$/i],
   ['summary', /^(professional summary|summary|profile|profil|about(?: me)?|personal statement)$/i],
   ['experience', /^(work experience|professional experience|employment(?: history)?|career history|experience|berufserfahrung|expérience(?: professionnelle)?)$/i],
   ['skills', /^(core skills|skills|technical skills|top skills|competencies|kenntnisse|compétences)$/i],
@@ -33,7 +34,7 @@ export const sectionKind = title => title === 'Header' ? 'header' : kinds.find((
 export function parseProfile(text) {
   const sections = []; let current = { id: 'source-0', title: 'Header', text: '' };
   for (const raw of String(text || '').replace(/\r/g, '').split('\n')) {
-    const line = raw.trim();
+    const line = raw.trim().replace(/:$/, '').trim();
     if (sectionKind(line) !== 'other' && line !== 'Header' && !/^\s*[•*-]/.test(raw)) {
       if (current.text.trim()) sections.push(current);
       current = { id: `source-${sections.length}`, title: canonicalHeading(line), displayTitle: canonicalHeading(line)!==line.replace(/:$/, '')?line.replace(/:$/, ''):undefined, text: '' };
