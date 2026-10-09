@@ -95,7 +95,7 @@ export function relevanceScore(text, { vacancy = '', targetRole = '', year = new
 
 const bullet = /^\s*(?:[•●▪*-]|\d+[.)])\s+/;
 const dates = /\b(?:19|20)\d{2}\b/;
-function records(section) {
+export function records(section) {
   const lines = section.text.split('\n').map(x => x.trim()).filter(Boolean);
   const blocks = []; let block = null;
   for (let i = 0; i < lines.length; i++) {

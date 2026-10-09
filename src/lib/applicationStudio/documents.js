@@ -8,6 +8,8 @@ import JSZip from 'jszip';
 import {TEMPLATES,FONTS,designFor,splitSections,flowText,photoData,colorInk} from './design.mjs';
 import {inspectDesign} from './designImport.js';
 import {documentText} from './pdfText.mjs';
+import {stableId,knowledgeSources} from './knowledge.mjs';
+import {assessmentDimensions} from './intelligence.mjs';
 import {recruiterAssessment} from './recruiter.mjs';
 import {inlineRuns,formatSelection,editStyledText} from './inlineStyles.mjs';
 import {parseProfile,normalizeSection,planCV,relevanceScore,fitCV,validateCV,approximatePages} from './contentEngine.mjs';
@@ -32,3 +34,4 @@ export async function measureCV(doc){return (await renderPDF({...doc,measure:tru
 export async function applicationPackage(documents){if(!documents.length)throw Error('No documents to export.');const zip=new JSZip();for(let i=0;i<documents.length;i++)zip.file(documents[i].kind==='cv'?'CV.pdf':documents[i].kind==='cover'?'Cover-Letter.pdf':'Motivation-Letter.pdf',await (await pdf(documents[i])).arrayBuffer());return zip.generateAsync({type:'blob'});}
 window.CareerDocs={editStyledText,inlineRuns,formatSelection,LANGUAGES,languageFor,detectLanguage,fontsForLanguage,validateTranslation,extract,pdf,applicationPackage,inspectDesign,TEMPLATES,FONTS,designFor,splitSections,flowText,photoData,colorInk,optimiseCV,measureCV,parseProfile,normalizeSection,planCV,relevanceScore,validateCV,approximatePages};
 window.CareerRecruiter={assess:recruiterAssessment};
+window.CareerIntelligence={stableId,knowledgeSources,assessmentDimensions};
