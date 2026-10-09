@@ -2,6 +2,19 @@ import assert from 'node:assert/strict';
 import {emptyKnowledge,importKnowledge,confirmFact,retractFact,knowledgeSources} from '../src/lib/applicationStudio/knowledge.mjs';
 import {validateStrategy,validateGeneratedCV,assessmentDimensions,groundingIssues,groundingReviewInput,validateGroundingReview} from '../src/lib/applicationStudio/intelligence.mjs';
 import {sanitizeApplication} from '../src/lib/applicationStudio/applicationState.mjs';
+import {structureSources,validateStructure} from '../src/lib/applicationStudio/structure.mjs';
+const wrappedSource='Taylor Morgan\nExperience\nOperations Planner — Example Warehouse\n2022 - Present\n• Planned replenishment\n• and maintained stock records.\nEducation\nBachelor of Business — Example University — 2019';
+const reconstructed=validateStructure({sections:[{title:'Header',items:[{sourceIds:['L0'],kind:'body'}]},{title:'Experience',items:[{sourceIds:['L2'],kind:'heading'},{sourceIds:['L3'],kind:'body'},{sourceIds:['L4','L5'],kind:'bullet'}]},{title:'Education',items:[{sourceIds:['L7'],kind:'body'}]}]},structureSources(wrappedSource));
+const reconstructedKnowledge=importKnowledge(emptyKnowledge(),{text:wrappedSource,sections:reconstructed.sections});
+assert(reconstructedKnowledge.claims.some(c=>c.original==='Planned replenishment and maintained stock records.'),'Server-reconstructed wrapped bullets remain valid source evidence');
+assert(!reconstructedKnowledge.sources[0].structureRecovered,'Presentation-only bullet removal does not trigger recovery');
+const staleSections=structuredClone(reconstructed.sections);staleSections[1].text+='\nDelivered 99% savings using SAP.';
+const recoveredKnowledge=importKnowledge(emptyKnowledge(),{text:wrappedSource,sections:staleSections});
+assert(recoveredKnowledge.sources[0].structureRecovered,'Stale or edited preview recovers from the original instead of blocking Next');
+assert(!recoveredKnowledge.claims.some(c=>/99%|SAP/.test(c.original)),'Recovery never imports unsupported preview claims');
+assert(recoveredKnowledge.entities.some(e=>e.kind==='education'),'Recovery retains original qualifications');
+assert.deepEqual(importKnowledge(recoveredKnowledge,{text:wrappedSource,sections:staleSections}),recoveredKnowledge,'Recovery remains idempotent');
+assert.throws(()=>importKnowledge(emptyKnowledge(),{text:wrappedSource,sections:[{title:'Experience',text:null}]}),/Invalid structured/);
 const source=`Taylor Morgan
 taylor@example.test
 Professional Summary

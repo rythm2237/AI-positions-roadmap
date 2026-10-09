@@ -15,10 +15,16 @@ export function knowledgeSources(kb) {
 }
 export function importKnowledge(kb, { text, type = 'cv', sections, label = '' }, at = new Date().toISOString()) {
   if (!sourceTypes.includes(type) || typeof text !== 'string' || !text.trim() || text.length > 100000) throw Error('Invalid candidate source.');
-  if(sections){if(!Array.isArray(sections)||sections.length>100||sections.some(s=>!s||typeof s.title!=='string'||typeof s.text!=='string'||s.text.split('\n').filter(x=>x.trim()).some(line=>!clean(text).includes(clean(line.replace(/^\s*[•●▪*-]\s*/,''))))))throw Error('Structured facts do not match the original source.');}
+  if(sections&&(!Array.isArray(sections)||sections.length>100||sections.some(s=>!s||typeof s.title!=='string'||typeof s.text!=='string')))throw Error('Invalid structured source sections.');
+  // Reconstruction joins wrapped fragments and removes each source bullet.
+  // Compare both sides using that same presentation normalization. A stale or
+  // edited preview must never become source evidence: recover from the original.
+  const sourceText=clean(text.split('\n').map(line=>line.replace(/^\s*[•●▪*-]\s*/, '')).join('\n'));
+  const structureRecovered=Boolean(sections?.some(s=>s.text.split('\n').filter(x=>x.trim()).some(line=>!sourceText.includes(clean(line.replace(/^\s*[•●▪*-]\s*/,''))))));
+  if(structureRecovered)sections=undefined;
   const next = structuredClone(kb), sourceId = stableId(type, text);
   if (next.sources.some(s => s.id === sourceId)) return next;
-  next.sources.push({ id: sourceId, type, label: clean(label).slice(0,150), importedAt: at });
+  next.sources.push({ id: sourceId, type, label: clean(label).slice(0,150), importedAt: at, ...(structureRecovered?{structureRecovered:true}:{}) });
   // Preserve uncertain associations rather than guessing companies or dates.
   for (const section of sections?.length ? sections : parseProfile(text)) {
     const kind = sectionKind(section.title), parsed = ['experience','projects'].includes(kind) ? records(section) : section.text.split(/\n\s*\n/).map(text=>({heading:[],items:text.split('\n')}));

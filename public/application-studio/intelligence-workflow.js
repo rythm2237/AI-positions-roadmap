@@ -28,6 +28,11 @@ function installIntelligenceWorkflow(){
   if(!candidateKnowledge.sources.some(s=>s.id===tools().stableId('cv',text))){
    if(!app().knowledgeConsent&&!confirm('Save these professional facts securely to your AI Role Path account so you can reuse them for future applications? You can review and remove facts below.'))throw Error('Candidate knowledge was not saved. Local editing remains available.');
    app().knowledgeConsent=true;await updateKnowledge('import',{text,type:'cv',label:'Imported candidate CV',sections:app().structureSource===text?app().cv:undefined});
+   if(candidateKnowledge.sources.find(s=>s.id===tools().stableId('cv',text))?.structureRecovered){
+    const warning='Some preview text differed from the uploaded source. Your professional facts were saved from the original CV instead. Review the section grouping before generating a new CV.';
+    app().structureReview=app().structureReview||{warnings:[],excluded:[]};
+    if(!app().structureReview.warnings.includes(warning))app().structureReview.warnings.push(warning);
+   }
   }
   const linkedin=S.candidateProfile.linkedinText;if(linkedin?.trim()&&!candidateKnowledge.sources.some(s=>s.id===tools().stableId('linkedin',linkedin)))await updateKnowledge('import',{text:linkedin,type:'linkedin',label:'Candidate LinkedIn text'});
   await updateKnowledge('learning',{});
