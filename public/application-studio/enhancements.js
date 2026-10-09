@@ -63,7 +63,7 @@ bindEnhancements=function(){
 };
 async function preparePortrait(file){
  if(!file||file.size>5*1024*1024||!['image/png','image/jpeg','image/webp'].includes(file.type))throw Error('Choose a PNG, JPEG or WebP portrait up to 5 MB.');
- const bitmap=await createImageBitmap(file);try{if(bitmap.width*bitmap.height>40000000)throw Error('Photo dimensions are too large.');const canvas=document.createElement('canvas');canvas.width=canvas.height=480;const c=canvas.getContext('2d');c.fillStyle='#fff';c.fillRect(0,0,480,480);const scale=440/Math.max(bitmap.width,bitmap.height),w=bitmap.width*scale,h=bitmap.height*scale;c.drawImage(bitmap,(480-w)/2,(480-h)/2,w,h);return canvas.toDataURL('image/jpeg',.88);}finally{bitmap.close();}
+ const bitmap=await createImageBitmap(file);try{if(bitmap.width*bitmap.height>40000000)throw Error('Photo dimensions are too large.');const canvas=document.createElement('canvas');canvas.width=canvas.height=480;const c=canvas.getContext('2d');c.fillStyle='#fff';c.fillRect(0,0,480,480);const scale=440/Math.hypot(bitmap.width,bitmap.height),w=bitmap.width*scale,h=bitmap.height*scale;c.drawImage(bitmap,(480-w)/2,(480-h)/2,w,h);return canvas.toDataURL('image/jpeg',.88);}finally{bitmap.close();}
 }
 async function saveDesignDefaults(){
  if(!account||S.demo)throw Error('Sign in with your own CV to save account defaults.');
