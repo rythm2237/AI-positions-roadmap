@@ -12,7 +12,7 @@ export function pageTextParts(raw,width,height,inheritedGutter=null){
   if(crossing>Math.max(3,body.length*.08)||run<=width*.025)continue;
   const center=x-run/2,left=body.filter(i=>i.transform[4]+i.width<=center),right=body.filter(i=>i.transform[4]>=center);
   const paired=left.filter(l=>right.some(r=>Math.abs(l.transform[5]-r.transform[5])<=3)).length;
-  if(left.length>=4&&right.length>=4&&paired>=3&&(!best||crossing<best.crossing||crossing===best.crossing&&run>best.run))best={run,x:center,crossing};
+  if(left.length>=4&&right.length>=4&&(crossing===0||paired>=3)&&(!best||crossing<best.crossing||crossing===best.crossing&&run>best.run))best={run,x:center,crossing};
  }
  if(!best&&inheritedGutter!==null){const crossing=body.filter(i=>i.transform[4]<inheritedGutter&&i.transform[4]+i.width>inheritedGutter).length;if(body.length>=4&&crossing<=Math.max(2,body.length*.08))best={x:inheritedGutter};}
  if(!best)return {columns:false,header:'',side:'',main:lines(items)};
