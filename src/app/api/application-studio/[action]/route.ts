@@ -1,6 +1,7 @@
 import {STRUCTURE_SCHEMA,structureSources,validateStructure,recoverStructure} from '@/lib/applicationStudio/structure.mjs';
 import {studioOutputSchema} from '@/lib/applicationStudio/outputSchemas.mjs';
 import {generateStudioObject,isStudioOutputError} from '@/lib/applicationStudio/structuredGeneration.mjs';
+import {LETTER_REVIEW_SCHEMA,LetterEvidenceError,generateGroundedLetter} from '@/lib/applicationStudio/letterGeneration.mjs';
 import {TRANSLATION_SCHEMA,translationContext,validateTranslation,protectTranslation,restoreTranslation,translateUnits} from '@/lib/applicationStudio/translation.mjs';
 import { classifyStudioGatewayError, studioModelFallback } from "@/lib/applicationStudio/gatewayErrors";
 import { submittedCV } from "@/lib/applicationStudio/recruiter.mjs";
@@ -14,7 +15,7 @@ import { limitedText, sourceMap, vacancySourceMap, validate, fetchPublic, Servic
 import {planCV,validateRewrites,validateCV} from '@/lib/applicationStudio/contentEngine.mjs';
 import {getKnowledge} from '@/lib/applicationStudio/knowledgeStore';
 import {knowledgeSources} from '@/lib/applicationStudio/knowledge.mjs';
-import {STRATEGY_SCHEMA,GENERATION_SCHEMA,GROUNDING_REVIEW_SCHEMA,groundingReviewInput,validateGroundingReview,validateStrategy,validateGeneratedCV,assessmentDimensions,groundingIssues} from '@/lib/applicationStudio/intelligence.mjs';
+import {STRATEGY_SCHEMA,GENERATION_SCHEMA,GROUNDING_REVIEW_SCHEMA,groundingReviewInput,validateGroundingReview,validateStrategy,validateGeneratedCV,assessmentDimensions} from '@/lib/applicationStudio/intelligence.mjs';
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -121,9 +122,20 @@ export async function POST(request: Request, { params }: { params: Promise<{ act
     }
     let parsed: unknown;
     try {
-      const result=await generateStudioObject({settings,model,schema:studioOutputSchema(aiAction),fallbackModel:studioModelFallback,retryInvalid:!structuralSources,onInferenceComplete:()=>{reservedQuota=undefined;}});
-      parsed=result.output;
+      if(['cover','motivation'].includes(aiAction)){
+        parsed=await generateGroundedLetter({sources,context:context!,generate:async repair=>{
+          const result=await generateStudioObject({settings:{...settings,prompt:JSON.stringify({...prompt,...(repair?{evidenceRepair:repair}:{})})},model,schema:studioOutputSchema(aiAction),fallbackModel:studioModelFallback,retryInvalid:false,onInferenceComplete:()=>{reservedQuota=undefined;}});
+          return result.output;
+        },review:async input=>{
+          const result=await generateStudioObject({settings:{...settings,system:LETTER_REVIEW_SCHEMA,prompt:JSON.stringify(input)},model,schema:z.object({languageValid:z.boolean(),checks:z.array(z.object({id:z.string(),status:z.enum(['supported','unsupported','ambiguous']),reason:z.string()}))}),fallbackModel:studioModelFallback,retryInvalid:false,onInferenceComplete:()=>{reservedQuota=undefined;}});
+          return result.output;
+        }});
+      }else{
+        const result=await generateStudioObject({settings,model,schema:studioOutputSchema(aiAction),fallbackModel:studioModelFallback,retryInvalid:!structuralSources,onInferenceComplete:()=>{reservedQuota=undefined;}});
+        parsed=result.output;
+      }
     }catch(error){
+      if(error instanceof LetterEvidenceError){const positions=[...new Set(error.issues.filter(i=>/^paragraph-\d+$/.test(i.id)).map(i=>Number(i.id.slice(10))+1))];return json({error:`The letter still needs evidence clarification${positions.length?' in paragraph(s) '+positions.join(', '):''} after one automatic rewrite. Your document is unchanged. Confirm the relevant experience in Candidate, or remove the unsupported claim and regenerate.`,code:'LETTER_EVIDENCE_CLARIFICATION',requestId},422);}
       if(!isStudioOutputError(error))throw error;
       // Structure detection is an enhancement, not a gate that loses the source
       // or blocks navigation. Never invent a replacement CV when output fails.
@@ -150,8 +162,6 @@ export async function POST(request: Request, { params }: { params: Promise<{ act
       for(const row of checked.matrix||[]){const named=String(row.requirement).match(/\b(?:SAP|ERP|MES)\b/gi)||[],supported=(row.evidenceIds||[]).map((id:string)=>sources[id]||'').join(' ');if(row.level==='Strong Match'&&named.some(term=>!new RegExp('\\b'+term+'\\b','i').test(supported))){row.level=row.evidenceIds?.length?'Transferable Skill':'Unknown';row.explanation='Related experience is reported, but the named specialist system is not established by the cited evidence. Confirm the actual system before claiming a direct match.';}}
       const dimensions=assessmentDimensions(checked,savedKnowledge,context!.cv as any[]);checked.dimensions=dimensions;checked.score=dimensions.professionalFit;
     }
-    if(['cover','motivation'].includes(aiAction)&&candidateSources){for(const p of checked.paragraphs||[]){const assertsExperience=/\bI (?:have|worked|built|managed|developed|led|used|implemented|achieved)|\bmy (?:experience|background|projects?|skills|career|education)\b/i.test(p.text);if(assertsExperience&&!p.evidenceIds?.length||p.evidenceIds?.length&&groundingIssues(p.text,p.evidenceIds.map((id:string)=>sources[id])).length)return json({error:'An unsupported claim was found in the letter. Your document is unchanged; retry with confirmed evidence.'},502);}}
-    if(['cover','motivation'].includes(aiAction)&&candidateSources)await reviewEvidence({targetLanguage:context!.language,statements:(checked.paragraphs||[]).filter(p=>p.evidenceIds?.length).map((p,i)=>({id:'paragraph-'+i,text:p.text,evidence:p.evidenceIds.map(id=>sources[id])}))},model,settings.abortSignal);
     return json(checked);
   } catch (error) {
     if (error instanceof ServiceError) return json({ error: error.message }, error.status);
