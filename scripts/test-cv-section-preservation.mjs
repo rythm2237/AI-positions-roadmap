@@ -12,6 +12,7 @@ const sections=[{id:'h',title:'Header',text:'Taylor Example\ntaylor@example.inva
  {id:'a',title:'Education',text:Array.from({length:8},(_,i)=>'Qualification '+i+' | Institute '+i+' | '+(2000+i)).join('\n')},
  {id:'x',title:'Volunteering',text:'Supported community learning sessions.'}];
 const plan=planCV({sections,vacancy:'Required inventory analytics',template:'Harbor'});
+assert(plan.sections.find(s=>s.title==='Selected Projects').headingLines.includes('Reporting project'));
 for(const s of sections)assert(plan.sections.some(p=>sectionKind(p.title)===sectionKind(s.title)),'Lost section '+s.title);
 for(let i=0;i<8;i++)assert(plan.sections.find(s=>s.title==='Education').text.includes('Qualification '+i));
 for(let i=0;i<9;i++)assert(plan.sections.find(s=>s.title==='Certifications').text.includes('Certificate '+i));

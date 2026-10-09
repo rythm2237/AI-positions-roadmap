@@ -98,7 +98,7 @@ function records(section) {
   const blocks = []; let block = null;
   for (let i = 0; i < lines.length; i++) {
     const line = lines[i], next = lines[i + 1] || '';
-    const heading = !bullet.test(line) && (section.headingLines?.includes(line)||sectionKind(section.title)==='projects'&&wordCount(line)<8&&next&&wordCount(next)>8||dates.test(line) || dates.test(next) || dates.test(lines[i+2]||'')&&wordCount(line)<8&&wordCount(next)<8&&!bullet.test(next) || /\s[—|–]\s|\s·\s/.test(line) || block?.items.length && bullet.test(next) && wordCount(line)<8) && wordCount(line) < 28;
+    const heading = !bullet.test(line) && (section.headingLines?.includes(line)||sectionKind(section.title)==='projects'&&wordCount(line)<8&&next&&wordCount(next)>5||dates.test(line) || dates.test(next) || dates.test(lines[i+2]||'')&&wordCount(line)<8&&wordCount(next)<8&&!bullet.test(next) || /\s[—|–]\s|\s·\s/.test(line) || block?.items.length && bullet.test(next) && wordCount(line)<8) && wordCount(line) < 28;
     if(heading&&block&&!block.items.length&&!block.heading.some(t=>dates.test(t))){block.heading.push(line);continue;}
     if (heading && !(dates.test(line) && block && !block.items.length && block.heading.length < 3)) {
       if (block) blocks.push(block);
