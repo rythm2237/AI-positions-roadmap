@@ -1,3 +1,4 @@
+import {LANGUAGES,languageFor,detectLanguage,fontsForLanguage,validateTranslation} from './languages.mjs';
 import {renderPDF} from './pdfRenderer.mjs';
 import * as pdfjs from 'pdfjs-dist/build/pdf.mjs';
 import mammoth from 'mammoth/mammoth.browser.js';
@@ -8,6 +9,7 @@ import {TEMPLATES,FONTS,designFor,splitSections,flowText,photoData,colorInk} fro
 import {inspectDesign} from './designImport.js';
 import {pageText} from './pdfText.mjs';
 import {recruiterAssessment} from './recruiter.mjs';
+import {parseProfile,normalizeSection,planCV,relevanceScore,fitCV,validateCV,approximatePages} from './contentEngine.mjs';
 const ASSET_BASE=window.CAREER_ATELIER_CONFIG?.assetBase||'';
 pdfjs.GlobalWorkerOptions.workerSrc=ASSET_BASE+'/assets/pdf.worker.min.mjs';
 const MAX=10*1024*1024;
@@ -24,6 +26,8 @@ export async function extract(file){
 const fontCache=new Map();
 async function fonts(id){const f=FONTS.find(f=>f.id===id)||FONTS[0];if(!fontCache.has(f.id))fontCache.set(f.id,Promise.all([f.file+'.ttf',f.file+'-Bold.ttf'].map(async name=>{const r=await fetch(ASSET_BASE+'/fonts/'+name);if(!r.ok)throw Error('PDF font could not be loaded.');return new Uint8Array(await r.arrayBuffer());})).catch(e=>{fontCache.delete(f.id);throw e}));return fontCache.get(f.id);}
 export async function pdf(doc){return renderPDF(doc,fonts);}
+export async function optimiseCV(input){return fitCV(input,async sections=>(await renderPDF({kind:'cv',...input,sections,measure:true},fonts)).pages);}
+export async function measureCV(doc){return (await renderPDF({...doc,measure:true},fonts)).pages;}
 export async function applicationPackage(documents){if(!documents.length)throw Error('No documents to export.');const zip=new JSZip();for(let i=0;i<documents.length;i++)zip.file(documents[i].kind==='cv'?'CV.pdf':documents[i].kind==='cover'?'Cover-Letter.pdf':'Motivation-Letter.pdf',await (await pdf(documents[i])).arrayBuffer());return zip.generateAsync({type:'blob'});}
-window.CareerDocs={extract,pdf,applicationPackage,inspectDesign,TEMPLATES,FONTS,designFor,splitSections,flowText,photoData,colorInk};
+window.CareerDocs={LANGUAGES,languageFor,detectLanguage,fontsForLanguage,validateTranslation,extract,pdf,applicationPackage,inspectDesign,TEMPLATES,FONTS,designFor,splitSections,flowText,photoData,colorInk,optimiseCV,measureCV,parseProfile,normalizeSection,planCV,relevanceScore,validateCV,approximatePages};
 window.CareerRecruiter={assess:recruiterAssessment};

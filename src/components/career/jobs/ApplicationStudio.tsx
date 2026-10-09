@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { buildStudioProfileDraft } from "@/lib/applicationStudio/profileDraft";
 import type { CareerWorkspaceData } from "@/types/careerWorkspace";
@@ -11,11 +11,12 @@ type StudioWindow = Window & { CareerAtelier?: {
   importSavedCV: (url: string, name: string, userId: string) => Promise<void>;
 } };
 
-export function ApplicationStudio({ career }: { career?: CareerWorkspaceData }) {
+export function ApplicationStudio({ career, initialMode, autoOpen=false }: { career?: CareerWorkspaceData; initialMode?: "general" | "targeted"; autoOpen?: boolean }) {
   const frame = useRef<HTMLIFrameElement>(null);
-  const [open, setOpen] = useState(false);
+  const [open, setOpen] = useState(autoOpen);
   const [fullPage, setFullPage] = useState(true);
   const [loaded, setLoaded] = useState(false);
+  useEffect(() => { if (autoOpen) { setLoaded(true); setOpen(true); } }, [autoOpen, initialMode]);
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState("");
 
@@ -47,13 +48,13 @@ export function ApplicationStudio({ career }: { career?: CareerWorkspaceData }) 
       <span className="mr-auto text-sm font-semibold text-white">CV & Application Studio</span>
       <button type="button" disabled={busy} onClick={() => void importSource("profile")} style={{ maxWidth: "100%", whiteSpace: "normal" }} className="btn-secondary min-h-11">Import my profile & completed learning</button>
       <button type="button" disabled={busy} onClick={() => void importSource("cv")} className="btn-secondary min-h-11">Import my saved CV</button>
-      <Link href={`/login?next=${encodeURIComponent(career ? `/careers/${career.slug}?section=jobs` : "/application-studio")}`} className="min-h-11 px-3 py-3 text-sm text-cyan-200">Sign in for AI & profile import</Link>
+      <Link href={`/login?next=${encodeURIComponent(career ? `/careers/${career.slug}?section=jobs` : `/application-studio${initialMode ? `?mode=${initialMode}` : ""}`)}`} className="min-h-11 px-3 py-3 text-sm text-cyan-200">Sign in for AI & profile import</Link>
       <button type="button" onClick={() => setFullPage(value => !value)} className="btn-secondary min-h-11">{fullPage ? "Exit full screen" : "Full screen"}</button>
       <button type="button" onClick={() => setOpen(false)} className="btn-secondary min-h-11">Close</button>
     </div>
     {!fullPage ? <p className="mb-3 shrink-0 text-xs leading-5 text-slate-400">You can load a fictional sample to explore the workflow. For your own assessment, sign in, upload your CV and add the real vacancy. AI analysis runs only when you request it. Completed learning is never presented as work experience or a verified certificate.</p> : null}
     {message ? <p role="status" className="mb-2 shrink-0 rounded-xl border border-white/10 p-3 text-sm text-slate-200">{message}</p> : null}
-    <iframe ref={frame} src="/application-studio/index.html" title="CV and job application editor" className="min-h-0 w-full flex-1 rounded-xl border border-white/10 bg-white" />
+    <iframe ref={frame} src={`/application-studio/index.html${initialMode?`?mode=${initialMode}`:""}`} title="CV and job application editor" className="min-h-0 w-full flex-1 rounded-xl border border-white/10 bg-white" />
     {!fullPage ? <p className="mt-3 shrink-0 text-xs text-slate-500">Documents and drafts stay in this editor. Use Account & privacy to save on this device or download an editable backup.</p> : null}
   </div>, document.body) : null;
 

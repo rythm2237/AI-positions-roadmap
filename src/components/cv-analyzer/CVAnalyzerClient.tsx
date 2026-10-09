@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useState } from "react";
 import { analyzeSemanticCV, type SemanticCVAnalysis } from "@/lib/cvAnalyzer/semanticAnalysis";
 import { parseLinkedInProfileText, type ImportedProfileField, type LinkedInProfileImport } from "@/lib/cvAnalyzer/linkedinProfile";
@@ -72,7 +73,7 @@ const IMPORT_FIELD_LABELS: Record<ImportedProfileField, string> = {
 };
 
 export default function CVAnalyzerClient({ initialTargetPosition = "" }: { initialTargetPosition?: string }) {
-  const [mode, setMode] = useState<"choose" | "upload" | "builder" | "linkedin">("choose");
+  const [mode, setMode] = useState<"choose" | "upload" | "build-choice" | "builder" | "linkedin">("choose");
   const [profile, setProfile] = useState<Profile>(() => ({ ...initialProfile, targetPosition: initialTargetPosition, openToSuggestions: !initialTargetPosition }));
   const [wizardStep, setWizardStep] = useState(0);
   const [rawText, setRawText] = useState("");
@@ -223,13 +224,23 @@ export default function CVAnalyzerClient({ initialTargetPosition = "" }: { initi
           <button type="button" onClick={() => setMode("upload")} className={`rounded-3xl border p-5 text-left transition ${mode === "upload" ? "border-violet-300/40 bg-violet-500/10" : "border-white/10 bg-white/[0.025] hover:border-violet-300/25"}`} data-help-title="Upload existing CV" data-help-description="Upload PDF, DOCX or TXT. The file is converted to text for analysis and is not stored by the extraction endpoint.">
             <span className="text-2xl" aria-hidden="true">↥</span><h2 className="mt-4 font-display text-xl font-semibold">Upload existing CV</h2><p className="mt-2 text-sm leading-6 text-slate-500">Optional if your CV is already prepared. PDF, DOCX or TXT up to 8 MB.</p>
           </button>
-          <button type="button" onClick={() => setMode("builder")} className={`rounded-3xl border p-5 text-left transition ${mode === "builder" ? "border-violet-300/40 bg-violet-500/10" : "border-white/10 bg-white/[0.025] hover:border-violet-300/25"}`} data-help-title="Guided CV builder" data-help-description="A wizard that collects career direction, profile, experience, evidence and skills before analysis.">
-            <span className="text-2xl" aria-hidden="true">✦</span><h2 className="mt-4 font-display text-xl font-semibold">Build my CV</h2><p className="mt-2 text-sm leading-6 text-slate-500">A guided wizard designed to capture achievements, not just responsibilities.</p>
+          <button type="button" onClick={() => setMode("build-choice")} className={`rounded-3xl border p-5 text-left transition ${mode === "build-choice" || mode === "builder" ? "border-violet-300/40 bg-violet-500/10" : "border-white/10 bg-white/[0.025] hover:border-violet-300/25"}`} data-help-title="Guided CV builder" data-help-description="A wizard that collects career direction, profile, experience, evidence and skills before analysis.">
+            <span className="text-2xl" aria-hidden="true">✦</span><h2 className="mt-4 font-display text-xl font-semibold">Build my CV</h2><p className="mt-2 text-sm leading-6 text-slate-500">Create a general-purpose CV or tailor one to a specific job. Review the content, choose a design and export your CV.</p>
           </button>
           <button type="button" onClick={() => setMode("linkedin")} aria-pressed={mode === "linkedin"} className={`rounded-3xl border p-5 text-left transition ${mode === "linkedin" ? "border-violet-300/40 bg-violet-500/10 ring-1 ring-violet-300/10" : "border-white/10 bg-white/[0.025] hover:border-violet-300/25"}`} data-help-title="LinkedIn import" data-help-description="Import a complete LinkedIn profile export into CV Analyzer without retyping the same career history.">
             <span className="text-2xl" aria-hidden="true">in</span><h2 className="mt-4 font-display text-xl font-semibold">LinkedIn</h2><p className="mt-2 text-sm leading-6 text-slate-500">Import your LinkedIn profile once, prefill your career history, then go straight to analysis.</p>
           </button>
         </section>
+
+        {mode === "build-choice" ? <section className="mt-6 rounded-3xl border border-white/10 bg-[#080b1c]/80 p-5 sm:p-7" aria-label="Choose your CV type">
+          <h2 className="font-display text-2xl font-semibold">What kind of CV would you like to build?</h2>
+          <p className="mt-2 text-sm leading-6 text-slate-400">Choose your starting point. You can change the CV type and document language in the studio.</p>
+          <div className="mt-5 grid gap-4 sm:grid-cols-2">
+            <Link href="/application-studio?mode=general" className="group rounded-2xl border border-violet-300/20 bg-violet-500/[0.06] p-5 transition duration-200 hover:-translate-y-0.5 hover:border-violet-300/50 hover:bg-violet-500/10 focus-visible:outline focus-visible:outline-2 focus-visible:outline-violet-300 motion-reduce:transform-none"><h3 className="text-lg font-semibold text-white">General-purpose CV</h3><p className="mt-2 text-sm leading-6 text-slate-400">A versatile CV for networking and future opportunities. No vacancy or company details required.</p><span className="mt-4 inline-flex text-sm font-semibold text-violet-200">Build a general CV →</span></Link>
+            <Link href="/application-studio?mode=targeted" className="group rounded-2xl border border-white/10 bg-white/[0.025] p-5 transition duration-200 hover:-translate-y-0.5 hover:border-cyan-300/40 hover:bg-cyan-500/[0.05] focus-visible:outline focus-visible:outline-2 focus-visible:outline-cyan-300 motion-reduce:transform-none"><h3 className="text-lg font-semibold text-white">Job-targeted CV</h3><p className="mt-2 text-sm leading-6 text-slate-400">Use a vacancy and company context to highlight relevant experience for a specific application.</p><span className="mt-4 inline-flex text-sm font-semibold text-cyan-200">Build for a job →</span></Link>
+          </div>
+          <button type="button" className="mt-5 text-sm text-slate-400 underline underline-offset-4 hover:text-white" onClick={()=>setMode("builder")}>Need to write your career history from scratch? Open the guided profile form.</button>
+        </section> : null}
 
         {mode === "choose" ? <section className="mt-6 rounded-3xl border border-dashed border-white/10 p-8 text-center text-sm text-slate-500">Choose an input method above to begin.</section> : null}
 

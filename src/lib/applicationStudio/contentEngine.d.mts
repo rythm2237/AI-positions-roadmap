@@ -1,0 +1,14 @@
+export type CVSection = {id?:string;title:string;displayTitle?:string;text:string;evidenceIds?:string[]};
+export type CVEvidence = {id:string;text:string;output?:string;kind:string;sectionId?:string;sectionTitle:string;roleHeading:string;total:number;dimensions:Record<string,number>;included:boolean;reason:string};
+export type ContentPlan = {cvGenerationVersion:number;createdAt:string;targetRole:string;vacancy:string;mode:string;sourceSections:CVSection[];sections:CVSection[];evidence:CVEvidence[];requirements:unknown[];capacity:{wordBudget:number};pressure:number;wordCount:number;estimatedPages:number;measuredPages?:number;warnings:string[];approved:boolean};
+export type PlanInput = {sections?:CVSection[]|unknown;source?:string;vacancy?:string|unknown;targetRole?:string;year?:number;template?:string|unknown;design?:unknown;portrait?:unknown};
+export function planCV(input:PlanInput,options?:{pressure?:number}):ContentPlan;
+export function fitCV(input:PlanInput,measure:(sections:CVSection[])=>Promise<number>):Promise<ContentPlan>;
+export function parseProfile(text:string):CVSection[];
+export function wordCount(text:string):number;
+export function isMetaContent(text:string):boolean;
+export function nearDuplicate(a:string,b:string):boolean;
+export function relevanceScore(text:string,context?:{vacancy?:string;targetRole?:string;year?:number}):{total:number;dimensions:Record<string,number>};
+export function validateCV(sections:CVSection[],options?:{maxSummary?:number}):{valid:boolean;issues:string[];wordCount:number};
+export function validateRewrites(value:unknown,plan:ContentPlan):{accepted:{evidenceId:string;original:string;text:string}[];rejected:unknown[]};
+export function approximatePages(sections:CVSection[],template:string,design:unknown,portrait:unknown):number;
