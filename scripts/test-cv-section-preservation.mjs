@@ -19,7 +19,8 @@ for(let i=0;i<9;i++)assert(plan.sections.find(s=>s.title==='Certifications').tex
 assert.equal(normalizeSection(sections[1]).text,'Prepared operational reports and coordinated inventory planning.');
 let measurements=0;await assert.rejects(fitCV({sections},async()=>{measurements++;return 4}),/No content was cut/);assert.equal(measurements,1);
 const sources=structureSources('Taylor\nEducation\nBachelor | Example University | 2020');
-assert.throws(()=>validateStructure({sections:[{title:'Header',items:[{kind:'heading',sourceIds:['L0']}]}]},sources),/omitted/);
+const recovered=validateStructure({sections:[{title:'Header',items:[{kind:'heading',sourceIds:['L0']}]}]},sources);
+assert(recovered.recovered);assert(recovered.sections.find(s=>s.title==='Education').text.includes('Bachelor | Example University | 2020'));
 const structured=validateStructure({sections:[{title:'Header',items:[{kind:'heading',sourceIds:['L0']}]},{title:'Education',items:[{kind:'heading',sourceIds:['L1','L2']}]}]},sources);
 assert.equal(structured.sections[1].text,'Bachelor | Example University | 2020');
 assert.deepEqual(structured.sections[1].headingLines,['Bachelor | Example University | 2020']);

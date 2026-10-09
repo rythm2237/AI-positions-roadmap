@@ -45,6 +45,7 @@ export function parseProfile(text) {
 
 // Extraction wraps are not semantic bullets. Preserve records, rejoin prose only.
 export function normalizeSection(section){
+ if(section.inlineStyles?.text?.length)return {...section};
  const kind=sectionKind(section.title),lines=section.text.split('\n'),out=[];
  const heading=String(section.displayTitle||section.title).replace(/:$/, '').trim();
  if(lines.length){const first=lines[0].replace(/^\s*[•*-]\s*/, '').trim();

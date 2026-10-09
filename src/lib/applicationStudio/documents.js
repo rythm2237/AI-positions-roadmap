@@ -9,6 +9,7 @@ import {TEMPLATES,FONTS,designFor,splitSections,flowText,photoData,colorInk} fro
 import {inspectDesign} from './designImport.js';
 import {pageText} from './pdfText.mjs';
 import {recruiterAssessment} from './recruiter.mjs';
+import {inlineRuns,formatSelection} from './inlineStyles.mjs';
 import {parseProfile,normalizeSection,planCV,relevanceScore,fitCV,validateCV,approximatePages} from './contentEngine.mjs';
 const ASSET_BASE=window.CAREER_ATELIER_CONFIG?.assetBase||'';
 pdfjs.GlobalWorkerOptions.workerSrc=ASSET_BASE+'/assets/pdf.worker.min.mjs';
@@ -29,5 +30,5 @@ export async function pdf(doc){return renderPDF(doc,fonts);}
 export async function optimiseCV(input){return fitCV(input,async sections=>(await renderPDF({kind:'cv',...input,sections,measure:true},fonts)).pages);}
 export async function measureCV(doc){return (await renderPDF({...doc,measure:true},fonts)).pages;}
 export async function applicationPackage(documents){if(!documents.length)throw Error('No documents to export.');const zip=new JSZip();for(let i=0;i<documents.length;i++)zip.file(documents[i].kind==='cv'?'CV.pdf':documents[i].kind==='cover'?'Cover-Letter.pdf':'Motivation-Letter.pdf',await (await pdf(documents[i])).arrayBuffer());return zip.generateAsync({type:'blob'});}
-window.CareerDocs={LANGUAGES,languageFor,detectLanguage,fontsForLanguage,validateTranslation,extract,pdf,applicationPackage,inspectDesign,TEMPLATES,FONTS,designFor,splitSections,flowText,photoData,colorInk,optimiseCV,measureCV,parseProfile,normalizeSection,planCV,relevanceScore,validateCV,approximatePages};
+window.CareerDocs={inlineRuns,formatSelection,LANGUAGES,languageFor,detectLanguage,fontsForLanguage,validateTranslation,extract,pdf,applicationPackage,inspectDesign,TEMPLATES,FONTS,designFor,splitSections,flowText,photoData,colorInk,optimiseCV,measureCV,parseProfile,normalizeSection,planCV,relevanceScore,validateCV,approximatePages};
 window.CareerRecruiter={assess:recruiterAssessment};

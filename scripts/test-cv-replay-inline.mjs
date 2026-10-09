@@ -1,0 +1,17 @@
+import assert from 'node:assert/strict';
+import fs from 'node:fs/promises';
+import {PDFDocument} from 'pdf-lib';
+import {structureSources,validateStructure} from '../src/lib/applicationStudio/structure.mjs';
+import {formatSelection,inlineRuns} from '../src/lib/applicationStudio/inlineStyles.mjs';
+import {renderPDF} from '../src/lib/applicationStudio/pdfRenderer.mjs';
+import {FONTS} from '../src/lib/applicationStudio/design.mjs';
+const source=structureSources('Taylor\nEducation\nBachelor of Business | Example University | 2020\nExperience\nOperations Planner\n2024 - Present\nPrepared accurate inventory reports and supported operational planning.');
+const response={sections:[{title:'Header',items:[{sourceIds:['L0'],kind:'heading'}]},{title:'Education',items:[{sourceIds:['L2'],kind:'body'},{sourceIds:['L2'],kind:'body'}]},{title:'Experience',items:[{sourceIds:['L4'],kind:'heading'},{sourceIds:['L5'],kind:'body'},{sourceIds:['L6'],kind:'body'},{sourceIds:['L6'],kind:'body'}]}]};
+const rebuilt=validateStructure(response,source);assert.equal(rebuilt.sections[1].text.split('\n').length,1);assert.equal(rebuilt.sections[2].text.match(/Prepared/g).length,1);assert.deepEqual(validateStructure(response,source).sections,rebuilt.sections);
+const incomplete=validateStructure({sections:[response.sections[0]]},source);assert(incomplete.recovered);assert(incomplete.sections.some(s=>s.title==='Education'));
+const sections=rebuilt.sections;formatSelection(sections[2],'text',0,18,{font:'serif',size:12,color:'#bb2244',bold:true});formatSelection(sections[1],'title',0,9,{font:'mono',size:15,color:'#5522aa'});
+assert.equal(inlineRuns(sections[2]).map(r=>r.text).join(''),sections[2].text);assert.equal(inlineRuns(sections[2])[0].font,'serif');assert(!formatSelection(sections[2],'text',0,10000,{font:'sans'}));
+const fonts=async id=>{const f=FONTS.find(f=>f.id===id);return Promise.all(['.ttf','-Bold.ttf'].map(x=>fs.readFile('public/application-studio/fonts/'+f.file+x)))};
+const pdf=await renderPDF({kind:'cv',template:'Harbor',sections},fonts);const bytes=new Uint8Array(await pdf.arrayBuffer());assert.equal((await PDFDocument.load(bytes)).getPageCount(),1);
+await fs.mkdir('tmp/cv-inline',{recursive:true});await fs.writeFile('tmp/cv-inline/proof.pdf',bytes);
+console.log('PASS: duplicate source IDs suppressed, repeat reconstruction idempotent, incomplete grouping recovers all facts, safe selected-word styles preserved in actual PDF.');
