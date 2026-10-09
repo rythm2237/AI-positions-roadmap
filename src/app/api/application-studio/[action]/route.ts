@@ -21,6 +21,12 @@ export const maxDuration = 120;
 function json(value: unknown, status = 200) {
   return NextResponse.json(value, { status, headers: { "Cache-Control": "private, no-store" } });
 }
+async function reviewEvidence(input:Record<string,unknown>&{statements:unknown[]},model:string,abortSignal:AbortSignal){
+  if(!input.statements.length)return;
+  const settings={model,system:GROUNDING_REVIEW_SCHEMA+' Also return languageValid:boolean. Set it true only if actual narrative prose is in targetLanguage. Original company names, official job titles, dates, contacts, qualifications and technical product names may remain unchanged; do not treat them as prose.',prompt:JSON.stringify(input),maxOutputTokens:6500,abortSignal,output:Output.object({schema:z.object({languageValid:z.boolean(),checks:z.array(z.object({id:z.string(),status:z.enum(['supported','unsupported','ambiguous']),reason:z.string()}))})})};
+  let result;try{result=await generateText(settings);}catch(error){const fallback=studioModelFallback(error,model);if(!fallback)throw error;result=await generateText({...settings,model:fallback});}
+  try{validateGroundingReview(result.output,input);}catch(error){throw new ServiceError((error as Error).message,502);}
+}
 
 export async function GET(_request: Request, { params }: { params: Promise<{ action: string }> }) {
   if ((await params).action !== "config") return json({ error: "Not found." }, 404);
@@ -120,20 +126,16 @@ export async function POST(request: Request, { params }: { params: Promise<{ act
       result = await generateText({...settings, model: fallback});
     }
     if (result.finishReason === "length") return json({ error: "AI output was incomplete. Your draft is preserved; try a shorter input." }, 502);
+    // A later review failure must not refund an inference that already completed.
+    reservedQuota=undefined;
     let parsed: unknown;
     try { parsed = JSON.parse(result.text.replace(/^```(?:json)?\s*/i, "").replace(/\s*```$/, "")); }
     catch { return json({ error: "AI returned invalid JSON. Your draft is preserved." }, 502); }
     if(aiAction==='strategy'){try{return json({strategy:validateStrategy(parsed,savedKnowledge!,String(context!.vacancy||''),String(context!.feedback||''))});}catch(error){return json({error:(error as Error).message},502);}}
     if(aiAction==='generate'){
-      try{
-        const draft=validateGeneratedCV(parsed,savedKnowledge!,approvedStrategy,context!.cv as any[],context!.rejectedIntelligence as string[]||[]),reviewInput={...groundingReviewInput(draft,savedKnowledge!),targetLanguage:context!.language};
-        if(reviewInput.statements.length){
-          const reviewSettings={model,system:GROUNDING_REVIEW_SCHEMA+' Also return languageValid:boolean. Set it true only if actual narrative prose is in targetLanguage. Original company names, official job titles, dates, contacts, qualifications and technical product names may remain unchanged; do not treat them as prose.',prompt:JSON.stringify(reviewInput),maxOutputTokens:6500,abortSignal:settings.abortSignal,output:Output.object({schema:z.object({languageValid:z.boolean(),checks:z.array(z.object({id:z.string(),status:z.enum(['supported','unsupported','ambiguous']),reason:z.string()}))})})};
-          let review;try{review=await generateText(reviewSettings);}catch(error){const fallback=studioModelFallback(error,model);if(!fallback)throw error;review=await generateText({...reviewSettings,model:fallback});}
-          validateGroundingReview(review.output,reviewInput);
-        }
-        return json({draft});
-      }catch(error){return json({error:(error as Error).message},502);}
+      let draft;try{draft=validateGeneratedCV(parsed,savedKnowledge!,approvedStrategy,context!.cv as any[],context!.rejectedIntelligence as string[]||[]);}catch(error){throw new ServiceError((error as Error).message,502);}
+      await reviewEvidence({...groundingReviewInput(draft,savedKnowledge!),targetLanguage:context!.language},model,settings.abortSignal);
+      return json({draft});
     }
     if(structuralSources){try{return json(validateStructure(parsed,structuralSources));}catch(error){return json({error:(error as Error).message},502);}}
     if(translatedInput){try{return json(validateTranslation(restoreTranslation(parsed,protectedTranslation!),context!.cv,translatedInput.targetLanguage));}catch(error){return json({error:(error as Error).message},502);}}
@@ -150,6 +152,7 @@ export async function POST(request: Request, { params }: { params: Promise<{ act
       const dimensions=assessmentDimensions(checked,savedKnowledge,context!.cv as any[]);checked.dimensions=dimensions;checked.score=dimensions.professionalFit;
     }
     if(['cover','motivation'].includes(aiAction)&&candidateSources){for(const p of checked.paragraphs||[]){const assertsExperience=/\bI (?:have|worked|built|managed|developed|led|used|implemented|achieved)|\bmy (?:experience|background|projects?|skills|career|education)\b/i.test(p.text);if(assertsExperience&&!p.evidenceIds?.length||p.evidenceIds?.length&&groundingIssues(p.text,p.evidenceIds.map((id:string)=>sources[id])).length)return json({error:'An unsupported claim was found in the letter. Your document is unchanged; retry with confirmed evidence.'},502);}}
+    if(['cover','motivation'].includes(aiAction)&&candidateSources)await reviewEvidence({targetLanguage:context!.language,statements:(checked.paragraphs||[]).filter(p=>p.evidenceIds?.length).map((p,i)=>({id:'paragraph-'+i,text:p.text,evidence:p.evidenceIds.map(id=>sources[id])}))},model,settings.abortSignal);
     return json(checked);
   } catch (error) {
     if (error instanceof ServiceError) return json({ error: error.message }, error.status);
