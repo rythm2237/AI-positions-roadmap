@@ -12,7 +12,7 @@ import { limitedText, sourceMap, vacancySourceMap, validate, fetchPublic, Servic
 import {planCV,validateRewrites,validateCV} from '@/lib/applicationStudio/contentEngine.mjs';
 import {getKnowledge} from '@/lib/applicationStudio/knowledgeStore';
 import {knowledgeSources} from '@/lib/applicationStudio/knowledge.mjs';
-import {STRATEGY_SCHEMA,GENERATION_SCHEMA,validateStrategy,validateGeneratedCV,assessmentDimensions,groundingIssues} from '@/lib/applicationStudio/intelligence.mjs';
+import {STRATEGY_SCHEMA,GENERATION_SCHEMA,GROUNDING_REVIEW_SCHEMA,groundingReviewInput,validateGroundingReview,validateStrategy,validateGeneratedCV,assessmentDimensions,groundingIssues} from '@/lib/applicationStudio/intelligence.mjs';
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -124,7 +124,17 @@ export async function POST(request: Request, { params }: { params: Promise<{ act
     try { parsed = JSON.parse(result.text.replace(/^```(?:json)?\s*/i, "").replace(/\s*```$/, "")); }
     catch { return json({ error: "AI returned invalid JSON. Your draft is preserved." }, 502); }
     if(aiAction==='strategy'){try{return json({strategy:validateStrategy(parsed,savedKnowledge!,String(context!.vacancy||''),String(context!.feedback||''))});}catch(error){return json({error:(error as Error).message},502);}}
-    if(aiAction==='generate'){try{return json({draft:validateGeneratedCV(parsed,savedKnowledge!,approvedStrategy,context!.cv as any[],context!.rejectedIntelligence as string[]||[])});}catch(error){return json({error:(error as Error).message},502);}}
+    if(aiAction==='generate'){
+      try{
+        const draft=validateGeneratedCV(parsed,savedKnowledge!,approvedStrategy,context!.cv as any[],context!.rejectedIntelligence as string[]||[]),reviewInput={...groundingReviewInput(draft,savedKnowledge!),targetLanguage:context!.language};
+        if(reviewInput.statements.length){
+          const reviewSettings={model,system:GROUNDING_REVIEW_SCHEMA+' Also return languageValid:boolean. Set it true only if actual narrative prose is in targetLanguage. Original company names, official job titles, dates, contacts, qualifications and technical product names may remain unchanged; do not treat them as prose.',prompt:JSON.stringify(reviewInput),maxOutputTokens:6500,abortSignal:settings.abortSignal,output:Output.object({schema:z.object({languageValid:z.boolean(),checks:z.array(z.object({id:z.string(),status:z.enum(['supported','unsupported','ambiguous']),reason:z.string()}))})})};
+          let review;try{review=await generateText(reviewSettings);}catch(error){const fallback=studioModelFallback(error,model);if(!fallback)throw error;review=await generateText({...reviewSettings,model:fallback});}
+          validateGroundingReview(review.output,reviewInput);
+        }
+        return json({draft});
+      }catch(error){return json({error:(error as Error).message},502);}
+    }
     if(structuralSources){try{return json(validateStructure(parsed,structuralSources));}catch(error){return json({error:(error as Error).message},502);}}
     if(translatedInput){try{return json(validateTranslation(restoreTranslation(parsed,protectedTranslation!),context!.cv,translatedInput.targetLanguage));}catch(error){return json({error:(error as Error).message},502);}}
     if(contentPlan){
@@ -134,9 +144,12 @@ export async function POST(request: Request, { params }: { params: Promise<{ act
       if(rewrites.rejected.length)contentPlan.warnings.push(`${rewrites.rejected.length} unverifiable AI rewrite(s) were discarded; source wording retained.`);
       return json({plan:contentPlan});
     }
-    const checked=validate(aiAction, parsed, context!, sources) as {dimensions?:unknown;paragraphs?:{text:string;evidenceIds:string[]}[]};
-    if(aiAction==='analysis'&&savedKnowledge?.claims.length)checked.dimensions=assessmentDimensions(checked,savedKnowledge,context!.cv as any[]);
-    if(['cover','motivation'].includes(aiAction)&&candidateSources){for(const p of checked.paragraphs||[]){if(p.evidenceIds?.length&&groundingIssues(p.text,p.evidenceIds.map((id:string)=>sources[id])).length)return json({error:'An unsupported claim was found in the letter. Your document is unchanged; retry with confirmed evidence.'},502);}}
+    const checked=validate(aiAction, parsed, context!, sources) as {score?:number;matrix?:any[];dimensions?:unknown;paragraphs?:{text:string;evidenceIds:string[]}[]};
+    if(aiAction==='analysis'&&savedKnowledge?.claims.length){
+      for(const row of checked.matrix||[]){const named=String(row.requirement).match(/\b(?:SAP|ERP|MES)\b/gi)||[],supported=(row.evidenceIds||[]).map((id:string)=>sources[id]||'').join(' ');if(row.level==='Strong Match'&&named.some(term=>!new RegExp('\\b'+term+'\\b','i').test(supported))){row.level=row.evidenceIds?.length?'Transferable Skill':'Unknown';row.explanation='Related experience is reported, but the named specialist system is not established by the cited evidence. Confirm the actual system before claiming a direct match.';}}
+      const dimensions=assessmentDimensions(checked,savedKnowledge,context!.cv as any[]);checked.dimensions=dimensions;checked.score=dimensions.professionalFit;
+    }
+    if(['cover','motivation'].includes(aiAction)&&candidateSources){for(const p of checked.paragraphs||[]){const assertsExperience=/\bI (?:have|worked|built|managed|developed|led|used|implemented|achieved)|\bmy (?:experience|background|projects?|skills|career|education)\b/i.test(p.text);if(assertsExperience&&!p.evidenceIds?.length||p.evidenceIds?.length&&groundingIssues(p.text,p.evidenceIds.map((id:string)=>sources[id])).length)return json({error:'An unsupported claim was found in the letter. Your document is unchanged; retry with confirmed evidence.'},502);}}
     return json(checked);
   } catch (error) {
     if (error instanceof ServiceError) return json({ error: error.message }, error.status);

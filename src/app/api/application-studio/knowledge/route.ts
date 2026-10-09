@@ -3,6 +3,7 @@ import {createClient} from '@/lib/supabase/server';
 import {getKnowledge,putKnowledge} from '@/lib/applicationStudio/knowledgeStore';
 import {importKnowledge,confirmFact,retractFact} from '@/lib/applicationStudio/knowledge.mjs';
 import {limitedText} from '@/lib/applicationStudio/validation.mjs';
+import {readCompletedLearning} from '@/lib/applicationStudio/completedLearning';
 export const dynamic='force-dynamic';
 const json=(value:unknown,status=200)=>NextResponse.json(value,{status,headers:{'Cache-Control':'private, no-store'}});
 async function identity(){const db=await createClient();const {data:{user},error}=await db.auth.getUser();return !error&&user&&!user.is_anonymous?user:null;}
@@ -16,7 +17,11 @@ export async function POST(request:Request){
   if(body.consent!==true)return json({error:'Confirm permission to save professional facts to your account.'},400);
   const current=await getKnowledge(user.id);if(body.revision!==current.knowledge.revision)return json({error:'Candidate knowledge changed. Reload it before saving.'},409);
   let knowledge;
-  if(body.operation==='import')knowledge=importKnowledge(current.knowledge,{text:body.text,type:body.type,label:body.label,sections:body.sections});
+  if(body.operation==='import'){if(body.type==='platform-learning')return json({error:'Platform learning must come from your account records.'},400);knowledge=importKnowledge(current.knowledge,{text:body.text,type:body.type,label:body.label,sections:body.sections});}
+  else if(body.operation==='learning'){
+   const db=await createClient(),items=await readCompletedLearning(db,user.id);
+   knowledge=current.knowledge;for(const item of items)knowledge=importKnowledge(knowledge,{text:'Professional Development\n'+item.title+' — '+item.provider+'; '+item.provenance,type:'platform-learning',label:item.id});
+  }
   else if(body.operation==='confirm')knowledge=confirmFact(current.knowledge,body.fact||{});
   else if(body.operation==='retract')knowledge=retractFact(current.knowledge,body.claimId);
   else return json({error:'Invalid candidate knowledge operation.'},400);

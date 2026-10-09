@@ -1,6 +1,7 @@
 import assert from 'node:assert/strict';
 import {emptyKnowledge,importKnowledge,confirmFact,retractFact,knowledgeSources} from '../src/lib/applicationStudio/knowledge.mjs';
-import {validateStrategy,validateGeneratedCV,assessmentDimensions,groundingIssues} from '../src/lib/applicationStudio/intelligence.mjs';
+import {validateStrategy,validateGeneratedCV,assessmentDimensions,groundingIssues,groundingReviewInput,validateGroundingReview} from '../src/lib/applicationStudio/intelligence.mjs';
+import {sanitizeApplication} from '../src/lib/applicationStudio/applicationState.mjs';
 const source=`Taylor Morgan
 taylor@example.test
 Professional Summary
@@ -39,6 +40,12 @@ assert.notDeepEqual(ai.priorities,planner.priorities,'Different jobs select mean
 ai.approved=true;
 const output={sections:kb.entities.map(e=>({title:{header:'Header',summary:'Professional Summary',experience:'Experience',projects:'Projects',education:'Education',certifications:'Certifications',skills:'Skills'}[e.kind],items:e.claimIds.map(id=>({text:kb.claims.find(c=>c.id===id).original,evidenceIds:[id],entityId:e.id,kind:kb.claims.find(c=>c.id===id).anchor?'heading':'body'}))})),warnings:[]};
 const draft=validateGeneratedCV(output,kb,ai,[]);
+const review=groundingReviewInput(draft,kb);assert(validateGroundingReview({checks:review.statements.map(s=>({id:s.id,status:'supported'}))},review));
+assert.throws(()=>validateGroundingReview({checks:[]},review),/incomplete/);
+assert.throws(()=>validateGroundingReview({checks:review.statements.map((s,i)=>({id:s.id,status:i?'supported':'unsupported'}))},review),/could not be established/);
+const saved=sanitizeApplication({id:'test-application',cv:draft.sections,languageVersions:{en:{sections:draft.sections}},accessToken:'never-save',portrait:'never-save',versions:Array.from({length:20},()=>({cv:[]}))});
+assert(!saved.accessToken&&!saved.portrait);assert.equal(saved.versions.length,10);assert(saved.languageVersions.en);
+assert.throws(()=>sanitizeApplication({id:'../another-user',cv:[]}),/Invalid/);
 assert(draft.sections.some(s=>s.title==='Education'));
 assert(draft.sections.some(s=>s.title==='Certifications'));
 assert(draft.operations.length>0);

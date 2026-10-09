@@ -9,7 +9,7 @@ export function stableId(scope, value) {
 }
 export const emptyKnowledge = () => ({ schemaVersion: 1, revision: 0, sources: [], entities: [], claims: [], declined: [] });
 const allowedKinds = ['header','summary','experience','projects','education','certifications','skills','languages','development','additional','other'];
-const sourceTypes = ['cv','linkedin','interview','portfolio','certification','project-document','approved-cv','application'];
+const sourceTypes = ['cv','linkedin','interview','portfolio','certification','project-document','approved-cv','application','platform-learning'];
 export function knowledgeSources(kb) {
   return Object.fromEntries(kb.claims.filter(c => !c.retracted && c.confirmed && !kb.declined.includes(c.id)).map(c => [c.id, c.original]));
 }
@@ -35,10 +35,11 @@ export function importKnowledge(kb, { text, type = 'cv', sections, label = '' },
       });
       const anchored=next.claims.filter(c=>c.entityId===entityId&&c.anchor);
       const date=anchored.find(c=>/\b(?:19|20)\d{2}\b/.test(c.original));if(date)entity.fields.dates={text:date.original,evidenceIds:[date.id]};
-      if(record.items.length)entity.fields.responsibilities={text:record.items.join('\n'),evidenceIds:entity.claimIds.filter(id=>!anchored.some(c=>c.id===id))};
+      if(kind==='header'){entity.fields.identity={text:lines[0],evidenceIds:entity.claimIds.slice(0,1)};entity.fields.contact={text:lines.slice(1).join('\n'),evidenceIds:entity.claimIds.slice(1)};}
+      else if(record.items.length&&kind==='experience')entity.fields.responsibilities={text:record.items.join('\n'),evidenceIds:entity.claimIds.filter(id=>!anchored.some(c=>c.id===id))};
     }
   }
-  next.revision++; return next;
+  next.revision++;if(next.claims.length>6000||JSON.stringify(next).length>1500000)throw Error('Your professional profile is too large. Remove obsolete facts before adding more.');return next;
 }
 export function confirmFact(kb, { text, entityId, kind = 'other', label = '', field = 'context', status }, at = new Date().toISOString()) {
   if (typeof text !== 'string' || !text.trim() || text.length > 4000 || !allowedKinds.includes(kind)) throw Error('Enter a professional fact of up to 4,000 characters.');
