@@ -30,7 +30,8 @@ export function validateTranslation(value,sections,target){
   const before=protectedItems(source.text).sort(),after=protectedItems(translated.text).sort();
   if(JSON.stringify(before)!==JSON.stringify(after))throw Error('Translation changed numbers or contact links. Current CV preserved.');
   if(/the (candidate|applicant) (appears|seems)|chain.of.thought|^\s*page\s*of\s*$/im.test(translated.text))throw Error('Translation contains analysis commentary.');
-  return {...source,text:translated.text,displayTitle:source.title==='Header'?'':translated.displayTitle};
+  // Offsets refer to source-language characters, not translated characters.
+  return {...source,inlineStyles:undefined,text:translated.text,displayTitle:source.title==='Header'?'':translated.displayTitle};
  });
  const prose=sections.filter(s=>s.title!=='Header'&&s.text.trim().split(/\s+/).length>5);
  if(prose.length&&prose.every(s=>output.find(o=>o.id===s.id)?.text.trim()===s.text.trim()))throw Error('The provider returned untranslated CV text. Your CV is unchanged.');

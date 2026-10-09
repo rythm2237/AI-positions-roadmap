@@ -19,3 +19,8 @@ h1,h2,.brand,.score{font-family:Inter,system-ui,sans-serif}.brand{font-size:22px
 }
 
 @media(min-width:901px){.design-mode .topbar{min-height:48px;padding:8px 18px}.design-mode .stage{padding-top:8px}.design-mode .workspace>.eyebrow,.design-mode .workspace>h1{display:none}.design-mode .workspace>p{font-size:12px}.design-mode .preview-wrap{display:block}.design-mode .print-target>p{margin:4px 0}.design-mode .cv-designed.a4{flex-shrink:0}}
+/* Editing is opt-in and remains directly on the document. */
+.preview-edit-toolbar{display:flex;gap:8px;flex-wrap:wrap;align-items:center;position:sticky;top:0;z-index:3;background:#101629;padding:12px;border-radius:12px}
+.preview-edit-toolbar select{max-width:180px}.preview-edit-toolbar input{max-width:70px}
+[contenteditable="plaintext-only"]{outline:1px dashed #8b75dc;white-space:pre-wrap;cursor:text;min-height:1em}
+[contenteditable="plaintext-only"]:focus{outline:2px solid #8b75dc}

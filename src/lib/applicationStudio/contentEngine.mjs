@@ -19,6 +19,7 @@ export function nearDuplicate(a, b) {
   return intersection / Math.min(x.size, y.size) >= .88 && Math.min(x.size, y.size) / Math.max(x.size, y.size) >= .65;
 }
 const kinds = [
+  ['contact', /^(contact|contact details|contact information)$/i],
   ['summary', /^(professional summary|summary|profile|profil|about(?: me)?|personal statement)$/i],
   ['experience', /^(work experience|professional experience|employment(?: history)?|career history|experience|berufserfahrung|expérience(?: professionnelle)?)$/i],
   ['skills', /^(core skills|skills|technical skills|top skills|competencies|kenntnisse|compétences)$/i],
@@ -33,7 +34,7 @@ export const sectionKind = title => title === 'Header' ? 'header' : kinds.find((
 export function parseProfile(text) {
   const sections = []; let current = { id: 'source-0', title: 'Header', text: '' };
   for (const raw of String(text || '').replace(/\r/g, '').split('\n')) {
-    const line = raw.trim();
+    const line = raw.trim().replace(/:$/, '').trim();
     if (sectionKind(line) !== 'other' && line !== 'Header' && !/^\s*[•*-]/.test(raw)) {
       if (current.text.trim()) sections.push(current);
       current = { id: `source-${sections.length}`, title: canonicalHeading(line), displayTitle: canonicalHeading(line)!==line.replace(/:$/, '')?line.replace(/:$/, ''):undefined, text: '' };
@@ -45,6 +46,7 @@ export function parseProfile(text) {
 
 // Extraction wraps are not semantic bullets. Preserve records, rejoin prose only.
 export function normalizeSection(section){
+ if(section.inlineStyles?.text?.length)return {...section};
  const kind=sectionKind(section.title),lines=section.text.split('\n'),out=[];
  const heading=String(section.displayTitle||section.title).replace(/:$/, '').trim();
  if(lines.length){const first=lines[0].replace(/^\s*[•*-]\s*/, '').trim();
@@ -93,7 +95,7 @@ export function relevanceScore(text, { vacancy = '', targetRole = '', year = new
 
 const bullet = /^\s*(?:[•●▪*-]|\d+[.)])\s+/;
 const dates = /\b(?:19|20)\d{2}\b/;
-function records(section) {
+export function records(section) {
   const lines = section.text.split('\n').map(x => x.trim()).filter(Boolean);
   const blocks = []; let block = null;
   for (let i = 0; i < lines.length; i++) {
@@ -195,7 +197,7 @@ export function planCV(input, { pressure = 0 } = {}) {
   add('Selected Projects', projectText, projectIds);
   const projectSection=selected.find(s=>s.title==='Selected Projects');
   if(projectSection)projectSection.headingLines=projects.flatMap(r=>r.heading);
-  for (const [kind, title] of [['education','Education'],['certifications','Certifications'],['languages','Languages'],['additional','Additional Experience']]) {
+  for (const [kind, title] of [['contact','Contact'],['education','Education'],['certifications','Certifications'],['languages','Languages'],['additional','Additional Experience']]) {
     const entries = source.filter(s => sectionKind(s.title) === kind).flatMap(s => s.text.split('\n').map(t => t.trim()).filter(Boolean).map(t => item(t.replace(bullet,''),kind,s.id,s.title)));
     const lines = [], ids = [];
     for (const e of (kind==='education'||kind==='languages'?entries:entries.sort((a,b)=>b.total-a.total))) {
