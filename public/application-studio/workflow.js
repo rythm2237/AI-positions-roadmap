@@ -15,7 +15,7 @@ function confirmCandidate(){
  if(text.length<40)throw Error('Upload or paste a complete CV, then review its extracted text.');
  if(text.length>100000)throw Error('CV exceeds 100,000 characters.');
  const detected=sectionize(text),header=detected.find(s=>s.title==='Header');
- if(header&&header.text.split(/\s+/).length>120)throw Error('Your CV body was detected as header text. Re-upload the original PDF to refresh extraction, or place section headings (Summary, Experience, Education) on separate lines in the text below. Your original CV is kept.');
+ if((!account||!conn.configured||S.demo)&&header&&header.text.split(/\s+/).length>120)throw Error('Your CV body was detected as header text. Re-upload the original PDF to refresh extraction, or place section headings (Summary, Experience, Education) on separate lines in the text below. Your original CV is kept.');
  if(p.linkedinUrl&&!/^https:\/\/(www\.)?linkedin\.com\/in\//i.test(p.linkedinUrl))throw Error('Use a LinkedIn profile URL beginning with https://www.linkedin.com/in/.');
  const a=app(),original=a.versions.findLast(v=>v.name==='Original');
  const unchanged=!a.cv.length||JSON.stringify(a.cv)===JSON.stringify(original?.cv);
