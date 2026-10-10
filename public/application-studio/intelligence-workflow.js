@@ -93,6 +93,7 @@ function installIntelligenceWorkflow(){
   const a=app();if(S.stage===4&&a.intelligenceDraft?.operations.some(o=>o.status==='pending'))throw Error('Accept, edit or reject the pending sections before design.');
   if(S.stage===4&&account&&!S.demo&&!a.useCurrentCV&&!a.intelligenceDraft)throw Error('Create and approve your strategy, then generate and review the CV. To keep the current content, choose “Use current CV without AI writing”.');
   if(S.stage===4&&a.cvGenerationVersion===3){commitStage();a.contentReviewed=true;S.stage=5;render();window.scrollTo(0,0);return;}
+  if(S.stage===5&&!await reviewTwoPageFit())return;
   return oldNext();
  };
  async function sendAgent(){const input=$('chatInput').value.trim();if(!input)return;app().chat.push({role:'user',text:input});$('chatInput').value='';await createStrategy(input);app().chat.push({role:'assistant',text:'I prepared a revised content strategy from your saved evidence. Review it, approve it, then generate the proposed CV changes. If your message includes a new professional fact, confirm it in Professional facts & evidence before generation.'});S.stage=4;save();}

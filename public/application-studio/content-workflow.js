@@ -40,3 +40,9 @@ function bindContentWorkflow(){
 async function validateExportCV(){await cleanCVFurniture();checkOutputLanguage();const a=app(),tools=await documentTools();const sourceCheck=tools.validateCV(a.cv,{maxSummary:a.cvGenerationVersion===2?100:Infinity});if(!sourceCheck.valid)throw Error(sourceCheck.issues.join('. '));const pages=await tools.measureCV(doc('cv'));if(pages>2)throw Error('CV exceeds two pages. Create and review a concise draft for this template before exporting. Your current CV is unchanged.');}
 
 async function cleanCVFurniture(){const a=app(),tools=await documentTools();if(!tools.normalizeSection)return;const cleaned=a.cv.map(s=>({...s,text:tools.normalizeSection(s).text}));if(JSON.stringify(cleaned)!==JSON.stringify(a.cv)){version('Before extraction cleanup');snapshot();a.cv=cleaned;a.pendingCVPlan=null;a.measuredPages=null;save();}}
+
+async function reviewTwoPageFit(){
+ const a=app();a.design=selectedDesign();a.measuredPages=await(await documentTools()).measureCV(doc('cv'));
+ if(a.measuredPages<=2)return true;
+ await prepareConciseCV(false);render();toast('Review and apply the proposed two-page draft, then continue to CV preview.');return false;
+}
