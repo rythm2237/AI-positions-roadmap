@@ -41,6 +41,27 @@ function htmlText(value=''){
   .replace(/&nbsp;/gi,' ').replace(/&amp;/gi,'&').replace(/&lt;/gi,'<').replace(/&gt;/gi,'>').replace(/&quot;/gi,'"').replace(/&#39;|&apos;/gi,"'")
   .split('\n').map(line=>line.replace(/\s+/g,' ').trim()).filter(Boolean).join('\n').trim();
 }
+// A small balanced HTML walker avoids greedy removal of nested consent panels.
+// Prefer the semantic vacancy area and remove site chrome before converting to text.
+export function extractVacancyText(html=''){
+ const clean=String(html).replace(/<!--[^]*?-->|<script\b[^>]*>[^]*?<\/script\s*>|<style\b[^>]*>[^]*?<\/style\s*>/gi,' ');
+ const stack=[],all=[],main=[];
+ const voidTags=new Set(['area','base','br','col','embed','hr','img','input','link','meta','param','source','track','wbr']);
+ for(const token of clean.match(/<[^>]*>|[^<]+/g)||[]){
+  if(token.startsWith('<')){
+   const match=token.match(/^<\s*(\/?)\s*([\w-]+)/);if(!match)continue;
+   const closing=!!match[1],tag=match[2].toLowerCase();
+   if(closing){const i=stack.map(s=>s.tag).lastIndexOf(tag);if(i>=0)stack.splice(i);}
+   else if(!voidTags.has(tag)&&!token.endsWith('/>')){
+    const chrome=(['nav','footer','noscript','template'].includes(tag)||tag==='aside'&&!stack.some(s=>s.main))||/\b(?:id|class)\s*=\s*["'][^"']*(?:cookie|consent|onetrust|usercentrics|cmp-container)[^"']*["']/i.test(token);
+    const semantic=tag==='main'||/\brole\s*=\s*["']main["']/i.test(token);
+    stack.push({tag,blocked:chrome||stack.some(s=>s.blocked),main:semantic||stack.some(s=>s.main)});
+   }
+   if(/^(?:p|div|br|li|h[1-6]|section|tr|main|article)$/.test(tag)&&!stack.some(s=>s.blocked)){all.push('\n');if(stack.some(s=>s.main))main.push('\n');}
+  }else if(!stack.some(s=>s.blocked)){all.push(token);if(stack.some(s=>s.main))main.push(token);}
+ }
+ const preferred=htmlText(main.join(' '));return preferred.length>=80?preferred:htmlText(all.join(' '));
+}
 function jobPostingFromJsonLd(html){
  const walk=(value,out=[],depth=0)=>{if(depth>20||value==null)return out;if(Array.isArray(value)){for(const item of value)walk(item,out,depth+1)}else if(typeof value==='object'){const type=value['@type'];if((Array.isArray(type)?type:[type]).some(item=>{const normalized=String(item||'').toLowerCase();return normalized==='jobposting'||normalized.endsWith('/jobposting')||normalized.endsWith('#jobposting')}))out.push(value);for(const item of Object.values(value))if(item&&typeof item==='object')walk(item,out,depth+1)}return out};
  for(const match of html.matchAll(/<script\b([^>]*)>([\s\S]*?)<\/script\s*>/gi)){
@@ -68,7 +89,7 @@ export async function fetchPublic(url,lookup=dns.lookup){
   const addresses=await lookup(target.hostname,{all:true,family:4});if(!addresses.length||addresses.some(x=>!publicIP(x.address)))throw new ServiceError('Private, reserved and local addresses are blocked.');const ip=addresses[0].address;
   const response=await new Promise((resolve,reject)=>{const req=https.get(target,{headers:{'User-Agent':'CareerAtelier/2.0',Accept:'text/html,text/plain'},lookup:(host,options,cb)=>{if(options?.all)cb(null,[{address:ip,family:4}]);else cb(null,ip,4)},timeout:20000},res=>{if([301,302,303,307,308].includes(res.statusCode)){res.resume();resolve({redirect:res.headers.location});return}if(res.statusCode!==200){res.resume();reject(new ServiceError('Public page unavailable. Paste its text instead.'));return}let bytes=0,chunks=[];res.on('data',b=>{bytes+=b.length;if(bytes>2*1024*1024){req.destroy();reject(new ServiceError('Public page exceeds 2 MB.'))}else chunks.push(b)});res.on('end',()=>resolve({type:res.headers['content-type'],data:Buffer.concat(chunks).toString('utf8')}));res.on('error',reject)});req.on('timeout',()=>req.destroy(new ServiceError('Public page timed out.')));req.on('error',reject)});
   if(response.redirect){url=new URL(response.redirect,target).href;continue}if(!/text\/(html|plain)/i.test(response.type||''))throw new ServiceError('Upload this document or paste its text.');
-  const html=/html/i.test(response.type||''),structured=html?extractJobPosting(response.data):{description:'',job:{}},pageText=html?htmlText(response.data):htmlText(response.data);
+  const html=/html/i.test(response.type||''),structured=html?extractJobPosting(response.data):{description:'',job:{}},pageText=html?extractVacancyText(response.data):htmlText(response.data);
   let text=structured.description.length>=80?structured.description:pageText;
   if(text.length<80)throw new ServiceError('Page contains too little readable text. Paste the vacancy.');
   if(structured.description.length>=80){const facts=Object.entries({Position:structured.job.title,Company:structured.job.company,Location:structured.job.location,'Employment type':structured.job.employmentType,'Work arrangement':structured.job.workplaceType,'Experience level':structured.job.experienceLevel,Salary:structured.job.salary,'Date posted':structured.job.datePosted,'Apply by':structured.job.validThrough,Category:structured.job.category,Industry:structured.job.industry,Skills:structured.job.skills,'Education requirements':structured.job.educationRequirements,Qualifications:structured.job.qualifications,Responsibilities:structured.job.responsibilities,'Working hours':structured.job.workHours,'Application method':structured.job.applicationMethod}).filter(([,value])=>value);text=[...facts.map(([label,value])=>`${label}: ${value}`),'Vacancy description:',text].join('\n')}

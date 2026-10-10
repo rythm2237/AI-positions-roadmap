@@ -252,9 +252,12 @@ export function validateRewrites(value, plan) {
 }
 
 export async function fitCV(input, measure) {
-  const plan=planCV(input),pages=await measure(plan.sections);
-  if(pages<=2)return {...plan,measuredPages:pages};
-  throw Error(`The section-preserving draft needs ${pages} pages. No content was cut to meet the page limit. Choose an extended CV or review individual section wording and layout; your current CV remains unchanged.`);
+  let pages=0;
+  for(let pressure=0;pressure<=3;pressure++){
+    const plan=planCV(input,{pressure});pages=await measure(plan.sections);
+    if(pages<=2)return {...plan,measuredPages:pages};
+  }
+  throw Error(`The section-preserving draft still needs ${pages} pages. No content was cut from your current CV. Shorten individual descriptions or choose a more compact layout, then create a fresh two-page draft. Education and employment headings are retained.`);
 }
 
 export function approximatePages(sections, template, design, portrait) {
