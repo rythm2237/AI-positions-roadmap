@@ -46,9 +46,8 @@ const cases={
  linkedInLong:broad+'\nAbout me\n'+('Long background detail, career aspirations and personal story. '.repeat(600)),
  forbidden:broad+'\nCertifications\nNo specific vocational training in production planning is indicated.',
 };
-const before=await renderPDF({kind:'cv',template:'Professional',sections:original},fonts);
-const beforePages=(await PDFDocument.load(await before.arrayBuffer())).getPageCount();
-await fs.writeFile(out+'/before.pdf',new Uint8Array(await before.arrayBuffer()));
+const beforePages=(await renderPDF({kind:'cv',template:'Professional',sections:original,measure:true},fonts)).pages;
+assert(beforePages>2);await assert.rejects(renderPDF({kind:'cv',template:'Professional',sections:original},fonts),/two-page/);
 const results=[];
 for(const template of TEMPLATES){
  for(const [name,source] of Object.entries(cases)){

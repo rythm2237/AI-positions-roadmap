@@ -49,3 +49,10 @@
 .cv-designed section .document-text{font-family:var(--cv-font)}.cv-designed .heading-band h2,.cv-designed.heading-band h2{background:var(--cv-section-band,var(--cv-side))}
 
 .cv-designed .cv-side h2{color:var(--cv-side-heading,var(--cv-heading-color))}
+
+/* Reserve a separate portrait column throughout the editable header. */
+.cv-designed .cv-masthead.has-portrait{display:grid;grid-template-columns:minmax(0,1fr) 70pt;column-gap:16pt;align-items:start}
+.cv-designed .cv-masthead.has-portrait::after{display:none}
+.cv-designed .cv-header-copy{min-width:0}
+.cv-designed .has-portrait .cv-header-copy{grid-column:1;grid-row:1}
+.cv-designed .has-portrait .cv-portrait,.cv-designed[dir=rtl] .has-portrait .cv-portrait{grid-column:2;grid-row:1;float:none;margin:0;object-fit:contain;box-sizing:border-box}

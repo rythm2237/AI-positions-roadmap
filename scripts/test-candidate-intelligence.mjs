@@ -53,6 +53,14 @@ assert.notDeepEqual(ai.priorities,planner.priorities,'Different jobs select mean
 ai.approved=true;
 const output={sections:kb.entities.map(e=>({title:{header:'Header',summary:'Professional Summary',experience:'Experience',projects:'Projects',education:'Education',certifications:'Certifications',skills:'Skills'}[e.kind],items:e.claimIds.map(id=>({text:kb.claims.find(c=>c.id===id).original,evidenceIds:[id],entityId:e.id,kind:kb.claims.find(c=>c.id===id).anchor?'heading':'body'}))})),warnings:[]};
 const draft=validateGeneratedCV(output,kb,ai,[]);
+const reformatted=structuredClone(output);
+for(const section of reformatted.sections)for(const item of section.items){
+ if(item.kind==='heading'&&kb.entities.find(e=>e.id===item.entityId)?.kind==='experience')item.text='Reformatted official title — 1900';
+}
+const anchorRecovered=validateGeneratedCV(reformatted,kb,ai);
+for(const claim of kb.claims.filter(c=>c.anchor&&kb.entities.find(e=>e.id===c.entityId)?.kind==='experience'))assert(anchorRecovered.sections.find(s=>s.title==='Experience').text.includes(claim.original));
+assert(!anchorRecovered.sections.find(s=>s.title==='Experience').text.includes('1900'));
+assert(anchorRecovered.sections.some(s=>s.title==='Education'));
 const review=groundingReviewInput(draft,kb);assert(validateGroundingReview({checks:review.statements.map(s=>({id:s.id,status:'supported'}))},review));
 assert.throws(()=>validateGroundingReview({checks:[]},review),/incomplete/);
 assert.throws(()=>validateGroundingReview({checks:review.statements.map((s,i)=>({id:s.id,status:i?'supported':'unsupported'}))},review),/could not be established/);
