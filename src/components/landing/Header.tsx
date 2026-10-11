@@ -13,6 +13,7 @@ type NavItem =
 const NAV_ITEMS: NavItem[] = [
   { kind: "link", label: "Explore Careers", href: "/careers" },
   { kind: "link", label: "CV Analyzer", href: "/cv-analyzer" },
+  { kind: "link", label: "Ready to Job", href: "/ready-to-job" },
   { kind: "overlay", label: "How It Works", overlay: "how" },
   { kind: "overlay", label: "Why AI Role Path", overlay: "why" },
 ];
