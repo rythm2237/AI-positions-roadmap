@@ -56,3 +56,17 @@
 .cv-designed .cv-header-copy{min-width:0}
 .cv-designed .has-portrait .cv-header-copy{grid-column:1;grid-row:1}
 .cv-designed .has-portrait .cv-portrait,.cv-designed[dir=rtl] .has-portrait .cv-portrait{grid-column:2;grid-row:1;float:none;margin:0;object-fit:contain;box-sizing:border-box}
+
+/* Stable, responsive task modal actions: cancel remains inside the panel. */
+#taskProgress{box-sizing:border-box;max-height:calc(100dvh - 28px);overflow:auto}
+#taskProgress .task-footer{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px;margin-top:12px}
+#taskProgress .task-footer small{flex:1 1 220px;min-width:0;line-height:1.5}
+#taskProgress .task-cancel{position:static;flex:0 0 auto;min-height:42px;margin:0;padding:9px 16px;border:1px solid #ffffff30;border-radius:9px;white-space:nowrap;font-size:13px;font-weight:600;cursor:pointer}
+@media(max-width:480px){#taskProgress{padding:16px}#taskProgress .task-cancel{width:100%}}
+/* Consistent CV portrait placement; circular crop stays centered within the header. */
+.cv-designed .cv-portrait{display:block;width:86pt;height:86pt;aspect-ratio:1;object-fit:cover;object-position:50% 32%;border-radius:50%;background:#13284a;border:3pt solid #fff;box-shadow:0 0 0 1.5pt #d8e4f2,0 4pt 12pt #0002;flex-shrink:0}
+.cv-designed .cv-masthead.has-portrait{display:flex;align-items:center;gap:14pt;min-width:0}
+.cv-designed .cv-masthead.has-portrait .cv-portrait{float:none;margin:0;order:2}
+.cv-designed .cv-masthead.has-portrait .cv-header-copy{min-width:0;flex:1}
+.cv-designed .cv-masthead.has-portrait::after{display:none}
+.cv-designed .cv-side .cv-portrait{margin:0 auto 16pt}
