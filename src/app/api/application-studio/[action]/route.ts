@@ -2,6 +2,7 @@ import {STRUCTURE_SCHEMA,structureSources,validateStructure,recoverStructure} fr
 import {studioOutputSchema} from '@/lib/applicationStudio/outputSchemas.mjs';
 import {generateStudioObject,isStudioOutputError} from '@/lib/applicationStudio/structuredGeneration.mjs';
 import {LETTER_REVIEW_SCHEMA,LetterEvidenceError,generateGroundedLetter} from '@/lib/applicationStudio/letterGeneration.mjs';
+import {generationEvidenceRecords,generateGroundedCV,CVEvidenceError} from '@/lib/applicationStudio/cvGeneration.mjs';
 import {strategyEvidenceRecords,generateVerifiedStrategy} from '@/lib/applicationStudio/strategyGeneration.mjs';
 import {TRANSLATION_SCHEMA,translationContext,validateTranslation,protectTranslation,restoreTranslation,translateUnits} from '@/lib/applicationStudio/translation.mjs';
 import { classifyStudioGatewayError, studioModelFallback } from "@/lib/applicationStudio/gatewayErrors";
@@ -16,7 +17,7 @@ import { limitedText, sourceMap, vacancySourceMap, validate, fetchPublic, Servic
 import {planCV,validateRewrites,validateCV} from '@/lib/applicationStudio/contentEngine.mjs';
 import {getKnowledge} from '@/lib/applicationStudio/knowledgeStore';
 import {knowledgeSources} from '@/lib/applicationStudio/knowledge.mjs';
-import {STRATEGY_SCHEMA,GENERATION_SCHEMA,GROUNDING_REVIEW_SCHEMA,groundingReviewInput,validateGroundingReview,validateStrategy,validateGeneratedCV,assessmentDimensions} from '@/lib/applicationStudio/intelligence.mjs';
+import {STRATEGY_SCHEMA,GENERATION_SCHEMA,GROUNDING_REVIEW_SCHEMA,validateStrategy,assessmentDimensions} from '@/lib/applicationStudio/intelligence.mjs';
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -24,12 +25,6 @@ export const maxDuration = 120;
 
 function json(value: unknown, status = 200) {
   return NextResponse.json(value, { status, headers: { "Cache-Control": "private, no-store" } });
-}
-async function reviewEvidence(input:Record<string,unknown>&{statements:unknown[]},model:string,abortSignal:AbortSignal){
-  if(!input.statements.length)return;
-  const settings={model,system:GROUNDING_REVIEW_SCHEMA+' Also return languageValid:boolean. Set it true only if actual narrative prose is in targetLanguage. Original company names, official job titles, dates, contacts, qualifications and technical product names may remain unchanged; do not treat them as prose.',prompt:JSON.stringify(input),maxOutputTokens:6500,abortSignal,output:Output.object({schema:z.object({languageValid:z.boolean(),checks:z.array(z.object({id:z.string(),status:z.enum(['supported','unsupported','ambiguous']),reason:z.string()}))})})};
-  let result;try{result=await generateText(settings);}catch(error){const fallback=studioModelFallback(error,model);if(!fallback)throw error;result=await generateText({...settings,model:fallback});}
-  try{validateGroundingReview(result.output,input);}catch(error){throw new ServiceError((error as Error).message,502);}
 }
 
 export async function GET(_request: Request, { params }: { params: Promise<{ action: string }> }) {
@@ -119,6 +114,23 @@ export async function POST(request: Request, { params }: { params: Promise<{ act
         }});
         return json({strategy});
     }
+    if(aiAction==='generate'){
+      const generationPrompt: Record<string,unknown>={...prompt,generationEvidenceRecords:generationEvidenceRecords(savedKnowledge!)};
+      delete generationPrompt.candidateKnowledge;
+      try{
+        const draft=await generateGroundedCV({knowledge:savedKnowledge!,strategy:approvedStrategy,current:context!.cv as any[],rejected:context!.rejectedIntelligence as string[]||[],language:String(context!.language||'en'),generate:async repair=>{
+          const result=await generateStudioObject({settings:{...settings,prompt:JSON.stringify({...generationPrompt,...(repair?{cvEvidenceRepair:repair}:{})})},model,schema:studioOutputSchema('generate'),fallbackModel:studioModelFallback,retryInvalid:false,onInferenceComplete:()=>{reservedQuota=undefined;}});
+          return result.output;
+        },review:async input=>{
+          const result=await generateStudioObject({settings:{...settings,system:GROUNDING_REVIEW_SCHEMA+' Also return languageValid:boolean. Verify actual prose against targetLanguage. Official names, titles, dates, contacts and products may remain unchanged.',prompt:JSON.stringify(input),maxOutputTokens:6500},model,schema:z.object({languageValid:z.boolean(),checks:z.array(z.object({id:z.string(),status:z.enum(['supported','unsupported','ambiguous']),reason:z.string()}))}),fallbackModel:studioModelFallback,retryInvalid:false,onInferenceComplete:()=>{reservedQuota=undefined;}});
+          return result.output;
+        }});
+        return json({draft});
+      }catch(error){
+        if(error instanceof CVEvidenceError)return json({error:'The AI draft could not be verified after one automatic rewrite. Your current CV and saved facts are unchanged. Retry generation, or choose “Use current CV without AI writing” to continue editing and designing it.',code:'CV_EVIDENCE_CLARIFICATION',requestId},422);
+        throw error;
+      }
+    }
     if(protectedTranslation&&translatedInput){
       let translated;try{translated=await translateUnits(protectedTranslation.input,async (batch: Record<string, unknown>)=>{
         const batchSettings={...settings,system:TRANSLATION_SCHEMA,prompt:JSON.stringify(batch),maxOutputTokens:6500,output:Output.object({schema:z.object({targetLanguage:z.literal(translatedInput!.targetLanguage),translations:z.array(z.object({id:z.string(),text:z.string()}))})})};
@@ -149,11 +161,6 @@ export async function POST(request: Request, { params }: { params: Promise<{ act
       // or blocks navigation. Never invent a replacement CV when output fails.
       if(structuralSources)return json(recoverStructure(structuralSources,'AI could not complete section grouping. Your full original CV was retained using source headings. Review titles, employers and qualifications before generating a new CV.'));
       return json({error:'AI could not complete this structured response. Your document is unchanged. Retry this step.',code:'AI_OUTPUT_INVALID',requestId},502);
-    }
-    if(aiAction==='generate'){
-      let draft;try{draft=validateGeneratedCV(parsed,savedKnowledge!,approvedStrategy,context!.cv as any[],context!.rejectedIntelligence as string[]||[]);}catch(error){throw new ServiceError((error as Error).message,502);}
-      await reviewEvidence({...groundingReviewInput(draft,savedKnowledge!),targetLanguage:context!.language},model,settings.abortSignal);
-      return json({draft});
     }
     if(structuralSources){try{return json(validateStructure(parsed,structuralSources));}catch{return json(recoverStructure(structuralSources,'AI section grouping could not be verified. Your full original CV was retained using source headings. Review the grouping before generating a new CV.'));}}
     if(translatedInput){try{return json(validateTranslation(restoreTranslation(parsed,protectedTranslation!),context!.cv,translatedInput.targetLanguage));}catch(error){return json({error:(error as Error).message},502);}}
