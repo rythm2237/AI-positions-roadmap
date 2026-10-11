@@ -29,7 +29,7 @@ async function downloadCVHTML(){
 }
 let taskTimer=null,taskStarted=0,taskLabel='';
 function startTaskProgress(label){
- taskStarted=Date.now();taskLabel=label;const node=$('taskProgress');node.hidden=false;node.innerHTML='<strong id="taskTitle"></strong><div class="task-meter"><div id="taskFill"></div></div><p id="taskDetail"></p><small>Progress is an estimate, not a count of completed AI work.</small>';updateTaskProgress();taskTimer=setInterval(updateTaskProgress,1000);
+ taskStarted=Date.now();taskLabel=label;const node=$('taskProgress');node.hidden=false;node.innerHTML='<strong id="taskTitle"></strong><div class="task-meter"><div id="taskFill"></div></div><p id="taskDetail"></p><div class="task-footer"><small>Progress is an estimate, not a count of completed AI work.</small><button id="cancelStudioTask" type="button" class="task-cancel">Cancel request</button></div>';const cancelButton=$('cancelStudioTask');cancelButton.addEventListener('click',()=>{if(typeof activeStudioRequest!=='undefined'&&activeStudioRequest){cancelButton.disabled=true;activeStudioRequest.abort();}else{cancelButton.disabled=true;cancelButton.textContent='Finishing current step…';}});updateTaskProgress();taskTimer=setInterval(updateTaskProgress,1000);
 }
 function updateTaskProgress(){
  const seconds=Math.floor((Date.now()-taskStarted)/1000),analysis=/analysis/i.test(taskLabel)||/Next step/.test(taskLabel)&&S.stage===2;
