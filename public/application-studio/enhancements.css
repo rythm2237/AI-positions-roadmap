@@ -70,3 +70,12 @@
 .cv-designed .cv-masthead.has-portrait .cv-header-copy{min-width:0;flex:1}
 .cv-designed .cv-masthead.has-portrait::after{display:none}
 .cv-designed .cv-side .cv-portrait{margin:0 auto 16pt}
+
+.cv-designed .cv-portrait-frame{width:64pt;height:64pt;display:flex;align-items:center;justify-content:center;background:#fff;border:3pt solid #fff;border-radius:50%;box-sizing:border-box;box-shadow:0 0 0 1pt #d4dedc;flex-shrink:0}
+.cv-designed .cv-portrait-frame .cv-portrait,.cv-designed[dir=rtl] .cv-portrait-frame .cv-portrait{float:none;width:70.7%;height:70.7%;object-fit:contain;border:0;border-radius:0;margin:0;box-shadow:none;box-sizing:border-box}
+.cv-designed .has-portrait .cv-portrait-frame{grid-column:2;grid-row:1}
+.cv-designed .cv-side .cv-portrait-frame{margin:0 auto 16pt}
+.template-blush .cv-portrait-frame{border-radius:0}.template-blush .cv-portrait-frame .cv-portrait{width:92%;height:92%}
+.confirmation-question textarea{min-height:75px}.confirmation-question .actions{flex-wrap:wrap}
+
+#agentClarifications{max-height:40vh;overflow:auto;margin-top:12px}#agentClarifications .note{padding:12px}#undoAgentEdit{margin-top:8px}

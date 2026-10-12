@@ -1,3 +1,6 @@
+import {CHAT_EDIT_SCHEMA,ChatEditError,generateChatEdit} from '@/lib/applicationStudio/chatEdit.mjs';
+import {fontsForLanguage} from '@/lib/applicationStudio/languages.mjs';
+import {FONTS} from '@/lib/applicationStudio/design.mjs';
 import {STRUCTURE_SCHEMA,structureSources,validateStructure,recoverStructure} from '@/lib/applicationStudio/structure.mjs';
 import {studioOutputSchema} from '@/lib/applicationStudio/outputSchemas.mjs';
 import {generateStudioObject,isStudioOutputError} from '@/lib/applicationStudio/structuredGeneration.mjs';
@@ -54,25 +57,25 @@ export async function POST(request: Request, { params }: { params: Promise<{ act
     catch (error) { if (error instanceof ServiceError) throw error; return json({ error: "Invalid JSON." }, 400); }
     if (!body || typeof body !== "object") return json({ error: "Invalid request." }, 400);
     if (body.sessionUserId !== user.id) return json({ error: "Your account changed. Reload the editor before continuing." }, 409);
-    const aiAction = body.action as keyof typeof SCHEMAS | "optimise" | "translate" | "structure" | "strategy" | "generate";
+    const aiAction = body.action as keyof typeof SCHEMAS | "optimise" | "translate" | "structure" | "strategy" | "generate" | "chatEdit";
     const context = body.context;
     operation = body.action || action;
     if (action === "ai") {
-      if ((!Object.hasOwn(SCHEMAS, aiAction)&&!['translate','structure','strategy','generate'].includes(aiAction)) || !context || Array.isArray(context)) return json({ error: "Invalid AI action." }, 400);
+      if ((!Object.hasOwn(SCHEMAS, aiAction)&&!['translate','structure','strategy','generate','chatEdit'].includes(aiAction)) || !context || Array.isArray(context)) return json({ error: "Invalid AI action." }, 400);
       for (const key of ["candidate", "linkedin", "vacancy"]) {
         if (typeof (context[key] || "") !== "string" || String(context[key] || "").length > 100_000) return json({ error: "Invalid or oversized source text." }, 400);
       }
-      if (!String(context.candidate || "").trim() || !['optimise','translate','structure','strategy','generate'].includes(aiAction) && !String(context.vacancy || "").trim()) return json({ error: "Confirm your CV and add the vacancy first." }, 400);
+      if (!String(context.candidate || "").trim() || !['optimise','translate','structure','strategy','generate','chatEdit'].includes(aiAction) && !String(context.vacancy || "").trim()) return json({ error: "Confirm your CV and add the vacancy first." }, 400);
       if (!Array.isArray(context.cv) || !context.cv.length || context.cv.length > 100 || context.cv.some((s: unknown) => !s || typeof s !== "object" || typeof (s as Record<string, unknown>).text !== "string" || typeof (s as Record<string, unknown>).title !== "string") || submittedCV(context).length > 100_000) return json({ error: "Invalid CV sections." }, 400);
     } else if (typeof body.url !== "string" || body.url.length > 2048) return json({ error: "Enter a public HTTPS URL." }, 400);
 
     // Public page retrieval does not call AI and must not consume the user's AI review allowance.
     if (action === "fetch") return json(await fetchPublic(body.url!));
 
-    const usesKnowledge=['analysis','strategy','generate','changes','cover','motivation','interview'].includes(aiAction);
+    const usesKnowledge=['analysis','strategy','generate','changes','cover','motivation','interview','chatEdit'].includes(aiAction);
     const savedKnowledge=usesKnowledge?(await getKnowledge(user.id)).knowledge:null;
     const candidateSources=savedKnowledge?.claims.length?knowledgeSources(savedKnowledge):null;
-    if(['strategy','generate'].includes(aiAction)&&!candidateSources)return json({error:'Save your candidate knowledge before creating a content strategy.'},400);
+    if(['strategy','generate','chatEdit'].includes(aiAction)&&!candidateSources)return json({error:'Save your candidate knowledge before creating a content strategy.'},400);
     if(usesKnowledge&&context!.knowledgeRevision!==undefined&&savedKnowledge?.revision!==context!.knowledgeRevision)return json({error:'Candidate facts changed. Reload knowledge and refresh your strategy.'},409);
     let approvedStrategy=null;
     if(aiAction==='generate'){
@@ -107,6 +110,15 @@ export async function POST(request: Request, { params }: { params: Promise<{ act
       maxOutputTokens: ['translate','structure','generate'].includes(aiAction)?14000:6500,
       abortSignal: AbortSignal.any([request.signal,AbortSignal.timeout(100_000)]),
     };
+    if(aiAction==='chatEdit'){
+      const editSources={...sources,...Object.fromEntries((context!.cv as any[]).map(s=>['CURRENT:'+s.id,s.text]))};
+      try{
+        const result=await generateChatEdit({context:context!,sources:editSources,generate:async repair=>{
+          const response=await generateStudioObject({settings:{...settings,system:SYSTEM+'\n'+CHAT_EDIT_SCHEMA,prompt:JSON.stringify({...prompt,sources:editSources,availableFonts:fontsForLanguage(FONTS,String(context!.language||'en')).map((f:{id:string;label:string})=>({id:f.id,label:f.label})),...(repair?{editRepair:repair}:{})})},model,schema:studioOutputSchema('chatEdit'),fallbackModel:studioModelFallback,retryInvalid:false,onInferenceComplete:()=>{reservedQuota=undefined;}});return response.output;
+        },review:async input=>{const response=await generateStudioObject({settings:{...settings,system:GROUNDING_REVIEW_SCHEMA+' Also return languageValid:boolean for actual prose, allowing official names and product names.',prompt:JSON.stringify(input)},model,schema:z.object({languageValid:z.boolean(),checks:z.array(z.object({id:z.string(),status:z.enum(['supported','unsupported','ambiguous']),reason:z.string()}))}),fallbackModel:studioModelFallback,retryInvalid:false});return response.output;}});
+        return json(result);
+      }catch(error){if(error instanceof ChatEditError||isStudioOutputError(error))return json({error:'The requested edit could not be verified. Your CV is unchanged. Describe the change more specifically or confirm the missing facts first.'},422);throw error;}
+    }
     if(aiAction==='strategy'){
         const strategy=await generateVerifiedStrategy({knowledge:savedKnowledge!,vacancy:String(context!.vacancy||''),feedback:String(context!.feedback||''),generate:async repair=>{
           const result=await generateStudioObject({settings:{...settings,prompt:JSON.stringify({...prompt,strategyEvidenceRecords:strategyEvidenceRecords(savedKnowledge!),...(repair?{strategyRepair:repair}:{})})},model,schema:studioOutputSchema('strategy'),fallbackModel:studioModelFallback,retryInvalid:false,onInferenceComplete:()=>{reservedQuota=undefined;}});
