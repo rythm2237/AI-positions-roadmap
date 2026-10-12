@@ -5,6 +5,7 @@ const evidenceIds=strings;
 const questions=strings;
 const letter=z.object({paragraphs:z.array(z.object({text:z.string(),evidenceIds})),confirmationQuestions:questions});
 const schemas={
+ chatEdit:z.object({changes:z.array(z.object({sectionId:z.string(),original:z.string(),proposed:z.string(),reason:z.string(),evidenceIds})),designChanges:z.array(z.object({field:z.string(),value:z.string()})),confirmationQuestions:questions,reply:z.string()}),
  structure:z.object({sections:z.array(z.object({title:z.string(),items:z.array(z.object({sourceIds:strings,kind:z.enum(['heading','body','bullet','gap'])}))})),warnings:strings}),
  strategy:z.object({narrative:z.string(),employerObjectives:z.array(z.object({text:z.string(),basis:z.enum(['explicit','interpretation']),vacancyQuote:z.string()})),priorities:z.array(z.object({entityId:z.string(),evidenceIds,treatment:z.enum(['feature','summarize','retain','omit']),reason:z.string(),pageOne:z.boolean()})),sectionOrder:strings,questions:z.array(z.object({id:z.string(),question:z.string(),entityId:z.string(),field:z.string(),requirement:z.string(),importance:z.enum(['critical','useful'])})),newFacts:z.array(z.object({text:z.string(),entityId:z.string(),field:z.string()})),warnings:strings}),
  generate:z.object({sections:z.array(z.object({title:z.string(),displayTitle:z.string(),items:z.array(z.object({text:z.string(),evidenceIds,kind:z.enum(['heading','body','bullet']),entityId:z.string()}))})),warnings:strings}),

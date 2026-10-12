@@ -10,3 +10,5 @@ SCHEMAS.analysis += ' EVIDENCE AUDIT: evidenceIds must be actual keys from the s
 
 SCHEMAS.optimise='Return {"rewrites":[{"text":"concise factual bullet","evidenceIds":["evidence-0"]}]}. You receive ONLY a selected evidence plan. Rewrite only included experience bullets, one evidence item per rewrite. Maximum 15–30 words per bullet. Preserve every official title/date/tool/metric, do not add unsupported outcomes or qualifiers. No analysis, scoring, missing qualifications or advice in CV text. Omit rewrites when shortening cannot preserve facts. This is a writing pass after deterministic content planning, not permission to select additional facts. General mode is allowed without a vacancy. No invented years, achievements or motivations.';
 SCHEMAS.changes += ' CV CONTENT: professional summary maximum 100 words, preferably 60–90; concise bullets, normally 15–30 words. Never insert recruiter analysis, absence of evidence, missing training, scores or advice into CV text. Existing titles/dates must remain unchanged.';
+
+SCHEMAS.chatEdit='Edit the current CV using exact supported replacements and safe design options.';

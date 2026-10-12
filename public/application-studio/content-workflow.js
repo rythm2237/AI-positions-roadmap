@@ -44,5 +44,5 @@ async function cleanCVFurniture(){const a=app(),tools=await documentTools();if(!
 async function reviewTwoPageFit(){
  const a=app();a.design=selectedDesign();a.measuredPages=await(await documentTools()).measureCV(doc('cv'));
  if(a.measuredPages<=2)return true;
- await prepareConciseCV(false);render();toast('Review and apply the proposed two-page draft, then continue to CV preview.');return false;
+ try{await prepareConciseCV(false);a.pageFitWarning='Review the concise draft below before exporting. Your current CV is unchanged.';}catch(error){a.pendingCVPlan=null;a.pageFitWarning=error.message;}save();return false;
 }

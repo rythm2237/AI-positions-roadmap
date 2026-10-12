@@ -6,6 +6,7 @@ import {recoverStructure,structureSources} from '../src/lib/applicationStudio/st
 import {importKnowledge,emptyKnowledge} from '../src/lib/applicationStudio/knowledge.mjs';
 
 const fixtures={
+ chatEdit:{changes:[],designChanges:[],confirmationQuestions:[],reply:"No edits required."},
  structure:{sections:[{title:'Header',items:[{sourceIds:['L0'],kind:'body'}]}],warnings:[]},
  strategy:{narrative:'Use real planning experience.',employerObjectives:[],priorities:[],sectionOrder:[],questions:[],newFacts:[],warnings:[]},
  generate:{sections:[],warnings:[]},
@@ -43,4 +44,4 @@ assert.equal(alwaysInvalid.doGenerateCalls.length,2,'Schema-invalid output canno
 let calls=0;const denied=Object.assign(new Error('Budget denied'),{name:'GatewayError',statusCode:402});
 await assert.rejects(generateStudioObject({settings,model:'configured-model',schema:studioOutputSchema('cover')},async()=>{calls++;throw denied;}),error=>error===denied);
 assert.equal(calls,1,'Budget/auth failures do not trigger output repair or policy bypass');
-console.log('Structured SDK regression PASS: 9 action schemas reach provider, malformed JSON is bounded, source recovery preserves education, and budget failures stay separate. Uses mock model transport, not live inference.');
+console.log('Structured SDK regression PASS: 10 action schemas reach provider, malformed JSON is bounded, source recovery preserves education, and budget failures stay separate. Uses mock model transport, not live inference.');
