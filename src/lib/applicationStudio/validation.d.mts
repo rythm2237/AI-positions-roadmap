@@ -6,3 +6,6 @@ export function validate(action: string, result: unknown, context: Record<string
 export function fetchPublic(url: string): Promise<{ text: string; url: string; retrievedAt: string }>;
 
 export function extractVacancyText(html:string):string;
+
+export class VacancyReferenceError extends ServiceError {}
+export function validateAnalysisWithRepair(result: unknown, context: Record<string, unknown>, sources: Record<string,string>, repair: (input: unknown)=>Promise<unknown>): Promise<unknown>;

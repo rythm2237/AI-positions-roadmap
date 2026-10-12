@@ -136,7 +136,7 @@ assert.deepEqual(vacancySourceMap(ad),{VAC1:"Required: Excel, production schedul
 const anchoredRow={requirement:"production scheduling",priority:"Mandatory",category:"experience",level:"Unknown",evidenceIds:[],vacancySourceId:"VAC1",vacancyQuote:"Required: production scheduling"};
 const anchored=validate("analysis",{job:{},matrix:[{...anchoredRow}]},{vacancy:ad},{});
 assert.equal(anchored.matrix[0].vacancyQuote,"Required: Excel, production scheduling.");
-assert.throws(()=>validate("analysis",{job:{},matrix:[{...anchoredRow,vacancySourceId:"VAC99",vacancyQuote:"SQL"}]},{vacancy:ad,vacancySources:{VAC99:"invented requirement"}},{}),/invalid vacancy source reference/);
+assert.throws(()=>validate("analysis",{job:{},matrix:[{...anchoredRow,vacancySourceId:"VAC99",vacancyQuote:"Invented requirement"}]},{vacancy:ad,vacancySources:{VAC99:"invented requirement"}},{}),/invalid vacancy source reference/);
 console.log("Vacancy source anchors: exact original sentences and forged source rejection passed.");
 
 assert.equal(analysis.matrix[0].evidenceReferenceInvalid,true);
@@ -154,3 +154,22 @@ assert(ordered.startsWith('Alex Example\nPlanner\nContact'));assert(!ordered.inc
 console.log('PDF import: masthead-first column order and footer exclusion passed.');
 
 const {flowText}=await import('../src/lib/applicationStudio/design.mjs');assert.equal(flowText({title:'Summary',text:'Business operations\nwith analytics.'}),'Business operations with analytics.');assert.equal(flowText({title:'Experience',text:'Role\n2024–2026'}),'Role\n2024–2026');
+
+const {validateAnalysisWithRepair}=await import("../src/lib/applicationStudio/validation.mjs");
+const internalAd="IKEA internal job\nCountry Fulfilment Automation Specialist\nExperience with supply chain automation required.\nExcel knowledge preferred.";
+const internalRow={requirement:"supply chain automation",category:"experience",level:"Unknown",priority:"Mandatory",evidenceIds:[],vacancySourceId:"VAC999",vacancyQuote:"Experience with supply chain automation required."};
+let repairCalls=0;
+const recovered=await validateAnalysisWithRepair({job:{},matrix:[{...internalRow}]},{vacancy:internalAd,url:""}, {},async()=>{repairCalls++;throw Error("should not retry")});
+assert.equal(repairCalls,0);
+assert.equal(recovered.matrix[0].vacancySourceId,"VAC3");
+assert.equal(recovered.matrix[0].vacancyQuote,internalRow.vacancyQuote);
+const broken={job:{},matrix:[{...internalRow,vacancyQuote:"Invented requirement"}]};
+const repaired=await validateAnalysisWithRepair(broken,{vacancy:internalAd,url:""}, {},async input=>{repairCalls++;assert.equal(input.vacancySources.VAC3,internalRow.vacancyQuote);return {job:{},matrix:[{...internalRow,vacancySourceId:"VAC3"}]}});
+assert.equal(repairCalls,1);
+assert.equal(repaired.matrix.length,1);
+assert.equal(broken.matrix[0].vacancyQuote,"Invented requirement");
+repairCalls=0;
+await assert.rejects(()=>validateAnalysisWithRepair(broken,{vacancy:internalAd}, {},async()=>{repairCalls++;return structuredClone(broken)}),/no public link is required/);
+assert.equal(repairCalls,1);
+await assert.rejects(()=>validateAnalysisWithRepair(broken,{vacancy:internalAd}, {},async()=>{throw Error("provider unavailable")}),/provider unavailable/);
+console.log("Internal pasted vacancy: exact quote recovery, bounded repair, forged reference rejection and provider failures passed.");

@@ -1,3 +1,4 @@
+import {validateAnalysisWithRepair} from '@/lib/applicationStudio/validation.mjs';
 import {CHAT_EDIT_SCHEMA,ChatEditError,generateChatEdit} from '@/lib/applicationStudio/chatEdit.mjs';
 import {fontsForLanguage} from '@/lib/applicationStudio/languages.mjs';
 import {FONTS} from '@/lib/applicationStudio/design.mjs';
@@ -183,7 +184,10 @@ export async function POST(request: Request, { params }: { params: Promise<{ act
       if(rewrites.rejected.length)contentPlan.warnings.push(`${rewrites.rejected.length} unverifiable AI rewrite(s) were discarded; source wording retained.`);
       return json({plan:contentPlan});
     }
-    const checked=validate(aiAction, parsed, context!, sources) as {score?:number;matrix?:any[];dimensions?:unknown;paragraphs?:{text:string;evidenceIds:string[]}[]};
+    const checked=(aiAction==='analysis'?await validateAnalysisWithRepair(parsed,context!,sources,async (analysisRepair:unknown)=>{
+      const result=await generateStudioObject({settings:{...settings,prompt:JSON.stringify({...prompt,analysisRepair})},model,schema:studioOutputSchema('analysis'),fallbackModel:studioModelFallback,retryInvalid:false});
+      return result.output;
+    }):validate(aiAction, parsed, context!, sources)) as {score?:number;matrix?:any[];dimensions?:unknown;paragraphs?:{text:string;evidenceIds:string[]}[]};
     if(aiAction==='analysis'&&savedKnowledge?.claims.length){
       for(const row of checked.matrix||[]){const named=String(row.requirement).match(/\b(?:SAP|ERP|MES)\b/gi)||[],supported=(row.evidenceIds||[]).map((id:string)=>sources[id]||'').join(' ');if(row.level==='Strong Match'&&named.some(term=>!new RegExp('\\b'+term+'\\b','i').test(supported))){row.level=row.evidenceIds?.length?'Transferable Skill':'Unknown';row.explanation='Related experience is reported, but the named specialist system is not established by the cited evidence. Confirm the actual system before claiming a direct match.';}}
       const dimensions=assessmentDimensions(checked,savedKnowledge,context!.cv as any[]);checked.dimensions=dimensions;checked.score=dimensions.professionalFit;
