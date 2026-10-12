@@ -3,6 +3,14 @@ import {createHash} from 'node:crypto';
 import https from 'node:https';import dns from 'node:dns/promises';import net from 'node:net';
 import { CATEGORIES, LEVEL_POINTS, recruiterAssessment } from './recruiter.mjs';
 export class ServiceError extends Error{constructor(message,status=400){super(message);this.status=status}}
+export class VacancyReferenceError extends ServiceError {}
+export async function validateAnalysisWithRepair(result,context,sources,repair){
+ try{return validate('analysis',structuredClone(result),context,sources)}catch(error){
+  if(!(error instanceof VacancyReferenceError))throw error;
+  const revised=await repair({error:error.message,vacancySources:vacancySourceMap(context.vacancy||''),instruction:'Return the complete analysis again. Use only the supplied VAC identifiers and copy the corresponding original vacancy sentence. Do not invent requirements or candidate evidence.'});
+  try{return validate('analysis',revised,context,sources)}catch(failure){if(failure instanceof VacancyReferenceError)throw new ServiceError('We could not verify the AI references to your job description after an automatic retry. Your pasted text is saved; no public link is required. Please retry analysis.',422);throw failure;}
+ }
+}
 export function sourceMap(cv,linkedin=''){const out={};for(const [p,text] of [['CV',cv],['LI',linkedin]])text.split('\n').forEach((line,i)=>{if(line.trim())out[p+(i+1)]=line.trim()});return out}
 export function vacancySourceMap(text){const out={};String(text).split(/\n+|(?<=[.!?])\s+/).filter(part=>part.trim()).forEach((part,i)=>{out['VAC'+(i+1)]=part.trim()});return out}
 const refs=(ids,source)=>Array.isArray(ids)?[...new Set(ids.filter(id=>typeof id==='string'&&Object.hasOwn(source,id)))]:[];
@@ -17,10 +25,17 @@ export function validate(action,result,context,sources){
   const vacancySources=vacancySourceMap(context.vacancy||'');
   const normalized=t=>String(t).replace(/\s+/g,' ').trim().toLowerCase();
   for(const r of result.matrix){
-   if(r.vacancySourceId!==undefined&&(typeof r.vacancySourceId!=='string'||!Object.hasOwn(vacancySources,r.vacancySourceId)))throw new ServiceError('AI returned an invalid vacancy source reference.');
+   if(r.vacancySourceId!==undefined&&(typeof r.vacancySourceId!=='string'||!Object.hasOwn(vacancySources,r.vacancySourceId))){
+    // A malformed AI identifier is recoverable only through an original quote.
+    // Never infer a requirement from a fuzzy match or trust caller-supplied maps.
+    const originalQuote=typeof r.vacancyQuote==='string'?normalized(r.vacancyQuote):'';
+    const matches=originalQuote?Object.entries(vacancySources).filter(([,text])=>normalized(text).includes(originalQuote)):[];
+    if(!matches.length)throw new VacancyReferenceError('AI returned an invalid vacancy source reference.');
+    r.vacancySourceId=matches[0][0];
+   }
    const quote=r.vacancySourceId?vacancySources[r.vacancySourceId]:typeof r.vacancyQuote==='string'?r.vacancyQuote.trim():'';
    r.vacancyQuote=quote&&normalized(context.vacancy||'').includes(normalized(quote))?quote:'';
-   if(!r.vacancyQuote)throw new ServiceError('A requirement could not be traced to the vacancy. Retry with the complete job advert.');
+   if(!r.vacancyQuote)throw new VacancyReferenceError('A requirement could not be traced to the vacancy. Retry with the complete job advert.');
    r.screeningGate=r.screeningGate===true&&r.priority==='Mandatory'&&['eligibility','languages','education','seniority'].includes(r.category);
   }
   const review=recruiterAssessment(result.matrix);result.recruiter=review;result.score=review.score;result.categories=review.categories;result.scoreNote=review.scoreNote;
