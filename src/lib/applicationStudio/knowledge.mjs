@@ -47,14 +47,16 @@ export function importKnowledge(kb, { text, type = 'cv', sections, label = '' },
   }
   next.revision++;if(next.claims.length>6000||JSON.stringify(next).length>1500000)throw Error('Your professional profile is too large. Remove obsolete facts before adding more.');return next;
 }
-export function confirmFact(kb, { text, entityId, kind = 'other', label = '', field = 'context', status }, at = new Date().toISOString()) {
+export function confirmFact(kb, { text, entityId, kind = 'other', label = '', field = 'context', status, question, vacancyKey = '' }, at = new Date().toISOString()) {
   if (typeof text !== 'string' || !text.trim() || text.length > 4000 || !allowedKinds.includes(kind)) throw Error('Enter a professional fact of up to 4,000 characters.');
+  if(question!==undefined&&(typeof question!=='string'||!question.trim()||question.length>2000||typeof vacancyKey!=='string'||vacancyKey.length>200))throw Error('Invalid confirmation question.');
   const next = structuredClone(kb);
   let entity = next.entities.find(e => e.id === entityId);
   if (!entity) { entity = { id: stableId(kind, label || text), kind, label: clean(label || text).slice(0,150), fields: {}, claimIds: [] }; next.entities.push(entity); }
   const original = text.trim(), sourceId = stableId('interview', original), id = stableId('claim', entity.id+'|'+original);
   if (!next.sources.some(s=>s.id===sourceId)) next.sources.push({id:sourceId,type:'interview',importedAt:at});
   if (!next.claims.some(c=>c.id===id)) next.claims.push({ id, sourceId, sourceType:'interview', location:field, original, meaning:original, entityId:entity.id, verification:'candidate-confirmed', confirmed:true, updatedAt:at });
+  if(question){const claim=next.claims.find(c=>c.id===id);const clarifications=claim.clarifications||[];if(!clarifications.some(c=>c.question===question.trim()&&c.vacancyKey===vacancyKey))claim.clarifications=[...clarifications,{question:question.trim(),vacancyKey}];}
   if (!entity.claimIds.includes(id)) entity.claimIds.push(id);
   const fields = ['company','title','dates','location','responsibilities','processes','tools','outcomes','skills','problem','role','architecture','workflows','links','context','mobility','workAuthorization'];
   if (fields.includes(field)) entity.fields[field] = { text:original, evidenceIds:[id] };
@@ -70,3 +72,13 @@ export function assertKnowledge(kb) {
   if (!kb || kb.schemaVersion!==1 || !Number.isInteger(kb.revision) || !Array.isArray(kb.entities) || !Array.isArray(kb.claims) || !Array.isArray(kb.sources) || !Array.isArray(kb.declined) || kb.claims.length>6000) throw Error('Invalid candidate knowledge.');
   return kb;
 }
+
+export function questionKey(question){return clean(String(question)).toLowerCase().replace(/[^\p{L}\p{N}]+/gu,' ').trim();}
+export function confirmedClarifications(kb,vacancy='',legacy={}){
+ const active=(kb?.claims||[]).filter(c=>c.confirmed&&!c.retracted&&!(kb.declined||[]).includes(c.id)),vacancyKey=stableId('vacancy',vacancy),out=[];
+ for(const c of active)for(const entry of c.clarifications||[])if(!entry.vacancyKey||entry.vacancyKey===vacancyKey)out.push({question:entry.question,answer:c.original,evidenceId:c.id,verification:c.verification});
+ // Migrate earlier saved Q/A pairs only when the answer is really in this account's knowledge.
+ for(const entry of Object.values(legacy||{})){if(!entry||typeof entry.question!=='string'||typeof entry.answer!=='string')continue;const c=active.find(c=>clean(c.original)===clean(entry.answer));if(c)out.push({question:entry.question,answer:c.original,evidenceId:c.id,verification:c.verification});}
+ return [...new Map(out.map(x=>[questionKey(x.question),x])).values()];
+}
+export function unresolvedQuestions(questions,answers=[]){const answered=new Set(answers.map(a=>questionKey(a.question)));return (questions||[]).filter(q=>typeof q==='string'&&!answered.has(questionKey(q)));}

@@ -6,3 +6,7 @@ export function importKnowledge(kb:Knowledge,input:{text:string;type?:string;sec
 export function confirmFact(kb:Knowledge,input:any,at?:string):Knowledge;
 export function retractFact(kb:Knowledge,id:string):Knowledge;
 export function assertKnowledge(kb:unknown):Knowledge;
+
+export function questionKey(question:string):string;
+export function confirmedClarifications(kb:Knowledge|null,vacancy?:string,legacy?:Record<string,unknown>):{question:string;answer:string;evidenceId:string;verification:string}[];
+export function unresolvedQuestions(questions:string[],answers?:{question:string}[]):string[];

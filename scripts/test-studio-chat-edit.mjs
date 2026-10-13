@@ -11,3 +11,6 @@ for(const change of [{sectionId:'a',original:context.cv[3].text,proposed:'PhD in
 await assert.rejects(generateChatEdit({context,sources,review,generate:async()=>({...value,designChanges:[{field:'size',value:'6'}]})}),ChatEditError);
 const failure=Object.assign(new Error('Budget'),{statusCode:402});calls=0;await assert.rejects(generateChatEdit({context,sources,review,generate:async()=>{calls++;throw failure;}}),e=>e===failure);assert.equal(calls,1);assert.equal(JSON.stringify(context),before);
 console.log('PASS: chat content/design edits, explanation-only replies, bounded repair, protected education/employment anchors, stale edits, readability and provider failures. AI transport is simulated.');
+
+const misleading=await generateChatEdit({context,sources,generate:async()=>({changes:[],designChanges:[],confirmationQuestions:[],reply:'Your answer was saved.'}),review:async()=>{throw Error('No statements to review')}});
+assert.match(misleading.reply,/did not save new profile facts/);

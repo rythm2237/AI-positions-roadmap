@@ -1,3 +1,4 @@
+import {confirmedClarifications,unresolvedQuestions} from '@/lib/applicationStudio/knowledge.mjs';
 import {validateAnalysisWithRepair} from '@/lib/applicationStudio/validation.mjs';
 import {CHAT_EDIT_SCHEMA,ChatEditError,generateChatEdit} from '@/lib/applicationStudio/chatEdit.mjs';
 import {fontsForLanguage} from '@/lib/applicationStudio/languages.mjs';
@@ -76,6 +77,7 @@ export async function POST(request: Request, { params }: { params: Promise<{ act
     const usesKnowledge=['analysis','strategy','generate','changes','cover','motivation','interview','chatEdit'].includes(aiAction);
     const savedKnowledge=usesKnowledge?(await getKnowledge(user.id)).knowledge:null;
     const candidateSources=savedKnowledge?.claims.length?knowledgeSources(savedKnowledge):null;
+    const answeredClarifications=confirmedClarifications(savedKnowledge,String(context!.vacancy||''),context!.confirmationAnswers as Record<string,unknown>||{});
     if(['strategy','generate','chatEdit'].includes(aiAction)&&!candidateSources)return json({error:'Save your candidate knowledge before creating a content strategy.'},400);
     if(usesKnowledge&&context!.knowledgeRevision!==undefined&&savedKnowledge?.revision!==context!.knowledgeRevision)return json({error:'Candidate facts changed. Reload knowledge and refresh your strategy.'},409);
     let approvedStrategy=null;
@@ -93,7 +95,7 @@ export async function POST(request: Request, { params }: { params: Promise<{ act
     if (!quota.allowed) return json({ error: `Daily AI review limit reached (${quota.limit}). It resets at 00:00 UTC. Your draft is unchanged.`, quota }, 429);
     if (quota.usageDate) reservedQuota = {userId: user.id, usageDate: quota.usageDate};
     const sources = candidateSources || (aiAction === "analysis" ? sourceMap(submittedCV(context!)) : sourceMap(String(context!.candidate), String(context!.linkedin || "")));
-    const prompt: Record<string, unknown> = { ...context, sources, ...(usesKnowledge?{candidateKnowledge:savedKnowledge}:{}), ...(['analysis','strategy'].includes(aiAction) ? {vacancySources: vacancySourceMap(String(context!.vacancy||''))} : {}) };
+    const prompt: Record<string, unknown> = { ...context, answeredClarifications, sources, ...(usesKnowledge?{candidateKnowledge:savedKnowledge}:{}), ...(['analysis','strategy'].includes(aiAction) ? {vacancySources: vacancySourceMap(String(context!.vacancy||''))} : {}) };
     if(approvedStrategy)prompt.strategy=approvedStrategy;
     delete prompt.candidate; delete prompt.linkedin;
     const contentPlan = aiAction === 'optimise' ? planCV({sections:context!.cv,vacancy:context!.vacancy,targetRole:(context!.job as {title?:string})?.title||'',template:context!.template,design:context!.design,portrait:context!.portrait}) : null;
@@ -105,8 +107,9 @@ export async function POST(request: Request, { params }: { params: Promise<{ act
     if(structuralSources){for(const key of Object.keys(prompt))delete prompt[key];Object.assign(prompt,{sourceLines:structuralSources});}
     if (aiAction === "analysis") { delete prompt.previousApplications; delete prompt.chat; delete prompt.approved; delete prompt.analysis; }
     const model = process.env.APPLICATION_STUDIO_MODEL || "openai/gpt-4.1-mini";
+    delete prompt.confirmationAnswers;
     const settings = {
-      system: `${SYSTEM}\nCourse completion and profile fields may be self-reported. Preserve that provenance. Never promote completed learning to employment, expertise, or verified certification.\n${aiAction==='structure'?STRUCTURE_SCHEMA:aiAction==='translate'?TRANSLATION_SCHEMA:aiAction==='strategy'?STRATEGY_SCHEMA:aiAction==='generate'?GENERATION_SCHEMA:(SCHEMAS as Record<string,string>)[aiAction]}\n${candidateSources&&aiAction==='analysis'?'Override document-only assessment: assess the ENTIRE saved candidate knowledge. Rewriting the CV cannot change professional fit. Cite candidate claim IDs from sources. Explicit requirements must cite vacancySources. Unknown eligibility stays unknown.':''}`,
+      system: `${SYSTEM}\nANSWERED CLARIFICATIONS: answeredClarifications contains saved, source-backed question/answer pairs. Use these answers in this assessment and do not repeat or paraphrase answered questions. A self-reported level is not a certificate. Only request certification or official equivalency if the vacancy explicitly requires it; otherwise assess reported proficiency or the original degree honestly. If an answer is incomplete, ask a narrower follow-up explaining exactly what remains unknown. Never claim a fact was saved by this AI request; only the separate knowledge-save operation saves facts.\nCourse completion and profile fields may be self-reported. Preserve that provenance. Never promote completed learning to employment, expertise, or verified certification.\n${aiAction==='structure'?STRUCTURE_SCHEMA:aiAction==='translate'?TRANSLATION_SCHEMA:aiAction==='strategy'?STRATEGY_SCHEMA:aiAction==='generate'?GENERATION_SCHEMA:(SCHEMAS as Record<string,string>)[aiAction]}\n${candidateSources&&aiAction==='analysis'?'Override document-only assessment: assess the ENTIRE saved candidate knowledge. Rewriting the CV cannot change professional fit. Cite candidate claim IDs from sources. Explicit requirements must cite vacancySources. Unknown eligibility stays unknown.':''}`,
       prompt: JSON.stringify(prompt),
       maxOutputTokens: ['translate','structure','generate'].includes(aiAction)?14000:6500,
       abortSignal: AbortSignal.any([request.signal,AbortSignal.timeout(100_000)]),
@@ -187,7 +190,8 @@ export async function POST(request: Request, { params }: { params: Promise<{ act
     const checked=(aiAction==='analysis'?await validateAnalysisWithRepair(parsed,context!,sources,async (analysisRepair:unknown)=>{
       const result=await generateStudioObject({settings:{...settings,prompt:JSON.stringify({...prompt,analysisRepair})},model,schema:studioOutputSchema('analysis'),fallbackModel:studioModelFallback,retryInvalid:false});
       return result.output;
-    }):validate(aiAction, parsed, context!, sources)) as {score?:number;matrix?:any[];dimensions?:unknown;paragraphs?:{text:string;evidenceIds:string[]}[]};
+    }):validate(aiAction, parsed, context!, sources)) as {score?:number;matrix?:any[];confirmationQuestions?:string[];dimensions?:unknown;paragraphs?:{text:string;evidenceIds:string[]}[]};
+    if(aiAction==='analysis')checked.confirmationQuestions=unresolvedQuestions(checked.confirmationQuestions||[],answeredClarifications);
     if(aiAction==='analysis'&&savedKnowledge?.claims.length){
       for(const row of checked.matrix||[]){const named=String(row.requirement).match(/\b(?:SAP|ERP|MES)\b/gi)||[],supported=(row.evidenceIds||[]).map((id:string)=>sources[id]||'').join(' ');if(row.level==='Strong Match'&&named.some(term=>!new RegExp('\\b'+term+'\\b','i').test(supported))){row.level=row.evidenceIds?.length?'Transferable Skill':'Unknown';row.explanation='Related experience is reported, but the named specialist system is not established by the cited evidence. Confirm the actual system before claiming a direct match.';}}
       const dimensions=assessmentDimensions(checked,savedKnowledge,context!.cv as any[]);checked.dimensions=dimensions;checked.score=dimensions.professionalFit;
