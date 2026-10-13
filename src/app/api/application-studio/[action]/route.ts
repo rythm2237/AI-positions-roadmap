@@ -49,6 +49,7 @@ export async function POST(request: Request, { params }: { params: Promise<{ act
   if (!request.headers.get("content-type")?.startsWith("application/json")) return json({ error: "JSON required." }, 400);
   const requestId = crypto.randomUUID();
   let operation = action;
+  let phase = 'request';
   let reservedQuota: {userId: string; usageDate: string} | undefined;
   try {
     const supabase = await createClient();
@@ -124,10 +125,13 @@ export async function POST(request: Request, { params }: { params: Promise<{ act
       }catch(error){if(error instanceof ChatEditError||isStudioOutputError(error))return json({error:'The requested edit could not be verified. Your CV is unchanged. Describe the change more specifically or confirm the missing facts first.'},422);throw error;}
     }
     if(aiAction==='strategy'){
+        phase='strategy-input';
         const strategy=await generateVerifiedStrategy({knowledge:savedKnowledge!,vacancy:String(context!.vacancy||''),feedback:String(context!.feedback||''),generate:async repair=>{
+          phase='strategy-model';
           const result=await generateStudioObject({settings:{...settings,prompt:JSON.stringify({...prompt,strategyEvidenceRecords:strategyEvidenceRecords(savedKnowledge!),...(repair?{strategyRepair:repair}:{})})},model,schema:studioOutputSchema('strategy'),fallbackModel:studioModelFallback,retryInvalid:false,onInferenceComplete:()=>{reservedQuota=undefined;}});
-          return result.output;
+          phase='strategy-validation';return result.output;
         }});
+        phase='strategy-ready';
         return json({strategy});
     }
     if(aiAction==='generate'){
@@ -212,7 +216,7 @@ export async function POST(request: Request, { params }: { params: Promise<{ act
       } catch { console.error("Application Studio quota refund failed", {requestId}); }
     }
     // Log only fixed classifications, never prompts, responses, URLs or credentials.
-    console.error("Application Studio request failed", {requestId, action, operation, code:failure.code, errorName:failure.errorName, providerStatus:failure.providerStatus, quotaRefunded});
+    console.error("Application Studio request failed", {requestId, action, operation, phase, code:failure.code, errorName:failure.errorName, providerStatus:failure.providerStatus, quotaRefunded});
     return json({error: `${failure.message}${quotaRefunded ? " This rejected request did not consume your daily AI allowance." : ""} Reference: ${requestId}.`,code:failure.code,requestId},503);
   }
 }

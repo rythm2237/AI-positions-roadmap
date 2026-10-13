@@ -60,6 +60,14 @@ const {JSDOM}=require('jsdom'),fs=require('fs'),vm=require('vm'),assert=require(
  const savedQA=ev('JSON.stringify(app().confirmationAnswers)');ev("var savedAi=ai;ai=async()=>{throw Error('Simulated provider failure')};");
  click('refreshSavedAnswers');await settle();assert.equal(ev('JSON.stringify(app().confirmationAnswers)'),savedQA);assert.equal(w.document.querySelectorAll('#workspace [data-save-clarification]').length,0);ev('ai=savedAi');
  ev('candidateKnowledge=null;knowledgeOwner=null;S.stage=0;render();');click('loadKnowledge');await settle();ev('S.stage=3;render();');assert(w.document.body.textContent.includes('Saved answer:'),'Question association survives loading profile from storage');
+
+ // The screenshot's strategy outage must not trap Next on the assessment page.
+ const failureCV=ev('JSON.stringify(app().cv)'),failureAnswers=ev('JSON.stringify(app().confirmationAnswers)');
+ ev("S.stage=3;app().proposalsGenerated=false;app().analysis.knowledgeRevision=candidateKnowledge.revision;app().analysisVacancy=app().vacancy;var workingApi=api;api=async(action,body)=>{if(action==='ai'&&body.action==='strategy')throw Error('AI service unavailable. Reference: simulated-outage');return workingApi(action,body)};render();");
+ click('stepNext');await settle();assert.equal(ev('S.stage'),4,'Next reaches review even when strategy creation fails');
+ assert(q('createStrategy'));assert(q('keepCurrentCV'));assert(w.document.body.textContent.includes('AI content strategy was not created'));assert(w.document.body.textContent.includes('simulated-outage'));assert.equal(ev('JSON.stringify(app().cv)'),failureCV);assert.equal(ev('JSON.stringify(app().confirmationAnswers)'),failureAnswers);assert.equal(ev('app().proposalsGenerated'),false);
+ ev('api=workingApi');click('createStrategy');await settle();assert.equal(ev('app().strategyError'),null,'Successful retry clears outage notice');
+ ev("app().strategyError='AI service unavailable';render()");click('keepCurrentCV');assert.equal(ev('S.stage'),5);assert.equal(ev('JSON.stringify(app().cv)'),failureCV,'Manual continuation preserves every section');
  user='candidate-b';ev("account={id:'candidate-b'};S.stage=0;render();");assert.equal(ev('candidateKnowledge'),null,'Account switch clears knowledge');click('loadKnowledge');await settle();assert.equal(ev('candidateKnowledge.claims.length'),0,'Second user cannot see first user evidence');
  console.log('Integrated DOM flow PASS: guest sign-in, private knowledge, strategy approval, full CV review, repeat generation, manual edit protection, design independence, agent fact confirmation and account isolation. AI responses and persistence are simulated; live provider/auth validation is separate.');dom.window.close();
 })().catch(e=>{console.error(e);process.exitCode=1;});
