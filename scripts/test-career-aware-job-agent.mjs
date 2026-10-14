@@ -44,3 +44,6 @@ test('21 Stretch requires explicit opt in and eligibility',()=>{const j={...noti
 test('22 Reject malformed preferences',()=>assert.throws(()=>parseCareerTracks([{...track('ai_automation',0),directYears:NaN}])));
 test('23 Generic Specialist title cannot override senior source evidence',()=>assert.equal(check('AI Automation Specialist','',{seniority:'senior'}).status,'blocked'));
 test('24 Description-derived level is persisted by enrichment',()=>assert.equal(enrichRequirements(job('AI Engineer','7 years of AI experience required.'),[]).seniority,'senior'));
+
+import {planSearchQueries} from '../src/lib/job-agent/searchStrategy.ts';
+test('25 Discovery reserves space for experienced operations alongside AI variants',()=>{const queries=planSearchQueries({primaryTargetRole:'AI Automation Specialist',hard:{excludedRoles:[]},soft:{secondaryRoles:['SEO Specialist'],marketTitleVariants:['Operations Planner'],adjacentRoles:[]}},6);assert.ok(queries.some(q=>q.query==='Operations Planner'));assert.ok(queries.some(q=>q.query==='SEO Specialist'));assert.equal(queries.length,6);});

@@ -24,6 +24,7 @@ The cron route remains `/api/cron/job-agent-reports`; existing scheduling and di
 
 ## Architecture implemented
 
+- Discovery reserves a query per career domain before filling title variants, preventing the primary AI track from consuming the entire six-query run budget.
 - Multiple independently configured career tracks, direct years (including unknown), maximum level, maximum advertised required years, required/preferred skills, industries and transition preference.
 - Conservative inferred defaults use role evidence rather than total employment years. Missing track duration needs confirmation where the vacancy demands years.
 - Deterministic classification uses title, mandatory years, explicit team management and enterprise architecture ownership; specialist is not inherently senior and Project Manager is not inherently a people manager.
@@ -51,20 +52,20 @@ Read-only replay of 89 currently stored October 11–13 vacancy rows against cur
 | Measure | Count |
 | --- | ---: |
 | Previously candidate-eligible | 16 |
-| New career gate: blocked | 26 |
+| New career gate: blocked | 27 |
 | New career gate: needs confirmation | 59 |
-| New career gate: eligible | 4 |
+| New career gate: eligible | 3 |
 
 These are career-gate outcomes, not complete notification outcomes or hiring probabilities. Stored rows may differ from original sent-email snapshots. No live vacancy re-fetch was performed during this replay. Old-version rows cannot enter the new primary digest until reassessed. No human-labelled precision/recall or classifier accuracy is claimed.
 
 ## Validation and release ledger
 
-- User-specified scenarios covered by `scripts/test-career-aware-job-agent.mjs` (24 deterministic tests).
+- User-specified scenarios covered by `scripts/test-career-aware-job-agent.mjs` (25 deterministic tests).
 - Daily orchestration tests exercise fake database/email transports, grouping, no-match behavior and signed Save/Not Relevant links. No external test email is sent.
 - Existing acquisition/provider/discovery/evidence regressions executed; one stale scoring-version assertion updated, and the preferred-education test corrected to require that preferred qualifications remain optional.
 - Full-suite test maintenance: native Node import resolution now supports existing `@/` and extensionless TypeScript imports. Stale source assertions were aligned with the existing assessment label, YouTube rejection copy, adaptive resource generator, configurable public-intelligence gate and already-published 23-career catalog; no learning/admin production behavior was changed.
 - Targeted ESLint was restored because the existing `next lint` command is unavailable in installed Next.js 16. Type checking covers the application.
-- The 98-test combined Job Agent regression run passed. Full platform regression tests are also included in the PR workflow.
+- The 99-test combined Job Agent regression run passed. Full platform regression tests are also included in the PR workflow.
 - Full standard build succeeded locally. Existing prebuild scripts rewrite generated career/UI files; unrelated generated changes are excluded from the commit.
 - Migration constraints and existing RLS inspected in the live database.
 - Signed-in production pre-change UI inspected. Post-change preview, PR checks and production release status must be recorded after deployment; local tests are not proof of production release.

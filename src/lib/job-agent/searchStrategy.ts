@@ -1,3 +1,4 @@
+import { careerDomain } from "./careerIntelligence.ts";
 import type { NormalizedJobSearchIntent } from "../../types/jobAgent.ts";
 
 export type SearchQuery = { query: string; origin: "exact" | "market_variant" | "secondary" | "adjacent"; priority: number };
@@ -25,10 +26,15 @@ export function planSearchQueries(intent: NormalizedJobSearchIntent, limit = 8):
     ...intent.soft.adjacentRoles.map((query, index) => ({ query, origin: "adjacent" as const, priority: 40 - index })),
   ];
   const seen = new Set<string>();
-  return candidates.sort((a, b) => b.priority - a.priority).filter((candidate) => {
+  const unique = candidates.sort((a, b) => b.priority - a.priority).filter((candidate) => {
     const key = normalize(candidate.query);
     if (!key || seen.has(key) || intent.hard.excludedRoles.some((excluded) => key.includes(normalize(excluded)))) return false;
     seen.add(key);
     return true;
-  }).slice(0, Math.max(1, Math.min(limit, 12)));
+  });
+  // Reserve a query for each configured domain before title variants consume the budget.
+  const domains=new Set<string>();
+  const seeds=unique.filter(candidate=>{const domain=careerDomain(candidate.query);if(domains.has(domain)) return false;domains.add(domain);return true;});
+  const selected=[...seeds,...unique.filter(candidate=>!seeds.includes(candidate))].slice(0,Math.max(1,Math.min(limit,12)));
+  return selected.sort((a,b)=>b.priority-a.priority);
 }
