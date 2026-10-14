@@ -1,3 +1,4 @@
+import { CAREER_GATE_VERSION } from "./careerIntelligence.ts";
 import type { JobOpportunity } from "@/types/jobAgent";
 
 const normalizeIdentityPart = (value: string | null | undefined) => (value ?? "")
@@ -40,7 +41,8 @@ export function collapseDuplicateOpportunities(jobs: JobOpportunity[]) {
 }
 
 export function groupCurrentJobResults(jobs: JobOpportunity[]) {
-  const active = collapseDuplicateOpportunities(jobs)
+  const currentJobs=jobs.map(job=>job.eligibility_version && job.eligibility_version!==CAREER_GATE_VERSION && job.eligibility_status==="eligible" ? {...job,eligibility_status:"unverified" as const,eligibility_reasons:[...job.eligibility_reasons,"Career-aware reassessment required before recommending this legacy result."]} : job);
+  const active = collapseDuplicateOpportunities(currentJobs)
     .filter((job) => job.freshness_status !== "expired")
     .sort((a, b) => (b.fit_score ?? -1) - (a.fit_score ?? -1));
 

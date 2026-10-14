@@ -1,3 +1,4 @@
+import { evaluateCareerEligibility } from "./careerIntelligence.ts";
 import { evaluateJobEligibility } from "./eligibility.ts";
 import type { CanonicalJobCandidate } from "./contracts.ts";
 import type { CareerEvidenceItem, EligibilityReason, JobAgent, JobEligibilityStatus, NormalizedJobSearchIntent } from "../../types/jobAgent.ts";
@@ -33,6 +34,17 @@ export function evaluateHardEligibility(input: { job: CanonicalJobCandidate; pro
   const base = evaluateJobEligibility({ title: input.job.title, company: input.job.company, country: input.job.country, location: input.job.location, description: input.job.description, descriptionComplete: input.job.descriptionComplete, workplaceModel: input.job.workplaceModel, employmentTypes: input.job.employmentTypes, seniority: input.job.seniority, visaSponsorship: input.job.visaSponsorship, salaryMin: input.job.salaryMin, salaryMax: input.job.salaryMax, currency: input.job.currency }, profile, input.agent);
   const hard: EligibilityReason[] = base.reasons.map((message) => ({ code: reasonCode(message), outcome: base.status === "blocked" ? "block" : "unknown", field: reasonCode(message).split("_")[0].toLowerCase(), message, evidence: null }));
 
+  hard.push(...evaluateCareerEligibility(input.job, input.intent, input.evidence).reasons);
+
+  const knownLanguages=input.intent.hard.languages.map(normalize);
+  for(const language of input.job.requiredLanguages) if(!knownLanguages.some(known=>known.includes(normalize(language)))) hard.push({code:"LANGUAGE_CONFLICT",outcome:"block",field:"language",message:`Missing required language: ${language}.`,evidence:language});
+  for(const skill of input.job.requiredSkills) {
+    if(!input.evidence.some(item=>normalize(item.label)===normalize(skill))) hard.push({code:"MANDATORY_SKILL_EVIDENCE_UNKNOWN",outcome:"unknown",field:"skill",message:`Confirm mandatory skill evidence: ${skill}.`,evidence:skill});
+  }
+  for(const qualification of input.job.educationRequirements) {
+    if(!input.evidence.some(item=>item.evidenceType==="education" && /degree|bachelor|master|bsc|msc|phd/i.test(item.value))) hard.push({code:"EDUCATION_EVIDENCE_UNKNOWN",outcome:"unknown",field:"education",message:"Confirm mandatory education or accepted equivalent experience.",evidence:qualification});
+  }
+
   const industryText = normalize(input.job.description);
   for (const industry of input.intent.hard.excludedIndustries) if (industryText.includes(normalize(industry))) hard.push({ code: "EXCLUDED_INDUSTRY", outcome: "block", field: "industry", message: `Vacancy matches excluded industry: ${industry}.`, evidence: industry });
 
@@ -42,5 +54,5 @@ export function evaluateHardEligibility(input: { job: CanonicalJobCandidate; pro
   }
 
   const status: JobEligibilityStatus = hard.some((item) => item.outcome === "block") ? "blocked" : hard.some((item) => item.outcome === "unknown") ? "unverified" : "eligible";
-  return { status, reasons: hard.map((item) => item.message), detail: hard, requiredLanguages: base.requiredLanguages, postingLanguage: base.postingLanguage };
+  return { status, reasons: hard.map((item) => item.message), detail: hard, requiredLanguages: [...new Set([...base.requiredLanguages,...input.job.requiredLanguages])], postingLanguage: base.postingLanguage };
 }

@@ -7,6 +7,7 @@ const workplace = (items: string[]) => cleaned(items).filter((item): item is Job
 export function createJobSearchIntent(agent: JobAgent, profileLanguages: string[], version = (agent.intent_version ?? 0) + 1, confirmedAt = new Date().toISOString()): NormalizedJobSearchIntent {
   const primaryTargetRole = agent.primary_career?.trim() || agent.desired_titles[0]?.trim() || "";
   const withoutFingerprint = {
+    careerTracks: agent.career_tracks ?? [],
     primaryTargetRole,
     hard: {
       excludedRoles: cleaned(agent.excluded_roles),
@@ -47,7 +48,7 @@ export function createJobSearchIntent(agent: JobAgent, profileLanguages: string[
     version,
     confirmedAt,
   };
-  const stable = JSON.stringify({ primaryTargetRole: withoutFingerprint.primaryTargetRole, hard: withoutFingerprint.hard, soft: withoutFingerprint.soft });
+  const stable = JSON.stringify({ primaryTargetRole: withoutFingerprint.primaryTargetRole, hard: withoutFingerprint.hard, soft: withoutFingerprint.soft, careerTracks: withoutFingerprint.careerTracks });
   return { ...withoutFingerprint, fingerprint: createHash("sha256").update(stable).digest("hex") };
 }
 

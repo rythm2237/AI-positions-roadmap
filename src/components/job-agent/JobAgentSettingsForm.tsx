@@ -1,3 +1,4 @@
+import { careerDomain, LEVELS } from "@/lib/job-agent/careerIntelligence";
 import { TimezoneField } from "./TimezoneField";
 import { inferSearchCurrency } from "@/lib/job-agent/currency";
 import type { JobAgent } from "@/types/jobAgent";
@@ -16,7 +17,9 @@ export function JobAgentSettingsForm({
   knownLanguages,
   preferenceCountry,
   action,
+  currentPosition,
 }: {
+  currentPosition?: string | null;
   agent?: JobAgent | null;
   primaryCareer: string;
   knownLanguages: string;
@@ -30,6 +33,13 @@ export function JobAgentSettingsForm({
       : [];
   const inferredCurrency = inferSearchCurrency(savedCountries);
 
+  const targets = [primaryCareer, ...(agent?.secondary_careers ?? []), ...(agent?.desired_titles ?? []), ...(agent?.adjacent_roles ?? [])].filter(Boolean);
+  const inferredDefaults = [...new Set(targets.map(careerDomain))].map(domain => ({
+    id: domain, name: domain.replaceAll("_", " "), domain, targetTitles: targets.filter(t=>careerDomain(t)===domain),
+    directYears: null, maximumSeniority: careerDomain(currentPosition ?? "") === domain ? "specialist" : "associate",
+    transition: careerDomain(currentPosition ?? "") !== domain, maximumRequiredYears: null, flexibility: "standard", mandatorySkills: [] as string[], preferredSkills: [] as string[], industries: [] as string[],
+  }));
+  const trackDefaults = [...(agent?.career_tracks ?? []), ...inferredDefaults.filter(t=>!agent?.career_tracks?.some(saved=>saved.domain===t.domain))];
   return (
     <form id="job-agent-settings" action={action} className="mt-8 space-y-6">
       <section className="glass rounded-2xl border border-white/[.07] p-5 sm:p-6">
@@ -43,6 +53,31 @@ export function JobAgentSettingsForm({
           <label className="text-sm text-slate-400 md:col-span-2">Roles to exclude<input name="excluded_roles" defaultValue={csv(agent?.excluded_roles)} className="input-field mt-2 min-h-11 w-full" /></label>
           <label className="text-sm text-slate-400">Minimum seniority<input name="min_seniority" defaultValue={agent?.min_seniority ?? ""} placeholder="e.g. mid" className="input-field mt-2 min-h-11 w-full" /></label>
           <label className="text-sm text-slate-400">Maximum seniority<input name="max_seniority" defaultValue={agent?.max_seniority ?? ""} placeholder="e.g. senior" className="input-field mt-2 min-h-11 w-full" /></label>
+        </div>
+      </section>
+
+      <section className="glass rounded-2xl border border-white/[.07] p-5 sm:p-6">
+        <input type="hidden" name="track_config_present" value="true"/><h2 className="font-display text-xl font-semibold text-white">Career tracks & experience</h2>
+        <p className="mt-2 text-sm text-slate-400">Confirm professional years separately for each track. Leave uncertain years blank; projects support skills and do not count as employment years. New target roles create additional tracks after saving.</p>
+        {trackDefaults.map((track,index)=><fieldset key={track.id} className="mt-5 rounded-xl border border-white/10 p-4">
+          <legend className="px-2 text-sm text-cyan-200">{track.name}</legend>
+          <input type="hidden" name="track_id" value={track.id}/><input type="hidden" name={`track_${index}_domain`} value={track.domain}/>
+          <div className="grid gap-4 md:grid-cols-2">
+            <label className="text-sm text-slate-400">Track name<input name={`track_${index}_name`} defaultValue={track.name} required className="input-field mt-2 w-full"/></label>
+            <label className="text-sm text-slate-400">Target titles<input name={`track_${index}_titles`} defaultValue={track.targetTitles.join(", ")} className="input-field mt-2 w-full"/></label>
+            <label className="text-sm text-slate-400">Direct professional years<input type="number" min="0" max="60" step="0.5" name={`track_${index}_years`} defaultValue={track.directYears??""} placeholder="Needs confirmation" className="input-field mt-2 w-full"/></label>
+            <label className="text-sm text-slate-400">Maximum target level<select name={`track_${index}_level`} defaultValue={track.maximumSeniority} className="input-field mt-2 w-full">{LEVELS.filter(l=>l!=="unknown").map(level=><option key={level} value={level}>{level}</option>)}</select></label>
+            <label className="text-sm text-slate-400">Maximum required years in vacancy<input type="number" min="0" max="60" name={`track_${index}_maximum`} defaultValue={track.maximumRequiredYears??""} className="input-field mt-2 w-full"/></label>
+            <label className="text-sm text-slate-400">Transition flexibility<select name={`track_${index}_flexibility`} defaultValue={track.flexibility} className="input-field mt-2 w-full"><option value="strict">Direct experience first</option><option value="standard">Include transferable evidence</option><option value="flexible">Explore adjacent opportunities</option></select></label>
+            <label className="text-sm text-slate-400">Required skills in opportunities<input name={`track_${index}_mandatory`} defaultValue={csv(track.mandatorySkills)} className="input-field mt-2 w-full"/></label>
+            <label className="text-sm text-slate-400">Preferred skills<input name={`track_${index}_preferred`} defaultValue={csv(track.preferredSkills)} className="input-field mt-2 w-full"/></label>
+            <label className="text-sm text-slate-400">Preferred industries<input name={`track_${index}_industries`} defaultValue={csv(track.industries)} className="input-field mt-2 w-full"/></label>
+            <label className="flex items-center gap-2 text-sm text-slate-300"><input type="checkbox" name={`track_${index}_transition`} defaultChecked={track.transition}/>Career transition</label>
+          </div>
+        </fieldset>)}
+        <div className="mt-5 grid gap-4 md:grid-cols-2">
+          <label className="text-sm text-slate-400">Minimum recommendation score<input type="number" min="0" max="100" name="minimum_match_score" defaultValue={agent?.minimum_match_score??68} className="input-field mt-2 w-full"/></label>
+          <label className="flex items-center gap-2 text-sm text-slate-300"><input type="checkbox" name="include_stretch" defaultChecked={agent?.include_stretch??false}/>Include eligible stretch opportunities</label>
         </div>
       </section>
 

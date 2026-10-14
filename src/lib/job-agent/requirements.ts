@@ -1,3 +1,4 @@
+import { classifyJob } from "./careerIntelligence.ts";
 import type { CanonicalJobCandidate } from "./contracts.ts";
 import type { CareerEvidenceItem } from "../../types/jobAgent.ts";
 
@@ -47,13 +48,13 @@ export function enrichRequirements(job: CanonicalJobCandidate, evidence: CareerE
     if (sectionEnding.test(clause.trim())) requirementSection = false;
     for (const skill of knownSkills) {
       if (!lower.includes(skill.toLowerCase())) continue;
-      if (requirementSection || requiredWording.test(lower)) required.add(skill);
-      else if (preferredWording.test(lower)) preferred.add(skill);
+      if (preferredWording.test(lower)) preferred.add(skill);
+      else if (requirementSection || requiredWording.test(lower)) required.add(skill);
     }
     for (const [skill, pattern] of SKILL_ALIASES) {
       if (!pattern.test(clause)) continue;
-      if (requirementSection || requiredWording.test(lower)) required.add(skill);
-      else if (preferredWording.test(lower)) preferred.add(skill);
+      if (preferredWording.test(lower)) preferred.add(skill);
+      else if (requirementSection || requiredWording.test(lower)) required.add(skill);
     }
   }
   const education = new Set(job.educationRequirements);
@@ -65,12 +66,13 @@ export function enrichRequirements(job: CanonicalJobCandidate, evidence: CareerE
       continue;
     }
     if (sectionEnding.test(clause.trim())) requirementSection = false;
-    if (/\b(?:bachelor(?:'s)?|master(?:'s)?|ph\.?d\.?|doctorate|degree|studium|ausbildung)\b/i.test(clause) && (requirementSection || requiredWording.test(clause))) education.add(clause.trim().slice(0, 300));
+    if (/\b(?:bachelor(?:'s)?|master(?:'s)?|ph\.?d\.?|doctorate|degree|studium|ausbildung)\b/i.test(clause) && !preferredWording.test(clause) && (requirementSection || requiredWording.test(clause))) education.add(clause.trim().slice(0, 300));
     const certificate = clause.match(/\b(?:valid|required|must (?:hold|have)|certified)\b[^.!?\n]{0,100}\b(PMP|CPA|CFA|CISSP|CISM|CCNA|AWS Certified|Azure Certified|professional licen[cs]e|security clearance)\b/i)?.[1];
     if (certificate) certifications.add(certificate);
   }
   const visaSponsorship = /\b(?:visa )?sponsorship (?:is )?(?:available|provided|offered)\b/i.test(job.description) ? "available"
     : /\b(?:no|not) (?:visa )?sponsorship|must (?:already )?have (?:the )?(?:right|authorization) to work\b/i.test(job.description) ? "not_available" : job.visaSponsorship;
   const workplaceModel = job.workplaceModel !== "unknown" ? job.workplaceModel : /\bhybrid\b/i.test(job.description) ? "hybrid" : /\b(?:fully remote|remote role|work from home)\b/i.test(job.description) ? "remote" : /\b(?:on[- ]site|office[- ]based)\b/i.test(job.description) ? "on_site" : "unknown";
-  return { ...job, seniority: job.seniority ?? seniority(job.title), workplaceModel, requiredSkills: [...required], preferredSkills: [...preferred], educationRequirements: [...education], certificationRequirements: [...certifications], visaSponsorship };
+  const classified = classifyJob(job);
+  return { ...job, seniority: classified.seniority === "unknown" ? job.seniority ?? seniority(job.title) : classified.seniority, workplaceModel, requiredSkills: [...required], preferredSkills: [...preferred], educationRequirements: [...education], certificationRequirements: [...certifications], visaSponsorship };
 }

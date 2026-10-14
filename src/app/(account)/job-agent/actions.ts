@@ -1,5 +1,6 @@
 "use server";
 
+import { parseCareerTracks } from "@/lib/job-agent/careerIntelligence";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { requireUser } from "@/lib/auth/session";
@@ -54,6 +55,9 @@ const criteriaSnapshot = (value: Partial<JobAgent> | Record<string, unknown> | n
   auto_prepare_threshold: value?.auto_prepare_threshold ?? 75,
   strong_match_threshold: value?.strong_match_threshold ?? 85,
   auto_skip_threshold: value?.auto_skip_threshold ?? 60,
+  career_tracks: value?.career_tracks ?? [],
+  minimum_match_score: value?.minimum_match_score ?? 68,
+  include_stretch: value?.include_stretch ?? false,
   languages: normalized((value?.search_languages as string[] | undefined) ?? languages),
 });
 
@@ -93,7 +97,20 @@ export async function saveJobAgent(form: FormData) {
   const citiesRegions = submittedCities;
   const salaryCurrency = inferSearchCurrency(searchCountries);
 
+  let careerTracks;
+  try {
+    careerTracks = form.has("track_config_present") ? parseCareerTracks(form.getAll("track_id").map((id,index)=>({
+      ...(existingAgent?.career_tracks?.find(track=>track.id===String(id)) ?? {}),
+      id: String(id), name: text(form,`track_${index}_name`), domain:text(form,`track_${index}_domain`),
+      targetTitles:list(form,`track_${index}_titles`), directYears:number(form,`track_${index}_years`,0,60),
+      maximumSeniority:text(form,`track_${index}_level`), maximumRequiredYears:number(form,`track_${index}_maximum`,0,60),
+      transition:checked(form,`track_${index}_transition`),flexibility:text(form,`track_${index}_flexibility`)??"standard",mandatorySkills:list(form,`track_${index}_mandatory`),preferredSkills:list(form,`track_${index}_preferred`),industries:list(form,`track_${index}_industries`),qualifications:[],professionalEvidence:[],projectEvidence:[],
+    }))) : (existingAgent?.career_tracks ?? []);
+  } catch { redirect("/job-agent?error=career-tracks"); }
   const payload = {
+    career_tracks: careerTracks,
+    include_stretch: checked(form,"include_stretch"),
+    minimum_match_score: number(form,"minimum_match_score",0,100) ?? 68,
     user_id: user.id,
     status: "active",
     automation_mode: automationMode,

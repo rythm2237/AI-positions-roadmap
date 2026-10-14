@@ -1,3 +1,4 @@
+import { FEEDBACK_REASONS } from "@/lib/job-agent/feedback";
 import { notFound } from "next/navigation";
 import { verifyJobEmailActionToken } from "@/lib/job-agent/emailActionToken";
 
@@ -33,6 +34,7 @@ export default async function JobActionPage({ params }: { params: Promise<{ toke
         <p style={{ color: "#64748b", fontSize: 15, lineHeight: 1.65, margin: "0 0 22px" }}>{text.body}</p>
         <form action="/api/job-agent/email-action" method="post">
           <input type="hidden" name="token" value={token} />
+          {payload.action === "not_relevant" ? <label style={{display:"block",marginBottom:16}}>Reason <select name="feedback_reason" defaultValue="not_interested">{FEEDBACK_REASONS.map(reason=><option key={reason} value={reason}>{reason.replaceAll("_"," ")}</option>)}</select></label> : null}
           <button type="submit" style={{ border: 0, borderRadius: 12, background: payload.action === "not_relevant" ? "#c2410c" : "#315efb", color: "#fff", padding: "12px 18px", fontSize: 14, fontWeight: 800, cursor: "pointer" }}>
             {text.button}
           </button>

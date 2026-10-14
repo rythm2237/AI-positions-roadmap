@@ -1,5 +1,6 @@
 "use server";
 
+import { feedbackReason } from "@/lib/job-agent/feedback";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { requireUser } from "@/lib/auth/session";
@@ -13,13 +14,14 @@ export async function rejectJob(form: FormData) {
   const id = jobId(form);
   if (!id) redirect("/job-agent?error=job");
   const supabase = await createClient();
+  const reason = feedbackReason(form.get("feedback_reason"));
   const now = new Date().toISOString();
   const job = await supabase.from("job_opportunities").select("role,company").eq("id", id).eq("user_id", user.id).maybeSingle<{ role: string; company: string }>();
   const result = await supabase.from("job_opportunities").update({ decision_status: "rejected", decision_at: now, snoozed_until: null, updated_at: now }).eq("id", id).eq("user_id", user.id);
   if (result.error) redirect("/job-agent?error=decision");
   await Promise.all([
-    supabase.from("user_activity").insert({ user_id: user.id, action: "job_agent_job_rejected", metadata: { job_id: id } }),
-    job.data ? supabase.rpc("record_job_agent_learning_signal", { p_signal_type: "rejected_role", p_signal_key: job.data.role, p_value: { role: job.data.role, company: job.data.company, lastJobId: id, inspectable: true }, p_confidence: 0.25 }) : Promise.resolve(),
+    supabase.from("user_activity").insert({ user_id: user.id, action: "job_agent_job_rejected", metadata: { job_id: id, reason } }),
+    job.data ? supabase.rpc("record_job_agent_learning_signal", { p_signal_type: "rejected_role", p_signal_key: job.data.role, p_value: { role: job.data.role, company: job.data.company, lastJobId: id, reason, inspectable: true }, p_confidence: 0.25 }) : Promise.resolve(),
   ]);
   revalidatePath("/job-agent");
   redirect("/job-agent?decision=rejected");
@@ -66,4 +68,13 @@ export async function approveJob(form: FormData) {
   const next = new FormData();
   next.set("job_id", id);
   await prepareApplication(next);
+}
+
+export async function disableLearningSignal(form: FormData) {
+  const user=await requireUser("/job-agent");
+  const supabase=await createClient();
+  const id=String(form.get("signal_id")??"");
+  const result=await supabase.from("job_agent_learned_preferences").update({active:false}).eq("id",id).eq("user_id",user.id);
+  if(result.error) redirect("/job-agent?error=feedback");
+  revalidatePath("/job-agent");
 }

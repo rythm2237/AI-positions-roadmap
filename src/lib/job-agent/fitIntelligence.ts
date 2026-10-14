@@ -1,6 +1,8 @@
+import { evaluateCareerEligibility } from "./careerIntelligence.ts";
 import type { CanonicalJobCandidate } from "./contracts.ts";
 import type { CareerEvidenceItem, FitConfidence, FitExplanation, JobClassification, NormalizedJobSearchIntent } from "../../types/jobAgent.ts";
 
+export const FIT_WEIGHTS = { roleRelevance:25, demonstratedEvidence:20, experienceDepth:10, requiredSkills:10, preferredSkills:5, seniority:4, industry:5, language:5, geography:5, workplace:3, salary:3, careerTrajectory:4, sponsorship:5 };
 export type EvidenceGroundedFit = { score: number; confidence: FitConfidence; classification: JobClassification; strengths: string[]; gaps: string[]; explanation: FitExplanation };
 const normalize = (value: string) => value.toLowerCase().replace(/[^a-z0-9+#.]+/g, " ").replace(/\s+/g, " ").trim();
 const stem = (value: string) => value.replace(/(?:ing|ed|es|s)$/i, "");
@@ -34,7 +36,7 @@ function demonstratedEvidenceMatches(item: CareerEvidenceItem, body: string) {
   return matched >= Math.max(1, Math.ceil(labelTokens.length * 0.5));
 }
 
-export function calculateEvidenceGroundedFit(job: CanonicalJobCandidate, intent: NormalizedJobSearchIntent, evidence: CareerEvidenceItem[]): EvidenceGroundedFit {
+export function calculateEvidenceGroundedFit(job: CanonicalJobCandidate, intent: NormalizedJobSearchIntent, evidence: CareerEvidenceItem[], weights: Partial<typeof FIT_WEIGHTS> = {}): EvidenceGroundedFit {
   const targets = [intent.primaryTargetRole, ...intent.soft.marketTitleVariants, ...intent.soft.secondaryRoles, ...intent.soft.adjacentRoles];
   const roleSimilarity = Math.max(0, ...targets.map((target) => overlapRatio(job.title, target)));
   const titleExact = targets.some((target) => normalize(job.title).includes(normalize(target)) || normalize(target).includes(normalize(job.title)));
@@ -47,20 +49,26 @@ export function calculateEvidenceGroundedFit(job: CanonicalJobCandidate, intent:
   const demonstratedScore = Math.min(20, demonstratedMatches.reduce((sum, item) => sum + (item.evidenceType === "quantified_achievement" ? 6 : 4), 0));
   const requiredScore = job.requiredSkills.length ? Math.round(requiredMatches.reduce((sum, match) => sum + skillEvidenceWeight(match.evidence), 0) / job.requiredSkills.length * 10) : 5;
   const preferredScore = job.preferredSkills.length ? Math.round(preferredMatches.reduce((sum, match) => sum + skillEvidenceWeight(match.evidence), 0) / job.preferredSkills.length * 5) : 3;
-  const roleHistory = evidence.find((item) => item.evidenceType === "role_history" && item.durationMonths !== null);
-  const experience = roleHistory?.durationMonths ? Math.min(10, Math.round(roleHistory.durationMonths / 12)) : demonstrated.length ? 6 : 2;
-  const seniority = job.seniority ? 4 : 2;
+  const career = evaluateCareerEligibility(job, intent, evidence);
+  const experience = career.track?.directYears ? Math.min(10, Math.round(career.track.directYears * 2)) : 0;
+  const seniority = career.status === "eligible" ? 4 : 0;
   const industry = intent.soft.targetIndustries.some((item) => body.includes(normalize(item))) ? 5 : intent.soft.targetIndustries.length ? 1 : 3;
   const languages = job.requiredLanguages.length ? (job.requiredLanguages.every((language) => evidence.some((item) => item.evidenceType === "language" && normalize(item.label).includes(normalize(language)))) ? 5 : 0) : 3;
   const geography = intent.hard.countries.some((country) => normalize(job.country ?? job.location ?? "").includes(normalize(country))) ? 5 : 2;
   const workplace = intent.hard.workplaceModels.includes(job.workplaceModel) ? 3 : job.workplaceModel === "unknown" ? 1 : 0;
   const salary = job.salaryMax !== null && intent.hard.salary.minimum !== null && job.currency === intent.hard.salary.currency ? (job.salaryMax >= intent.hard.salary.minimum ? 3 : 0) : 1;
-  const trajectory = roleSimilarity >= 0.5 && demonstratedMatches.length ? 4 : 1;
+  const trajectory = career.track?.transition && career.track.flexibility === "strict" ? 0 : roleSimilarity >= 0.5 && demonstratedMatches.length ? 4 : 1;
   const sponsorship = job.visaSponsorship === "available" ? 5 : 0;
-  const score = Math.max(0, Math.min(100, role + demonstratedScore + requiredScore + preferredScore + experience + seniority + industry + languages + geography + workplace + salary + trajectory + sponsorship));
+  const dimensions = { roleRelevance:role, demonstratedEvidence:demonstratedScore, experienceDepth:experience, requiredSkills:requiredScore, preferredSkills:preferredScore, seniority, industry, language:languages, geography, workplace, salary, careerTrajectory:trajectory, sponsorship };
+  for(const key of Object.keys(dimensions) as Array<keyof typeof FIT_WEIGHTS>) {
+    const configured=weights[key]??FIT_WEIGHTS[key];
+    dimensions[key]=Math.round(dimensions[key]*Math.max(0,Math.min(100,configured))/FIT_WEIGHTS[key]);
+  }
+  const rawScore = Math.max(0, Math.min(100, Object.values(dimensions).reduce((sum,value)=>sum+value,0)));
+  const score = career.status === "blocked" ? 0 : rawScore;
   const completeness = [job.descriptionComplete, job.country, job.workplaceModel !== "unknown", job.requiredSkills.length > 0, evidence.length > 0, demonstrated.length > 0].filter(Boolean).length;
   const confidence: FitConfidence = completeness >= 5 ? "high" : completeness >= 3 ? "medium" : "low";
-  const classification: JobClassification = score >= 82 ? "strong_match" : score >= 68 ? "good_match" : score >= 52 ? "worth_reviewing" : "stretch";
+  const classification: JobClassification = career.status === "blocked" ? "blocked" : career.status === "unverified" ? "worth_reviewing" : score >= 82 ? "strong_match" : score >= 68 ? "good_match" : score >= 52 ? "worth_reviewing" : "stretch";
   const strongest = demonstratedMatches.sort((a, b) => b.confidence - a.confidence).slice(0, 5);
   const missingEvidence = requiredMatches.filter((match) => !match.evidence).map((match) => match.skill);
   const strengths = [role >= 20 ? "Strong target-role alignment" : null, strongest.length ? `Demonstrated evidence: ${strongest.map((item) => item.label).join(", ")}` : null, requiredMatches.some((match) => match.evidence) ? "Required skills supported by profile evidence" : null, sponsorship ? "Visa/work-permit sponsorship explicitly available" : null].filter((item): item is string => Boolean(item));
@@ -68,12 +76,13 @@ export function calculateEvidenceGroundedFit(job: CanonicalJobCandidate, intent:
   return {
     score, confidence, classification, strengths, gaps,
     explanation: {
-      dimensions: { roleRelevance: role, demonstratedEvidence: demonstratedScore, experienceDepth: experience, requiredSkills: requiredScore, preferredSkills: preferredScore, seniority, industry, language: languages, geography, workplace, salary, careerTrajectory: trajectory },
+      career: { track: career.track?.name ?? null, seniority: career.analysis.seniority, requiredYears: career.analysis.mandatoryYears, transition: career.track?.transition ?? false, status: career.status, evidence: career.analysis.evidence },
+      dimensions,
       strongestEvidence: strongest.map((item) => ({ evidenceId: item.id, label: item.label, source: item.sourceType, contribution: item.evidenceType === "quantified_achievement" ? 6 : 4 })),
       missingEvidence,
       transferableEvidence: strongest.filter((item) => item.evidenceType === "project_implementation" || item.evidenceType === "portfolio_artifact" || item.provenance.transferableCapability === true).map((item) => ({ evidenceId: item.id, label: item.label, source: item.sourceType })),
       whyRankedHere: [role >= 20 ? "The vacancy title aligns with a confirmed target role." : "The vacancy has partial semantic overlap with target roles.", demonstratedMatches.length ? `${demonstratedMatches.length} demonstrated evidence item(s) matched the vacancy.` : "Title similarity was not treated as professional evidence.", sponsorship ? "The vacancy explicitly states sponsorship support and received a positive ranking boost." : "Unknown sponsorship is neutral and does not reduce the score.", confidence === "low" ? "Incomplete vacancy or profile evidence limits confidence." : "The ranking uses multiple verified dimensions."],
-      scoringVersion: "evidence-fit-v3-sponsorship-signal",
+      scoringVersion: "career-fit-v1",
     },
   };
 }

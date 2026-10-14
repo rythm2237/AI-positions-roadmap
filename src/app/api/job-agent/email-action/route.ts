@@ -1,3 +1,4 @@
+import { feedbackReason } from "@/lib/job-agent/feedback";
 import { verifyJobEmailActionToken } from "@/lib/job-agent/emailActionToken";
 
 function dbConfig() {
@@ -51,6 +52,7 @@ export async function POST(request: Request) {
     const job = jobs[0];
     if (!job) return new Response(resultHtml({ title: "Job unavailable", message: "This vacancy is no longer available in your Job Agent workspace." }), { status: 404, headers: { "Content-Type": "text/html; charset=utf-8" } });
 
+    const reason = feedbackReason(form.get("feedback_reason"));
     const now = new Date().toISOString();
     if (payload.action === "save") {
       await dbFetch("job_saved_jobs?on_conflict=user_id,job_id", {
@@ -71,11 +73,11 @@ export async function POST(request: Request) {
     await Promise.all([
       dbFetch(`job_saved_jobs?user_id=eq.${encodeURIComponent(payload.userId)}&job_id=eq.${encodeURIComponent(payload.jobId)}`, { method: "DELETE" }),
       dbFetch(`job_opportunities?id=eq.${encodeURIComponent(payload.jobId)}&user_id=eq.${encodeURIComponent(payload.userId)}`, { method: "PATCH", body: JSON.stringify({ decision_status: "rejected", decision_at: now, snoozed_until: null, updated_at: now }) }),
-      dbFetch("user_activity", { method: "POST", body: JSON.stringify({ user_id: payload.userId, action: "job_agent_job_not_relevant_from_email", metadata: { job_id: payload.jobId, role: job.role, company: job.company } }) }).catch(() => null),
+      dbFetch("user_activity", { method: "POST", body: JSON.stringify({ user_id: payload.userId, action: "job_agent_job_not_relevant_from_email", metadata: { job_id: payload.jobId, role: job.role, company: job.company, reason } }) }).catch(() => null),
     ]);
-    await dbFetch("rpc/record_job_agent_learning_signal", {
-      method: "POST",
-      body: JSON.stringify({ p_signal_type: "rejected_role", p_signal_key: job.role, p_value: { role: job.role, company: job.company, lastJobId: job.id, source: "email_digest", inspectable: true }, p_confidence: 0.25 }),
+    await dbFetch("job_agent_learned_preferences?on_conflict=user_id,signal_type,signal_key", {
+      method: "POST", headers: {Prefer:"resolution=ignore-duplicates,return=minimal"},
+      body: JSON.stringify({user_id:payload.userId,signal_type:"rejected_role",signal_key:job.role.trim().toLowerCase(),value:{role:job.role,reason,lastJobId:job.id,source:"email_digest",inspectable:true},confidence:0.25}),
     }).catch(() => null);
 
     return new Response(resultHtml({ title: "Feedback recorded ✓", message: "This vacancy will no longer be surfaced as a recommendation. Your feedback will also help improve future Job Agent ranking." }), { headers: { "Content-Type": "text/html; charset=utf-8" } });

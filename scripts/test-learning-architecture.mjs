@@ -13,7 +13,9 @@ assert.match(learning, /career\.journeyStages\.map/);
 assert.doesNotMatch(learning, /const\s+(phases|modules)\s*=\s*\[/);
 assert.match(learning, /isJourneyStageUnlocked/);
 assert.match(learning, /resolveCareerStepReferences/);
-assert.match(learning, /Career OS Role Validation/);
+// The current learning UI exposes the same gated validation as a comprehensive step assessment.
+assert.match(learning, /Comprehensive step assessment/);
+assert.match(learning, /onOpenAssessment/);
 assert.match(learning, /<EffortEstimate estimate=\{current\.estimatedEffort\}/);
 assert.doesNotMatch(learning, /label="Duration"/);
 
