@@ -82,7 +82,7 @@ export function renderDailyJobDigestEmail(input: {
   site: string;
   periodLabel: string;
 }) {
-  const strong = input.jobs.filter((job) => (job.fit_score ?? 0) >= 80).length;
+  const strong = input.jobs.filter((job) => job.decision_classification === "strong_match").length;
   const eligible = input.jobs.filter((job) => job.eligibility_status === "eligible").length;
   const unverified = input.jobs.filter((job) => job.eligibility_status === "unverified").length;
   const greeting = input.name?.trim() ? `Hi ${esc(input.name.trim())}, ` : "";
