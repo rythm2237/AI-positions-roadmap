@@ -1,5 +1,7 @@
 "use server";
 
+import { feedbackAdjustment, type LearningSignal } from "@/lib/job-agent/feedback";
+
 import { randomUUID, timingSafeEqual } from "node:crypto";
 import { createClient as createServiceSupabaseClient } from "@supabase/supabase-js";
 import { revalidatePath } from "next/cache";
@@ -211,6 +213,7 @@ async function executeJobSearch(
     if (attempts.error) console.error("Job Agent provider telemetry failed", { correlationId, code: attempts.error.code });
   }
 
+  const learned = agent.learned_preferences_enabled === false ? [] : (await supabase.from("job_agent_learned_preferences").select("id,signal_type,signal_key,sample_size,active,value").eq("user_id",user.id).eq("active",true).returns<LearningSignal[]>()).data ?? [];
   const processed = await Promise.all(gateway.jobs.slice(0, 80).map(async (candidate) => {
     const verification = await verifyVacancy(candidate);
     const verificationRejected = verificationRejectCodes.has(verification.errorCode ?? "");
@@ -223,9 +226,16 @@ async function executeJobSearch(
     const freshness = assessFreshness(job);
     const eligibility = evaluateHardEligibility({ job, profile, agent, intent: { ...intent, version: intentRecord.version }, evidence: evidenceResult.evidence, expired: freshness.status === "expired" });
     job.requiredLanguages = eligibility.requiredLanguages;
-    const effectiveEligibilityStatus = verificationRejected ? "blocked" as const : eligibility.status;
+    const effectiveEligibilityStatus = verificationRejected ? "blocked" as const : verification.status !== "verified" && eligibility.status !== "blocked" ? "unverified" as const : eligibility.status;
     const fit = effectiveEligibilityStatus === "blocked" ? null : calculateEvidenceGroundedFit(job, intent, evidenceResult.evidence);
-    const classification = verificationRejected ? "blocked" as const : freshness.status === "expired" ? "expired" as const : eligibility.status === "blocked" ? "blocked" as const : fit?.classification ?? "stretch";
+    if(fit && effectiveEligibilityStatus === "eligible") {
+      const adjustment=feedbackAdjustment(job.title,learned);
+      fit.score=Math.max(0,Math.min(100,fit.score+adjustment));
+      fit.explanation.dimensions.feedback=adjustment;
+      fit.classification=fit.score>=agent.strong_match_threshold?"strong_match":fit.score>=Math.max(68,agent.minimum_match_score??68)?"good_match":fit.score>=52?"worth_reviewing":"stretch";
+      if(adjustment) fit.explanation.whyRankedHere.push(`Repeated exact-title feedback adjusted ranking by ${adjustment} points. Disable the signal in settings to undo this.`);
+    }
+    const classification = effectiveEligibilityStatus === "unverified" ? "worth_reviewing" as const : verificationRejected ? "blocked" as const : freshness.status === "expired" ? "expired" as const : eligibility.status === "blocked" ? "blocked" as const : fit?.classification ?? "stretch";
     const execution = determineExecutionCapability({ mode: agent.automation_mode, eligibility: effectiveEligibilityStatus, applicationUrl: job.applicationUrl, officialAutoSubmitConfigured: false, officialAssistedIntegration: false });
     const recommendation = classification === "strong_match" ? "strong" : classification === "good_match" ? "prepare" : classification === "blocked" || classification === "expired" ? "skip" : "review";
     return { job, verification, verificationRejected, verificationReason, freshness, eligibility, effectiveEligibilityStatus, fit, classification, execution, recommendation };
@@ -242,7 +252,7 @@ async function executeJobSearch(
     verification_status: verification.status, verification_provenance: verification.provenance, verified_at: verification.status === "verified" || verification.status === "partially_verified" ? now : null,
     freshness_status: freshness.status, stale_reason: freshness.reason, eligibility_status: effectiveEligibilityStatus,
     eligibility_reasons: verificationRejected && verificationReason ? [verificationReason, ...eligibility.reasons] : eligibility.reasons,
-    eligibility_detail: { reasons: eligibility.detail }, eligibility_checked_at: now, eligibility_version: "hard-gate-v4",
+    eligibility_detail: { reasons: eligibility.detail }, eligibility_checked_at: now, eligibility_version: "career-gate-v1",
     fit_score: fit?.score ?? null, fit_confidence: fit?.confidence ?? null, fit_explanation: fit?.explanation ?? {}, decision_classification: classification,
     recommendation, strengths: fit?.strengths ?? [], gaps: [...(verificationReason ? [verificationReason] : []), ...eligibility.reasons, ...(fit?.gaps ?? [])], execution_capability: execution.capability,
     status: classification === "blocked" || classification === "expired" ? "skipped" : recommendation === "strong" || recommendation === "prepare" ? "recommended" : "discovered",
@@ -284,8 +294,8 @@ async function executeJobSearch(
     processedByJobId.set(jobId, item);
     for (const source of item.job.sources) sourceRows.set(`${source.provider}|${source.sourceUrl}`, { user_id: user.id, job_id: jobId, search_run_id: searchRun.data.id, provider: source.provider, source_job_id: source.sourceJobId, source_query: source.sourceQuery, source_url: source.sourceUrl, provider_payload: source.providerPayload });
     verificationRows.push({ user_id: user.id, job_id: jobId, status: item.verification.status, method: String(item.verification.provenance.method ?? "unknown"), source_url: item.job.sourceUrl, fields: item.verification.provenance, error_code: item.verification.errorCode ?? null, verified_at: now });
-    if (item.fit) fitRows.push({ user_id: user.id, job_id: jobId, intent_id: intentRecord.id, score: item.fit.score, confidence: item.fit.confidence, classification: item.fit.classification, dimensions: item.fit.explanation.dimensions, strongest_evidence_ids: item.fit.explanation.strongestEvidence.map((evidence) => evidence.evidenceId).filter(Boolean), missing_evidence: item.fit.explanation.missingEvidence, transferable_evidence_ids: item.fit.explanation.transferableEvidence.map((evidence) => evidence.evidenceId).filter(Boolean), explanation: item.fit.explanation, scoring_version: "evidence-fit-v1" });
-    if (!item.verificationRejected && (item.classification === "strong_match" || item.classification === "good_match" || item.effectiveEligibilityStatus === "unverified")) inboxRows.push({ user_id: user.id, job_id: jobId, category: item.classification === "strong_match" ? "new_strong_match" : "new_review_job", title: `${item.job.title} at ${item.job.company}`.slice(0, 160), body: item.fit?.explanation.whyRankedHere.join(" ") || item.eligibility.reasons.join(" "), priority: item.classification === "strong_match" ? "high" : "normal", recommended_action: item.effectiveEligibilityStatus === "unverified" ? "Review unverified hard requirements before preparing an application." : "Review the evidence and application readiness.", deep_link: `/job-agent/jobs/${jobId}`, dedupe_key: `search:${searchRun.data.id}:job:${jobId}` });
+    if (item.fit) fitRows.push({ user_id: user.id, job_id: jobId, intent_id: intentRecord.id, score: item.fit.score, confidence: item.fit.confidence, classification: item.fit.classification, dimensions: item.fit.explanation.dimensions, strongest_evidence_ids: item.fit.explanation.strongestEvidence.map((evidence) => evidence.evidenceId).filter(Boolean), missing_evidence: item.fit.explanation.missingEvidence, transferable_evidence_ids: item.fit.explanation.transferableEvidence.map((evidence) => evidence.evidenceId).filter(Boolean), explanation: item.fit.explanation, scoring_version: "career-fit-v1" });
+    if (item.effectiveEligibilityStatus === "eligible" && item.verification.status === "verified" && (item.classification === "strong_match" || item.classification === "good_match")) inboxRows.push({ user_id: user.id, job_id: jobId, category: item.classification === "strong_match" ? "new_strong_match" : "new_review_job", title: `${item.job.title} at ${item.job.company}`.slice(0, 160), body: item.fit?.explanation.whyRankedHere.join(" ") || item.eligibility.reasons.join(" "), priority: item.classification === "strong_match" ? "high" : "normal", recommended_action: "Review the evidence and application readiness.", deep_link: `/job-agent/jobs/${jobId}`, dedupe_key: `search:${searchRun.data.id}:job:${jobId}` });
   });
 
   const secondaryWrites = await Promise.all([

@@ -1,3 +1,4 @@
+import { recommendationEligible } from "./recommendationPolicy";
 import "server-only";
 
 import type { JobAgent } from "@/types/jobAgent";
@@ -6,7 +7,7 @@ import { renderJobDigestEmail, type DigestJob } from "@/lib/job-agent/digestEmai
 
 type ServiceAgent = JobAgent & { user_id: string };
 type ServiceProfile = { id: string; email: string; name: string | null };
-type OpportunityRow = DigestJob & { snoozed_until: string | null };
+type OpportunityRow = DigestJob & { snoozed_until: string | null; verification_status?: string; eligibility_version?: string; decision_classification?: string; freshness_status?: string };
 type ApplicationRow = {
   user_id: string;
   status: string;
@@ -76,7 +77,7 @@ async function sendEmail(input: { to: string; subject: string; html: string }) {
   return payload.id ?? null;
 }
 
-const jobSelect = "id,user_id,fit_score,status,recommendation,eligibility_status,decision_status,snoozed_until,company,role,location,country,salary_min,salary_max,salary_currency,job_url,discovered_at";
+const jobSelect = "id,user_id,fit_score,status,recommendation,eligibility_status,decision_status,snoozed_until,company,role,location,country,salary_min,salary_max,salary_currency,job_url,discovered_at,verification_status,eligibility_version,decision_classification,freshness_status";
 
 async function fetchSavedJobs(userIds: string[]) {
   if (!userIds.length) return new Map<string, OpportunityRow[]>();
@@ -152,7 +153,7 @@ export async function sendPendingJobInboxEmails(now = new Date()) {
     const newJobs = items.flatMap((item) => {
       if (!item.job_id || seen.has(item.job_id)) return [];
       const job = jobById.get(item.job_id);
-      if (!job || job.status === "skipped" || job.recommendation === "skip" || job.decision_status === "rejected" || job.decision_status === "approved") return [];
+      if (!job || !recommendationEligible(job, agent, now)) return [];
       seen.add(item.job_id);
       return [job];
     }).sort((a, b) => (b.fit_score ?? 0) - (a.fit_score ?? 0));
@@ -262,7 +263,7 @@ export async function sendDueJobAgentReports(now = new Date()) {
     if (!profile?.email) continue;
 
     const userJobs = jobs
-      .filter((job) => job.user_id === agent.user_id && job.eligibility_status === "eligible" && job.status !== "skipped" && job.recommendation !== "skip" && job.decision_status !== "rejected" && job.decision_status !== "approved" && (job.decision_status !== "snoozed" || !job.snoozed_until || Date.parse(job.snoozed_until) <= now.getTime()))
+      .filter((job) => job.user_id === agent.user_id && recommendationEligible(job, agent, now))
       .sort((a, b) => (b.fit_score ?? 0) - (a.fit_score ?? 0))
       .slice(0, 12);
     const userApps = applications.filter((application) => application.user_id === agent.user_id);

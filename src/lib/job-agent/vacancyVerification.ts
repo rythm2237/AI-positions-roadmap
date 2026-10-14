@@ -1,4 +1,5 @@
 import "server-only";
+import { isGenericVacancyPage } from "./vacancyIdentity";
 
 import { lookup } from "node:dns/promises";
 import { isIP } from "node:net";
@@ -227,6 +228,9 @@ export async function verifyVacancy(job: CanonicalJobCandidate): Promise<Vacancy
     const posting = contentType.includes("html") ? extractJobPosting(body) : (() => { try { return findJobPosting(JSON.parse(body)); } catch { return null; } })();
     const looksClosed = /\b(job (?:is )?no longer available|position (?:has been )?filled|applications? closed|posting (?:has )?expired)\b/i.test(pageText);
 
+    if (isGenericVacancyPage(finalUrl, job.title)) {
+      return {status:"failed",job,provenance:{method:"source_page",sourceUrl:finalUrl},errorCode:"NOT_CANONICAL_VACANCY"};
+    }
     if (posting) {
       const title = stringValue(posting.title) ?? job.title;
       const company = organizationName(posting.hiringOrganization) ?? job.company;

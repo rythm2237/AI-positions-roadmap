@@ -1,3 +1,6 @@
+import { createClient } from "@/lib/supabase/server";
+import { disableLearningSignal } from "./decisionActions";
+import type { LearningSignal } from "@/lib/job-agent/feedback";
 import Link from "next/link";
 import { requireUser } from "@/lib/auth/session";
 import { getJobAgentWorkspace } from "@/lib/job-agent/repository";
@@ -59,6 +62,8 @@ export default async function JobAgentPage({
   const workspace = await getJobAgentWorkspace(user);
   const query = await searchParams;
   const agent = workspace.agent;
+  const supabase=await createClient();
+  const learned=(await supabase.from("job_agent_learned_preferences").select("id,signal_type,signal_key,sample_size,active,value").eq("user_id",user.id).eq("active",true).returns<LearningSignal[]>()).data??[];
   const primaryCareer = agent?.primary_career ?? query.career ?? workspace.profile.target_career ?? workspace.savedCareers[0]?.career_slug ?? "";
   const knownLanguages = workspace.profile.languages.join(", ");
   const latestResume = workspace.resumes[0];
@@ -104,6 +109,7 @@ export default async function JobAgentPage({
       <aside className="sticky top-24 hidden lg:block" aria-label="Career identity sources"><div className="mb-3 flex items-center justify-between px-1"><p className="text-xs font-semibold uppercase tracking-[.16em] text-slate-500">Your search identity</p><Link href="/profile" className="text-xs text-violet-300">Edit</Link></div><IdentityPanel profile={workspace.profile} latestResume={latestResume} userId={user.id} linkedinUrl={agent?.linkedin_url} /></aside>
     </div>
 
-    <section className="mt-8"><JobAgentSettingsForm agent={agent} primaryCareer={primaryCareer} knownLanguages={knownLanguages} preferenceCountry={workspace.preferences?.job_search_country} action={saveJobAgent} /></section>
+    {learned.length ? <details className="mt-6 rounded-xl border border-white/10 p-4"><summary className="cursor-pointer text-slate-200">Recommendation feedback ({learned.length})</summary><p className="mt-2 text-sm text-slate-400">Only repeated feedback about exactly the same title changes ranking. Disable a signal to reverse its effect.</p>{learned.map(signal=><form key={signal.id} action={disableLearningSignal} className="mt-3 flex flex-wrap items-center gap-3 text-sm text-slate-300"><input type="hidden" name="signal_id" value={signal.id}/><span>{signal.signal_key} · {signal.value.reason??signal.signal_type} · {signal.sample_size} signals</span><button className="btn-secondary px-3 py-2">Disable</button></form>)}</details> : null}
+    <section className="mt-8"><JobAgentSettingsForm currentPosition={workspace.profile.current_position} agent={agent} primaryCareer={primaryCareer} knownLanguages={knownLanguages} preferenceCountry={workspace.preferences?.job_search_country} action={saveJobAgent} /></section>
   </main>;
 }

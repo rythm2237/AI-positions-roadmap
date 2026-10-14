@@ -47,13 +47,13 @@ export function enrichRequirements(job: CanonicalJobCandidate, evidence: CareerE
     if (sectionEnding.test(clause.trim())) requirementSection = false;
     for (const skill of knownSkills) {
       if (!lower.includes(skill.toLowerCase())) continue;
-      if (requirementSection || requiredWording.test(lower)) required.add(skill);
-      else if (preferredWording.test(lower)) preferred.add(skill);
+      if (preferredWording.test(lower)) preferred.add(skill);
+      else if (requirementSection || requiredWording.test(lower)) required.add(skill);
     }
     for (const [skill, pattern] of SKILL_ALIASES) {
       if (!pattern.test(clause)) continue;
-      if (requirementSection || requiredWording.test(lower)) required.add(skill);
-      else if (preferredWording.test(lower)) preferred.add(skill);
+      if (preferredWording.test(lower)) preferred.add(skill);
+      else if (requirementSection || requiredWording.test(lower)) required.add(skill);
     }
   }
   const education = new Set(job.educationRequirements);
@@ -65,7 +65,7 @@ export function enrichRequirements(job: CanonicalJobCandidate, evidence: CareerE
       continue;
     }
     if (sectionEnding.test(clause.trim())) requirementSection = false;
-    if (/\b(?:bachelor(?:'s)?|master(?:'s)?|ph\.?d\.?|doctorate|degree|studium|ausbildung)\b/i.test(clause) && (requirementSection || requiredWording.test(clause))) education.add(clause.trim().slice(0, 300));
+    if (/\b(?:bachelor(?:'s)?|master(?:'s)?|ph\.?d\.?|doctorate|degree|studium|ausbildung)\b/i.test(clause) && !preferredWording.test(clause) && (requirementSection || requiredWording.test(clause))) education.add(clause.trim().slice(0, 300));
     const certificate = clause.match(/\b(?:valid|required|must (?:hold|have)|certified)\b[^.!?\n]{0,100}\b(PMP|CPA|CFA|CISSP|CISM|CCNA|AWS Certified|Azure Certified|professional licen[cs]e|security clearance)\b/i)?.[1];
     if (certificate) certifications.add(certificate);
   }

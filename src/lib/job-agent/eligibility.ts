@@ -60,7 +60,7 @@ export function extractRequiredLanguages(text: string): string[] {
   const found = new Set<string>();
   const clauses = text.split(/(?<=[.!?;:\n])\s+|\n+/).filter(Boolean);
   for (const clause of clauses) {
-    if (!requirementWords.test(clause)) continue;
+    if (/\b(preferred|nice to have|desirable|bonus|von vorteil)\b/i.test(clause) || !requirementWords.test(clause)) continue;
     for (const [language, pattern] of languagePatterns) if (pattern.test(clause)) found.add(language);
   }
   return [...found];

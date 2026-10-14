@@ -247,7 +247,7 @@ test("Layer 6f — German requirement sections extract grounded consulting evide
     educationRequirements: [],
   }), []);
   assert.deepEqual(enriched.requiredSkills.sort(), ["Business Case Development", "Solution Consulting", "Workshop Facilitation"].sort());
-  assert.equal(enriched.educationRequirements.length, 1);
+  assert.equal(enriched.educationRequirements.length, 0);
 });
 
 test("Layer 7 — hard gate separates blocked from unverified", () => {

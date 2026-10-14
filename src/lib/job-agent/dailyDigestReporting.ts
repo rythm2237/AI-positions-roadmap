@@ -1,3 +1,4 @@
+import { recommendationEligible } from "./recommendationPolicy";
 import "server-only";
 
 import type { JobAgent } from "@/types/jobAgent";
@@ -11,7 +12,7 @@ type DeliveryRow = { id: string; inbox_item_id: string | null };
 type InboxRef = { id: string; job_id: string | null };
 type ReportRow = { id: string; status: string; sent_at?: string | null };
 
-const jobSelect = "id,user_id,fit_score,status,recommendation,eligibility_status,decision_status,company,role,location,country,salary_min,salary_max,salary_currency,job_url,discovered_at";
+const jobSelect = "id,user_id,fit_score,status,recommendation,eligibility_status,decision_status,company,role,location,country,salary_min,salary_max,salary_currency,job_url,discovered_at,verification_status,eligibility_version,decision_classification,freshness_status,seniority,fit_explanation,strengths,gaps,snoozed_until";
 
 function dbConfig() {
   const url = process.env.SUPABASE_URL ?? process.env.NEXT_PUBLIC_SUPABASE_URL;
@@ -134,12 +135,13 @@ export async function sendDueDailyJobDigests(now = new Date()) {
     const since = previous[0]?.sent_at ?? new Date(now.getTime() - 26 * 60 * 60 * 1000).toISOString();
     const recent = await serviceFetch<DailyDigestJob[]>(`job_opportunities?user_id=eq.${agent.user_id}&discovered_at=gt.${encodeURIComponent(since)}&discovered_at=lte.${encodeURIComponent(now.toISOString())}&select=${jobSelect}&order=discovered_at.desc&limit=1000`);
     const jobs = recent
-      .filter((job) => job.status !== "skipped" && job.recommendation !== "skip" && job.decision_status !== "rejected" && job.decision_status !== "approved")
+      .filter((job) => recommendationEligible(job, agent, now))
       .sort((a, b) => (b.fit_score ?? -1) - (a.fit_score ?? -1) || Date.parse(b.discovered_at) - Date.parse(a.discovered_at));
 
     const savedJobs = await fetchSavedJobs(agent.user_id);
     const summary = {
-      found: jobs.length,
+      found: recent.length,
+      recommended: jobs.length,
       verified: jobs.filter((job) => job.eligibility_status === "eligible").length,
       unverified: jobs.filter((job) => job.eligibility_status === "unverified").length,
       strongMatches: jobs.filter((job) => (job.fit_score ?? 0) >= agent.strong_match_threshold).length,
@@ -177,7 +179,7 @@ export async function sendDueDailyJobDigests(now = new Date()) {
     try {
       const providerId = await sendEmail({
         to: profile.email,
-        subject: `${jobs.length} jobs found in your daily Job Agent run — AI Role Path`,
+        subject: jobs.length ? `${jobs.length} suitable opportunities — AI Role Path` : "No suitable new opportunities today — AI Role Path",
         html,
       });
       if (ledgerId) {

@@ -1,0 +1,2 @@
+import tseslint from 'typescript-eslint';
+export default [{ignores:['node_modules/**','.next/**','public/**']},{files:['src/lib/job-agent/**/*.{ts,tsx}','src/components/job-agent/**/*.tsx','src/app/(account)/job-agent/**/*.{ts,tsx}','src/app/api/job-agent/email-action/route.ts','src/app/job-action/**/*.tsx'],languageOptions:{parser:tseslint.parser,parserOptions:{ecmaVersion:'latest',sourceType:'module',ecmaFeatures:{jsx:true}}},rules:{'no-debugger':'error','no-constant-condition':'error','no-unreachable':'error','constructor-super':'error','valid-typeof':'error'}}];

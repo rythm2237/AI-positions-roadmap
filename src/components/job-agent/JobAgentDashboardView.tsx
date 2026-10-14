@@ -1,3 +1,4 @@
+import { FEEDBACK_REASONS } from "@/lib/job-agent/feedback";
 import Link from "next/link";
 import { approveJob, rejectJob, snoozeJob } from "@/app/(account)/job-agent/decisionActions";
 import { dismissInboxItem, markInboxRead } from "@/app/(account)/job-agent/inboxActions";
@@ -44,7 +45,7 @@ const locationLabel = (job: JobOpportunity) => {
 function ResultActions({ job, blocked }: { job: JobOpportunity; blocked: boolean }) {
   return <div className="flex flex-wrap items-center gap-2">
     {!blocked ? <form action={approveJob}><input type="hidden" name="job_id" value={job.id} /><button className="btn-primary min-h-10 px-4 text-sm">{job.eligibility_status === "unverified" ? "Prepare with review" : "Prepare application"}</button></form> : <span className="rounded-xl border border-rose-300/20 px-4 py-2 text-sm font-semibold text-rose-200">Application blocked</span>}
-    <form action={rejectJob}><input type="hidden" name="job_id" value={job.id} /><button className="btn-secondary min-h-10 px-4 text-sm">Reject</button></form>
+    <form action={rejectJob}><input type="hidden" name="job_id" value={job.id} /><select aria-label="Reason for rejection" name="feedback_reason" defaultValue="not_interested" className="input-field min-h-10 text-sm">{FEEDBACK_REASONS.map(reason=><option key={reason} value={reason}>{reason.replaceAll("_"," ")}</option>)}</select><button className="btn-secondary min-h-10 px-4 text-sm">Reject</button></form>
     {!blocked ? <form action={snoozeJob} className="flex items-center gap-2"><input type="hidden" name="job_id" value={job.id} /><select name="snooze_days" defaultValue="1" className="input-field min-h-10 px-2 text-xs" aria-label={`Snooze ${job.role}`}><option value="1">1 day</option><option value="3">3 days</option><option value="7">1 week</option><option value="30">1 month</option></select><button className="btn-secondary min-h-10 px-3 text-sm">Snooze</button></form> : null}
     <Link href={`/job-agent/jobs/${job.id}`} className="text-sm font-semibold text-violet-300">Evidence & details →</Link>
   </div>;

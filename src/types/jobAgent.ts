@@ -60,6 +60,7 @@ export interface JobSearchSoftPreferences {
 }
 
 export interface NormalizedJobSearchIntent {
+  careerTracks?: CareerTrack[];
   primaryTargetRole: string;
   hard: JobSearchHardConstraints;
   soft: JobSearchSoftPreferences;
@@ -110,6 +111,7 @@ export interface JobAgent {
   never_submit_ats_automatically: boolean; ask_before_startups: boolean; report_frequency: "daily" | "weekly" | "none"; report_time: string | null;
   timezone: string; notification_channels: string[]; immediate_high_fit_threshold: number; linkedin_url: string | null;
   linkedin_sync_mode: "use_automatically" | "review_first" | "ignore"; onboarding_completed_at: string | null; created_at: string; updated_at: string;
+  career_tracks?: CareerTrack[]; include_stretch?: boolean; minimum_match_score?: number;
   intent_version?: number; learned_preferences_enabled?: boolean; follow_up_days?: number;
 }
 
@@ -122,6 +124,7 @@ export interface EligibilityReason {
 }
 
 export interface FitExplanation {
+  career?: { track: string | null; seniority: string; requiredYears: number; transition: boolean; status: string; evidence: string[] };
   dimensions: Record<string, number>;
   strongestEvidence: Array<{ evidenceId?: string; label: string; source: EvidenceSourceType; contribution: number }>;
   missingEvidence: string[];
@@ -169,3 +172,10 @@ export interface JobAgentInboxItem {
 }
 
 export type JobAgentDashboardStats = { jobsFound: number; strongMatches: number; applicationsSent: number; readyForSubmit: number; recruiterReplies: number; interviews: number; };
+
+export interface CareerTrack {
+  id: string; name: string; domain: string; targetTitles: string[]; directYears: number | null;
+  maximumSeniority: string; transition: boolean; maximumRequiredYears: number | null;
+  flexibility: "strict" | "standard" | "flexible"; mandatorySkills: string[]; preferredSkills: string[];
+  industries: string[]; qualifications: string[]; professionalEvidence: string[]; projectEvidence: string[]; confirmed: boolean;
+}

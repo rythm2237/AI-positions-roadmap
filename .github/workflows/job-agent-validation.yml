@@ -80,6 +80,9 @@ jobs:
       - name: Recovery relevance ranking regressions
         run: node --experimental-strip-types --test --test-concurrency=1 scripts/test-job-agent-recovery-relevance-ranking.mjs
 
+      - name: Career-aware eligibility and notification regressions
+        run: npm run test:career-agent
+
       - name: Job Acquisition System suite
         run: node --experimental-strip-types --test --test-concurrency=1 scripts/test-job-acquisition-system.mjs
 

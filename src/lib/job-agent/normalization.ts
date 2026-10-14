@@ -50,6 +50,7 @@ function quality(job: CanonicalJobCandidate) {
 
 export function deduplicateJobs(jobs: CanonicalJobCandidate[], now = new Date()) {
   const byKey = new Map<string, CanonicalJobCandidate>();
+  const byContent = new Map<string,string>();
   for (const candidate of jobs) {
     const applicationUrl = canonicalizeJobUrl(candidate.applicationUrl);
     const sourceUrl = canonicalizeJobUrl(candidate.sourceUrl);
@@ -70,7 +71,10 @@ export function deduplicateJobs(jobs: CanonicalJobCandidate[], now = new Date())
     const expiration = normalized.expiresAt ? Date.parse(normalized.expiresAt) : Number.NaN;
     if (Number.isFinite(expiration) && expiration <= now.getTime()) continue;
 
-    const key = canonicalJobKey(normalized);
+    const contentKey = normalized.descriptionComplete && normalized.description.length >= 120
+      ? createHash("sha256").update([normalized.company,normalized.title,normalized.location ?? normalized.country,normalized.description].map(normalizeJobText).join("|")).digest("hex") : null;
+    const key = (contentKey && byContent.get(contentKey)) || canonicalJobKey(normalized);
+    if(contentKey) byContent.set(contentKey,key);
     normalized.canonicalKey = key;
     const existing = byKey.get(key);
     if (!existing) {

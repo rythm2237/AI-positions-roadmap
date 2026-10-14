@@ -12,7 +12,12 @@ const ROLE_VARIANTS: Record<string, string[]> = {
 const normalize = (value: string) => value.toLowerCase().replace(/[^a-z0-9+#]+/g, " ").replace(/\s+/g, " ").trim();
 
 export function planSearchQueries(intent: NormalizedJobSearchIntent, limit = 8): SearchQuery[] {
+  const trackQueries=(intent.careerTracks??[]).flatMap(track=>track.targetTitles.flatMap(title=>[
+    {query:title,origin:"exact" as const,priority:110},
+    ...(track.transition ? [{query:`Junior ${title.replace(/^(?:junior|associate)\s+/i,"")}`,origin:"market_variant" as const,priority:105}] : []),
+  ]));
   const candidates: SearchQuery[] = [
+    ...trackQueries,
     { query: intent.primaryTargetRole, origin: "exact", priority: 100 },
     ...(ROLE_VARIANTS[normalize(intent.primaryTargetRole)] ?? []).map((query, index) => ({ query, origin: "market_variant" as const, priority: 90 - index })),
     ...intent.soft.marketTitleVariants.map((query, index) => ({ query, origin: "market_variant" as const, priority: 80 - index })),

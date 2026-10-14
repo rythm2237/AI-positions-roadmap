@@ -40,11 +40,19 @@ export function evidenceFromMasterCv(resumeId: string, resumeText: string): Care
   const lines = resumeText.replace(/\u0000/g, " ").split(/\r?\n/).map((line) => line.trim()).filter((line) => line.length >= 3);
   const skills = extractMasterCvSkills(resumeText);
   const result: CareerEvidenceItem[] = [];
+  const projectLines=new Set<string>();
+  let inProjects=false;
+  for(const line of lines) {
+    if(/^(?:personal |selected |software |key )?projects?\b/i.test(line)) inProjects=true;
+    else if(/^(?:professional experience|work experience|employment|education|certifications?)\b/i.test(line)) inProjects=false;
+    if(inProjects) projectLines.add(line);
+    if(/\b(?:bachelor|master|bsc|msc|ph\.?d|degree)\b/i.test(line)) result.push(item("master_cv",resumeId,"education","Education",line,0.8,null,{lineExcerpt:line,parser:"master-cv-evidence-v4"}));
+  }
   for (const skill of skills) {
     const contexts = lines.filter((line) => line.toLowerCase().includes(skill.toLowerCase())).slice(0, 3);
     const demonstrated = contexts.find((line) => demonstratedActionVerb.test(line));
     const value = demonstrated ?? contexts[0] ?? skill;
-    const evidenceType: EvidenceType = demonstrated ? (metric.test(demonstrated) ? "quantified_achievement" : "work_implementation") : "skill_mention";
+    const evidenceType: EvidenceType = demonstrated ? (projectLines.has(demonstrated) ? "project_implementation" : metric.test(demonstrated) ? "quantified_achievement" : "work_implementation") : "skill_mention";
     result.push(item("master_cv", resumeId, evidenceType, skill, value, demonstrated ? 0.9 : 0.62, null, { lineExcerpt: value.slice(0, 500), parser: "master-cv-evidence-v3" }));
   }
 
@@ -53,7 +61,7 @@ export function evidenceFromMasterCv(resumeId: string, resumeText: string): Care
   for (const line of implementationLines) {
     for (const [label, pattern] of implementationCapabilities) {
       if (!pattern.test(line)) continue;
-      const evidenceType: EvidenceType = metric.test(line) ? "quantified_achievement" : "work_implementation";
+      const evidenceType: EvidenceType = projectLines.has(line) ? "project_implementation" : metric.test(line) ? "quantified_achievement" : "work_implementation";
       result.push(item("master_cv", resumeId, evidenceType, label, line.slice(0, 700), metric.test(line) ? 0.9 : 0.82, null, { lineExcerpt: line.slice(0, 500), parser: "master-cv-evidence-v3", transferableCapability: true }));
     }
   }
