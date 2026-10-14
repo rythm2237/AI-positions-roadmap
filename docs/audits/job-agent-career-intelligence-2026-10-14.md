@@ -59,10 +59,12 @@ These are career-gate outcomes, not complete notification outcomes or hiring pro
 
 ## Validation and release ledger
 
-- User-specified scenarios covered by `scripts/test-career-aware-job-agent.mjs` (22 deterministic tests).
+- User-specified scenarios covered by `scripts/test-career-aware-job-agent.mjs` (24 deterministic tests).
 - Daily orchestration tests exercise fake database/email transports, grouping, no-match behavior and signed Save/Not Relevant links. No external test email is sent.
 - Existing acquisition/provider/discovery/evidence regressions executed; one stale scoring-version assertion updated, and the preferred-education test corrected to require that preferred qualifications remain optional.
+- Full-suite test maintenance: native Node import resolution now supports existing `@/` and extensionless TypeScript imports. Stale source assertions were aligned with the existing assessment label, YouTube rejection copy, adaptive resource generator, configurable public-intelligence gate and already-published 23-career catalog; no learning/admin production behavior was changed.
 - Targeted ESLint was restored because the existing `next lint` command is unavailable in installed Next.js 16. Type checking covers the application.
+- The 98-test combined Job Agent regression run passed. Full platform regression tests are also included in the PR workflow.
 - Full standard build succeeded locally. Existing prebuild scripts rewrite generated career/UI files; unrelated generated changes are excluded from the commit.
 - Migration constraints and existing RLS inspected in the live database.
 - Signed-in production pre-change UI inspected. Post-change preview, PR checks and production release status must be recorded after deployment; local tests are not proof of production release.
@@ -74,3 +76,5 @@ This is deterministic career intelligence, not an AI semantic reviewer. Unknown 
 Full live end-to-end completion, independent human-labelled accuracy evaluation, real Gmail/Outlook rendering and delivery observation remain distinct from mocked integration tests. Do not mark these complete without evidence. No provider charge was intentionally incurred by the audit itself.
 
 Security advisor remediation reference: https://supabase.com/docs/guides/database/database-linter
+
+Synthetic digest layout preview: `job-agent-digest-preview.html` (test data and non-production action signatures).

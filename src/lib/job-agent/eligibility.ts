@@ -1,3 +1,4 @@
+import { levelRank } from "./careerIntelligence.ts";
 import type { JobAgent } from "@/types/jobAgent";
 import type { Profile } from "@/types/identity";
 
@@ -86,25 +87,10 @@ function hasLanguage(profile: Profile, language: string) {
 }
 
 function detectedSeniority(title: string): number | null {
-  const value = normalize(title);
-  if (/\b(intern|internship|trainee|graduate)\b/.test(value)) return 0;
-  if (/\b(junior|jr)\b/.test(value)) return 1;
-  if (/\b(senior|sr)\b/.test(value)) return 3;
-  if (/\b(lead|principal|staff|head|director|vp|vice president)\b/.test(value)) return 4;
-  if (/\b(mid|middle|intermediate)\b/.test(value)) return 2;
-  return null;
+  // A function title such as Project Manager is not sufficient people-management evidence.
+  return /\b(?:project|product|account) manager\b/i.test(title) ? null : levelRank(title);
 }
-
-function configuredSeniority(value: string | null): number | null {
-  if (!value) return null;
-  const normalized = normalize(value);
-  if (/intern|trainee|graduate|entry/.test(normalized)) return 0;
-  if (/junior|jr/.test(normalized)) return 1;
-  if (/mid|middle|intermediate/.test(normalized)) return 2;
-  if (/senior|sr/.test(normalized)) return 3;
-  if (/lead|principal|staff|head|director|vp/.test(normalized)) return 4;
-  return null;
-}
+function configuredSeniority(value: string | null): number | null { return levelRank(value); }
 
 function needsSponsorship(agent: JobAgent) {
   const value = normalize(agent.sponsorship_requirement ?? "");

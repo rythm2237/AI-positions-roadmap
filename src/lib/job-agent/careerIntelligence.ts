@@ -53,6 +53,11 @@ export function classifyJob(job: Pick<CanonicalJobCandidate,'title'|'description
   for (const [level,pattern] of titleRules) if(pattern.test(t)) {seniority=level;evidence.push(`Title: ${t}`);break;}
   // Manager is a function in Project/Product/Account Manager titles, not proof of direct reports.
   if (peopleManagement && (levelRank(seniority) ?? 0)<4) {seniority='manager';evidence.push('Description explicitly requires people management');}
+  const providerRank=levelRank(job.seniority);
+  if(providerRank!==null && providerRank>=4 && providerRank>(levelRank(seniority)??0)) {
+    seniority=LEVELS.find(level=>job.seniority?.toLowerCase().includes(level)) ?? (providerRank>=7?'executive':providerRank>=6?'director':providerRank>=5?'lead':'senior');
+    evidence.push(`Provider seniority evidence: ${job.seniority}`);
+  }
   const mandatoryYears = Math.max(0,...years.filter(x=>!x.preferred).map(x=>x.minimum));
   if (mandatoryYears>=5 && (levelRank(seniority) ?? 0)<4) {seniority='senior'; evidence.push(...years.filter(x=>!x.preferred).map(x=>x.evidence));}
   if (architectureOwnership && (levelRank(seniority) ?? 0)<4) {seniority='senior';evidence.push('Enterprise architecture ownership');}

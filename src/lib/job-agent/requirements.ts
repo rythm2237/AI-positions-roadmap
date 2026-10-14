@@ -1,3 +1,4 @@
+import { classifyJob } from "./careerIntelligence.ts";
 import type { CanonicalJobCandidate } from "./contracts.ts";
 import type { CareerEvidenceItem } from "../../types/jobAgent.ts";
 
@@ -72,5 +73,6 @@ export function enrichRequirements(job: CanonicalJobCandidate, evidence: CareerE
   const visaSponsorship = /\b(?:visa )?sponsorship (?:is )?(?:available|provided|offered)\b/i.test(job.description) ? "available"
     : /\b(?:no|not) (?:visa )?sponsorship|must (?:already )?have (?:the )?(?:right|authorization) to work\b/i.test(job.description) ? "not_available" : job.visaSponsorship;
   const workplaceModel = job.workplaceModel !== "unknown" ? job.workplaceModel : /\bhybrid\b/i.test(job.description) ? "hybrid" : /\b(?:fully remote|remote role|work from home)\b/i.test(job.description) ? "remote" : /\b(?:on[- ]site|office[- ]based)\b/i.test(job.description) ? "on_site" : "unknown";
-  return { ...job, seniority: job.seniority ?? seniority(job.title), workplaceModel, requiredSkills: [...required], preferredSkills: [...preferred], educationRequirements: [...education], certificationRequirements: [...certifications], visaSponsorship };
+  const classified = classifyJob(job);
+  return { ...job, seniority: classified.seniority === "unknown" ? job.seniority ?? seniority(job.title) : classified.seniority, workplaceModel, requiredSkills: [...required], preferredSkills: [...preferred], educationRequirements: [...education], certificationRequirements: [...certifications], visaSponsorship };
 }

@@ -4,8 +4,8 @@ import { CAREER_CATALOG, CAREER_DOMAINS } from "../src/data/careerCatalog.ts";
 import { OCCUPATION_FAMILY_CATALOG } from "../src/data/occupationFamilyCatalog.ts";
 
 assert.equal(CAREER_CATALOG.length, 23, "the Admin inventory must cover all 23 site Careers");
-assert.equal(CAREER_CATALOG.filter((career) => career.availability === "available").length, 22, "22 Careers must be active");
-assert.deepEqual(CAREER_CATALOG.filter((career) => career.availability === "planned").map((career) => career.slug), ["enterprise-ai-consultant"]);
+assert.equal(CAREER_CATALOG.filter((career) => career.availability === "available").length, 23, "all 23 published Careers must be active");
+assert.deepEqual(CAREER_CATALOG.filter((career) => career.availability === "planned").map((career) => career.slug), []);
 assert.equal(OCCUPATION_FAMILY_CATALOG.length, CAREER_DOMAINS.length, "every Career domain must own one canonical occupation family");
 assert.deepEqual(
   new Set(OCCUPATION_FAMILY_CATALOG.map((family) => family.domain)),
