@@ -8,7 +8,7 @@ import {STRUCTURE_SCHEMA,structureSources,validateStructure,recoverStructure} fr
 import {studioOutputSchema} from '@/lib/applicationStudio/outputSchemas.mjs';
 import {generateStudioObject,isStudioOutputError} from '@/lib/applicationStudio/structuredGeneration.mjs';
 import {LETTER_REVIEW_SCHEMA,LetterEvidenceError,generateGroundedLetter} from '@/lib/applicationStudio/letterGeneration.mjs';
-import {generationEvidenceRecords,generateGroundedCV,CVEvidenceError} from '@/lib/applicationStudio/cvGeneration.mjs';
+import {generationEvidenceRecords,generateGroundedCV,CVEvidenceError,cvEvidenceFailureCode} from '@/lib/applicationStudio/cvGeneration.mjs';
 import {strategyEvidenceRecords,generateVerifiedStrategy} from '@/lib/applicationStudio/strategyGeneration.mjs';
 import {TRANSLATION_SCHEMA,translationContext,validateTranslation,protectTranslation,restoreTranslation,translateUnits} from '@/lib/applicationStudio/translation.mjs';
 import { classifyStudioGatewayError, studioModelFallback } from "@/lib/applicationStudio/gatewayErrors";
@@ -118,7 +118,15 @@ export async function POST(request: Request, { params }: { params: Promise<{ act
     };
     if(['quick-review','quick-generate','quick-cover'].includes(aiAction)){
       try{return json(await runQuickOperation(aiAction,context!,settings,model,()=>{reservedQuota=undefined;}));}
-      catch(error){if(error instanceof CVEvidenceError||error instanceof LetterEvidenceError)return json({error:'The draft could not pass the factual evidence check. Your source and answers are preserved. Retry, or continue in Advanced Builder.',code:'QUICK_EVIDENCE_REVIEW',requestId},422);throw error;}
+      catch(error){
+       if(error instanceof CVEvidenceError||error instanceof LetterEvidenceError){
+        const reason=error instanceof CVEvidenceError?cvEvidenceFailureCode(error):'unsupported-content';
+        console.warn('Quick CV evidence review failed',{requestId,operation:aiAction,reason});
+        const messages:Record<string,string>={language:'The draft did not keep the requested document language.', 'review-coverage':'The AI did not finish checking every statement.', 'evidence-references':'Some draft statements were linked to the wrong source record.', 'output-format':'The AI did not return a complete CV draft.', 'unsupported-content':'Some rewritten wording could not be verified against your original facts.'};
+        return json({error:messages[reason]+' Your CV and answers are preserved. Retry, review your answers, or transfer them to Advanced Builder.',code:'QUICK_EVIDENCE_REVIEW',reason,requestId},422);
+       }
+       throw error;
+      }
     }
     if(aiAction==='chatEdit'){
       const editSources={...sources,...Object.fromEntries((context!.cv as any[]).map(s=>['CURRENT:'+s.id,s.text]))};

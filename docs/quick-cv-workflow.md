@@ -26,3 +26,9 @@ No new provider credentials, authentication system or database schema. Source fi
 The uploaded file is rebuilt using supported layouts; original spacing, fonts and page furniture are approximate. Scanned PDFs need pasted text/OCR. Photo recovery handles separate PDF images and embedded DOCX images; full-page scanned photographs are not guessed. If all retained records cannot fit within two readable pages, export is blocked with Advanced continuation instead of truncating source content. A single compact content retry is allowed without extra questions.
 
 Browser generation tests use simulated AI responses and do not prove live model quality. Production AI verification requires a signed-in end-to-end request through the configured Gateway.
+
+## Evidence failure recovery
+
+A bounded automatic rewrite receives the exact rejected draft and the complete statement review, so opaque statement IDs can be resolved to actual wording. Every corrected statement still passes record, metric and independent semantic checks. User-facing failures distinguish language, review coverage, references, output structure and unsupported wording. Server diagnostics contain only the category, operation and request ID, never CV text or review explanations.
+
+Advanced handoff is available before generation and after a failed evidence check. It preserves original sections, answers, vacancy, layout and portrait in the existing account-bound transfer. Source-only transfers open Candidate and are explicitly not marked as a reviewed generated CV.
