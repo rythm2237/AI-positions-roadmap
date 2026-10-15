@@ -47,9 +47,11 @@ export function ApplicationStudio({ career, initialMode, autoOpen=false }: { car
   >
     <div className="mb-2 flex shrink-0 flex-wrap items-center gap-2">
       <span className="mr-auto text-sm font-semibold text-white">{builderMode==="quick"?"Quick CV":"CV & Application Studio"}</span>
-      <button hidden={builderMode==="quick"} type="button" disabled={busy} onClick={() => void importSource("profile")} style={{ maxWidth: "100%", whiteSpace: "normal" }} className="btn-secondary min-h-11">Import my profile & completed learning</button>
-      <button hidden={builderMode==="quick"} type="button" disabled={busy} onClick={() => void importSource("cv")} className="btn-secondary min-h-11">Import my saved CV</button>
+      {builderMode === "advanced" ? <>
+      <button type="button" disabled={busy} onClick={() => void importSource("profile")} style={{ maxWidth: "100%", whiteSpace: "normal" }} className="btn-secondary min-h-11">Import my profile & completed learning</button>
+      <button type="button" disabled={busy} onClick={() => void importSource("cv")} className="btn-secondary min-h-11">Import my saved CV</button>
       <Link href={`/login?next=${encodeURIComponent(career ? `/careers/${career.slug}?section=jobs` : `/application-studio${initialMode ? `?mode=${initialMode}` : ""}`)}`} className="min-h-11 px-3 py-3 text-sm text-cyan-200">Sign in for AI & profile import</Link>
+      </> : null}
       <button type="button" onClick={() => setFullPage(value => !value)} className="btn-secondary min-h-11">{fullPage ? "Exit full screen" : "Full screen"}</button>
       <button type="button" onClick={() => setOpen(false)} className="btn-secondary min-h-11">Close</button>
     </div>
