@@ -1,0 +1,31 @@
+name: Email authentication validation
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'src/lib/auth/**'
+      - 'src/lib/supabase/**'
+      - 'src/components/auth/**'
+      - 'src/app/login/**'
+      - 'src/app/signup/**'
+      - 'src/app/forgot-password/**'
+      - 'src/app/reset-password/**'
+      - 'src/app/auth/**'
+      - 'scripts/test-password-auth.mjs'
+      - '.github/workflows/email-auth-validation.yml'
+permissions:
+  contents: read
+jobs:
+  validate-email-auth:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci
+      - run: node --test scripts/test-password-auth.mjs
+      - run: npx eslint src/lib/auth src/components/auth src/app/login src/app/signup src/app/forgot-password src/app/reset-password src/app/auth
+      - run: npm run typecheck
