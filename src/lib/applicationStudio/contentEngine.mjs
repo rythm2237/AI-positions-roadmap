@@ -28,7 +28,7 @@ const kinds = [
   ['certifications', /^(certifications|certificates|training(?: and courses)?|courses)$/i],
   ['development', /^professional development$/i],
   ['languages', /^(languages|language skills|sprachen|langues)$/i],
-  ['additional', /^(additional experience|earlier experience)$/i],
+  ['additional', /^(additional experience|earlier experience|sonstiges|weitere angaben|zusätzliche angaben)$/i],
 ];
 export const sectionKind = title => title === 'Header' ? 'header' : kinds.find(([, re]) => re.test(canonicalHeading(title)))?.[0] || 'other';
 export function parseProfile(text) {
