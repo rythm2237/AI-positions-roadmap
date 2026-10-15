@@ -68,10 +68,21 @@ export function validateGeneratedCV(value,kb,strategy,current=[],rejected=[]){
   if(e.kind==='header'){s.text=kept;s.evidenceIds=originals;}
   else if(!originals.every(id=>referenced.has(id))){const all=kb.entities.filter(x=>x.kind===e.kind).flatMap(x=>x.claimIds).filter(id=>Object.hasOwn(sources,id));s.text=uniq(all.map(id=>sources[id])).join('\n');s.evidenceIds=uniq(all);}
  }
- // One canonical section per kind, even when the model returns one section per employer.
- const grouped=[];
- for(const section of sections){const old=grouped.find(s=>s.title===section.title);if(old){old.text+='\n\n'+section.text;old.evidenceIds=uniq([...old.evidenceIds,...section.evidenceIds]);old.headingLines=[...(old.headingLines||[]),...(section.headingLines||[])];old.statements=[...(old.statements||[]),...(section.statements||[])];}else grouped.push(section);}
- sections.splice(0,sections.length,...grouped);
+ // One canonical section per semantic kind, even when display labels differ
+ // by language (e.g. "Professional Summary" vs "Kurzprofil"). Custom sections
+ // remain distinct unless their normalized titles are exactly equal.
+ const grouped=[],groupKey=section=>{const kind=sectionKind(section.title);return kind!=='other'?'kind:'+kind:'other:'+String(section.title||'').toLowerCase().normalize('NFKC').replace(/\s+/g,' ').trim();};
+ for(const section of sections){
+  const key=groupKey(section),old=grouped.find(s=>s._groupKey===key);
+  if(old){
+   if(section.text&&!old.text.includes(section.text))old.text+=(old.text?'\n\n':'')+section.text;
+   old.evidenceIds=uniq([...(old.evidenceIds||[]),...(section.evidenceIds||[])]);
+   old.headingLines=uniq([...(old.headingLines||[]),...(section.headingLines||[])]);
+   old.statements=[...(old.statements||[]),...(section.statements||[])];
+   if(!old.displayTitle&&section.displayTitle)old.displayTitle=section.displayTitle;
+  }else grouped.push({...section,_groupKey:key});
+ }
+ sections.splice(0,sections.length,...grouped.map(({_groupKey,...section})=>section));
  let experience=sections.find(s=>sectionKind(s.title)==='experience');
  const employments=kb.entities.filter(e=>e.kind==='experience'&&strategy.priorities.find(p=>p.entityId===e.id)?.treatment!=='omit');
  const recency=e=>{const text=e.claimIds.map(id=>sources[id]||'').join(' ');return /present|current|ongoing/i.test(text)?9999:Math.max(0,...(text.match(/\b(?:19|20)\d{2}\b/g)||[]).map(Number));};
