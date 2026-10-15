@@ -7,6 +7,7 @@ import fontkit from '@pdf-lib/fontkit';
 import JSZip from 'jszip';
 import {TEMPLATES,FONTS,designFor,splitSections,flowText,photoData,colorInk} from './design.mjs';
 import {inspectDesign} from './designImport.js';
+import {sourceAppearance} from './sourceAppearance.js';
 import {documentText} from './pdfText.mjs';
 import {stableId,knowledgeSources,questionKey,confirmedClarifications,unresolvedQuestions} from './knowledge.mjs';
 import {assessmentDimensions} from './intelligence.mjs';
@@ -32,6 +33,6 @@ export async function pdf(doc){return renderPDF(doc,fonts);}
 export async function optimiseCV(input){return fitCV(input,async sections=>(await renderPDF({kind:'cv',...input,sections,measure:true},fonts)).pages);}
 export async function measureCV(doc){return (await renderPDF({...doc,measure:true},fonts)).pages;}
 export async function applicationPackage(documents){if(!documents.length)throw Error('No documents to export.');const zip=new JSZip();for(let i=0;i<documents.length;i++)zip.file(documents[i].kind==='cv'?'CV.pdf':documents[i].kind==='cover'?'Cover-Letter.pdf':'Motivation-Letter.pdf',await (await pdf(documents[i])).arrayBuffer());return zip.generateAsync({type:'blob'});}
-window.CareerDocs={editStyledText,inlineRuns,formatSelection,LANGUAGES,languageFor,detectLanguage,fontsForLanguage,validateTranslation,extract,pdf,applicationPackage,inspectDesign,TEMPLATES,FONTS,designFor,splitSections,flowText,photoData,colorInk,optimiseCV,measureCV,parseProfile,normalizeSection,planCV,relevanceScore,validateCV,approximatePages};
+window.CareerDocs={editStyledText,inlineRuns,formatSelection,LANGUAGES,languageFor,detectLanguage,fontsForLanguage,validateTranslation,extract,pdf,applicationPackage,inspectDesign,sourceAppearance,TEMPLATES,FONTS,designFor,splitSections,flowText,photoData,colorInk,optimiseCV,measureCV,parseProfile,normalizeSection,planCV,relevanceScore,validateCV,approximatePages};
 window.CareerRecruiter={assess:recruiterAssessment};
 window.CareerIntelligence={stableId,knowledgeSources,questionKey,confirmedClarifications,unresolvedQuestions,assessmentDimensions};

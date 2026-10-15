@@ -1,0 +1,10 @@
+const assert=require('node:assert/strict'),fs=require('node:fs'),{JSDOM}=require('jsdom');
+const {window:w}=new JSDOM('',{url:'https://airolepath.test/application-studio/index.html?quickHandoff=1',runScripts:'outside-only'});
+w.account={id:'owner-a'};w.S={applications:[{id:'existing',cv:[{title:'Header',text:'Existing draft'}]}]};w.freshJob=()=>({id:'new-quick'});w.uid=()=>String(Math.random());w.clone=x=>JSON.parse(JSON.stringify(x));w.save=()=>{};w.render=()=>{};w.toast=()=>{};w.CareerDocs={designFor:(_t,d)=>d,photoData:x=>x};w.eval(fs.readFileSync('public/application-studio/quick-handoff.js','utf8'));
+const source={id:'h',title:'Header',text:'Alex Example\nalex@example.test'};
+const payload={userId:'owner-a',createdAt:Date.now(),candidate:source.text,vacancy:'A full job description',sourceSections:[source],sections:[source],job:{title:'Ausbildung'},language:'de',design:{layout:'sidebar-left'},portrait:'data:image/jpeg;base64,AAAA',answers:[{id:'q1',question:'German level?',answer:'My German is B1.',skipped:false}],cover:{text:'Source-backed cover letter'}};
+const key='career-quick-handoff:owner-a';
+w.sessionStorage.setItem(key,JSON.stringify({...payload,userId:'other'}));w.applyQuickHandoff();assert.equal(w.S.applications.length,1,'Reject other user');
+w.sessionStorage.setItem(key,JSON.stringify({...payload,createdAt:Date.now()-20*60*1000}));w.applyQuickHandoff();assert.equal(w.S.applications.length,1,'Reject expired transfer');
+w.sessionStorage.setItem(key,JSON.stringify(payload));w.applyQuickHandoff();assert.equal(w.S.applications.length,2);assert.equal(w.S.applications[0].cv[0].text,'Existing draft');const a=w.S.applications[1];assert.equal(a.portrait,payload.portrait);assert.equal(a.design.layout,'sidebar-left');assert.equal(a.quickAnswers[0].answer,'My German is B1.');assert.equal(a.cover.text,payload.cover.text);assert.equal(w.sessionStorage.getItem(key),null);assert.equal(w.S.stage,6);w.applyQuickHandoff();assert.equal(w.S.applications.length,2,'Single-use transfer');
+console.log('PASS: account-scoped, expiry-checked, single-use Advanced transfer with photo, layout, answers and preserved existing applications.');w.close();

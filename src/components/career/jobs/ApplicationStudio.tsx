@@ -11,12 +11,13 @@ type StudioWindow = Window & { CareerAtelier?: {
   importSavedCV: (url: string, name: string, userId: string) => Promise<void>;
 } };
 
-export function ApplicationStudio({ career, initialMode, autoOpen=false }: { career?: CareerWorkspaceData; initialMode?: "general" | "targeted"; autoOpen?: boolean }) {
+export function ApplicationStudio({ career, initialMode, autoOpen=false }: { career?: CareerWorkspaceData; initialMode?: "general" | "targeted" | "quick" | "advanced"; autoOpen?: boolean }) {
   const frame = useRef<HTMLIFrameElement>(null);
+  const [builderMode,setBuilderMode]=useState<"quick"|"advanced">(initialMode==="quick"?"quick":"advanced");
   const [open, setOpen] = useState(autoOpen);
   const [fullPage, setFullPage] = useState(true);
   const [loaded, setLoaded] = useState(false);
-  useEffect(() => { if (autoOpen) { setLoaded(true); setOpen(true); } }, [autoOpen, initialMode]);
+  useEffect(() => { if (autoOpen) { setLoaded(true); setOpen(true); setBuilderMode(initialMode==="quick"?"quick":"advanced"); } }, [autoOpen, initialMode]);
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState("");
 
@@ -45,25 +46,38 @@ export function ApplicationStudio({ career, initialMode, autoOpen=false }: { car
     style={{ display: open ? "flex" : "none", ...(fullPage ? { height: "100dvh" } : {}) }}
   >
     <div className="mb-2 flex shrink-0 flex-wrap items-center gap-2">
-      <span className="mr-auto text-sm font-semibold text-white">CV & Application Studio</span>
-      <button type="button" disabled={busy} onClick={() => void importSource("profile")} style={{ maxWidth: "100%", whiteSpace: "normal" }} className="btn-secondary min-h-11">Import my profile & completed learning</button>
-      <button type="button" disabled={busy} onClick={() => void importSource("cv")} className="btn-secondary min-h-11">Import my saved CV</button>
+      <span className="mr-auto text-sm font-semibold text-white">{builderMode==="quick"?"Quick CV":"CV & Application Studio"}</span>
+      <button hidden={builderMode==="quick"} type="button" disabled={busy} onClick={() => void importSource("profile")} style={{ maxWidth: "100%", whiteSpace: "normal" }} className="btn-secondary min-h-11">Import my profile & completed learning</button>
+      <button hidden={builderMode==="quick"} type="button" disabled={busy} onClick={() => void importSource("cv")} className="btn-secondary min-h-11">Import my saved CV</button>
       <Link href={`/login?next=${encodeURIComponent(career ? `/careers/${career.slug}?section=jobs` : `/application-studio${initialMode ? `?mode=${initialMode}` : ""}`)}`} className="min-h-11 px-3 py-3 text-sm text-cyan-200">Sign in for AI & profile import</Link>
       <button type="button" onClick={() => setFullPage(value => !value)} className="btn-secondary min-h-11">{fullPage ? "Exit full screen" : "Full screen"}</button>
       <button type="button" onClick={() => setOpen(false)} className="btn-secondary min-h-11">Close</button>
     </div>
     {!fullPage ? <p className="mb-3 shrink-0 text-xs leading-5 text-slate-400">You can load a fictional sample to explore the workflow. For your own assessment, sign in, upload your CV and add the real vacancy. AI analysis runs only when you request it. Completed learning is never presented as work experience or a verified certificate.</p> : null}
     {message ? <p role="status" className="mb-2 shrink-0 rounded-xl border border-white/10 p-3 text-sm text-slate-200">{message}</p> : null}
-    <iframe ref={frame} src={`/application-studio/index.html${initialMode?`?mode=${initialMode}`:""}`} title="CV and job application editor" className="min-h-0 w-full flex-1 rounded-xl border border-white/10 bg-white" />
+    <iframe ref={frame} src={builderMode==="quick"?"/application-studio/quick/index.html":`/application-studio/index.html${initialMode==="general"||initialMode==="targeted"?`?mode=${initialMode}`:""}`} title="CV and job application editor" className="min-h-0 w-full flex-1 rounded-xl border border-white/10 bg-white" />
     {!fullPage ? <p className="mt-3 shrink-0 text-xs text-slate-500">Documents and drafts stay in this editor. Use Account & privacy to save on this device or download an editable backup.</p> : null}
   </div>, document.body) : null;
 
   return <section id="application-studio" className="rounded-2xl border border-indigo-300/20 bg-indigo-400/[0.04] p-4 sm:p-5">
     <p className="label-sm text-indigo-300">Job Preparation · CV / Resume</p>
     <h3 className="mt-2 font-display text-2xl font-semibold text-white">Your application studio</h3>
-    <p className="mt-3 max-w-3xl text-sm leading-6 text-slate-400">Build your master CV, match a real vacancy, review suggested changes, write cover and motivation letters, and export PDFs in your browser. Import your profile and completed learning as a draft you review first.</p>
+    <p className="mt-3 max-w-3xl text-sm leading-6 text-slate-400">Choose a fast content update in your current CV style, or use the full editor for deeper control.</p>
+    <div className="mt-5 grid gap-4 md:grid-cols-2">
+      <div className="rounded-xl border border-cyan-200/20 bg-cyan-300/[0.04] p-5">
+        <p className="label-sm text-cyan-200">Quick CV</p>
+        <h4 className="mt-2 text-lg font-semibold text-white">Your CV + a job. A focused application.</h4>
+        <p className="mt-2 text-sm leading-6 text-slate-400">A brief fit score, up to five short questions, then a tailored CV and optional cover letter. Keeps your photo and a close match to your original layout. No design step.</p>
+        <button type="button" onClick={() => { setBuilderMode("quick"); setLoaded(true); setFullPage(true); setOpen(true); }} className="btn-primary mt-4 min-h-11 w-full sm:w-auto">Start Quick CV</button>
+      </div>
+      <div className="rounded-xl border border-white/10 p-5">
+        <p className="label-sm text-indigo-200">Advanced Builder</p>
+        <h4 className="mt-2 text-lg font-semibold text-white">Review, refine and design every detail.</h4>
+        <p className="mt-2 text-sm leading-6 text-slate-400">Explore evidence, edit sections, choose layouts, translate documents and prepare your complete application pack in the existing studio.</p>
+        <button type="button" onClick={() => { setBuilderMode("advanced"); setLoaded(true); setFullPage(true); setOpen(true); }} className="btn-secondary mt-4 min-h-11 w-full sm:w-auto">Open Advanced Builder</button>
+      </div>
+    </div>
     <div className="mt-4 flex flex-wrap gap-3">
-      <button type="button" onClick={() => { setLoaded(true); if (!open) setFullPage(true); setOpen(!open); }} aria-expanded={open} className="btn-primary min-h-11">{open ? "Close Application Studio" : "Open CV & Application Studio"}</button>
       <Link href="/profile" className="btn-secondary min-h-11">Update my profile</Link>
       <Link href="/cv-analyzer" className="btn-secondary min-h-11">Career CV analysis</Link>
     </div>
