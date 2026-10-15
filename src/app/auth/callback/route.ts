@@ -11,6 +11,7 @@ export async function GET(request: NextRequest) {
   if (error) return NextResponse.redirect(new URL("/login?error=callback", request.url));
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return NextResponse.redirect(new URL("/login?error=session", request.url));
+  if (next === "/reset-password") return NextResponse.redirect(new URL("/reset-password", request.url));
   await supabase.from("user_activity").insert({ user_id: user.id, action: "login" });
   const { data: profile } = await supabase.from("profiles").select("onboarding_completed_at").eq("id", user.id).single();
   return NextResponse.redirect(new URL(profile?.onboarding_completed_at ? next : "/onboarding", request.url));
