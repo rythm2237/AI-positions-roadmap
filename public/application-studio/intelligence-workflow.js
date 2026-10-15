@@ -34,6 +34,12 @@ function installIntelligenceWorkflow(){
     if(!app().structureReview.warnings.includes(warning))app().structureReview.warnings.push(warning);
    }
   }
+  const pendingQuick=(app().quickAnswers||[]).filter(q=>!q.skipped&&q.answer?.trim()&&!Object.values(tools().knowledgeSources(candidateKnowledge)).includes(q.answer.trim()));
+  if(pendingQuick.length){
+   if(!app().quickKnowledgeConsent&&!confirm('Save your Quick CV answers as self-reported professional facts for this application?'))throw Error('Your answers remain in this draft. Saving reusable facts was canceled.');
+   app().quickKnowledgeConsent=true;
+   for(const q of pendingQuick)await updateKnowledge('confirm',{fact:{text:q.answer.trim(),entityId:candidateKnowledge.entities.some(e=>e.id===q.entityId)?q.entityId:'',kind:q.kind||'other',field:'context',question:q.question,vacancyKey:tools().stableId('vacancy',app().vacancy)}});
+  }
   const linkedin=S.candidateProfile.linkedinText;if(linkedin?.trim()&&!candidateKnowledge.sources.some(s=>s.id===tools().stableId('linkedin',linkedin)))await updateKnowledge('import',{text:linkedin,type:'linkedin',label:'Candidate LinkedIn text'});
   await updateKnowledge('learning',{});
   return candidateKnowledge;

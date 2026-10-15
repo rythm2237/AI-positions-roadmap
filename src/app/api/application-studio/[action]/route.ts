@@ -1,3 +1,4 @@
+import {runQuickOperation} from '@/lib/applicationStudio/quickService';
 import {confirmedClarifications,unresolvedQuestions} from '@/lib/applicationStudio/knowledge.mjs';
 import {validateAnalysisWithRepair} from '@/lib/applicationStudio/validation.mjs';
 import {CHAT_EDIT_SCHEMA,ChatEditError,generateChatEdit} from '@/lib/applicationStudio/chatEdit.mjs';
@@ -60,11 +61,11 @@ export async function POST(request: Request, { params }: { params: Promise<{ act
     catch (error) { if (error instanceof ServiceError) throw error; return json({ error: "Invalid JSON." }, 400); }
     if (!body || typeof body !== "object") return json({ error: "Invalid request." }, 400);
     if (body.sessionUserId !== user.id) return json({ error: "Your account changed. Reload the editor before continuing." }, 409);
-    const aiAction = body.action as keyof typeof SCHEMAS | "optimise" | "translate" | "structure" | "strategy" | "generate" | "chatEdit";
+    const aiAction = body.action as keyof typeof SCHEMAS | "optimise" | "translate" | "structure" | "strategy" | "generate" | "chatEdit" | "quick-review" | "quick-generate" | "quick-cover";
     const context = body.context;
     operation = body.action || action;
     if (action === "ai") {
-      if ((!Object.hasOwn(SCHEMAS, aiAction)&&!['translate','structure','strategy','generate','chatEdit'].includes(aiAction)) || !context || Array.isArray(context)) return json({ error: "Invalid AI action." }, 400);
+      if ((!Object.hasOwn(SCHEMAS, aiAction)&&!['translate','structure','strategy','generate','chatEdit','quick-review','quick-generate','quick-cover'].includes(aiAction)) || !context || Array.isArray(context)) return json({ error: "Invalid AI action." }, 400);
       for (const key of ["candidate", "linkedin", "vacancy"]) {
         if (typeof (context[key] || "") !== "string" || String(context[key] || "").length > 100_000) return json({ error: "Invalid or oversized source text." }, 400);
       }
@@ -112,9 +113,13 @@ export async function POST(request: Request, { params }: { params: Promise<{ act
     const settings = {
       system: `${SYSTEM}\nANSWERED CLARIFICATIONS: answeredClarifications contains saved, source-backed question/answer pairs. Use these answers in this assessment and do not repeat or paraphrase answered questions. A self-reported level is not a certificate. Only request certification or official equivalency if the vacancy explicitly requires it; otherwise assess reported proficiency or the original degree honestly. If an answer is incomplete, ask a narrower follow-up explaining exactly what remains unknown. Never claim a fact was saved by this AI request; only the separate knowledge-save operation saves facts.\nCourse completion and profile fields may be self-reported. Preserve that provenance. Never promote completed learning to employment, expertise, or verified certification.\n${aiAction==='structure'?STRUCTURE_SCHEMA:aiAction==='translate'?TRANSLATION_SCHEMA:aiAction==='strategy'?STRATEGY_SCHEMA:aiAction==='generate'?GENERATION_SCHEMA:(SCHEMAS as Record<string,string>)[aiAction]}\n${candidateSources&&aiAction==='analysis'?'Override document-only assessment: assess the ENTIRE saved candidate knowledge. Rewriting the CV cannot change professional fit. Cite candidate claim IDs from sources. Explicit requirements must cite vacancySources. Unknown eligibility stays unknown.':''}`,
       prompt: JSON.stringify(prompt),
-      maxOutputTokens: ['translate','structure','generate'].includes(aiAction)?14000:6500,
+      maxOutputTokens: ['translate','structure','generate','quick-generate'].includes(aiAction)?14000:6500,
       abortSignal: AbortSignal.any([request.signal,AbortSignal.timeout(100_000)]),
     };
+    if(['quick-review','quick-generate','quick-cover'].includes(aiAction)){
+      try{return json(await runQuickOperation(aiAction,context!,settings,model,()=>{reservedQuota=undefined;}));}
+      catch(error){if(error instanceof CVEvidenceError||error instanceof LetterEvidenceError)return json({error:'The draft could not pass the factual evidence check. Your source and answers are preserved. Retry, or continue in Advanced Builder.',code:'QUICK_EVIDENCE_REVIEW',requestId},422);throw error;}
+    }
     if(aiAction==='chatEdit'){
       const editSources={...sources,...Object.fromEntries((context!.cv as any[]).map(s=>['CURRENT:'+s.id,s.text]))};
       try{
