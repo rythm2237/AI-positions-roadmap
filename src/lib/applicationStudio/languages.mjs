@@ -43,12 +43,13 @@ export function validateTranslation(value,sections,target){
 }
 
 const LOCAL_HEADINGS={
- 'Professional Summary':['خلاصه حرفه‌ای','خلاصه حرفه ای','درباره من','الملخص المهني','نبذة عني','पेशेवर सारांश','सारांश','Профиль','Профессиональное резюме','Resumen profesional','Resumo profissional','Profilo'],
- 'Experience':['تجربه کاری','سوابق کاری','سوابق شغلی','الخبرة المهنية','الخبرات العملية','कार्य अनुभव','अनुभव','Опыт работы','Experiencia laboral','Experiência profissional','Esperienza lavorativa','İş deneyimi'],
- 'Skills':['مهارت‌ها','مهارت ها','مهارتها','المهارات','कौशल','Навыки','Habilidades','Competenze','Beceriler'],
- 'Education':['تحصیلات','سوابق تحصیلی','التعليم','शिक्षा','Образование','Educación','Educação','Istruzione','Eğitim'],
- 'Languages':['زبان‌ها','زبان ها','اللغات','भाषाएँ','Языки','Idiomas','Lingue','Diller'],
+ 'Professional Summary':['خلاصه حرفه‌ای','خلاصه حرفه ای','درباره من','الملخص المهني','نبذة عني','पेशेवर सारांश','सारांश','Профиль','Профессиональное резюме','Resumen profesional','Resumo profissional','Profilo','Kurzprofil'],
+ 'Experience':['تجربه کاری','سوابق کاری','سوابق شغلی','الخبرة المهنية','الخبرات العملية','कार्य अनुभव','अनुभव','Опыт работы','Experiencia laboral','Experiência profissional','Esperienza lavorativa','İş deneyimi','Berufliche Erfahrung'],
+ 'Skills':['مهارت‌ها','مهارت ها','مهارتها','المهارات','कौशल','Навыки','Habilidades','Competenze','Beceriler','IT-Kenntnisse','IT Kenntnisse','Stärken','Staerken'],
+ 'Education':['تحصیلات','سوابق تحصیلی','التعليم','शिक्षा','Образование','Educación','Educação','Istruzione','Eğitim','Bildungsweg'],
+ 'Languages':['زبان‌ها','زبان ها','اللغات','भाषाएँ','Языки','Idiomas','Lingue','Diller','Sprachkenntnisse'],
  'Projects':['پروژه‌ها','پروژه ها','المشاريع','परियोजनाएँ','Проекты','Proyectos','Projetos','Progetti'],
- 'Certifications':['گواهینامه‌ها','گواهینامه ها','دوره‌ها','الشهادات','प्रमाणपत्र','Сертификаты','Certificaciones','Certificações','Certificazioni']
+ 'Certifications':['گواهینامه‌ها','گواهینامه ها','دوره‌ها','الشهادات','प्रमाणपत्र','Сертификаты','Certificaciones','Certificações','Certificazioni','Zertifikate'],
+ 'Additional Experience':['Sonstiges','Weitere Angaben','Zusätzliche Angaben']
 };
 export function canonicalHeading(value){const text=String(value).trim().replace(/:$/,'');return Object.entries(LOCAL_HEADINGS).find(([,labels])=>labels.some(l=>l.toLocaleLowerCase()===text.toLocaleLowerCase()))?.[0]||text;}

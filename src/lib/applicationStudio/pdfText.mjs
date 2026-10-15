@@ -36,5 +36,5 @@ export function documentText(pages){
  const output=[];let group=[];
  const flush=()=>{if(group.length)output.push(...['header','side','main'].map(key=>group.map(p=>p[key]).filter(Boolean).join('\n')).filter(Boolean));group=[];};
  let previousWidth=null;
- for(const page of pages){const p=pageTextParts(page.items,page.width,page.height,previousWidth===page.width?group.at(-1)?.gutter:null);if(p.columns)group.push(p);else{flush();output.push(p.main);}previousWidth=page.width;}flush();return output.join('\n');
+ for(const page of pages){const p=pageTextParts(page.items,page.width,page.height,previousWidth===page.width?group.at(-1)?.gutter:null);if(p.columns)group.push(p);else{flush();output.push(p.main);}previousWidth=page.width;}flush();return output.join('\n\n');
 }
