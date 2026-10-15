@@ -33,7 +33,7 @@
     "test:application-studio-agent": "node scripts/test-application-studio-agent.mjs",
     "test:cv-content": "node scripts/test-cv-content.mjs",
     "test:career-agent": "node --experimental-strip-types --test scripts/test-career-aware-job-agent.mjs scripts/test-job-agent-digest-integration.mjs",
-    "test:quick-cv": "node scripts/test-quick-cv.mjs && node scripts/test-quick-cv-flow.cjs && node scripts/test-quick-cv-handoff.cjs && node scripts/test-quick-cv-appearance.mjs"
+    "test:quick-cv": "node scripts/test-quick-cv.mjs && node scripts/test-quick-cv-recovery.mjs && node scripts/test-quick-cv-flow.cjs && node scripts/test-quick-cv-handoff.cjs && node scripts/test-quick-cv-appearance.mjs"
   },
   "dependencies": {
     "@pdf-lib/fontkit": "1.1.1",
