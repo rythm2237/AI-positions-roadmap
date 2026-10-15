@@ -121,7 +121,7 @@ export async function POST(request: Request, { params }: { params: Promise<{ act
       catch(error){
        if(error instanceof CVEvidenceError||error instanceof LetterEvidenceError){
         const reason=error instanceof CVEvidenceError?cvEvidenceFailureCode(error):'unsupported-content';
-        console.warn('Quick CV evidence review failed',{requestId,operation:aiAction,reason});
+        console.warn('Quick CV evidence review failed',{requestId,operation:aiAction,reason,stage:error instanceof CVEvidenceError?error.details?.stage||'generation':'letter-review'});
         const messages:Record<string,string>={language:'The draft did not keep the requested document language.', 'review-coverage':'The AI did not finish checking every statement.', 'evidence-references':'Some draft statements were linked to the wrong source record.', 'output-format':'The AI did not return a complete CV draft.', 'unsupported-content':'Some rewritten wording could not be verified against your original facts.'};
         return json({error:messages[reason]+' Your CV and answers are preserved. Retry, review your answers, or transfer them to Advanced Builder.',code:'QUICK_EVIDENCE_REVIEW',reason,requestId},422);
        }
