@@ -5,10 +5,10 @@ import { safeInternalRedirect } from "@/lib/auth/redirects";
 export async function GET(request: NextRequest) {
   const code = request.nextUrl.searchParams.get("code");
   const next = safeInternalRedirect(request.nextUrl.searchParams.get("next"));
-  if (!code) return NextResponse.redirect(new URL("/login?error=callback", request.url));
+  if (!code) return NextResponse.redirect(new URL(next === "/reset-password" ? "/auth/recovery" : "/login?error=callback", request.url));
   const supabase = await createClient();
   const { error } = await supabase.auth.exchangeCodeForSession(code);
-  if (error) return NextResponse.redirect(new URL("/login?error=callback", request.url));
+  if (error) return NextResponse.redirect(new URL(next === "/reset-password" ? "/forgot-password?error=expired" : "/login?error=callback", request.url));
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return NextResponse.redirect(new URL("/login?error=session", request.url));
   if (next === "/reset-password") return NextResponse.redirect(new URL("/reset-password", request.url));

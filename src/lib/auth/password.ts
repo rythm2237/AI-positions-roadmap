@@ -34,7 +34,7 @@ export async function runPasswordFlow(client: AuthClient, mode: PasswordMode, fo
   if (mode === "forgot") {
     const { error } = await client.auth.resetPasswordForEmail(email, { redirectTo: `${origin}/auth/callback?next=%2Freset-password` });
     if (error && error.code !== "user_not_found") return { error: error.status === 429 ? "Too many requests. Please wait before requesting another email." : "The reset email could not be requested right now. Please try again later." };
-    return { message: "If an account exists for this email, you will receive a password reset link. Open it in this browser. Check your spam folder too." };
+    return { message: "If an account exists for this email, you will receive a password reset link. Open the latest email link to choose your new password. You can open it on another device or in your mail app. Check your spam folder too." };
   }
   const { data: { user }, error: sessionError } = await client.auth.getUser();
   if (sessionError || !user) return { error: "Your reset session has expired. Request a new password reset link." };

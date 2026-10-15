@@ -1,5 +1,6 @@
 import type { Metadata, Viewport } from "next";
 import type { ReactNode } from "react";
+import { RecoveryLinkHandler } from "@/components/auth/RecoveryLinkHandler";
 import AnalyticsScripts from "@/components/analytics/AnalyticsScripts";
 import GlobalExplainMode from "@/components/help/GlobalExplainMode";
 import AuthDock from "@/components/identity/AuthDock";
@@ -96,6 +97,7 @@ export default function RootLayout({ children }: { children: ReactNode }) {
         ))}
       </head>
       <body className="antialiased">
+        <RecoveryLinkHandler />
         <AnalyticsScripts />
         {children}
         <GlobalFooter />
