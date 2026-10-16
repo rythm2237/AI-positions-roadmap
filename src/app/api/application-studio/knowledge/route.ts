@@ -23,6 +23,15 @@ export async function POST(request:Request){
    knowledge=current.knowledge;for(const item of items)knowledge=importKnowledge(knowledge,{text:'Professional Development\n'+item.title+' — '+item.provider+'; '+item.provenance,type:'platform-learning',label:item.id});
   }
   else if(body.operation==='confirm')knowledge=confirmFact(current.knowledge,body.fact||{});
+  else if(body.operation==='replace') {
+   const oldClaim=current.knowledge.claims.find(claim=>claim.id===body.claimId&&!claim.retracted&&!current.knowledge.declined.includes(claim.id));
+   if(!oldClaim)return json({error:'The fact no longer exists. Reload your profile.'},409);
+   const entity=current.knowledge.entities.find(item=>item.id===oldClaim.entityId);
+   if(!entity||typeof body.text!=='string'||!body.text.trim())return json({error:'Enter the corrected professional fact.'},400);
+   if(oldClaim.original.trim()===body.text.trim())return json({userId:user.id,...current});
+   const updated=confirmFact(current.knowledge,{entityId:entity.id,kind:entity.kind,label:entity.label,text:body.text,field:'context'});
+   knowledge=retractFact(updated,oldClaim.id);
+  }
   else if(body.operation==='retract')knowledge=retractFact(current.knowledge,body.claimId);
   else return json({error:'Invalid candidate knowledge operation.'},400);
   if(knowledge.revision===current.knowledge.revision)return json({userId:user.id,...current});
