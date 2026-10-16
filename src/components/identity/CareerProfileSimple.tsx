@@ -8,7 +8,8 @@ import type { Profile } from "@/types/identity";
 
 type Category=typeof CAREER_SECTIONS[number]["kind"];
 type SemanticRecord={kind:Category;label:string;text:string;sourceQuote:string;details:Record<string,string>;edited?:boolean};
-type Draft={sourceText:string;name:string;file?:File;records:SemanticRecord[];uncertain:string[];rejected:number;selected:number[]};
+type SourceType="cv"|"linkedin"|"certification"|"project-document";
+type Draft={sourceText:string;name:string;file?:File;sourceType:SourceType;records:SemanticRecord[];uncertain:string[];rejected:number;selected:number[]};
 type KnowledgeResponse={userId?:string;knowledge?:Knowledge;error?:string};
 const important=["header","experience","skills","education","certifications","projects","languages","development"] as Category[];
 const shortNames:Record<string,string>={
@@ -33,6 +34,7 @@ export function CareerProfileSimple({profile,userId,hasResume}: {profile:Profile
  const [consent,setConsent]=useState(false);
  const [draft,setDraft]=useState<Draft|null>(null);
  const [pasted,setPasted]=useState("");
+ const [pastedSource,setPastedSource]=useState<SourceType>("cv");
  const [activeCategory,setActiveCategory]=useState<string>("");
  const [more,setMore]=useState(false);
  const [query,setQuery]=useState("");
@@ -67,7 +69,7 @@ export function CareerProfileSimple({profile,userId,hasResume}: {profile:Profile
    setKnowledge(result.knowledge);
  }
 
- async function analyseSource(text:string,name:string,file?:File){
+ async function analyseSource(text:string,name:string,file?:File,sourceType:SourceType="cv"){
    if(!ready||busy)return;
    if(text.trim().length<8){setNotice("The file contains too little readable text.");return;}
    if(text.length>90000){setNotice("This file is too long for automatic analysis. Try a shorter resume.");return;}
@@ -79,7 +81,7 @@ export function CareerProfileSimple({profile,userId,hasResume}: {profile:Profile
      });
      const result=await res.json() as {records?:SemanticRecord[];uncertain?:string[];rejected?:number;error?:string};
      if(!res.ok||!result.records?.length)throw Error(result.error||"No reliable information could be extracted.");
-     setDraft({sourceText:text,name,file,records:result.records,uncertain:result.uncertain||[],
+     setDraft({sourceText:text,name,file,sourceType,records:result.records,uncertain:result.uncertain||[],
        rejected:result.rejected||0,selected:result.records.map((_,i)=>i)});
      setStage("review");
    }catch(e){setStage("upload");setNotice(errorText(e));}
@@ -132,7 +134,7 @@ export function CareerProfileSimple({profile,userId,hasResume}: {profile:Profile
    try{
      const records=draft.selected.map(i=>draft.records[i]).filter(r=>r.label.trim()&&r.text.trim());
      if(!records.length)throw Error("Select at least one valid record.");
-     await saveKnowledge("semantic-import",{text:draft.sourceText,type:"cv",label:draft.name,records});
+     await saveKnowledge("semantic-import",{text:draft.sourceText,type:draft.sourceType,label:draft.name,records});
      const detail=draft.file?await storeMasterCv(draft.file):"";
      setDraft(null);setStage("upload");
      setNotice("Profile updated. "+records.length+" reviewed records processed. "+detail);
@@ -235,8 +237,9 @@ export function CareerProfileSimple({profile,userId,hasResume}: {profile:Profile
        <p className="mt-3 text-xs text-slate-500">PDF, DOCX or TXT · Maximum 8 MB · Scanned PDFs may require an extra AI transcription request</p>
        <details className="mt-5 max-w-xl rounded-xl border border-white/10 bg-black/10 px-4 py-3">
          <summary className="cursor-pointer text-sm font-medium text-indigo-100">Or paste your CV text instead</summary>
+         <select aria-label="Text source" className="input-field mt-3 w-full" value={pastedSource} onChange={e=>setPastedSource(e.target.value as SourceType)}><option value="cv">CV / résumé</option><option value="linkedin">LinkedIn profile text</option><option value="certification">Certificate</option><option value="project-document">Project document</option></select>
          <textarea className="input-field mt-3 min-h-28 w-full" value={pasted} onChange={e=>setPasted(e.target.value)} maxLength={90000} placeholder="Paste your résumé or LinkedIn profile text here…"/>
-         <button className="btn-secondary mt-3 min-h-10 text-sm disabled:opacity-50" type="button" disabled={!ready||!consent||busy||pasted.trim().length<8} onClick={()=>void analyseSource(pasted,"Pasted CV / professional profile")}>Analyse pasted text</button>
+         <button className="btn-secondary mt-3 min-h-10 text-sm disabled:opacity-50" type="button" disabled={!ready||!consent||busy||pasted.trim().length<8} onClick={()=>void analyseSource(pasted,"Pasted professional text",undefined,pastedSource)}>Analyse pasted text</button>
        </details>
      </div>
    </section>}
