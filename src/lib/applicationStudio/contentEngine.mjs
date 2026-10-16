@@ -26,7 +26,7 @@ const kinds = [
   ['projects', /^(selected projects|key projects|projects|portfolio|portfolio projects)$/i],
   ['education', /^(education|academic background|ausbildung|formation)$/i],
   ['certifications', /^(certifications|certificates|credentials|licenses)$/i],
-  ['development', /^(professional development|training(?: and courses)?|courses|professional training|learning)$/i],
+  ['development', /^(professional development|training(?:\\s*(?:and|&)\\s*courses)?|courses|professional training|learning)$/i],
   ['languages', /^(languages|language skills|sprachen|langues)$/i],
   ['additional', /^(achievements|key achievements|awards|publications|additional experience|earlier experience|sonstiges|weitere angaben|zusätzliche angaben)$/i],
 ];
