@@ -345,7 +345,7 @@ export function CareerProfileSimple({profile,userId,hasResume}: {profile:Profile
              </span><span className="flex shrink-0 items-center gap-3"><span className="rounded-full bg-white/[.08] px-2.5 py-1 text-xs text-slate-300">{counts[s.kind]}</span><span className="text-xl text-slate-400">{activeCategory===s.kind?"−":"+"}</span></span>
            </button>
            {activeCategory===s.kind&&<div className="border-t border-white/10 p-4">
-             {items.length>=4&&<div className="mb-4 flex flex-wrap items-center justify-between gap-3 rounded-xl border border-indigo-300/15 bg-indigo-300/[.03] p-3">
+             {items.length>=4&&s.kind!=="preferences"&&<div className="mb-4 flex flex-wrap items-center justify-between gap-3 rounded-xl border border-indigo-300/15 bg-indigo-300/[.03] p-3">
                <p className="max-w-lg text-xs leading-5 text-slate-300">Have outdated, split or repeated CV entries? Organise this section into complete records, then review before saving.</p>
                <button type="button" className="btn-secondary min-h-10 text-xs disabled:opacity-50" disabled={busy||!ready} onClick={()=>void proposeReconstruction(s.kind)}>Organise imported entries</button>
              </div>}
