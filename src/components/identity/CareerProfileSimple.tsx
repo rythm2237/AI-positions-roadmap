@@ -62,6 +62,20 @@ export function CareerProfileSimple({profile,userId,hasResume}: {profile:Profile
  const scores=useMemo(()=>careerProfileScores(profile,knowledge,resumeStored),[profile,knowledge,resumeStored]);
  const total=Object.values(groups).reduce((n,a)=>n+a.length,0);
  const privateCount=useMemo(()=>sensitiveClaimIds(knowledge).length,[knowledge]);
+ const repairable=useMemo(()=>{
+   const count:Record<string,number>={};
+   const entities=new Map(knowledge.entities.map(e=>[e.id,e]));
+   const hidden=new Set(sensitiveClaimIds(knowledge));
+   const declined=new Set(knowledge.declined);
+   for(const claim of knowledge.claims){
+     if(!claim.confirmed||claim.retracted||declined.has(claim.id)||hidden.has(claim.id)||
+        claim.verification==="candidate-confirmed"||/^(?:semantic-v2:|reconstructed:)/.test(String(claim.location||"")))continue;
+     const kind=entities.get(claim.entityId)?.kind;
+     if(kind)count[kind]=(count[kind]||0)+1;
+   }
+   return count;
+ },[knowledge]);
+
  const sections=useMemo(()=>CAREER_SECTIONS.filter(s=>(important.includes(s.kind)||more)&&
     (!query.trim()||(categoryName(s.kind)+" "+groups[s.kind].map(f=>f.text+" "+f.label).join(" ")).toLowerCase().includes(query.toLowerCase()))),[groups,more,query]);
  const counts=useMemo(()=>Object.fromEntries(CAREER_SECTIONS.map(s=>[s.kind,groups[s.kind]?.length||0])),[groups]);
@@ -362,8 +376,8 @@ export function CareerProfileSimple({profile,userId,hasResume}: {profile:Profile
              </span><span className="flex shrink-0 items-center gap-3"><span className="rounded-full bg-white/[.08] px-2.5 py-1 text-xs text-slate-300">{counts[s.kind]}</span><span className="text-xl text-slate-400">{activeCategory===s.kind?"−":"+"}</span></span>
            </button>
            {activeCategory===s.kind&&<div className="border-t border-white/10 p-4">
-             {items.length>=4&&s.kind!=="preferences"&&<div className="mb-4 flex flex-wrap items-center justify-between gap-3 rounded-xl border border-indigo-300/15 bg-indigo-300/[.03] p-3">
-               <p className="max-w-lg text-xs leading-5 text-slate-300">Have outdated, split or repeated CV entries? Organise this section into complete records, then review before saving.</p>
+             {(repairable[s.kind]||0)>=2&&s.kind!=="preferences"&&<div className="mb-4 flex flex-wrap items-center justify-between gap-3 rounded-xl border border-indigo-300/15 bg-indigo-300/[.03] p-3">
+               <p className="max-w-lg text-xs leading-5 text-slate-300">{repairable[s.kind]} older CV fragments need review. Group them into complete records without deleting the originals.</p>
                <button type="button" className="btn-secondary min-h-10 text-xs disabled:opacity-50" disabled={busy||!ready} onClick={()=>void proposeReconstruction(s.kind)}>Organise imported entries</button>
              </div>}
              {matches.length===0?<p className="text-sm text-slate-500">No information here yet. Import your CV or add a detail below.</p>:
