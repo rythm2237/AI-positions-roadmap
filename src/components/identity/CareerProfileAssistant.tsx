@@ -5,9 +5,10 @@ import { useState } from "react";
 type Proposal = { kind: string; field: string; label: string; text: string; excerpt: string; reason: string };
 type AssistantResult = { proposals?: Proposal[]; questions?: string[]; omitted?: number; error?: string };
 
-export function CareerProfileAssistant({ busy, disabled, onApprove }: {
+export function CareerProfileAssistant({ busy, disabled, cvText, onApprove }: {
   busy: boolean;
   disabled: boolean;
+  cvText?: string;
   onApprove: (facts: Array<{ kind: string; field: string; label: string; text: string }>) => Promise<void>;
 }) {
   const [note, setNote] = useState("");
@@ -18,14 +19,15 @@ export function CareerProfileAssistant({ busy, disabled, onApprove }: {
   const [status, setStatus] = useState("");
   const pending = busy || loading || disabled;
 
-  async function propose() {
+  async function propose(mode: "note" | "cv" = "note") {
     setProposals([]); setSelected([]); setQuestions([]); setStatus("");
-    if (note.trim().length < 10) return setStatus("Enter at least one genuine professional detail.");
+    const sourceText = mode === "cv" ? (cvText || "").slice(0, 22000) : note;
+    if (sourceText.trim().length < 10) return setStatus("Enter at least one genuine professional detail.");
     setLoading(true);
     try {
       const response = await fetch("/api/career-profile/assist", {
         method: "POST", headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ text: note, mode: "note" }),
+        body: JSON.stringify({ text: sourceText, mode }),
       });
       const data = await response.json() as AssistantResult;
       if (!response.ok) throw new Error(data.error || "AI assistant is not available.");
@@ -57,7 +59,8 @@ export function CareerProfileAssistant({ busy, disabled, onApprove }: {
     <label className="mt-5 block text-sm text-slate-300">Professional details
       <textarea value={note} onChange={(e) => setNote(e.target.value)} maxLength={22000} placeholder="Example: I built a Power BI dashboard for department-level replenishment planning in 2025. It compares daily workload with forecast demand." className="input-field mt-2 min-h-32 w-full" />
     </label>
-    <button disabled={pending || note.trim().length < 10} type="button" className="btn-secondary mt-4 min-h-11 disabled:opacity-50" onClick={() => void propose()}>{loading ? "Reviewing…" : "Suggest profile updates"}</button>
+    <button disabled={pending || note.trim().length < 10} type="button" className="btn-secondary mt-4 min-h-11 disabled:opacity-50" onClick={() => void propose("note")}>{loading ? "Reviewing…" : "Suggest profile updates"}</button>
+    {cvText && <button disabled={pending} type="button" className="btn-secondary ml-2 mt-4 min-h-11 disabled:opacity-50" onClick={() => void propose("cv")}>AI review extracted CV</button>}
     {status && <p role="status" className="mt-3 text-sm text-indigo-100">{status}</p>}
     {proposals.length > 0 && <div className="mt-5 space-y-3">
       <h3 className="font-semibold text-white">Proposed updates ({selected.length} selected)</h3>
