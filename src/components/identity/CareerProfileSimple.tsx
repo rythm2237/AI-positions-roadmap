@@ -286,6 +286,43 @@ export function CareerProfileSimple({profile,userId,hasResume}: {profile:Profile
      </div>
    </section>}
 
+
+   {repairDraft && <section id="career-repair-review" className="scroll-mt-24 rounded-2xl border border-indigo-300/30 bg-slate-950/85 p-5 sm:p-7">
+     <div className="flex flex-wrap items-start justify-between gap-3">
+       <div><p className="text-xs font-semibold uppercase tracking-widest text-indigo-300">Review before changing existing details</p>
+         <h2 className="mt-2 text-xl font-semibold text-white">Organise {categoryName(repairDraft.kind)}</h2>
+         <p className="mt-2 text-sm leading-6 text-slate-300">We reviewed {repairDraft.originalCount} imported fragments and prepared {repairDraft.records.length} complete records.
+           Only approved items will replace their original fragments. A private backup is saved first.</p></div>
+       <button type="button" className="btn-secondary min-h-10 text-sm" disabled={busy} onClick={()=>setRepairDraft(null)}>Cancel</button>
+     </div>
+     {repairDraft.remaining>0&&<p className="mt-3 text-xs text-amber-200">{repairDraft.remaining} additional original entries remain outside this batch.</p>}
+     {repairDraft.rejected>0&&<p className="mt-2 text-xs text-amber-200">{repairDraft.rejected} unsupported suggestions were discarded.</p>}
+     {repairDraft.uncertain.length>0&&<details className="mt-3 text-xs text-amber-200"><summary className="cursor-pointer">Uncertain details</summary><ul className="mt-2 list-disc pl-5">{repairDraft.uncertain.map((q,i)=><li key={i}>{q}</li>)}</ul></details>}
+     <div className="mt-5 space-y-3">
+       {repairDraft.records.map((item,index)=><article key={index} className={"rounded-xl border p-4 "+(repairDraft.selected.includes(index)?"border-indigo-300/20 bg-white/[.025]":"border-white/5 opacity-60")}>
+         <div className="flex flex-wrap items-center gap-3">
+           <label className="flex min-w-0 flex-1 items-center gap-2">
+             <input type="checkbox" aria-label={"Include "+item.label} checked={repairDraft.selected.includes(index)}
+               onChange={e=>setRepairDraft(old=>old?{...old,selected:e.target.checked?[...old.selected,index]:old.selected.filter(x=>x!==index)}:old)}/>
+             <input className="input-field min-w-0 flex-1 text-sm" aria-label="Record title" maxLength={150} value={item.label} onChange={e=>changeRepair(index,{label:e.target.value})}/>
+           </label>
+           <select className="input-field max-w-40 text-sm" aria-label={"Section for "+item.label} value={item.kind}
+             onChange={e=>changeRepair(index,{kind:e.target.value as Category})}>
+             {CAREER_SECTIONS.map(c=><option key={c.kind} value={c.kind}>{categoryName(c.kind)}</option>)}
+           </select>
+         </div>
+         <textarea className="input-field mt-3 min-h-16 w-full text-sm" aria-label={"Details for "+item.label} maxLength={2000}
+           value={item.text} onChange={e=>changeRepair(index,{text:e.target.value})}/>
+         <p className="mt-2 text-xs text-slate-500">Based on {item.sourceClaimIds.length} saved source entries · Original history retained</p>
+       </article>)}
+     </div>
+     <div className="sticky bottom-3 z-10 mt-5 flex flex-wrap items-center justify-between gap-3 rounded-xl border border-indigo-300/20 bg-slate-950 p-3">
+       <span className="text-xs text-slate-300">{repairDraft.selected.length} of {repairDraft.records.length} selected</span>
+       <button type="button" className="btn-primary min-h-11 disabled:opacity-50" disabled={busy||!repairDraft.selected.length}
+         onClick={()=>void saveReconstruction()}>{busy?"Saving…":"Confirm & save with backup"}</button>
+     </div>
+   </section>}
+
    {notice&&<p role="status" aria-live="polite" className="rounded-xl border border-white/10 bg-slate-900/80 p-3 text-sm text-slate-200">{notice}</p>}
 
    <section aria-labelledby="career-simple-sections">
@@ -297,16 +334,23 @@ export function CareerProfileSimple({profile,userId,hasResume}: {profile:Profile
      <div className="mt-5 grid gap-3 md:grid-cols-2">
        {sections.map(s=>{
          const items=groups[s.kind]||[];
-         const matches=query.trim()?items.filter(i=>normalised(i.text+" "+i.label).includes(normalised(query))):items;
+         const unique=new Set<string>();
+         const distinct=items.filter(item=>{const key=normalised(item.text);if(unique.has(key))return false;unique.add(key);return true;});
+         const matches=query.trim()?distinct.filter(i=>normalised(i.text+" "+i.label).includes(normalised(query))):distinct;
+         const visible=showAll[s.kind]?matches:matches.slice(0,6);
          return <article key={s.kind} className={"min-w-0 rounded-xl border border-white/10 bg-slate-950/45 "+(activeCategory===s.kind?"md:col-span-2":"")}>
            <button type="button" aria-expanded={activeCategory===s.kind} className="flex w-full items-center justify-between gap-3 p-4 text-left" onClick={()=>setActiveCategory(v=>v===s.kind?"":s.kind)}>
              <span className="min-w-0"><span className="block font-semibold text-white">{categoryName(s.kind)}</span>
-               <span className="mt-1 block truncate text-xs text-slate-400">{items.length?items.slice(0,2).map(x=>x.label).join(" · "):"Not added yet"}</span>
+               <span className="mt-1 block truncate text-xs text-slate-400">{items.length?items.slice(0,2).map(x=>x.text.replace(/^[•*-]\s*/,"").slice(0,48)).join(" · "):"Not added yet"}</span>
              </span><span className="flex shrink-0 items-center gap-3"><span className="rounded-full bg-white/[.08] px-2.5 py-1 text-xs text-slate-300">{counts[s.kind]}</span><span className="text-xl text-slate-400">{activeCategory===s.kind?"−":"+"}</span></span>
            </button>
            {activeCategory===s.kind&&<div className="border-t border-white/10 p-4">
+             {items.length>=4&&<div className="mb-4 flex flex-wrap items-center justify-between gap-3 rounded-xl border border-indigo-300/15 bg-indigo-300/[.03] p-3">
+               <p className="max-w-lg text-xs leading-5 text-slate-300">Have outdated, split or repeated CV entries? Organise this section into complete records, then review before saving.</p>
+               <button type="button" className="btn-secondary min-h-10 text-xs disabled:opacity-50" disabled={busy||!ready} onClick={()=>void proposeReconstruction(s.kind)}>Organise imported entries</button>
+             </div>}
              {matches.length===0?<p className="text-sm text-slate-500">No information here yet. Import your CV or add a detail below.</p>:
-             <ul className="space-y-2">{matches.slice(0,80).map(item=><li key={item.id} className="rounded-lg border border-white/[.07] bg-white/[.02] p-3">
+             <ul className="space-y-2">{visible.map(item=><li key={item.id} className="rounded-lg border border-white/[.07] bg-white/[.02] p-3">
                {editing?.id===item.id?<div><textarea value={editing.value} maxLength={4000} onChange={e=>setEditing({id:item.id,value:e.target.value})} className="input-field min-h-20 w-full text-sm"/>
                  <div className="mt-2 flex gap-2"><button className="btn-primary min-h-10 text-xs" disabled={busy||!editing.value.trim()} onClick={()=>void saveCorrection(item.id,editing.value)}>Save</button>
                    <button className="btn-secondary min-h-10 text-xs" onClick={()=>setEditing(null)}>Cancel</button></div></div>:
@@ -315,6 +359,7 @@ export function CareerProfileSimple({profile,userId,hasResume}: {profile:Profile
                    <button className="text-rose-300 hover:text-rose-200" type="button" disabled={busy} onClick={()=>void remove(item.id)}>Remove</button>
                    <span className="text-slate-500">{item.sourceType==="cv"?"From CV":item.verification==="candidate-confirmed"?"Added by you":"Saved source"}</span></div></>}
              </li>)}</ul>}
+             {matches.length>6&&<button type="button" className="mt-3 text-sm text-indigo-200 hover:text-indigo-100" onClick={()=>setShowAll(p=>({...p,[s.kind]:!p[s.kind]}))}>{showAll[s.kind]?"Show fewer records":"Show "+(matches.length-6)+" more records"}</button>}
              <details className="mt-4 rounded-lg border border-white/10 px-3 py-2"><summary className="cursor-pointer text-sm text-indigo-200">+ Add information</summary>
                <div className="mt-3 space-y-3">
                  <label className="block text-xs text-slate-400">Title<input className="input-field mt-1 w-full" maxLength={150} value={manual.kind===s.kind?manual.title:""} onChange={e=>setManual({kind:s.kind,title:e.target.value,text:manual.kind===s.kind?manual.text:""})} placeholder={s.kind==="header"?"e.g. Address":s.kind==="skills"?"e.g. Power BI":"Record title"}/></label>
