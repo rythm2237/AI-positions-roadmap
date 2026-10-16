@@ -47,6 +47,7 @@ export function CareerProfileSimple({profile,userId,hasResume}: {profile:Profile
  const [editDraftIndex,setEditDraftIndex]=useState<number|null>(null);
  const [stage,setStage]=useState<"upload"|"analysing"|"review">("upload");
  const [repairDraft,setRepairDraft]=useState<RepairDraft|null>(null);
+ const [hasRepairBackup,setHasRepairBackup]=useState(false);
  const [showAll,setShowAll]=useState<Record<string,boolean>>({});
 
  useEffect(()=>{
@@ -197,9 +198,25 @@ export function CareerProfileSimple({profile,userId,hasResume}: {profile:Profile
      await saveKnowledge("reconcile",{kind:repairDraft.kind,
        records:repairDraft.selected.map(i=>repairDraft.records[i]).filter(r=>r.label.trim()&&r.text.trim())});
      const processed=repairDraft.selected.length,remaining=repairDraft.remaining;
-     setRepairDraft(null);setActiveCategory(repairDraft.kind);setShowAll(prev=>({...prev,[repairDraft.kind]:false}));
+     setRepairDraft(null);setHasRepairBackup(true);setActiveCategory(repairDraft.kind);setShowAll(prev=>({...prev,[repairDraft.kind]:false}));
      setNotice(processed+" reviewed records saved. Your previous profile has a private backup. "+
        (remaining?"Some old entries still need review.":""));
+   }catch(e){setNotice(errorText(e));}
+   finally{setBusy(false);}
+ }
+
+
+ async function undoLastReconstruction(){
+   if(busy||!ready)return;
+   if(!window.confirm("Restore your previous Career Profile? This reverses the latest organisation and any later profile changes, but creates another private recovery snapshot."))return;
+   setBusy(true);setNotice("");
+   try{
+     const res=await fetch("/api/career-profile/restore",{method:"POST",headers:{"Content-Type":"application/json"},
+       body:JSON.stringify({revision:knowledge.revision,sessionUserId:userId,confirmation:"RESTORE MY PROFILE"})});
+     const payload=await res.json() as KnowledgeResponse;
+     if(!res.ok||payload.userId!==userId||!payload.knowledge)throw Error(payload.error||"Restore failed.");
+     setKnowledge(payload.knowledge);setHasRepairBackup(false);setRepairDraft(null);
+     setNotice("Your previous profile has been restored. The previous state remains in a private recovery snapshot.");
    }catch(e){setNotice(errorText(e));}
    finally{setBusy(false);}
  }
@@ -377,6 +394,7 @@ export function CareerProfileSimple({profile,userId,hasResume}: {profile:Profile
      <summary className="cursor-pointer text-sm text-slate-400">Data & privacy options</summary>
      <p className="mt-2 text-xs text-slate-500">Your professional data belongs to your account. Previous generated CVs remain separate snapshots.</p>
      <div className="mt-3 flex flex-wrap gap-3"><button type="button" onClick={exportProfile} className="btn-secondary min-h-10 text-xs">Export profile JSON</button>
+       {hasRepairBackup&&<button type="button" disabled={busy} onClick={()=>void undoLastReconstruction()} className="btn-secondary min-h-10 text-xs disabled:opacity-50">Undo last cleanup</button>}
        <button type="button" disabled={!ready||busy} onClick={()=>void clearFacts()} className="rounded-lg border border-rose-300/20 px-3 text-xs text-rose-200 disabled:opacity-50">Clear saved career facts</button></div>
    </details>
  </div>;
