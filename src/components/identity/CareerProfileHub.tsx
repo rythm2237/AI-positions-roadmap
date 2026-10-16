@@ -31,6 +31,7 @@ export function CareerProfileHub({ profile, userId, hasResume }: { profile: Prof
   const [importDraft, setImportDraft] = useState<ImportDraft | null>(null);
   const [sourceKind, setSourceKind] = useState<ImportSource>("cv");
   const [pastedProfile, setPastedProfile] = useState("");
+  const [pendingScan, setPendingScan] = useState<{file:File; sourceType:ImportSource}|null>(null);
   const [lastCvText, setLastCvText] = useState("");
   const [kind, setKind] = useState<string>("experience");
   const [entityId, setEntityId] = useState("");
@@ -79,6 +80,7 @@ export function CareerProfileHub({ profile, userId, hasResume }: { profile: Prof
   async function readCV(file: File) {
     setStatus("");
     setImportDraft(null);
+    setPendingScan(null);
     const extension = file.name.split(".").pop()?.toLowerCase();
     if (!["pdf", "docx", "txt"].includes(extension || "") || !file.size || file.size > MAX_BYTES) {
       setStatus("Choose a readable PDF, DOCX or TXT file up to 8 MB.");
@@ -90,9 +92,30 @@ export function CareerProfileHub({ profile, userId, hasResume }: { profile: Prof
       data.set("file", file);
       const response = await fetch("/api/cv-analyzer/extract", { method: "POST", body: data });
       const result = await response.json() as { text?: string; error?: string };
-      if (!response.ok || !result.text) throw new Error(result.error || "No readable CV text was found. Scanned image-only PDFs need an OCR-capable file.");
+      if (!response.ok && response.status === 422 && extension === "pdf") {
+        setPendingScan({file,sourceType:sourceKind});
+        setStatus("This PDF has no selectable text. You can try the optional AI scan reader, which uses one AI request and requires your consent.");
+        return;
+      }
+      if (!response.ok || !result.text) throw new Error(result.error || "No readable CV text was found.");
       setImportDraft({ file, name: file.name, sourceType: sourceKind, text: result.text, characters: result.text.length });
       setStatus("Review what will be added to your profile. This preview has not been saved.");
+    } catch (error) { setStatus(messageOf(error)); }
+    finally { setBusy(false); }
+  }
+
+  async function readScannedPDF() {
+    if (!pendingScan || busy || !knowledgeReady) return;
+    setBusy(true); setStatus("");
+    try {
+      const form = new FormData();
+      form.set("file", pendingScan.file); form.set("consent", "yes");
+      const response = await fetch("/api/career-profile/ocr", { method:"POST", body:form });
+      const data = await response.json() as { text?:string; error?:string };
+      if (!response.ok || !data.text) throw new Error(data.error || "Scan could not be read.");
+      setImportDraft({file:pendingScan.file,name:pendingScan.file.name,sourceType:pendingScan.sourceType,text:data.text,characters:data.text.length});
+      setPendingScan(null);
+      setStatus("AI transcription complete. Review all names, dates, claims and qualifications carefully before importing.");
     } catch (error) { setStatus(messageOf(error)); }
     finally { setBusy(false); }
   }
@@ -289,6 +312,7 @@ export function CareerProfileHub({ profile, userId, hasResume }: { profile: Prof
         <div className="flex flex-wrap gap-3"><button type="button" disabled={busy} onClick={() => void confirmImport()} className="btn-primary min-h-11 disabled:opacity-50">Confirm & import to my profile</button>
           <button type="button" disabled={busy} onClick={() => setImportDraft(null)} className="btn-secondary min-h-11">Cancel</button></div>
       </div>}
+      {pendingScan && <button type="button" disabled={busy} onClick={() => void readScannedPDF()} className="btn-secondary mt-3 min-h-11 text-sm disabled:opacity-50">I consent · Try AI OCR for this PDF (uses AI allowance)</button>}
       {status && <p role="status" aria-live="polite" className="mt-4 rounded-lg border border-white/10 bg-white/[.03] p-3 text-sm text-slate-200">{status}</p>}
     </section>
 
