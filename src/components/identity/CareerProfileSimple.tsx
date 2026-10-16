@@ -5,12 +5,15 @@ import { createClient } from "@/lib/supabase/client";
 import { emptyKnowledge, type Knowledge } from "@/lib/applicationStudio/knowledge.mjs";
 import { CAREER_SECTIONS, careerProfileScores, factsBySection } from "@/lib/identity/careerProfileHub";
 import type { Profile } from "@/types/identity";
+import { sensitiveClaimIds } from "@/lib/identity/careerPrivacy.mjs";
 
 type Category=typeof CAREER_SECTIONS[number]["kind"];
 type SemanticRecord={kind:Category;label:string;text:string;sourceQuote:string;details:Record<string,string>;edited?:boolean};
 type SourceType="cv"|"linkedin"|"certification"|"project-document";
 type Draft={sourceText:string;name:string;file?:File;sourceType:SourceType;records:SemanticRecord[];uncertain:string[];rejected:number;selected:number[]};
 type KnowledgeResponse={userId?:string;knowledge?:Knowledge;error?:string};
+type RebuiltItem={kind:Category;label:string;text:string;sourceClaimIds:string[];reason?:string;edited?:boolean};
+type RepairDraft={kind:Category;records:RebuiltItem[];selected:number[];originalCount:number;remaining:number;rejected:number;uncertain:string[];skipped:{sensitive:number;manual:number}};
 const important=["header","experience","skills","education","certifications","projects","languages","development"] as Category[];
 const shortNames:Record<string,string>={
  header:"Personal & contact",summary:"Professional summary",experience:"Work experience",
@@ -43,6 +46,8 @@ export function CareerProfileSimple({profile,userId,hasResume}: {profile:Profile
  const [resumeStored,setResumeStored]=useState(hasResume);
  const [editDraftIndex,setEditDraftIndex]=useState<number|null>(null);
  const [stage,setStage]=useState<"upload"|"analysing"|"review">("upload");
+ const [repairDraft,setRepairDraft]=useState<RepairDraft|null>(null);
+ const [showAll,setShowAll]=useState<Record<string,boolean>>({});
 
  useEffect(()=>{
    const controller=new AbortController();
@@ -55,6 +60,7 @@ export function CareerProfileSimple({profile,userId,hasResume}: {profile:Profile
  const groups=useMemo(()=>factsBySection(knowledge),[knowledge]);
  const scores=useMemo(()=>careerProfileScores(profile,knowledge,resumeStored),[profile,knowledge,resumeStored]);
  const total=Object.values(groups).reduce((n,a)=>n+a.length,0);
+ const privateCount=useMemo(()=>sensitiveClaimIds(knowledge).length,[knowledge]);
  const sections=useMemo(()=>CAREER_SECTIONS.filter(s=>(important.includes(s.kind)||more)&&
     (!query.trim()||(categoryName(s.kind)+" "+groups[s.kind].map(f=>f.text+" "+f.label).join(" ")).toLowerCase().includes(query.toLowerCase()))),[groups,more,query]);
  const counts=useMemo(()=>Object.fromEntries(CAREER_SECTIONS.map(s=>[s.kind,groups[s.kind]?.length||0])),[groups]);
@@ -163,6 +169,41 @@ export function CareerProfileSimple({profile,userId,hasResume}: {profile:Profile
    catch(e){setNotice(errorText(e));}
    finally{setBusy(false);}
  }
+
+ async function proposeReconstruction(kind:Category){
+   if(busy||!ready)return;
+   if(!window.confirm("Organise imported "+categoryName(kind)+" records using AI? Only professional details will be analysed. Nothing changes until you review and save."))return;
+   setBusy(true);setNotice("");
+   try{
+     const response=await fetch("/api/career-profile/reconstruct",{method:"POST",headers:{"Content-Type":"application/json"},
+       body:JSON.stringify({kind,revision:knowledge.revision,consent:true})});
+     const result=await response.json() as {records?:RebuiltItem[];originalCount?:number;remaining?:number;rejected?:number;
+       uncertain?:string[];skipped?:{sensitive:number;manual:number};error?:string};
+     if(!response.ok||!result.records?.length)throw Error(result.error||"No reliable reconstruction proposals found.");
+     setRepairDraft({kind,records:result.records,selected:result.records.map((_,i)=>i),
+       originalCount:result.originalCount||0,remaining:result.remaining||0,rejected:result.rejected||0,
+       uncertain:result.uncertain||[],skipped:result.skipped||{sensitive:0,manual:0}});
+     requestAnimationFrame(()=>document.getElementById("career-repair-review")?.scrollIntoView({behavior:"smooth",block:"start"}));
+   }catch(e){setNotice(errorText(e));}
+   finally{setBusy(false);}
+ }
+ function changeRepair(index:number,patch:Partial<RebuiltItem>){
+   setRepairDraft(current=>current?{...current,records:current.records.map((r,i)=>i===index?{...r,...patch,edited:true}:r)}:current);
+ }
+ async function saveReconstruction(){
+   if(!repairDraft||busy||!repairDraft.selected.length)return;
+   setBusy(true);setNotice("");
+   try{
+     await saveKnowledge("reconcile",{kind:repairDraft.kind,
+       records:repairDraft.selected.map(i=>repairDraft.records[i]).filter(r=>r.label.trim()&&r.text.trim())});
+     const processed=repairDraft.selected.length,remaining=repairDraft.remaining;
+     setRepairDraft(null);setActiveCategory(repairDraft.kind);setShowAll(prev=>({...prev,[repairDraft.kind]:false}));
+     setNotice(processed+" reviewed records saved. Your previous profile has a private backup. "+
+       (remaining?"Some old entries still need review.":""));
+   }catch(e){setNotice(errorText(e));}
+   finally{setBusy(false);}
+ }
+
  function exportProfile(){
    const content=JSON.stringify({exportVersion:2,exportedAt:new Date().toISOString(),profile,knowledge},null,2);
    const url=URL.createObjectURL(new Blob([content],{type:"application/json"}));
@@ -186,7 +227,8 @@ export function CareerProfileSimple({profile,userId,hasResume}: {profile:Profile
      <div role="progressbar" aria-label="Profile completeness" aria-valuemin={0} aria-valuemax={100} aria-valuenow={scores.completeness} className="mt-4 h-2 overflow-hidden rounded-full bg-slate-800">
        <div className="h-full rounded-full bg-gradient-to-r from-violet-400 to-cyan-300 transition-all" style={{width:scores.completeness+"%"}} />
      </div>
-     <p className="mt-3 text-xs text-slate-400">{ready?total+" saved details · "+scores.missing.length+" essential sections to improve":"Loading saved profile…"}</p>
+     <p className="mt-3 text-xs text-slate-400">{ready?total+" professional entries · "+scores.missing.length+" essential sections to improve":"Loading saved profile…"}</p>
+     {privateCount>0&&<p className="mt-2 text-xs text-amber-200">{privateCount} private financial or identity entries excluded from this professional profile and job matching. Original sources remain privately saved.</p>}
    </section>
 
    {draft ? <section className="rounded-2xl border border-indigo-300/20 bg-slate-950/80 p-5 sm:p-7">
