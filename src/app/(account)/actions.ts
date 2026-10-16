@@ -22,6 +22,7 @@ export async function completeOnboarding(form?: FormData) {
   if (preferenceError) redirect(`/onboarding?error=save&code=${encodeURIComponent(preferenceError.code ?? "unknown")}`);
   await supabase.from("user_activity").insert({ user_id: user.id, action: "onboarding_completed", metadata: { journey_mode: journeyMode } });
   revalidatePath("/dashboard"); revalidatePath("/profile");
+  if (form && text(form, "profile_first") === "yes") redirect("/profile?welcome=cv");
   redirect(journeyMode === "ready_to_apply" ? "/job-search-mode?welcome=1" : "/#career-universe");
 }
 
