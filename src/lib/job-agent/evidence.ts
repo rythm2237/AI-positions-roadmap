@@ -110,6 +110,7 @@ export function evidenceFromCareerKnowledge(profileId: string, knowledge: {
     const entity = entities.get(claim.entityId);
     if (!entity) continue;
     const kind = entity.kind;
+    if (kind === "preferences") continue; // Search preferences are not qualifications.
     const evidenceType: EvidenceType =
       kind === "certifications" ? "certification" :
       kind === "languages" ? "language" :
