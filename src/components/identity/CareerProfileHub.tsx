@@ -5,6 +5,8 @@ import { createClient } from "@/lib/supabase/client";
 import { emptyKnowledge, type Knowledge } from "@/lib/applicationStudio/knowledge.mjs";
 import { CAREER_SECTIONS, careerProfileScores, factsBySection, previewCareerImport, type ProfileFact } from "@/lib/identity/careerProfileHub";
 import type { Profile } from "@/types/identity";
+import { CareerProfileAssistant } from "./CareerProfileAssistant";
+import { CareerRecordDetails } from "./CareerRecordDetails";
 
 type KnowledgeResponse = { userId?: string; knowledge?: Knowledge; token?: string | null; error?: string };
 type ImportDraft = { file: File; text: string; characters: number };
@@ -125,6 +127,42 @@ export function CareerProfileHub({ profile, userId, hasResume }: { profile: Prof
     finally { setBusy(false); }
   }
 
+  async function approveAssistantFacts(facts: Array<{ kind: string; field: string; label: string; text: string }>) {
+    if (!knowledgeReady || busy) throw new Error("Profile is not available.");
+    setBusy(true);
+    try {
+      await changeKnowledge("batch-confirm", { facts });
+      setStatus(facts.length + " reviewed facts saved to the Career Profile Hub.");
+    } finally { setBusy(false); }
+  }
+
+  async function saveMetadata(entityId: string, metadata: Record<string, string | null>) {
+    if (!knowledgeReady || busy) throw new Error("Profile is not available.");
+    setBusy(true);
+    try { await changeKnowledge("metadata", { entityId, metadata }); }
+    finally { setBusy(false); }
+  }
+
+  async function moveFact(claimId: string, kind: string, label: string) {
+    if (!knowledgeReady || busy) return;
+    setBusy(true);
+    try {
+      await changeKnowledge("move", { claimId, kind, label });
+      setStatus("Fact moved to " + (CAREER_SECTIONS.find(s => s.kind === kind)?.title || kind));
+    } catch (error) { setStatus(messageOf(error)); }
+    finally { setBusy(false); }
+  }
+
+  function exportProfile() {
+    const payload = JSON.stringify({ exportVersion: 1, exportedAt: new Date().toISOString(), account: profile.id, basics: profile, knowledge }, null, 2);
+    const url = URL.createObjectURL(new Blob([payload], { type: "application/json" }));
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = "career-profile-backup.json";
+    link.click();
+    URL.revokeObjectURL(url);
+  }
+
   async function addFact() {
     if (!knowledgeReady || !factText.trim() || busy) return;
     setBusy(true); setStatus("");
@@ -184,6 +222,7 @@ export function CareerProfileHub({ profile, userId, hasResume }: { profile: Prof
       </div>
       {scores.missing.length > 0 && <p className="mt-4 text-sm text-amber-100">Suggested next sections: {scores.missing.slice(0, 3).join(" · ")}</p>}
       <p className="mt-2 text-xs text-slate-500">Self-reported CV information is not independently verified. Optional sections do not reduce profile completeness.</p>
+      <button type="button" disabled={!knowledgeReady} onClick={exportProfile} className="btn-secondary mt-3 min-h-10 text-xs disabled:opacity-50">Export my full career profile (JSON)</button>
     </section>
 
     <section className="glass rounded-2xl border border-indigo-300/20 p-5 sm:p-7" aria-labelledby="career-cv-import-title">
@@ -215,6 +254,8 @@ export function CareerProfileHub({ profile, userId, hasResume }: { profile: Prof
       </div>}
       {status && <p role="status" aria-live="polite" className="mt-4 rounded-lg border border-white/10 bg-white/[.03] p-3 text-sm text-slate-200">{status}</p>}
     </section>
+
+    <CareerProfileAssistant busy={busy} disabled={!knowledgeReady} onApprove={approveAssistantFacts} />
 
     <section id="career-profile-add-fact" className="glass scroll-mt-20 rounded-2xl border border-white/10 p-5 sm:p-7" aria-labelledby="career-add-title">
       <h2 id="career-add-title" className="text-xl font-semibold text-white">{entityId ? "Add details to an existing record" : "Add professional information"}</h2>
@@ -259,8 +300,14 @@ export function CareerProfileHub({ profile, userId, hasResume }: { profile: Prof
               <span className="text-slate-500">{item.verification === "candidate-confirmed" ? "Candidate confirmed" : "CV reported · review recommended"}</span>
               <button type="button" disabled={busy} className="text-indigo-200 underline-offset-2 hover:underline" onClick={() => addDetail(item)}>Add detail</button>
               <button type="button" disabled={busy} className="text-indigo-200 underline-offset-2 hover:underline" onClick={() => { setEditingId(item.id); setEditingText(item.text); }}>Edit</button>
+              <label className="text-slate-300">Move to
+                <select aria-label={"Move fact to a different section: " + item.text.slice(0, 40)} disabled={busy} value={item.kind} onChange={(e) => void moveFact(item.id, e.target.value, item.label || item.text.slice(0, 70))} className="ml-2 rounded border border-white/20 bg-slate-900 px-1 py-1 text-xs text-white">
+                  {CAREER_SECTIONS.map(sec => <option key={sec.kind} value={sec.kind}>{sec.title}</option>)}
+                </select>
+              </label>
               <button type="button" disabled={busy} className="text-rose-200 underline-offset-2 hover:underline" onClick={() => void removeFact(item.id)}>Remove</button>
             </div>
+            <CareerRecordDetails kind={item.kind} entityId={item.entityId} value={item.metadata} busy={busy} onSave={saveMetadata} />
           </li>)}</ul>
           {facts.length > 12 && <button type="button" className="btn-secondary mt-3 min-h-11 text-sm" onClick={() => setExpanded((previous) => ({ ...previous, [section.kind]: !previous[section.kind] }))}>{expanded[section.kind] ? "Show fewer" : "Show all " + facts.length + " facts"}</button>}
         </details>;
