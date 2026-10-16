@@ -36,6 +36,13 @@ export function importKnowledge(kb, { text, type = 'cv', sections, label = '' },
       if (!entity) { entity = { id: entityId, kind, label: lines[0], fields: {}, claimIds: [] }; next.entities.push(entity); }
       lines.forEach((line, i) => {
         const original = line.replace(/^[•●▪*-]\s*/, '').trim(), id = stableId('claim', entityId + '|' + original);
+        // Cross-document reconciliation: separate source files may repeat identical
+        // standalone credentials/skills, and must not create duplicate profile facts.
+        const duplicate=['skills','certifications','languages','education','development'].includes(kind) &&
+          next.claims.some(c=>c.confirmed&&!c.retracted&&!next.declined.includes(c.id)&&
+            clean(c.original).toLowerCase()===clean(original).toLowerCase()&&
+            next.entities.find(e=>e.id===c.entityId)?.kind===kind);
+        if(duplicate)return;
         if (!next.claims.some(c => c.id === id)) next.claims.push({ id, sourceId, sourceType: type, location: `${section.title}:${i+1}`, original, meaning: original, entityId, anchor:record.heading.includes(line)||kind==='header', verification: 'candidate-reported', confirmed: true, updatedAt: at });
         if (!entity.claimIds.includes(id)) entity.claimIds.push(id);
       });
