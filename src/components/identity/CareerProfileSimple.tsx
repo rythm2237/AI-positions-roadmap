@@ -344,7 +344,15 @@ export function CareerProfileSimple({profile,userId,hasResume}: {profile:Profile
          </div>
          <textarea className="input-field mt-3 min-h-16 w-full text-sm" aria-label={"Details for "+item.label} maxLength={2000}
            value={item.text} onChange={e=>changeRepair(index,{text:e.target.value})}/>
-         <p className="mt-2 text-xs text-slate-500">Based on {item.sourceClaimIds.length} saved source entries · Original history retained</p>
+         <details className="mt-2 rounded-lg border border-white/[.06] px-3 py-2">
+           <summary className="cursor-pointer text-xs text-slate-400">Compare original text ({item.sourceClaimIds.length} fragments)</summary>
+           <ul className="mt-2 space-y-2 text-xs leading-5 text-slate-300">
+             {item.sourceClaimIds.map(id=>{
+               const claim=knowledge.claims.find(c=>c.id===id);
+               return claim?<li key={id} className="whitespace-pre-wrap break-words border-l border-indigo-400/20 pl-3">{claim.original}</li>:null;
+             })}
+           </ul>
+         </details>
        </article>)}
      </div>
      <div className="sticky bottom-3 z-10 mt-5 flex flex-wrap items-center justify-between gap-3 rounded-xl border border-indigo-300/20 bg-slate-950 p-3">
