@@ -38,7 +38,7 @@ export function validateRepairProposals(kb,kind,proposals,allowedIds){
     const claim=original.get(id),entity=claim&&entities.get(claim.entityId);
     if(!allowed.has(id)||!claim||!entity||!claim.confirmed||claim.retracted||kb.declined.includes(id)||
       entity.kind!==kind||claim.verification==='candidate-confirmed'||isSensitiveCareerClaim(claim,entity))throw Error('Source evidence changed. Reload this section.');
-    if(used.has(id))throw Error('One source cannot be overwritten by two proposals.');
+    if(used.has(id)&&kind!=='skills')throw Error('One source cannot be overwritten by two proposals.');
     return claim;
   });
   const allSourceText=sources.map(c=>c.original).join(' ');
