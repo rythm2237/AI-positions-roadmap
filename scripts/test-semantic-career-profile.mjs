@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import {semanticReview,containedQuote,groupSemanticRecords} from "../src/lib/identity/semanticCv.mjs";
-import {emptyKnowledge,importSemanticKnowledge,importKnowledge} from "../src/lib/applicationStudio/knowledge.mjs";
+import {emptyKnowledge,importSemanticKnowledge,importKnowledge,confirmFact} from "../src/lib/applicationStudio/knowledge.mjs";
 
 const cv=[
  "Jane Sample",
@@ -67,4 +67,11 @@ const another=importSemanticKnowledge(kb,{text:"Certifications\nGoogle Analytics
 ]});
 assert.equal(another.claims.filter(c=>c.original==="Google Analytics Certificate, 2023").length,1,"Cross-file duplicates suppressed");
 assert.equal(another.claims.filter(c=>c.original==="Advanced SQL Certificate, 2026").length,1);
+const oldSameCv=importKnowledge(emptyKnowledge(),{text:cv,type:"cv",label:"Old line-by-line extraction"});
+const withManual=confirmFact(oldSameCv,{kind:"skills",label:"Custom skill",text:"User confirmed machine maintenance",field:"context"});
+const migrated=importSemanticKnowledge(withManual,{text:cv,type:"cv",label:"Upgraded semantic extraction",records:reviewed.records});
+assert.ok(migrated.claims.some(c=>c.original==="Main Street 14, 1087 Budapest, Hungary"&&!c.retracted));
+assert.ok(migrated.claims.some(c=>c.original==="User confirmed machine maintenance"&&!c.retracted),"Manual edits survive");
+const previouslyFragmented=migrated.claims.filter(c=>c.sourceId===oldSameCv.sources[0].id&&!String(c.location).startsWith("semantic-v2:")&&c.verification==="candidate-reported");
+assert.ok(previouslyFragmented.length>0&&previouslyFragmented.every(c=>c.retracted),"Older split-lines retired from active evidence");
 console.log("Semantic Career Profile PASS: multi-line address as ONE record, role/education/certificates/skills, source grounding, duplicate merge and legacy preservation.");
