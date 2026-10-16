@@ -39,6 +39,7 @@ export function CareerProfileSimple({profile,userId,hasResume}: {profile:Profile
  const [editing,setEditing]=useState<{id:string;value:string}|null>(null);
  const [manual,setManual]=useState({kind:"skills",title:"",text:""});
  const [resumeStored,setResumeStored]=useState(hasResume);
+ const [editDraftIndex,setEditDraftIndex]=useState<number|null>(null);
  const [stage,setStage]=useState<"upload"|"analysing"|"review">("upload");
 
  useEffect(()=>{
@@ -197,18 +198,22 @@ export function CareerProfileSimple({profile,userId,hasResume}: {profile:Profile
      {draft.rejected>0&&<p className="mt-3 text-xs text-amber-200">{draft.rejected} unsupported extraction suggestions were excluded.</p>}
      {draft.uncertain.length>0&&<details className="mt-3 text-sm text-amber-200"><summary className="cursor-pointer">Needs attention ({draft.uncertain.length})</summary><ul className="mt-2 list-disc pl-5">{draft.uncertain.map((q,i)=><li key={i}>{q}</li>)}</ul></details>}
      <div className="mt-5 space-y-4">
-       {CAREER_SECTIONS.filter(s=>draft.records.some(r=>r.kind===s.kind)).map(s=><div key={s.kind} className="rounded-xl border border-white/10 bg-white/[.025] p-4">
-         <h3 className="mb-3 text-sm font-semibold text-white">{categoryName(s.kind)} <span className="ml-2 text-xs font-normal text-slate-500">{draft.records.filter(r=>r.kind===s.kind).length}</span></h3>
+       {CAREER_SECTIONS.filter(s=>draft.records.some(r=>r.kind===s.kind)).map(s=><details key={s.kind} className="rounded-xl border border-white/10 bg-white/[.025] p-4">
+         <summary className="cursor-pointer text-sm font-semibold text-white">{categoryName(s.kind)} <span className="ml-2 text-xs font-normal text-slate-500">{draft.records.filter(r=>r.kind===s.kind).length} records · click to review</span></summary>
          <div className="space-y-3">{draft.records.map((r,i)=>({r,i})).filter(({r})=>r.kind===s.kind).map(({r,i})=><article key={i} className={"rounded-lg border p-3 "+(draft.selected.includes(i)?"border-indigo-400/20 bg-slate-900/50":"border-white/5 opacity-60")}>
            <div className="flex items-center gap-2"><input type="checkbox" aria-label={"Include "+r.label} checked={draft.selected.includes(i)} onChange={()=>toggleSelected(i)}/>
              <input aria-label="Record title" value={r.label} onChange={e=>updateDraft(i,{label:e.target.value})} maxLength={150} className="min-w-0 flex-1 border-0 border-b border-transparent bg-transparent text-sm font-semibold text-white outline-none focus:border-indigo-400"/>
              <select value={r.kind} aria-label={"Section for "+r.label} onChange={e=>updateDraft(i,{kind:e.target.value as Category})} className="max-w-28 rounded-lg border border-white/10 bg-slate-900 px-1 py-1 text-xs text-slate-300">
                {CAREER_SECTIONS.map(cat=><option value={cat.kind} key={cat.kind}>{categoryName(cat.kind)}</option>)}
              </select></div>
-           <textarea aria-label={"Extracted information for "+r.label} value={r.text} maxLength={2000} rows={Math.min(5,Math.max(2,Math.ceil(r.text.length/85)))} onChange={e=>updateDraft(i,{text:e.target.value})} className="mt-2 w-full resize-y rounded-lg border border-white/10 bg-slate-950/30 p-2 text-sm leading-6 text-slate-200 focus:border-indigo-400 focus:outline-none"/>
-           <details className="mt-1"><summary className="cursor-pointer text-xs text-slate-500">View original CV excerpt</summary><pre className="mt-2 whitespace-pre-wrap text-xs text-slate-400">{r.sourceQuote}</pre></details>
+           {editDraftIndex===i ? <div className="mt-2">
+             <textarea aria-label={"Extracted information for "+r.label} value={r.text} maxLength={2000} rows={Math.min(5,Math.max(2,Math.ceil(r.text.length/85)))} onChange={e=>updateDraft(i,{text:e.target.value})} className="w-full resize-y rounded-lg border border-indigo-400/30 bg-slate-950/30 p-2 text-sm leading-6 text-slate-200 focus:outline-none"/>
+             <button type="button" onClick={()=>setEditDraftIndex(null)} className="mt-2 text-xs text-indigo-200">Done editing</button></div>
+           : <div className="mt-2 flex items-start justify-between gap-3"><p className="min-w-0 whitespace-pre-wrap text-sm leading-6 text-slate-300">{r.text}</p>
+             <button type="button" onClick={()=>setEditDraftIndex(i)} className="shrink-0 text-xs text-indigo-200 hover:text-white">Edit</button></div>}
+           <details className="mt-1"><summary className="cursor-pointer text-xs text-slate-500">Show source</summary><pre className="mt-2 whitespace-pre-wrap text-xs text-slate-400">{r.sourceQuote}</pre></details>
          </article>)}</div>
-       </div>)}
+       </details>)}
      </div>
      <div className="sticky bottom-3 z-10 mt-5 flex flex-wrap items-center justify-between gap-3 rounded-xl border border-indigo-400/20 bg-slate-950/95 p-3 shadow-xl">
        <span className="text-xs text-slate-300">{draft.selected.length} records selected · Nothing saved yet</span>
