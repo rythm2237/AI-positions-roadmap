@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
 import { emptyKnowledge, type Knowledge } from "@/lib/applicationStudio/knowledge.mjs";
-import { CAREER_SECTIONS, careerProfileScores, factsBySection, type ProfileFact } from "@/lib/identity/careerProfileHub";
+import { CAREER_SECTIONS, careerProfileScores, factsBySection } from "@/lib/identity/careerProfileHub";
 import type { Profile } from "@/types/identity";
 
 type Category=typeof CAREER_SECTIONS[number]["kind"];
@@ -197,7 +197,7 @@ export function CareerProfileSimple({profile,userId,hasResume}: {profile:Profile
      {draft.rejected>0&&<p className="mt-3 text-xs text-amber-200">{draft.rejected} unsupported extraction suggestions were excluded.</p>}
      {draft.uncertain.length>0&&<details className="mt-3 text-sm text-amber-200"><summary className="cursor-pointer">Needs attention ({draft.uncertain.length})</summary><ul className="mt-2 list-disc pl-5">{draft.uncertain.map((q,i)=><li key={i}>{q}</li>)}</ul></details>}
      <div className="mt-5 space-y-4">
-       {CAREER_SECTIONS.filter(s=>draft.records.some((r,i)=>r.kind===s.kind&&draft.selected.includes(i))).map(s=><div key={s.kind} className="rounded-xl border border-white/10 bg-white/[.025] p-4">
+       {CAREER_SECTIONS.filter(s=>draft.records.some(r=>r.kind===s.kind)).map(s=><div key={s.kind} className="rounded-xl border border-white/10 bg-white/[.025] p-4">
          <h3 className="mb-3 text-sm font-semibold text-white">{categoryName(s.kind)} <span className="ml-2 text-xs font-normal text-slate-500">{draft.records.filter(r=>r.kind===s.kind).length}</span></h3>
          <div className="space-y-3">{draft.records.map((r,i)=>({r,i})).filter(({r})=>r.kind===s.kind).map(({r,i})=><article key={i} className={"rounded-lg border p-3 "+(draft.selected.includes(i)?"border-indigo-400/20 bg-slate-900/50":"border-white/5 opacity-60")}>
            <div className="flex items-center gap-2"><input type="checkbox" aria-label={"Include "+r.label} checked={draft.selected.includes(i)} onChange={()=>toggleSelected(i)}/>
