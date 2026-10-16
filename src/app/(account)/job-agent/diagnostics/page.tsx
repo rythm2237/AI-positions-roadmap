@@ -13,6 +13,7 @@ type DiagnosticRun = {
   unverified_count: number | null; blocked_count: number | null;
   recommended_count: number | null; provider_errors: number | null;
   diagnostic_category: string; providers: ProviderAttempt[] | null;
+  provider_summary?: {searchFunnel?: { deferredByProcessingLimit?: number; processedCandidates?: number; processingLimit?: number; reasonCounts?: Record<string,number>; verificationErrorCounts?: Record<string,number> }} | null;
 };
 const label: Record<string, string> = {
   partial_provider_failure: "Some providers failed — results incomplete",
@@ -29,7 +30,7 @@ export default async function JobSearchDiagnosticsPage() {
   const supabase = await createClient();
   const { data, error } = await supabase
     .from("job_search_run_diagnostics")
-    .select("search_run_id,started_at,run_status,queries_planned,provider_records,deduplicated_count,eligible_count,unverified_count,blocked_count,recommended_count,provider_errors,diagnostic_category,providers")
+    .select("search_run_id,started_at,run_status,queries_planned,provider_records,deduplicated_count,eligible_count,unverified_count,blocked_count,recommended_count,provider_errors,diagnostic_category,providers,provider_summary")
     .eq("user_id", user.id).order("started_at", { ascending: false }).limit(10);
   const runs = (data ?? []) as DiagnosticRun[];
   return <main className="mx-auto max-w-6xl px-5 py-10 text-slate-100">
@@ -56,6 +57,14 @@ export default async function JobSearchDiagnosticsPage() {
             <div key={key} className="rounded-lg border border-white/10 p-3"><p className="text-xl font-semibold">{count(value)}</p><p className="text-xs text-slate-400">{key}</p></div>
           )}
         </div>
+        {run.provider_summary?.searchFunnel ? <section className="mt-5 rounded-xl border border-amber-300/15 bg-amber-400/[.025] p-3">
+          <h2 className="text-sm font-semibold">Eligibility &amp; verification breakdown</h2>
+          <p className="mt-1 text-xs text-slate-400">Processed {count(run.provider_summary.searchFunnel.processedCandidates)} candidates (limit {count(run.provider_summary.searchFunnel.processingLimit)}). Deferred by cap: {count(run.provider_summary.searchFunnel.deferredByProcessingLimit)}. Each candidate may have more than one rejection/review reason.</p>
+          <div className="mt-3 grid gap-3 sm:grid-cols-2">
+            <div><p className="text-xs font-semibold">Eligibility reason codes</p>{Object.entries(run.provider_summary.searchFunnel.reasonCounts ?? {}).sort((a,b)=>b[1]-a[1]).map(([reason,total])=><div key={reason} className="flex justify-between gap-2 border-b border-white/5 py-1 text-xs"><span className="break-words text-slate-400">{reason}</span><span>{total}</span></div>)}</div>
+            <div><p className="text-xs font-semibold">Verification error codes</p>{Object.entries(run.provider_summary.searchFunnel.verificationErrorCounts ?? {}).sort((a,b)=>b[1]-a[1]).map(([reason,total])=><div key={reason} className="flex justify-between gap-2 border-b border-white/5 py-1 text-xs"><span className="break-words text-slate-400">{reason}</span><span>{total}</span></div>)}</div>
+          </div>
+        </section> : <p className="mt-4 text-xs text-slate-500">Detailed rejection-code snapshots will become available for search runs created after this update.</p>}
         <h2 className="mt-5 text-sm font-semibold">Sources actually queried</h2>
         <div className="mt-2 overflow-x-auto"><table className="w-full text-left text-xs"><thead><tr className="border-b border-white/10 text-slate-400"><th className="p-2">Provider</th><th className="p-2">Attempts</th><th className="p-2">Records</th><th className="p-2">Errors</th></tr></thead>
         <tbody>{summary.map(([provider,stats])=><tr className="border-b border-white/5" key={provider}><td className="p-2">{provider}</td><td className="p-2">{stats.attempts}</td><td className="p-2">{stats.records}</td><td className="p-2">{stats.errors}</td></tr>)}</tbody></table></div>
