@@ -5,12 +5,15 @@ import { createClient } from "@/lib/supabase/client";
 import { emptyKnowledge, type Knowledge } from "@/lib/applicationStudio/knowledge.mjs";
 import { CAREER_SECTIONS, careerProfileScores, factsBySection } from "@/lib/identity/careerProfileHub";
 import type { Profile } from "@/types/identity";
+import { sensitiveClaimIds } from "@/lib/identity/careerPrivacy.mjs";
 
 type Category=typeof CAREER_SECTIONS[number]["kind"];
 type SemanticRecord={kind:Category;label:string;text:string;sourceQuote:string;details:Record<string,string>;edited?:boolean};
 type SourceType="cv"|"linkedin"|"certification"|"project-document";
 type Draft={sourceText:string;name:string;file?:File;sourceType:SourceType;records:SemanticRecord[];uncertain:string[];rejected:number;selected:number[]};
 type KnowledgeResponse={userId?:string;knowledge?:Knowledge;error?:string};
+type RebuiltItem={kind:Category;label:string;text:string;sourceClaimIds:string[];reason?:string;edited?:boolean};
+type RepairDraft={kind:Category;records:RebuiltItem[];selected:number[];originalCount:number;remaining:number;rejected:number;uncertain:string[];skipped:{sensitive:number;manual:number}};
 const important=["header","experience","skills","education","certifications","projects","languages","development"] as Category[];
 const shortNames:Record<string,string>={
  header:"Personal & contact",summary:"Professional summary",experience:"Work experience",
@@ -43,6 +46,9 @@ export function CareerProfileSimple({profile,userId,hasResume}: {profile:Profile
  const [resumeStored,setResumeStored]=useState(hasResume);
  const [editDraftIndex,setEditDraftIndex]=useState<number|null>(null);
  const [stage,setStage]=useState<"upload"|"analysing"|"review">("upload");
+ const [repairDraft,setRepairDraft]=useState<RepairDraft|null>(null);
+ const [hasRepairBackup,setHasRepairBackup]=useState(false);
+ const [showAll,setShowAll]=useState<Record<string,boolean>>({});
 
  useEffect(()=>{
    const controller=new AbortController();
@@ -52,9 +58,35 @@ export function CareerProfileSimple({profile,userId,hasResume}: {profile:Profile
    return ()=>controller.abort();
  },[userId]);
 
+
+ useEffect(()=>{
+   let mounted=true;
+   fetch("/api/career-profile/restore",{cache:"no-store"}).then(async response=>{
+     if(!response.ok)return;
+     const result=await response.json() as {available?:boolean};
+     if(mounted)setHasRepairBackup(result.available===true);
+   }).catch(()=>{});
+   return ()=>{mounted=false;};
+ },[userId]);
+
  const groups=useMemo(()=>factsBySection(knowledge),[knowledge]);
  const scores=useMemo(()=>careerProfileScores(profile,knowledge,resumeStored),[profile,knowledge,resumeStored]);
- const total=Object.values(groups).reduce((n,a)=>n+a.length,0);
+
+ const privateCount=useMemo(()=>sensitiveClaimIds(knowledge).length,[knowledge]);
+ const repairable=useMemo(()=>{
+   const count:Record<string,number>={};
+   const entities=new Map(knowledge.entities.map(e=>[e.id,e]));
+   const hidden=new Set(sensitiveClaimIds(knowledge));
+   const declined=new Set(knowledge.declined);
+   for(const claim of knowledge.claims){
+     if(!claim.confirmed||claim.retracted||declined.has(claim.id)||hidden.has(claim.id)||
+        claim.verification==="candidate-confirmed"||/^(?:semantic-v2:|reconstructed:)/.test(String(claim.location||"")))continue;
+     const kind=entities.get(claim.entityId)?.kind;
+     if(kind)count[kind]=(count[kind]||0)+1;
+   }
+   return count;
+ },[knowledge]);
+
  const sections=useMemo(()=>CAREER_SECTIONS.filter(s=>(important.includes(s.kind)||more)&&
     (!query.trim()||(categoryName(s.kind)+" "+groups[s.kind].map(f=>f.text+" "+f.label).join(" ")).toLowerCase().includes(query.toLowerCase()))),[groups,more,query]);
  const counts=useMemo(()=>Object.fromEntries(CAREER_SECTIONS.map(s=>[s.kind,groups[s.kind]?.length||0])),[groups]);
@@ -163,6 +195,57 @@ export function CareerProfileSimple({profile,userId,hasResume}: {profile:Profile
    catch(e){setNotice(errorText(e));}
    finally{setBusy(false);}
  }
+
+ async function proposeReconstruction(kind:Category){
+   if(busy||!ready)return;
+   if(!window.confirm("Organise imported "+categoryName(kind)+" records using AI? Only professional details will be analysed. Nothing changes until you review and save."))return;
+   setBusy(true);setNotice("");
+   try{
+     const response=await fetch("/api/career-profile/reconstruct",{method:"POST",headers:{"Content-Type":"application/json"},
+       body:JSON.stringify({kind,revision:knowledge.revision,consent:true})});
+     const result=await response.json() as {records?:RebuiltItem[];originalCount?:number;remaining?:number;rejected?:number;
+       uncertain?:string[];skipped?:{sensitive:number;manual:number};error?:string};
+     if(!response.ok||!result.records?.length)throw Error(result.error||"No reliable reconstruction proposals found.");
+     setRepairDraft({kind,records:result.records,selected:result.records.map((_,i)=>i),
+       originalCount:result.originalCount||0,remaining:result.remaining||0,rejected:result.rejected||0,
+       uncertain:result.uncertain||[],skipped:result.skipped||{sensitive:0,manual:0}});
+     requestAnimationFrame(()=>document.getElementById("career-repair-review")?.scrollIntoView({behavior:"smooth",block:"start"}));
+   }catch(e){setNotice(errorText(e));}
+   finally{setBusy(false);}
+ }
+ function changeRepair(index:number,patch:Partial<RebuiltItem>){
+   setRepairDraft(current=>current?{...current,records:current.records.map((r,i)=>i===index?{...r,...patch,edited:true}:r)}:current);
+ }
+ async function saveReconstruction(){
+   if(!repairDraft||busy||!repairDraft.selected.length)return;
+   setBusy(true);setNotice("");
+   try{
+     await saveKnowledge("reconcile",{kind:repairDraft.kind,
+       records:repairDraft.selected.map(i=>repairDraft.records[i]).filter(r=>r.label.trim()&&r.text.trim())});
+     const processed=repairDraft.selected.length,remaining=repairDraft.remaining;
+     setRepairDraft(null);setHasRepairBackup(true);setActiveCategory(repairDraft.kind);setShowAll(prev=>({...prev,[repairDraft.kind]:false}));
+     setNotice(processed+" reviewed records saved. Your previous profile has a private backup. "+
+       (remaining?"Some old entries still need review.":""));
+   }catch(e){setNotice(errorText(e));}
+   finally{setBusy(false);}
+ }
+
+
+ async function undoLastReconstruction(){
+   if(busy||!ready)return;
+   if(!window.confirm("Restore your previous Career Profile? This reverses the latest organisation and any later profile changes, but creates another private recovery snapshot."))return;
+   setBusy(true);setNotice("");
+   try{
+     const res=await fetch("/api/career-profile/restore",{method:"POST",headers:{"Content-Type":"application/json"},
+       body:JSON.stringify({revision:knowledge.revision,sessionUserId:userId,confirmation:"RESTORE MY PROFILE"})});
+     const payload=await res.json() as KnowledgeResponse;
+     if(!res.ok||payload.userId!==userId||!payload.knowledge)throw Error(payload.error||"Restore failed.");
+     setKnowledge(payload.knowledge);setHasRepairBackup(false);setRepairDraft(null);
+     setNotice("Your previous profile has been restored. The previous state remains in a private recovery snapshot.");
+   }catch(e){setNotice(errorText(e));}
+   finally{setBusy(false);}
+ }
+
  function exportProfile(){
    const content=JSON.stringify({exportVersion:2,exportedAt:new Date().toISOString(),profile,knowledge},null,2);
    const url=URL.createObjectURL(new Blob([content],{type:"application/json"}));
@@ -186,7 +269,8 @@ export function CareerProfileSimple({profile,userId,hasResume}: {profile:Profile
      <div role="progressbar" aria-label="Profile completeness" aria-valuemin={0} aria-valuemax={100} aria-valuenow={scores.completeness} className="mt-4 h-2 overflow-hidden rounded-full bg-slate-800">
        <div className="h-full rounded-full bg-gradient-to-r from-violet-400 to-cyan-300 transition-all" style={{width:scores.completeness+"%"}} />
      </div>
-     <p className="mt-3 text-xs text-slate-400">{ready?total+" saved details · "+scores.missing.length+" essential sections to improve":"Loading saved profile…"}</p>
+     <p className="mt-3 text-xs text-slate-400">{ready?(Object.values(repairable).reduce((n,value)=>n+value,0)>0?Object.values(repairable).reduce((n,value)=>n+value,0)+" older CV fragments can be organised": "Your career details are ready to review"):"Loading saved profile…"}</p>
+     {privateCount>0&&<p className="mt-2 text-xs text-amber-200">{privateCount} private financial or identity entries excluded from this professional profile and job matching. Original sources remain privately saved.</p>}
    </section>
 
    {draft ? <section className="rounded-2xl border border-indigo-300/20 bg-slate-950/80 p-5 sm:p-7">
@@ -244,6 +328,51 @@ export function CareerProfileSimple({profile,userId,hasResume}: {profile:Profile
      </div>
    </section>}
 
+
+   {repairDraft && <section id="career-repair-review" className="scroll-mt-24 rounded-2xl border border-indigo-300/30 bg-slate-950/85 p-5 sm:p-7">
+     <div className="flex flex-wrap items-start justify-between gap-3">
+       <div><p className="text-xs font-semibold uppercase tracking-widest text-indigo-300">Review before changing existing details</p>
+         <h2 className="mt-2 text-xl font-semibold text-white">Organise {categoryName(repairDraft.kind)}</h2>
+         <p className="mt-2 text-sm leading-6 text-slate-300">We reviewed {repairDraft.originalCount} imported fragments and prepared {repairDraft.records.length} complete records.
+           Only approved items will replace their original fragments. A private backup is saved first.</p></div>
+       <button type="button" className="btn-secondary min-h-10 text-sm" disabled={busy} onClick={()=>setRepairDraft(null)}>Cancel</button>
+     </div>
+     {repairDraft.remaining>0&&<p className="mt-3 text-xs text-amber-200">{repairDraft.remaining} additional original entries remain outside this batch.</p>}
+     {repairDraft.rejected>0&&<p className="mt-2 text-xs text-amber-200">{repairDraft.rejected} unsupported suggestions were discarded.</p>}
+     {repairDraft.uncertain.length>0&&<details className="mt-3 text-xs text-amber-200"><summary className="cursor-pointer">Uncertain details</summary><ul className="mt-2 list-disc pl-5">{repairDraft.uncertain.map((q,i)=><li key={i}>{q}</li>)}</ul></details>}
+     <div className="mt-5 space-y-3">
+       {repairDraft.records.map((item,index)=><article key={index} className={"rounded-xl border p-4 "+(repairDraft.selected.includes(index)?"border-indigo-300/20 bg-white/[.025]":"border-white/5 opacity-60")}>
+         <div className="flex flex-wrap items-center gap-3">
+           <label className="flex min-w-0 flex-1 items-center gap-2">
+             <input type="checkbox" aria-label={"Include "+item.label} checked={repairDraft.selected.includes(index)}
+               onChange={e=>setRepairDraft(old=>old?{...old,selected:e.target.checked?[...old.selected,index]:old.selected.filter(x=>x!==index)}:old)}/>
+             <input className="input-field min-w-0 flex-1 text-sm" aria-label="Record title" maxLength={150} value={item.label} onChange={e=>changeRepair(index,{label:e.target.value})}/>
+           </label>
+           <select className="input-field max-w-40 text-sm" aria-label={"Section for "+item.label} value={item.kind}
+             onChange={e=>changeRepair(index,{kind:e.target.value as Category})}>
+             {CAREER_SECTIONS.map(c=><option key={c.kind} value={c.kind}>{categoryName(c.kind)}</option>)}
+           </select>
+         </div>
+         <textarea className="input-field mt-3 min-h-16 w-full text-sm" aria-label={"Details for "+item.label} maxLength={2000}
+           value={item.text} onChange={e=>changeRepair(index,{text:e.target.value})}/>
+         <details className="mt-2 rounded-lg border border-white/[.06] px-3 py-2">
+           <summary className="cursor-pointer text-xs text-slate-400">Compare original text ({item.sourceClaimIds.length} fragments)</summary>
+           <ul className="mt-2 space-y-2 text-xs leading-5 text-slate-300">
+             {item.sourceClaimIds.map(id=>{
+               const claim=knowledge.claims.find(c=>c.id===id);
+               return claim?<li key={id} className="whitespace-pre-wrap break-words border-l border-indigo-400/20 pl-3">{claim.original}</li>:null;
+             })}
+           </ul>
+         </details>
+       </article>)}
+     </div>
+     <div className="sticky bottom-3 z-10 mt-5 flex flex-wrap items-center justify-between gap-3 rounded-xl border border-indigo-300/20 bg-slate-950 p-3">
+       <span className="text-xs text-slate-300">{repairDraft.selected.length} of {repairDraft.records.length} selected</span>
+       <button type="button" className="btn-primary min-h-11 disabled:opacity-50" disabled={busy||!repairDraft.selected.length}
+         onClick={()=>void saveReconstruction()}>{busy?"Saving…":"Confirm & save with backup"}</button>
+     </div>
+   </section>}
+
    {notice&&<p role="status" aria-live="polite" className="rounded-xl border border-white/10 bg-slate-900/80 p-3 text-sm text-slate-200">{notice}</p>}
 
    <section aria-labelledby="career-simple-sections">
@@ -255,16 +384,26 @@ export function CareerProfileSimple({profile,userId,hasResume}: {profile:Profile
      <div className="mt-5 grid gap-3 md:grid-cols-2">
        {sections.map(s=>{
          const items=groups[s.kind]||[];
-         const matches=query.trim()?items.filter(i=>normalised(i.text+" "+i.label).includes(normalised(query))):items;
+         const unique=new Set<string>();
+         const distinct=items.filter(item=>{const key=normalised(item.text);if(unique.has(key))return false;unique.add(key);return true;});
+         const matches=query.trim()?distinct.filter(i=>normalised(i.text+" "+i.label).includes(normalised(query))):distinct;
+         const visible=showAll[s.kind]?matches:matches.slice(0,6);
+         const legacy=s.kind==="skills"?profile.skills:s.kind==="certifications"?profile.certificates:s.kind==="languages"?profile.languages:[];
+         const count=distinct.length||legacy.length;
+         const needsCleanup=(repairable[s.kind]||0)>=2;
          return <article key={s.kind} className={"min-w-0 rounded-xl border border-white/10 bg-slate-950/45 "+(activeCategory===s.kind?"md:col-span-2":"")}>
            <button type="button" aria-expanded={activeCategory===s.kind} className="flex w-full items-center justify-between gap-3 p-4 text-left" onClick={()=>setActiveCategory(v=>v===s.kind?"":s.kind)}>
              <span className="min-w-0"><span className="block font-semibold text-white">{categoryName(s.kind)}</span>
-               <span className="mt-1 block truncate text-xs text-slate-400">{items.length?items.slice(0,2).map(x=>x.label).join(" · "):"Not added yet"}</span>
-             </span><span className="flex shrink-0 items-center gap-3"><span className="rounded-full bg-white/[.08] px-2.5 py-1 text-xs text-slate-300">{counts[s.kind]}</span><span className="text-xl text-slate-400">{activeCategory===s.kind?"−":"+"}</span></span>
+               <span className="mt-1 block truncate text-xs text-slate-400">{items.length?items.slice(0,2).map(x=>x.text.replace(/^[•*-]\s*/,"").slice(0,48)).join(" · "):legacy.length?legacy.slice(0,2).join(" · "):"Not imported yet"}</span>
+             </span><span className="flex shrink-0 items-center gap-3"><span className="rounded-full bg-white/[.08] px-2.5 py-1 text-xs text-slate-300">{needsCleanup?"Review":count}</span><span className="text-xl text-slate-400">{activeCategory===s.kind?"−":"+"}</span></span>
            </button>
            {activeCategory===s.kind&&<div className="border-t border-white/10 p-4">
-             {matches.length===0?<p className="text-sm text-slate-500">No information here yet. Import your CV or add a detail below.</p>:
-             <ul className="space-y-2">{matches.slice(0,80).map(item=><li key={item.id} className="rounded-lg border border-white/[.07] bg-white/[.02] p-3">
+             {(repairable[s.kind]||0)>=2&&s.kind!=="preferences"&&<div className="mb-4 flex flex-wrap items-center justify-between gap-3 rounded-xl border border-indigo-300/15 bg-indigo-300/[.03] p-3">
+               <p className="max-w-lg text-xs leading-5 text-slate-300">{repairable[s.kind]} older CV fragments need review. Group them into complete records without deleting the originals.</p>
+               <button type="button" className="btn-secondary min-h-10 text-xs disabled:opacity-50" disabled={busy||!ready} onClick={()=>void proposeReconstruction(s.kind)}>Organise imported entries</button>
+             </div>}
+             {matches.length===0?<div className="text-sm text-slate-400">{legacy.length?<><p className="mb-2 text-xs">Previously saved in account details (not yet structured as separate CV facts):</p><p>{legacy.join(" · ")}</p></>:<p>No information imported into this section yet. Upload your CV or add a detail below.</p>}</div>:
+             <ul className="space-y-2">{visible.map(item=><li key={item.id} className="rounded-lg border border-white/[.07] bg-white/[.02] p-3">
                {editing?.id===item.id?<div><textarea value={editing.value} maxLength={4000} onChange={e=>setEditing({id:item.id,value:e.target.value})} className="input-field min-h-20 w-full text-sm"/>
                  <div className="mt-2 flex gap-2"><button className="btn-primary min-h-10 text-xs" disabled={busy||!editing.value.trim()} onClick={()=>void saveCorrection(item.id,editing.value)}>Save</button>
                    <button className="btn-secondary min-h-10 text-xs" onClick={()=>setEditing(null)}>Cancel</button></div></div>:
@@ -273,6 +412,7 @@ export function CareerProfileSimple({profile,userId,hasResume}: {profile:Profile
                    <button className="text-rose-300 hover:text-rose-200" type="button" disabled={busy} onClick={()=>void remove(item.id)}>Remove</button>
                    <span className="text-slate-500">{item.sourceType==="cv"?"From CV":item.verification==="candidate-confirmed"?"Added by you":"Saved source"}</span></div></>}
              </li>)}</ul>}
+             {matches.length>6&&<button type="button" className="mt-3 text-sm text-indigo-200 hover:text-indigo-100" onClick={()=>setShowAll(p=>({...p,[s.kind]:!p[s.kind]}))}>{showAll[s.kind]?"Show fewer records":"Show "+(matches.length-6)+" more records"}</button>}
              <details className="mt-4 rounded-lg border border-white/10 px-3 py-2"><summary className="cursor-pointer text-sm text-indigo-200">+ Add information</summary>
                <div className="mt-3 space-y-3">
                  <label className="block text-xs text-slate-400">Title<input className="input-field mt-1 w-full" maxLength={150} value={manual.kind===s.kind?manual.title:""} onChange={e=>setManual({kind:s.kind,title:e.target.value,text:manual.kind===s.kind?manual.text:""})} placeholder={s.kind==="header"?"e.g. Address":s.kind==="skills"?"e.g. Power BI":"Record title"}/></label>
@@ -290,6 +430,7 @@ export function CareerProfileSimple({profile,userId,hasResume}: {profile:Profile
      <summary className="cursor-pointer text-sm text-slate-400">Data & privacy options</summary>
      <p className="mt-2 text-xs text-slate-500">Your professional data belongs to your account. Previous generated CVs remain separate snapshots.</p>
      <div className="mt-3 flex flex-wrap gap-3"><button type="button" onClick={exportProfile} className="btn-secondary min-h-10 text-xs">Export profile JSON</button>
+       {hasRepairBackup&&<button type="button" disabled={busy} onClick={()=>void undoLastReconstruction()} className="btn-secondary min-h-10 text-xs disabled:opacity-50">Undo last cleanup</button>}
        <button type="button" disabled={!ready||busy} onClick={()=>void clearFacts()} className="rounded-lg border border-rose-300/20 px-3 text-xs text-rose-200 disabled:opacity-50">Clear saved career facts</button></div>
    </details>
  </div>;

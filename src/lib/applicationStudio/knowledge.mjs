@@ -1,5 +1,6 @@
 import { parseProfile, sectionKind, records } from './contentEngine.mjs';
 import {semanticReview,normalizedSource} from '../identity/semanticCv.mjs';
+import {isSensitiveCareerClaim} from '../identity/careerPrivacy.mjs';
 
 // IDs depend on professional content, never array position or an application CV.
 const clean = value => String(value || '').normalize('NFKC').replace(/\s+/g, ' ').trim();
@@ -12,7 +13,8 @@ export const emptyKnowledge = () => ({ schemaVersion: 1, revision: 0, sources: [
 const allowedKinds = ['header','summary','experience','projects','education','certifications','skills','languages','development','portfolio','preferences','additional','other'];
 const sourceTypes = ['cv','linkedin','interview','portfolio','certification','project-document','approved-cv','application','platform-learning'];
 export function knowledgeSources(kb) {
-  return Object.fromEntries(kb.claims.filter(c => !c.retracted && c.confirmed && !kb.declined.includes(c.id)).map(c => [c.id, c.original]));
+  const entities=new Map(kb.entities.map(e=>[e.id,e]));
+  return Object.fromEntries(kb.claims.filter(c => !c.retracted && c.confirmed && !kb.declined.includes(c.id)&&!isSensitiveCareerClaim(c,entities.get(c.entityId))).map(c => [c.id, c.original]));
 }
 export function importKnowledge(kb, { text, type = 'cv', sections, label = '' }, at = new Date().toISOString()) {
   if (!sourceTypes.includes(type) || typeof text !== 'string' || !text.trim() || text.length > 100000) throw Error('Invalid candidate source.');
