@@ -63,4 +63,18 @@ assert.ok(updated.claims.some(c=>c.original===proposal.text&&c.sourceClaimIds.le
 assert.equal(updated.claims.length,kb.claims.length+1,"History is additive; old facts remain recoverable.");
 assert.ok(!Object.values(knowledgeSources(updated)).some(x=>x.includes("Bankszámlaszám")));
 assert.equal(sensitiveClaimIds(updated).length,2,"Sensitive source data remain private, never silently deleted");
+
+assert.deepEqual(repairCandidates(updated,"experience").candidates.map(c=>c.id),["w6"],"Already repaired work history is not offered for repair again");
+const skillSources=repairCandidates(kb,"skills");
+const skills=[
+ {kind:"skills",label:"Process Improvement",text:"Process Improvement",sourceClaimIds:["s1","s2"]},
+ {kind:"skills",label:"Operational Planning",text:"Operational Planning",sourceClaimIds:["s1","s4"]},
+];
+assert.equal(validateRepairProposals(kb,"skills",skills,skillSources.candidates.map(c=>c.id)).length,2,"Compound source can support two separate real skills");
+const split=applyRepair(kb,"skills",skills,skillSources.candidates.map(c=>c.id));
+assert.ok(split.claims.some(c=>c.original==="Process Improvement"&&!c.retracted));
+assert.ok(split.claims.some(c=>c.original==="Operational Planning"&&!c.retracted));
+assert.ok(split.claims.find(c=>c.id==="s1").retracted,"Compound legacy skill retired after approved split");
+assert.equal(repairCandidates(split,"skills").candidates.some(c=>c.id==="s1"),false,"Processed skill never re-enters repair queue");
+
 console.log("Career reconstruction PASS: bank-data quarantine, source validation, grouped experience, provenance, manual preservation, explicit rollback history, and no mutation.");
