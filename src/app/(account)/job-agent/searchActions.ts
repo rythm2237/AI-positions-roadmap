@@ -9,6 +9,7 @@ import { redirect } from "next/navigation";
 import { requireUser } from "@/lib/auth/session";
 import { createClient } from "@/lib/supabase/server";
 import { assessFreshness, canonicalJobKey, safeExternalUrl } from "@/lib/job-agent/normalization";
+import { selectCandidatesForVerification } from "@/lib/job-agent/verificationSelection";
 import { configuredJobProviders, runProviderGateway } from "@/lib/job-agent/providers/gateway";
 import { createJobSearchIntent, validateJobSearchIntent } from "@/lib/job-agent/intent";
 import { planSearchQueries } from "@/lib/job-agent/searchStrategy";
@@ -214,7 +215,9 @@ async function executeJobSearch(
   }
 
   const learned = agent.learned_preferences_enabled === false ? [] : (await supabase.from("job_agent_learned_preferences").select("id,signal_type,signal_key,sample_size,active,value").eq("user_id",user.id).eq("active",true).returns<LearningSignal[]>()).data ?? [];
-  const processed = await Promise.all(gateway.jobs.slice(0, 80).map(async (candidate) => {
+  const processingLimit = 80; // Bounded verification workload; expose omitted candidates in diagnostics.
+  const candidatesDeferredByLimit = Math.max(0, gateway.jobs.length - processingLimit);
+  const processed = await Promise.all(selectCandidatesForVerification(gateway.jobs, processingLimit).map(async (candidate) => {
     const verification = await verifyVacancy(candidate);
     const verificationRejected = verificationRejectCodes.has(verification.errorCode ?? "");
     const verificationReason = verification.errorCode === "NOT_CANONICAL_VACANCY"
@@ -319,8 +322,32 @@ async function executeJobSearch(
   const { searched, eligible, unverified, blocked, expired, recommended } = runMetrics;
   const status = allFailed ? "failed" : providerFailures.length || persistenceErrors.length ? "partial" : "completed";
   const attemptsByStatus = Object.fromEntries([...new Set(gateway.attempts.map((attempt) => attempt.status))].map((attemptStatus) => [attemptStatus, gateway.attempts.filter((attempt) => attempt.status === attemptStatus).length]));
+  const reasonCounts: Record<string, number> = {};
+  const verificationErrorCounts: Record<string, number> = {};
+  for (const item of processed) {
+    // One count per reason code per candidate. A candidate can have multiple reasons.
+    const codes = new Set(item.eligibility.detail.map((reason) => reason.code));
+    if (item.verificationRejected) codes.add("SOURCE_VERIFICATION_REJECTED");
+    for (const code of codes) reasonCounts[code] = (reasonCounts[code] ?? 0) + 1;
+    if (item.verification.errorCode) {
+      const code = item.verification.errorCode;
+      verificationErrorCounts[code] = (verificationErrorCounts[code] ?? 0) + 1;
+    }
+  }
+  const searchFunnel = {
+    rawCandidates: gateway.jobs.length,
+    processingLimit,
+    processedCandidates: processed.length,
+    deferredByProcessingLimit: candidatesDeferredByLimit,
+    eligible,
+    unverified,
+    blocked,
+    recommended,
+    reasonCounts,
+    verificationErrorCounts,
+  };
   const estimatedCost = gateway.attempts.reduce((sum, attempt) => sum + providerCost(attempt.provider, attempt.requestCount), 0);
-  await supabase.from("job_search_runs").update({ status, provider_records: gateway.jobs.length, deduplicated_count: searched, eligible_count: eligible, unverified_count: unverified, blocked_count: blocked, recommended_count: recommended, expired_count: expired, provider_summary: { attemptsByStatus, evidenceWarnings: evidenceResult.warnings, persistenceErrors }, api_usage: { requests: gateway.attempts.reduce((sum, attempt) => sum + attempt.requestCount, 0) }, estimated_cost: estimatedCost, latency_ms: Date.now() - started, error_code: allFailed ? "ALL_PROVIDERS_FAILED" : persistenceErrors.length ? "SECONDARY_PERSISTENCE_PARTIAL" : null, completed_at: new Date().toISOString() }).eq("id", searchRun.data.id).eq("user_id", user.id);
+  await supabase.from("job_search_runs").update({ status, provider_records: gateway.jobs.length, deduplicated_count: searched, eligible_count: eligible, unverified_count: unverified, blocked_count: blocked, recommended_count: recommended, expired_count: expired, provider_summary: { attemptsByStatus, evidenceWarnings: evidenceResult.warnings, persistenceErrors, searchFunnel }, api_usage: { requests: gateway.attempts.reduce((sum, attempt) => sum + attempt.requestCount, 0) }, estimated_cost: estimatedCost, latency_ms: Date.now() - started, error_code: allFailed ? "ALL_PROVIDERS_FAILED" : persistenceErrors.length ? "SECONDARY_PERSISTENCE_PARTIAL" : null, completed_at: new Date().toISOString() }).eq("id", searchRun.data.id).eq("user_id", user.id);
 
   await supabase.from("user_activity").insert({ user_id: user.id, action: "job_agent_search_run_v2", metadata: { correlation_id: correlationId, intent_version: intentRecord.version, searched, eligible, unverified, blocked, expired, recommended, provider_errors: providerFailures.length, providers: providers.map((provider) => provider.name), queries: queries.map((query) => query.query), latency_ms: Date.now() - started } });
   if (shouldRevalidate) revalidatePath("/job-agent");

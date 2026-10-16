@@ -22,6 +22,7 @@ import { countProviderIssues, groupCurrentJobResults } from "../src/lib/job-agen
 import { summarizeCanonicalSearchRun } from "../src/lib/job-agent/searchRunMetrics.ts";
 import { extractSourcePageIdentity, sourceCompanyMatchesHost } from "../src/lib/job-agent/sourcePageIdentity.ts";
 import { enrichRequirements } from "../src/lib/job-agent/requirements.ts";
+import { selectCandidatesForVerification } from "../src/lib/job-agent/verificationSelection.ts";
 
 const root = new URL("..", import.meta.url);
 const source = (path) => readFileSync(new URL(path, root), "utf8");
@@ -75,6 +76,21 @@ const candidate = (overrides = {}) => {
   job.canonicalKey = canonicalJobKey(job);
   return job;
 };
+
+test("Bounded verification samples every provider before consuming any single source", () => {
+  const jobs = [
+    ...Array.from({length: 90}, (_, i) => ({source: "Arbeitnow", id: `a${i}`})),
+    ...Array.from({length: 20}, (_, i) => ({source: "DirectCompanyPortfolio", id: `d${i}`})),
+    ...Array.from({length: 12}, (_, i) => ({source: "Adzuna", id: `z${i}`})),
+  ];
+  const selected = selectCandidatesForVerification(jobs, 80);
+  assert.equal(selected.length, 80);
+  assert.equal(new Set(selected.map(job => job.id)).size, 80);
+  assert.ok(selected.some(job => job.source === "DirectCompanyPortfolio"));
+  assert.ok(selected.some(job => job.source === "Adzuna"));
+  assert.deepEqual(selectCandidatesForVerification(jobs, 0), []);
+  assert.equal(selectCandidatesForVerification(jobs.slice(0,2), 80).length, 2);
+});
 
 test("Layer 1 — confirmed intent preserves hard constraints and stable currency", () => {
   assert.deepEqual(validateJobSearchIntent(intent), []);
