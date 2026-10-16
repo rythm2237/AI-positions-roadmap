@@ -27,6 +27,16 @@ const cv=[
  "Languages",
  "English C1; Hungarian A2",
 ].join("\n");
+const splitAddress=[
+ {kind:"header",label:"Street",text:"Main Street 14",sourceQuote:"Main Street 14",details:{}},
+ {kind:"header",label:"Postal code / city",text:"1087 Budapest",sourceQuote:"1087 Budapest",details:{}},
+ {kind:"header",label:"Country",text:"Hungary",sourceQuote:"Hungary",details:{}},
+];
+const regrouped=semanticReview(cv,splitAddress);
+assert.equal(regrouped.records.length,1,"Three contact lines must become one address");
+assert.equal(regrouped.records[0].text,"Main Street 14, 1087 Budapest, Hungary");
+assert.equal(regrouped.records[0].kind,"header");
+
 const candidates=[
  {kind:"header",label:"Address",text:"Main Street 14, 1087 Budapest, Hungary",sourceQuote:"Main Street 14\n1087 Budapest\nHungary",details:{location:"Main Street 14, 1087 Budapest, Hungary"}},
  {kind:"header",label:"Email",text:"jane.sample@example.org",sourceQuote:"jane.sample@example.org",details:{}},
