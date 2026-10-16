@@ -8,7 +8,7 @@ export function stableId(scope, value) {
   return `${scope}-${(hash >>> 0).toString(36)}-${(second>>>0).toString(36)}`;
 }
 export const emptyKnowledge = () => ({ schemaVersion: 1, revision: 0, sources: [], entities: [], claims: [], declined: [] });
-const allowedKinds = ['header','summary','experience','projects','education','certifications','skills','languages','development','additional','other'];
+const allowedKinds = ['header','summary','experience','projects','education','certifications','skills','languages','development','portfolio','preferences','additional','other'];
 const sourceTypes = ['cv','linkedin','interview','portfolio','certification','project-document','approved-cv','application','platform-learning'];
 export function knowledgeSources(kb) {
   return Object.fromEntries(kb.claims.filter(c => !c.retracted && c.confirmed && !kb.declined.includes(c.id)).map(c => [c.id, c.original]));
@@ -75,6 +75,8 @@ export function assertKnowledge(kb) {
 
 
 const metadataRules={
+ preferences:['targetRoles','seniority','preferredCountries','preferredCities','workModels','employmentTypes','mobility','workAuthorization','salaryExpectation','preferredIndustries'],
+ portfolio:['projectUrl','repositoryUrl','artifactUrl','status','role','technology'],
  skills:['category','level','yearsExperience','lastUsed','evidenceLink','relatedProjects'],
  experience:['employmentType','startDate','endDate','isCurrent','company','jobTitle','country'],
  education:['institution','degree','field','startDate','endDate','grade'],
