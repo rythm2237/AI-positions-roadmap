@@ -1,5 +1,5 @@
 import {stableId} from '../applicationStudio/knowledge.mjs';
-import {isSensitiveCareerClaim} from './careerPrivacy.mjs';
+import {isSensitiveCareerClaim,isSensitiveCareerText} from './careerPrivacy.mjs';
 
 export const REPAIR_KINDS=['header','experience','skills','education','certifications','development','projects','languages','summary','portfolio','additional','other'];
 const normal=value=>String(value||'').normalize('NFKC').replace(/\s+/g,' ').trim().toLowerCase();
@@ -31,6 +31,7 @@ export function validateRepairProposals(kb,kind,proposals,allowedIds){
     typeof proposal.text!=='string'||!proposal.text.trim()||proposal.text.length>2000||
     !REPAIR_KINDS.includes(proposal.kind)||!Array.isArray(proposal.sourceClaimIds)||
     !proposal.sourceClaimIds.length||proposal.sourceClaimIds.length>35)throw Error('Invalid profile record.');
+  if(isSensitiveCareerText(proposal.text,proposal.kind)||isSensitiveCareerText(proposal.label,proposal.kind))throw Error('Sensitive personal information cannot enter professional records.');
   const ids=[...new Set(proposal.sourceClaimIds)];
   if(ids.length!==proposal.sourceClaimIds.length)throw Error('Duplicate evidence references.');
   const sources=ids.map(id=>{
