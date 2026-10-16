@@ -68,8 +68,10 @@ export async function POST(request: Request) {
       fallbackModel: studioModelFallback,
       retryInvalid: false,
     });
-    const proposals = result.output.proposals.filter((p) => matchQuote(input.text!, p.excerpt));
-    return json({ proposals, questions: result.output.questions, omitted: result.output.proposals.length - proposals.length, saved: false });
+    const parsed = outputSchema.parse(result.output);
+    const text = input.text as string;
+    const proposals = parsed.proposals.filter((p) => matchQuote(text, p.excerpt));
+    return json({ proposals, questions: parsed.questions, omitted: parsed.proposals.length - proposals.length, saved: false });
   } catch {
     if (chargeStarted && usageDate) {
       try { await refundRejectedBetaAiQuota(user.id, "project_review", usageDate, crypto.randomUUID()); } catch { /* no source logging */ }
