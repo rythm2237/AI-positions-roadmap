@@ -30,7 +30,8 @@ export function ProfilePortfolioEvidence({ careerTitle }: { careerTitle: string 
   }, []);
 
   const projects = useMemo(() => {
-    const facts = factsBySection(knowledge).projects || [];
+    const groupedSections = factsBySection(knowledge);
+    const facts = [...(groupedSections.projects || []), ...(groupedSections.portfolio || [])];
     const grouped = new Map<string, PortfolioEntry>();
     for (const item of facts) {
       const key = item.entityId;
