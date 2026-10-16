@@ -15,7 +15,7 @@ export function repairCandidates(kb,kind,limit=40){
   if(isSensitiveCareerClaim(claim,entity)){skipped.sensitive++;continue;}
   if(claim.verification==='candidate-confirmed'){skipped.manual++;continue;}
   if(!String(claim.original||'').trim())continue;
-  candidates.push({id:claim.id,kind:entity.kind,label:String(entity.label||'').slice(0,150),text:String(claim.original||'').slice(0,1800),sourceType:claim.sourceType||'cv'});
+  candidates.push({id:claim.id,kind:entity.kind,label:String(entity.label||'').slice(0,150),text:String(claim.original||'').slice(0,1800),sourceType:claim.sourceType||'cv',sourceId:claim.sourceId||''});
  }
  return {kind,candidates:candidates.slice(0,limit),remaining:Math.max(0,candidates.length-limit),skipped};
 }
