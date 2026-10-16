@@ -19,16 +19,16 @@ export function nearDuplicate(a, b) {
   return intersection / Math.min(x.size, y.size) >= .88 && Math.min(x.size, y.size) / Math.max(x.size, y.size) >= .65;
 }
 const kinds = [
-  ['contact', /^(contact|contact details|contact information)$/i],
+  ['header', /^(contact|contact details|contact information|personal details|personal information)$/i],
   ['summary', /^(professional summary|summary|profile|profil|about(?: me)?|personal statement)$/i],
   ['experience', /^(work experience|professional experience|employment(?: history)?|career history|experience|berufserfahrung|expérience(?: professionnelle)?)$/i],
   ['skills', /^(core skills|skills|technical skills|top skills|competencies|kenntnisse|compétences)$/i],
-  ['projects', /^(selected projects|key projects|projects|portfolio|achievements|key achievements)$/i],
+  ['projects', /^(selected projects|key projects|projects|portfolio|portfolio projects)$/i],
   ['education', /^(education|academic background|ausbildung|formation)$/i],
-  ['certifications', /^(certifications|certificates|training(?: and courses)?|courses)$/i],
-  ['development', /^professional development$/i],
+  ['certifications', /^(certifications|certificates|credentials|licenses)$/i],
+  ['development', /^(professional development|training(?: and courses)?|courses|professional training|learning)$/i],
   ['languages', /^(languages|language skills|sprachen|langues)$/i],
-  ['additional', /^(additional experience|earlier experience|sonstiges|weitere angaben|zusätzliche angaben)$/i],
+  ['additional', /^(achievements|key achievements|awards|publications|additional experience|earlier experience|sonstiges|weitere angaben|zusätzliche angaben)$/i],
 ];
 export const sectionKind = title => title === 'Header' ? 'header' : kinds.find(([, re]) => re.test(canonicalHeading(title)))?.[0] || 'other';
 export function parseProfile(text) {
