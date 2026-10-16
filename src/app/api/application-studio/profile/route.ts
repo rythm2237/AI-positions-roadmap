@@ -1,5 +1,7 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
+import { getKnowledge } from "@/lib/applicationStudio/knowledgeStore";
+import { candidateKnowledgeForCV } from "@/lib/identity/careerProfileHub";
 
 export const dynamic = "force-dynamic";
 
@@ -14,11 +16,13 @@ export async function GET(request: Request) {
     slug && /^[a-z0-9-]{1,100}$/.test(slug) ? supabase.from("career_user_state").select("state_key,payload").eq("user_id", user.id).eq("career_slug", slug).eq("is_deleted", false).in("state_key", ["workspace_progress", "project_evidence"]) : Promise.resolve({ data: [] }),
   ]);
   if (profile.error || !profile.data) return NextResponse.json({ error: "Your profile is unavailable. Complete your profile first." }, { status: 503 });
+  const candidateKnowledge = await getKnowledge(user.id);
+  const careerKnowledgeText = candidateKnowledgeForCV(candidateKnowledge.knowledge);
   let resume = null;
   const latest = resumes.data?.[0];
   if (latest?.storage_path.startsWith(`${user.id}/`)) {
     const signed = await supabase.storage.from("resumes").createSignedUrl(latest.storage_path, 120);
     if (signed.data) resume = { url: signed.data.signedUrl, name: `Saved-CV.${latest.file_type}` };
   }
-  return NextResponse.json({ userId: user.id, profile: profile.data, resume, progress: state.data?.find(row => row.state_key === "workspace_progress")?.payload, projects: state.data?.find(row => row.state_key === "project_evidence")?.payload }, { headers: { "Cache-Control": "private, no-store" } });
+  return NextResponse.json({ userId: user.id, profile: profile.data, careerKnowledgeText, resume, progress: state.data?.find(row => row.state_key === "workspace_progress")?.payload, projects: state.data?.find(row => row.state_key === "project_evidence")?.payload }, { headers: { "Cache-Control": "private, no-store" } });
 }
