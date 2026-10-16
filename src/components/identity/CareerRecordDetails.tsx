@@ -2,6 +2,8 @@
 
 import { useState } from "react";
 const descriptors: Record<string, Array<[string, string, string]>> = {
+  preferences: [["targetRoles","Target roles","text"],["seniority","Target career level","text"],["preferredCountries","Preferred countries","text"],["preferredCities","Preferred cities","text"],["workModels","Remote, hybrid or onsite","text"],["employmentTypes","Employment types","text"],["mobility","Relocation preference","text"],["workAuthorization","Work authorization (self-reported)","text"],["salaryExpectation","Salary expectation","text"],["preferredIndustries","Preferred industries","text"]],
+  portfolio: [["projectUrl","Portfolio URL","url"],["repositoryUrl","Source repository","url"],["artifactUrl","Artifact URL","url"],["status","Current status","text"],["role","My role","text"],["technology","Tools / technologies","text"]],
   skills: [["category","Category","text"],["level","Proficiency (beginner/intermediate/advanced/expert/unknown)","select-level"],["yearsExperience","Years of practice","number"],["lastUsed","Last used (year)","text"],["evidenceLink","Evidence link","url"],["relatedProjects","Associated projects","text"]],
   experience: [["company","Employer","text"],["jobTitle","Position","text"],["employmentType","Employment type","text"],["startDate","Start date","month"],["endDate","End date","month"],["country","Country","text"]],
   education: [["institution","Institution","text"],["degree","Degree","text"],["field","Field of study","text"],["startDate","Start date","month"],["endDate","End date","month"],["grade","Grade","text"]],
