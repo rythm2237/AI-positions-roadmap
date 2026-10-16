@@ -92,6 +92,8 @@ export default async function JobAgentPage({
 
     {query.saved ? <p role="status" className="mt-5 rounded-xl border border-emerald-300/15 bg-emerald-400/[.06] px-4 py-3 text-sm text-emerald-200">Settings saved. This search used the confirmed configuration above.</p> : null}
 
+    <div className="mt-4"><Link href="/job-agent/diagnostics" className="inline-flex min-h-10 items-center rounded-xl border border-violet-300/20 px-4 py-2 text-sm font-semibold text-violet-200 hover:bg-violet-400/10">Search Diagnostics → See source failures and filter counts</Link></div>
+
     {workspace.latestSearch ? <section className="mt-5 rounded-2xl border border-white/[.07] bg-white/[.02] p-4" aria-labelledby="search-summary-title">
       <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between"><div><p id="search-summary-title" className="text-sm font-semibold text-white">{workspace.latestSearch.status === "partial" ? "Search complete · some sources need attention" : groupedResults.active.length === 0 ? "Search complete · no matching jobs" : "Search complete"}</p><p className="mt-1 text-xs text-slate-500">Expired vacancies are removed before ranking and are not included below.</p></div><code className="text-[11px] text-slate-600">Run {String(workspace.latestSearch.correlation_id).slice(0, 8)}</code></div>
       <div className="mt-4 grid grid-cols-2 gap-2 sm:grid-cols-3 xl:grid-cols-5">{resultSummary.map((item) => <div key={item.label} className={`rounded-xl border px-3 py-3 ${item.tone}`}><p className="text-2xl font-semibold">{item.value}</p><p className="mt-0.5 text-[11px] opacity-75">{item.label}</p></div>)}</div>
