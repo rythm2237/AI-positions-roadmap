@@ -37,6 +37,14 @@ assert.equal(regrouped.records.length,1,"Three contact lines must become one add
 assert.equal(regrouped.records[0].text,"Main Street 14, 1087 Budapest, Hungary");
 assert.equal(regrouped.records[0].kind,"header");
 
+const hungarian=semanticReview("Fő utca 4\n1072 Budapest\nMagyarország",[
+ {kind:"header",label:"Utca",text:"Fő utca 4",sourceQuote:"Fő utca 4",details:{}},
+ {kind:"header",label:"Irányítószám / város",text:"1072 Budapest",sourceQuote:"1072 Budapest",details:{}},
+ {kind:"header",label:"Ország",text:"Magyarország",sourceQuote:"Magyarország",details:{}},
+]);
+assert.equal(hungarian.records.length,1,"Hungarian three-line address must be one contact field");
+assert.equal(hungarian.records[0].label,"Address");
+
 const candidates=[
  {kind:"header",label:"Address",text:"Main Street 14, 1087 Budapest, Hungary",sourceQuote:"Main Street 14\n1087 Budapest\nHungary",details:{location:"Main Street 14, 1087 Budapest, Hungary"}},
  {kind:"header",label:"Email",text:"jane.sample@example.org",sourceQuote:"jane.sample@example.org",details:{}},
