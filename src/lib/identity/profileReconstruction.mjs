@@ -14,6 +14,8 @@ export function repairCandidates(kb,kind,limit=40){
   if(!entity||entity.kind!==kind)continue;
   if(isSensitiveCareerClaim(claim,entity)){skipped.sensitive++;continue;}
   if(claim.verification==='candidate-confirmed'){skipped.manual++;continue;}
+  // Never send already repaired or semantic-v2 records back into the cleanup loop.
+  if(/^(?:reconstructed:|semantic-v2:)/.test(String(claim.location||'')))continue;
   if(!String(claim.original||'').trim())continue;
   candidates.push({id:claim.id,kind:entity.kind,label:String(entity.label||'').slice(0,150),text:String(claim.original||'').slice(0,1800),sourceType:claim.sourceType||'cv',sourceId:claim.sourceId||''});
  }
