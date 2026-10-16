@@ -1,5 +1,5 @@
 import assert from "node:assert/strict";
-import { emptyKnowledge, importKnowledge, confirmFact, retractFact } from "../src/lib/applicationStudio/knowledge.mjs";
+import { emptyKnowledge, importKnowledge, confirmFact, retractFact, updateEntityMetadata, moveKnowledgeFact, confirmFactBatch } from "../src/lib/applicationStudio/knowledge.mjs";
 import { sectionKind } from "../src/lib/applicationStudio/contentEngine.mjs";
 
 assert.equal(sectionKind("Contact details"), "header");
@@ -39,4 +39,23 @@ const replaced = retractFact(changed, existing.id);
 assert.ok(replaced.claims.find(c => c.original === "SQL (intermediate)" && c.verification === "candidate-confirmed"));
 assert.equal(replaced.claims.find(c => c.id === existing.id).retracted, true);
 assert.ok(replaced.claims.filter(c => c.confirmed && !c.retracted).some(c => c.original.includes("Warehouse Planning")));
-console.log("Career Profile Hub: import, section mapping, deduplication, correction and provenance passed.");
+
+const metadata = updateEntityMetadata(replaced,{entityId:existing.entityId,metadata:{level:"intermediate",yearsExperience:2,category:"Database"}});
+assert.equal(metadata.entities.find(e=>e.id===existing.entityId).metadata.level,"intermediate");
+assert.equal(metadata.entities.find(e=>e.id===existing.entityId).metadata.yearsExperience,2);
+assert.throws(()=>updateEntityMetadata(metadata,{entityId:existing.entityId,metadata:{level:"superhuman"}}),/Invalid skill level/);
+assert.throws(()=>updateEntityMetadata(metadata,{entityId:existing.entityId,metadata:{yearsExperience:-4}}),/Invalid experience duration/);
+const approved=confirmFactBatch(metadata,[
+ {text:"Completed a training on production planning",kind:"development",label:"Production planning",field:"context"},
+ {text:"Designed a stock movement dashboard",kind:"projects",label:"Movement dashboard",field:"context"}
+]);
+assert.ok(approved.claims.some(c=>c.original==="Designed a stock movement dashboard"));
+const newProject=approved.claims.find(c=>c.original==="Designed a stock movement dashboard");
+const moved=moveKnowledgeFact(approved,{claimId:newProject.id,kind:"portfolio",label:"Movement dashboard"});
+assert.equal(moved.entities.find(e=>e.id===moved.claims.find(c=>c.id===newProject.id).entityId).kind,"portfolio");
+const multi=importKnowledge(moved,{text:"Certifications\\nData Analytics Certificate, Example Provider 2024\\nGoogle Analytics Certification",type:"certification",label:"another-document.pdf"});
+assert.equal(multi.claims.filter(c=>c.original==="Data Analytics Certificate").length,1);
+const skillsOnce=importKnowledge(multi,{text:"Skills\\nPower BI\\nSQL",type:"cv",label:"new-cv.pdf"});
+assert.equal(skillsOnce.claims.filter(c=>c.original==="Power BI").length,1);
+assert.ok(["portfolio","preferences"].every(kind=>sectionKind(kind==="portfolio"?"Portfolio":"Career Preferences")===kind));
+console.log("Career Profile Hub: import, categorisation, deduplication, corrections, structured metadata, batch approval, reassignment and provenance passed.");
