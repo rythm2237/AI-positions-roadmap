@@ -1,7 +1,7 @@
 import { requireUser } from "@/lib/auth/session";
 import { getIdentityWorkspace } from "@/lib/identity/repository";
 import { AvatarUploader } from "@/components/identity/AvatarUploader";
-import { CareerProfileHub } from "@/components/identity/CareerProfileHub";
+import { CareerProfileSimple } from "@/components/identity/CareerProfileSimple";
 import { saveProfile } from "../actions";
 
 const fields = [
@@ -15,8 +15,8 @@ export default async function ProfilePage({ searchParams }: { searchParams: Prom
   const query = await searchParams;
   return <main className="mx-auto max-w-6xl px-4 py-8 sm:px-6 sm:py-12">
     <p className="eyebrow">My career identity</p>
-    <h1 className="mt-2 font-display text-3xl font-semibold text-white sm:text-4xl">Your career profile</h1>
-    <p className="mt-3 max-w-3xl text-sm leading-6 text-slate-400">Add your professional history once, then use its relevant evidence to prepare targeted CVs, applications and portfolio projects.</p>
+    <h1 className="mt-2 font-display text-3xl font-semibold text-white sm:text-4xl">My career profile</h1>
+    <p className="mt-3 max-w-3xl text-sm leading-6 text-slate-400">Everything about your career in one place. Import a CV, check the details, and update anything later.</p>
     <div className="mt-6 flex flex-wrap items-center gap-5 rounded-2xl border border-white/10 p-4 sm:p-6">
       <AvatarUploader userId={user.id} currentUrl={data.profile.avatar_url} />
       <div className="min-w-0"><p className="font-semibold text-white">{data.profile.name || "Your professional profile"}</p>
@@ -25,9 +25,9 @@ export default async function ProfilePage({ searchParams }: { searchParams: Prom
     </div>
     {query.saved && <p role="status" className="mt-5 rounded-xl bg-emerald-400/10 p-3 text-sm text-emerald-200">Basic profile saved.</p>}
     {query.error && <p role="alert" className="mt-5 rounded-xl bg-rose-400/10 p-3 text-sm text-rose-200">The profile could not be saved. Please check the information.</p>}
-    <CareerProfileHub profile={data.profile} userId={user.id} hasResume={data.resumes.length > 0} />
+    <CareerProfileSimple profile={data.profile} userId={user.id} hasResume={data.resumes.length > 0} />
     <details className="glass mt-8 rounded-2xl border border-white/10 p-5 sm:p-7">
-      <summary className="cursor-pointer text-xl font-semibold text-white">Basic details & job-search preferences</summary>
+      <summary className="cursor-pointer text-xl font-semibold text-white">Account details (optional)</summary>
       <p className="mt-3 text-sm text-slate-400">Edit your public-facing basics and search region. Detailed skills, credentials and professional records belong in Career Profile Hub above.</p>
       <form action={saveProfile} className="mt-6 space-y-7">
         <div className="grid gap-4 sm:grid-cols-2">{fields.map(([key, title]) => <label key={key} className="text-sm text-slate-300">{title}

@@ -1,7 +1,7 @@
 import {NextResponse} from 'next/server';
 import {createClient} from '@/lib/supabase/server';
 import {getKnowledge,putKnowledge} from '@/lib/applicationStudio/knowledgeStore';
-import {importKnowledge,confirmFact,retractFact,updateEntityMetadata,moveKnowledgeFact,confirmFactBatch,emptyKnowledge} from '@/lib/applicationStudio/knowledge.mjs';
+import {importKnowledge,importSemanticKnowledge,confirmFact,retractFact,updateEntityMetadata,moveKnowledgeFact,confirmFactBatch,emptyKnowledge} from '@/lib/applicationStudio/knowledge.mjs';
 import {limitedText} from '@/lib/applicationStudio/validation.mjs';
 import {readCompletedLearning} from '@/lib/applicationStudio/completedLearning';
 export const dynamic='force-dynamic';
@@ -18,6 +18,7 @@ export async function POST(request:Request){
   const current=await getKnowledge(user.id);if(body.revision!==current.knowledge.revision)return json({error:'Candidate knowledge changed. Reload it before saving.'},409);
   let knowledge;
   if(body.operation==='import'){if(body.type==='platform-learning')return json({error:'Platform learning must come from your account records.'},400);knowledge=importKnowledge(current.knowledge,{text:body.text,type:body.type,label:body.label,sections:body.sections});}
+  else if(body.operation==='semantic-import')knowledge=importSemanticKnowledge(current.knowledge,{text:body.text,type:body.type,label:body.label,records:body.records});
   else if(body.operation==='learning'){
    const db=await createClient(),items=await readCompletedLearning(db,user.id);
    knowledge=current.knowledge;for(const item of items)knowledge=importKnowledge(knowledge,{text:'Professional Development\n'+item.title+' — '+item.provider+'; '+item.provenance,type:'platform-learning',label:item.id});

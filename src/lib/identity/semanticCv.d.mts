@@ -1,0 +1,10 @@
+export type SemanticKind="header"|"summary"|"experience"|"skills"|"education"|"certifications"|"development"|"projects"|"languages"|"additional"|"portfolio"|"preferences"|"other";
+export type SemanticRecord={kind:SemanticKind;label:string;text:string;sourceQuote:string;details:Record<string,string>;edited?:boolean};
+export const semanticKinds:SemanticKind[];
+export const semanticFields:string[];
+export function normalizedSource(value:unknown):string;
+export function containedQuote(source:unknown,quote:unknown):boolean;
+export function semanticDuplicateKey(record:SemanticRecord):string;
+export function combineAddressParts(source:string,records:SemanticRecord[]):SemanticRecord[];
+export function semanticReview(source:string,records:unknown[]):{records:SemanticRecord[];rejected:Array<{index:number;reason:string}>};
+export function groupSemanticRecords(records:SemanticRecord[]):Record<SemanticKind,SemanticRecord[]>;

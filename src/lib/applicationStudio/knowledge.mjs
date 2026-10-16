@@ -1,4 +1,5 @@
 import { parseProfile, sectionKind, records } from './contentEngine.mjs';
+import {semanticReview,normalizedSource} from '../identity/semanticCv.mjs';
 
 // IDs depend on professional content, never array position or an application CV.
 const clean = value => String(value || '').normalize('NFKC').replace(/\s+/g, ' ').trim();
@@ -54,6 +55,68 @@ export function importKnowledge(kb, { text, type = 'cv', sections, label = '' },
   }
   next.revision++;if(next.claims.length>6000||JSON.stringify(next).length>1500000)throw Error('Your professional profile is too large. Remove obsolete facts before adding more.');return next;
 }
+
+/**
+ * One CV item becomes one meaningful career record. Crucially, a multi-line
+ * address remains a single, user-editable 'Address' item. Existing claims from
+ * older line-by-line imports remain unchanged and available.
+ */
+export function importSemanticKnowledge(kb,{text,type='cv',label='',records:proposed},at=new Date().toISOString()){
+ if(!sourceTypes.includes(type)||type==='platform-learning')throw Error('Unsupported profile source.');
+ const {records,rejected}=semanticReview(text,proposed);
+ if(rejected.length)throw Error('Some proposed facts lack matching source excerpts. Review the CV again.');
+ if(!records.length)throw Error('No confirmed records to import.');
+ const next=structuredClone(kb),sourceId=stableId(type,text);
+ if(!next.sources.some(s=>s.id===sourceId))next.sources.push({id:sourceId,type,label:clean(label).slice(0,150),importedAt:at,semanticVersion:2});
+ // Upgrade only earlier machine-split claims from the exact same source file.
+ // User-confirmed edits and other uploaded documents stay untouched.
+ let upgraded=0;
+ for(const claim of next.claims){
+   if(claim.sourceId===sourceId&&claim.confirmed&&!claim.retracted&&claim.verification==='candidate-reported'&&!String(claim.location||'').startsWith('semantic-v2:')){
+     claim.retracted=true;if(!next.declined.includes(claim.id))next.declined.push(claim.id);upgraded++;
+   }
+ }
+ const active=next.claims.filter(c=>c.confirmed&&!c.retracted&&!next.declined.includes(c.id));
+ let added=0;
+ for(const r of records){
+  const fingerprint=normalizedSource(r.text);
+  const duplicate=active.some(c=>{
+    const e=next.entities.find(e=>e.id===c.entityId);
+    return e?.kind===r.kind&&normalizedSource(c.original)===fingerprint;
+  });
+  if(duplicate)continue;
+  // A job record is keyed by role AND employer. Individual skills remain distinct.
+  const entityId=stableId('semantic-'+r.kind,r.label);
+  let entity=next.entities.find(e=>e.id===entityId);
+  if(!entity){entity={id:entityId,kind:r.kind,label:r.label,fields:{},claimIds:[],metadata:{}};next.entities.push(entity);}
+  const id=stableId('claim',entityId+'|'+r.text);
+  if(next.claims.some(c=>c.id===id))continue;
+  const keyMap={
+    header:{organisation:'organisation',role:'role',dates:'dates',location:'address',issuer:'issuer',level:'level'},
+    experience:{organisation:'company',role:'jobTitle',dates:'dateRange',location:'location',issuer:'issuer',level:'level'},
+    education:{organisation:'institution',role:'degree',dates:'dateRange',location:'location',issuer:'issuer',level:'level'},
+    certifications:{organisation:'organisation',role:'title',dates:'dateRange',location:'location',issuer:'issuer',level:'level'},
+    development:{organisation:'provider',role:'course',dates:'dateRange',location:'location',issuer:'issuer',level:'level'},
+    projects:{organisation:'organisation',role:'role',dates:'dateRange',location:'location',issuer:'issuer',level:'level'},
+    skills:{organisation:'organisation',role:'role',dates:'dateRange',location:'location',issuer:'issuer',level:'level'},
+    languages:{organisation:'organisation',role:'role',dates:'dateRange',location:'location',issuer:'issuer',level:'cefr'}
+  };
+  for(const [k,v] of Object.entries(r.details||{})){
+    if(typeof v==='string'&&v&&v.length<=180)entity.metadata[(keyMap[r.kind]||{})[k]||k]=v;
+  }
+  next.claims.push({id,sourceId,sourceType:type,original:r.text,meaning:r.text,
+    sourceQuote:r.sourceQuote,location:'semantic-v2:'+r.kind,entityId,confirmed:true,
+    verification:r.edited?'candidate-confirmed':'candidate-reported',updatedAt:at});
+  entity.claimIds.push(id);
+  active.push(next.claims[next.claims.length-1]);
+  added++;
+ }
+ if(!added && !upgraded && next.sources.length===kb.sources.length)return kb;
+ next.revision++;
+ if(next.claims.length>6000||JSON.stringify(next).length>1500000)throw Error('The profile exceeds the size limit.');
+ return next;
+}
+
 export function confirmFact(kb, { text, entityId, kind = 'other', label = '', field = 'context', status, question, vacancyKey = '' }, at = new Date().toISOString()) {
   if (typeof text !== 'string' || !text.trim() || text.length > 4000 || !allowedKinds.includes(kind)) throw Error('Enter a professional fact of up to 4,000 characters.');
   if(question!==undefined&&(typeof question!=='string'||!question.trim()||question.length>2000||typeof vacancyKey!=='string'||vacancyKey.length>200))throw Error('Invalid confirmation question.');
@@ -92,7 +155,7 @@ const metadataRules={
  projects:['projectType','status','projectUrl','repositoryUrl','startDate','endDate','role'],
  languages:['cefr','proficiency','certificate'],
  additional:['awardIssuer','awardedAt','url'],
- header:['city','country','phone','linkedin','website'],
+ header:['address','fullName','email','city','country','phone','linkedin','website'],
  summary:['targetRole','industry'],
  other:['category','url']
 };
