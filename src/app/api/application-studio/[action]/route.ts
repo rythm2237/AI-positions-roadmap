@@ -76,7 +76,7 @@ export async function POST(request: Request, { params }: { params: Promise<{ act
     // Public page retrieval does not call AI and must not consume the user's AI review allowance.
     if (action === "fetch") return json(await fetchPublic(body.url!));
 
-    const usesKnowledge=['analysis','strategy','generate','changes','cover','motivation','interview','chatEdit'].includes(aiAction);
+    const usesKnowledge=['analysis','strategy','generate','changes','cover','motivation','interview','chatEdit','quick-review','quick-generate','quick-cover'].includes(aiAction);
     const savedKnowledge=usesKnowledge?(await getKnowledge(user.id)).knowledge:null;
     const candidateSources=savedKnowledge?.claims.length?knowledgeSources(savedKnowledge):null;
     const answeredClarifications=confirmedClarifications(savedKnowledge,String(context!.vacancy||''),context!.confirmationAnswers as Record<string,unknown>||{});
@@ -117,7 +117,7 @@ export async function POST(request: Request, { params }: { params: Promise<{ act
       abortSignal: AbortSignal.any([request.signal,AbortSignal.timeout(100_000)]),
     };
     if(['quick-review','quick-generate','quick-cover'].includes(aiAction)){
-      try{return json(await runQuickOperation(aiAction,context!,settings,model,()=>{reservedQuota=undefined;}));}
+      try{return json(await runQuickOperation(aiAction,{...context,careerKnowledge:savedKnowledge},settings,model,()=>{reservedQuota=undefined;}));}
       catch(error){
        if(error instanceof CVEvidenceError||error instanceof LetterEvidenceError){
         const reason=error instanceof CVEvidenceError?cvEvidenceFailureCode(error):'unsupported-content';
