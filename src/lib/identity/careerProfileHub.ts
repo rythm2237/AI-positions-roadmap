@@ -1,5 +1,6 @@
 import type { Profile } from "@/types/identity";
 import { emptyKnowledge, importKnowledge, type Knowledge } from "@/lib/applicationStudio/knowledge.mjs";
+import { isSensitiveCareerClaim } from "@/lib/identity/careerPrivacy.mjs";
 
 export const CAREER_SECTIONS = [
   { kind: "header", title: "Personal details", required: true, hint: "Contact information and professional links" },
@@ -30,6 +31,7 @@ export function factsBySection(knowledge: Knowledge): Record<string, ProfileFact
   const entities = new Map(knowledge.entities.map((entity) => [entity.id, entity]));
   for (const claim of activeClaims(knowledge)) {
     const entity = entities.get(claim.entityId);
+    if (isSensitiveCareerClaim(claim,entity)) continue;
     const kind = entity && groups[entity.kind] ? entity.kind : "other";
     groups[kind].push({
       id: claim.id, entityId: claim.entityId, kind,
