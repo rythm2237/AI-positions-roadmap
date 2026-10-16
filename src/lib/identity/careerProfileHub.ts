@@ -41,8 +41,8 @@ export function factsBySection(knowledge: Knowledge): Record<string, ProfileFact
   return groups;
 }
 
-export function previewCareerImport(knowledge: Knowledge, text: string, label: string) {
-  const next = importKnowledge(knowledge, { text, type: "cv", label });
+export function previewCareerImport(knowledge: Knowledge, text: string, label: string, sourceType: "cv" | "certification" | "project-document" | "linkedin" = "cv") {
+  const next = importKnowledge(knowledge, { text, type: sourceType, label });
   const before = new Set(knowledge.claims.map((claim) => claim.id));
   const newClaims = next.claims.filter((claim) => !before.has(claim.id));
   const newClaimIds = new Set(newClaims.map((claim) => claim.id));
