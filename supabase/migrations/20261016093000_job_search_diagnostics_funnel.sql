@@ -17,7 +17,6 @@ select
   r.blocked_count,
   r.recommended_count,
   r.error_code,
-  r.provider_summary,
   coalesce(p.attempts, 0) as provider_attempts,
   coalesce(p.successes, 0) as provider_successes,
   coalesce(p.no_results, 0) as provider_no_results,
@@ -33,7 +32,8 @@ select
       then 'eligibility_or_verification_bottleneck'
     when coalesce(r.recommended_count, 0) = 0 then 'recommendation_bottleneck'
     else 'has_recommendations'
-  end as diagnostic_category
+  end as diagnostic_category,
+  r.provider_summary
 from public.job_search_runs r
 left join lateral (
   select
