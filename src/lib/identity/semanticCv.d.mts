@@ -5,5 +5,6 @@ export const semanticFields:string[];
 export function normalizedSource(value:unknown):string;
 export function containedQuote(source:unknown,quote:unknown):boolean;
 export function semanticDuplicateKey(record:SemanticRecord):string;
+export function combineAddressParts(source:string,records:SemanticRecord[]):SemanticRecord[];
 export function semanticReview(source:string,records:unknown[]):{records:SemanticRecord[];rejected:Array<{index:number;reason:string}>};
 export function groupSemanticRecords(records:SemanticRecord[]):Record<SemanticKind,SemanticRecord[]>;
