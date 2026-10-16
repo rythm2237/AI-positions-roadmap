@@ -9,7 +9,8 @@ import { CareerProfileAssistant } from "./CareerProfileAssistant";
 import { CareerRecordDetails } from "./CareerRecordDetails";
 
 type KnowledgeResponse = { userId?: string; knowledge?: Knowledge; token?: string | null; error?: string };
-type ImportDraft = { file: File; text: string; characters: number };
+type ImportSource = "cv" | "certification" | "project-document" | "linkedin";
+type ImportDraft = { file?: File; name: string; sourceType: ImportSource; text: string; characters: number };
 const MAX_BYTES = 8 * 1024 * 1024;
 const fields = [
   { key: "context", name: "General detail" }, { key: "company", name: "Company / organisation" },
@@ -28,6 +29,8 @@ export function CareerProfileHub({ profile, userId, hasResume }: { profile: Prof
   const [busy, setBusy] = useState(false);
   const [status, setStatus] = useState("");
   const [importDraft, setImportDraft] = useState<ImportDraft | null>(null);
+  const [sourceKind, setSourceKind] = useState<ImportSource>("cv");
+  const [pastedProfile, setPastedProfile] = useState("");
   const [lastCvText, setLastCvText] = useState("");
   const [kind, setKind] = useState<string>("experience");
   const [entityId, setEntityId] = useState("");
@@ -58,7 +61,7 @@ export function CareerProfileHub({ profile, userId, hasResume }: { profile: Prof
   const grouped = useMemo(() => factsBySection(knowledge), [knowledge]);
   const preview = useMemo(() => {
     if (!importDraft) return null;
-    try { return { result: previewCareerImport(knowledge, importDraft.text, importDraft.file.name), error: "" }; }
+    try { return { result: previewCareerImport(knowledge, importDraft.text, importDraft.name, importDraft.sourceType), error: "" }; }
     catch (error) { return { result: null, error: messageOf(error) }; }
   }, [knowledge, importDraft]);
 
@@ -88,7 +91,7 @@ export function CareerProfileHub({ profile, userId, hasResume }: { profile: Prof
       const response = await fetch("/api/cv-analyzer/extract", { method: "POST", body: data });
       const result = await response.json() as { text?: string; error?: string };
       if (!response.ok || !result.text) throw new Error(result.error || "No readable CV text was found. Scanned image-only PDFs need an OCR-capable file.");
-      setImportDraft({ file, text: result.text, characters: result.text.length });
+      setImportDraft({ file, name: file.name, sourceType: sourceKind, text: result.text, characters: result.text.length });
       setStatus("Review what will be added to your profile. This preview has not been saved.");
     } catch (error) { setStatus(messageOf(error)); }
     finally { setBusy(false); }
@@ -120,10 +123,10 @@ export function CareerProfileHub({ profile, userId, hasResume }: { profile: Prof
     setBusy(true);
     setStatus("");
     try {
-      await changeKnowledge("import", { type: "cv", text: importDraft.text, label: importDraft.file.name });
-      const detail = await saveOriginalCV(importDraft.file);
-      setStatus("CV import completed. " + preview.result.added + " new facts added. " + detail);
-      setLastCvText(importDraft.text.slice(0,22000));
+      await changeKnowledge("import", { type: importDraft.sourceType, text: importDraft.text, label: importDraft.name });
+      const detail = importDraft.file && importDraft.sourceType === "cv" ? await saveOriginalCV(importDraft.file) : "The extracted source facts were saved with provenance.";
+      setStatus("Profile import completed. " + preview.result.added + " new facts added. " + detail);
+      if (importDraft.sourceType === "cv") setLastCvText(importDraft.text.slice(0,22000));
       setImportDraft(null);
     } catch (error) { setStatus(messageOf(error)); }
     finally { setBusy(false); }
@@ -229,18 +232,33 @@ export function CareerProfileHub({ profile, userId, hasResume }: { profile: Prof
 
     <section className="glass rounded-2xl border border-indigo-300/20 p-5 sm:p-7" aria-labelledby="career-cv-import-title">
       <div className="flex flex-wrap items-start justify-between gap-3">
-        <div><p className="eyebrow">Fast onboarding</p><h2 id="career-cv-import-title" className="mt-2 text-xl font-semibold text-white">Create your profile from a CV</h2>
+        <div><p className="eyebrow">Fast onboarding</p><h2 id="career-cv-import-title" className="mt-2 text-xl font-semibold text-white">Import your career history</h2>
           <p className="mt-2 max-w-2xl text-sm leading-6 text-slate-400">Upload a CV to extract your experience, skills, degrees, credentials and projects. Missing facts are added under the right section; repeated facts are not copied again.</p></div>
         <label className="btn-primary inline-flex min-h-11 cursor-pointer items-center justify-center text-sm">
           {busy ? "Processing…" : "Upload a CV"}
           <input className="sr-only" type="file" accept=".pdf,.docx,.txt" disabled={!knowledgeReady || busy} onChange={(event) => { const file = event.currentTarget.files?.[0]; event.currentTarget.value = ""; if (file) void readCV(file); }} />
         </label>
       </div>
+      <label className="mt-4 block text-sm text-slate-300">Document type
+        <select className="input-field mt-2 min-h-11 w-full max-w-sm" value={sourceKind} onChange={e => setSourceKind(e.target.value as ImportSource)}>
+          <option value="cv">CV / résumé</option>
+          <option value="certification">Certificate / qualification</option>
+          <option value="project-document">Project document / portfolio file</option>
+          <option value="linkedin">Exported LinkedIn text</option>
+        </select>
+      </label>
+      <details className="mt-3 rounded-lg border border-white/10 p-3">
+        <summary className="cursor-pointer text-sm text-indigo-100">Paste LinkedIn profile or another professional source</summary>
+        <label className="mt-3 block text-xs text-slate-300">Professional text
+          <textarea className="input-field mt-2 min-h-24 w-full" maxLength={100000} value={pastedProfile} onChange={e => setPastedProfile(e.target.value)} placeholder="Paste exported profile text, job history, accomplishments and credentials. No login credentials or private messages." />
+        </label>
+        <button type="button" className="btn-secondary mt-3 min-h-11 text-sm" disabled={!knowledgeReady || busy || pastedProfile.trim().length < 5} onClick={() => {setImportDraft({name:"Pasted professional profile",text:pastedProfile,characters:pastedProfile.length,sourceType:"linkedin"});setStatus("Review the extracted profile facts before saving.");}}>Review pasted profile</button>
+      </details>
       <p className="mt-3 text-xs text-slate-500">PDF / DOCX / TXT · max 8 MB · Extracted information is reviewed before being saved. Scanned PDFs without extractable text are not supported yet.</p>
       {!loaded && <p className="mt-4 text-sm text-slate-400">Loading saved professional evidence…</p>}
       {preview?.error && <p role="alert" className="mt-4 rounded-lg bg-rose-500/10 p-3 text-sm text-rose-200">{preview.error}</p>}
       {preview?.result && importDraft && <div className="mt-5 space-y-4 rounded-xl border border-white/10 bg-white/[.02] p-4">
-        <div className="flex flex-wrap items-center justify-between gap-2"><div><h3 className="font-semibold text-white">{importDraft.file.name}</h3><p className="text-xs text-slate-400">{importDraft.characters.toLocaleString()} characters extracted</p></div>
+        <div className="flex flex-wrap items-center justify-between gap-2"><div><h3 className="font-semibold text-white">{importDraft.name}</h3><p className="text-xs text-slate-400">{importDraft.characters.toLocaleString()} characters extracted</p></div>
           <span className="rounded-full bg-indigo-400/10 px-3 py-1 text-sm font-semibold text-indigo-200">{preview.result.added} new facts</span></div>
         {preview.result.added === 0 && <p className="text-sm text-slate-300">No new distinct facts found. You can still save this CV as your master document.</p>}
         <div className="grid gap-3 sm:grid-cols-2">
