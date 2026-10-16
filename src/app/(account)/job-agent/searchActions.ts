@@ -9,6 +9,7 @@ import { redirect } from "next/navigation";
 import { requireUser } from "@/lib/auth/session";
 import { createClient } from "@/lib/supabase/server";
 import { assessFreshness, canonicalJobKey, safeExternalUrl } from "@/lib/job-agent/normalization";
+import { selectCandidatesForVerification } from "@/lib/job-agent/verificationSelection";
 import { configuredJobProviders, runProviderGateway } from "@/lib/job-agent/providers/gateway";
 import { createJobSearchIntent, validateJobSearchIntent } from "@/lib/job-agent/intent";
 import { planSearchQueries } from "@/lib/job-agent/searchStrategy";
@@ -216,7 +217,7 @@ async function executeJobSearch(
   const learned = agent.learned_preferences_enabled === false ? [] : (await supabase.from("job_agent_learned_preferences").select("id,signal_type,signal_key,sample_size,active,value").eq("user_id",user.id).eq("active",true).returns<LearningSignal[]>()).data ?? [];
   const processingLimit = 80; // Bounded verification workload; expose omitted candidates in diagnostics.
   const candidatesDeferredByLimit = Math.max(0, gateway.jobs.length - processingLimit);
-  const processed = await Promise.all(gateway.jobs.slice(0, processingLimit).map(async (candidate) => {
+  const processed = await Promise.all(selectCandidatesForVerification(gateway.jobs, processingLimit).map(async (candidate) => {
     const verification = await verifyVacancy(candidate);
     const verificationRejected = verificationRejectCodes.has(verification.errorCode ?? "");
     const verificationReason = verification.errorCode === "NOT_CANONICAL_VACANCY"
