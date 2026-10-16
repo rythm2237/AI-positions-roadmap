@@ -6,6 +6,7 @@ import type { CareerEvidenceItem } from "../../types/jobAgent";
 import type { Profile, ResumeRecord } from "../../types/identity";
 import type { createClient } from "../supabase/server";
 import { assertKnowledge } from "@/lib/applicationStudio/knowledge.mjs";
+import { isSensitiveCareerText } from "@/lib/identity/careerPrivacy.mjs";
 
 type SupabaseClient = Awaited<ReturnType<typeof createClient>>;
 type EvidenceRow = { id: string; source_type: CareerEvidenceItem["sourceType"]; source_id: string | null; evidence_type: CareerEvidenceItem["evidenceType"]; label: string; value: string; confidence: number; duration_months: number | null; provenance: Record<string, unknown>; fingerprint: string };
@@ -49,7 +50,9 @@ export async function loadUnifiedEvidence(supabase: SupabaseClient, userId: stri
     warnings.push("CAREER_PROFILE_EVIDENCE_UNAVAILABLE");
   }
 
-  const generated = mergeEvidence(profileEvidence, masterCvEvidence, knowledgeEvidence);
+  // Preserve source documents, but never promote banking/identity numbers into job evidence.
+  const safe = (entry: CareerEvidenceItem) => !isSensitiveCareerText(entry.value, entry.evidenceType === "user_claim" ? "header" : "");
+  const generated = mergeEvidence(profileEvidence.filter(safe), masterCvEvidence.filter(safe), knowledgeEvidence.filter(safe));
   if (generated.length) {
     const persisted = await supabase.from("job_evidence_items").upsert(generated.map((entry) => toRow(userId, entry)), { onConflict: "user_id,fingerprint" });
     if (persisted.error) warnings.push(`EVIDENCE_PERSIST_FAILED:${persisted.error.code}`);
@@ -72,6 +75,7 @@ export async function loadUnifiedEvidence(supabase: SupabaseClient, userId: stri
   }
   const relevant = (current.data ?? []).filter((row) =>
     (row.source_type !== "master_cv" || row.source_id === resume?.id) &&
-    (row.provenance?.candidateKnowledge !== true || activeKnowledge.has(row.fingerprint)));
+    (row.provenance?.candidateKnowledge !== true || activeKnowledge.has(row.fingerprint)) &&
+    !isSensitiveCareerText(row.value, row.evidence_type === "user_claim" ? "header" : ""));
   return { evidence: mergeEvidence(relevant.map(toDomain), generated), resume, warnings };
 }
