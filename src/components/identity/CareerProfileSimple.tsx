@@ -111,7 +111,7 @@ export function CareerProfileSimple({profile,userId,hasResume}: {profile:Profile
  }
 
  function updateDraft(index:number,change:Partial<SemanticRecord>){
-   setDraft(old=>old?{...old,records:old.records.map((r,i)=>i===index?{...r,...change,edited:true}:r)}:old);
+   setDraft(old=>old?{...old,records:old.records.map((r,i)=>i===index?{...r,...change,edited:true,...(change.text!==undefined||change.kind!==undefined||change.label!==undefined?{details:{}}:{})}:r)}:old);
  }
  function toggleSelected(index:number){
    setDraft(old=>old?{...old,selected:old.selected.includes(index)?old.selected.filter(x=>x!==index):[...old.selected,index]}:old);
