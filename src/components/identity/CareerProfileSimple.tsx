@@ -60,7 +60,7 @@ export function CareerProfileSimple({profile,userId,hasResume}: {profile:Profile
 
  const groups=useMemo(()=>factsBySection(knowledge),[knowledge]);
  const scores=useMemo(()=>careerProfileScores(profile,knowledge,resumeStored),[profile,knowledge,resumeStored]);
- const total=Object.values(groups).reduce((n,a)=>n+a.length,0);
+
  const privateCount=useMemo(()=>sensitiveClaimIds(knowledge).length,[knowledge]);
  const repairable=useMemo(()=>{
    const count:Record<string,number>={};
@@ -258,7 +258,7 @@ export function CareerProfileSimple({profile,userId,hasResume}: {profile:Profile
      <div role="progressbar" aria-label="Profile completeness" aria-valuemin={0} aria-valuemax={100} aria-valuenow={scores.completeness} className="mt-4 h-2 overflow-hidden rounded-full bg-slate-800">
        <div className="h-full rounded-full bg-gradient-to-r from-violet-400 to-cyan-300 transition-all" style={{width:scores.completeness+"%"}} />
      </div>
-     <p className="mt-3 text-xs text-slate-400">{ready?total+" professional entries · "+scores.missing.length+" essential sections to improve":"Loading saved profile…"}</p>
+     <p className="mt-3 text-xs text-slate-400">{ready?(Object.values(repairable).reduce((n,value)=>n+value,0)>0?Object.values(repairable).reduce((n,value)=>n+value,0)+" older CV fragments can be organised": "Your career details are ready to review"):"Loading saved profile…"}</p>
      {privateCount>0&&<p className="mt-2 text-xs text-amber-200">{privateCount} private financial or identity entries excluded from this professional profile and job matching. Original sources remain privately saved.</p>}
    </section>
 
@@ -377,18 +377,21 @@ export function CareerProfileSimple({profile,userId,hasResume}: {profile:Profile
          const distinct=items.filter(item=>{const key=normalised(item.text);if(unique.has(key))return false;unique.add(key);return true;});
          const matches=query.trim()?distinct.filter(i=>normalised(i.text+" "+i.label).includes(normalised(query))):distinct;
          const visible=showAll[s.kind]?matches:matches.slice(0,6);
+         const legacy=s.kind==="skills"?profile.skills:s.kind==="certifications"?profile.certificates:s.kind==="languages"?profile.languages:[];
+         const count=distinct.length||legacy.length;
+         const needsCleanup=(repairable[s.kind]||0)>=2;
          return <article key={s.kind} className={"min-w-0 rounded-xl border border-white/10 bg-slate-950/45 "+(activeCategory===s.kind?"md:col-span-2":"")}>
            <button type="button" aria-expanded={activeCategory===s.kind} className="flex w-full items-center justify-between gap-3 p-4 text-left" onClick={()=>setActiveCategory(v=>v===s.kind?"":s.kind)}>
              <span className="min-w-0"><span className="block font-semibold text-white">{categoryName(s.kind)}</span>
-               <span className="mt-1 block truncate text-xs text-slate-400">{items.length?items.slice(0,2).map(x=>x.text.replace(/^[•*-]\s*/,"").slice(0,48)).join(" · "):"Not added yet"}</span>
-             </span><span className="flex shrink-0 items-center gap-3"><span className="rounded-full bg-white/[.08] px-2.5 py-1 text-xs text-slate-300">{counts[s.kind]}</span><span className="text-xl text-slate-400">{activeCategory===s.kind?"−":"+"}</span></span>
+               <span className="mt-1 block truncate text-xs text-slate-400">{items.length?items.slice(0,2).map(x=>x.text.replace(/^[•*-]\s*/,"").slice(0,48)).join(" · "):legacy.length?legacy.slice(0,2).join(" · "):"Not imported yet"}</span>
+             </span><span className="flex shrink-0 items-center gap-3"><span className="rounded-full bg-white/[.08] px-2.5 py-1 text-xs text-slate-300">{needsCleanup?"Review":count}</span><span className="text-xl text-slate-400">{activeCategory===s.kind?"−":"+"}</span></span>
            </button>
            {activeCategory===s.kind&&<div className="border-t border-white/10 p-4">
              {(repairable[s.kind]||0)>=2&&s.kind!=="preferences"&&<div className="mb-4 flex flex-wrap items-center justify-between gap-3 rounded-xl border border-indigo-300/15 bg-indigo-300/[.03] p-3">
                <p className="max-w-lg text-xs leading-5 text-slate-300">{repairable[s.kind]} older CV fragments need review. Group them into complete records without deleting the originals.</p>
                <button type="button" className="btn-secondary min-h-10 text-xs disabled:opacity-50" disabled={busy||!ready} onClick={()=>void proposeReconstruction(s.kind)}>Organise imported entries</button>
              </div>}
-             {matches.length===0?<p className="text-sm text-slate-500">No information here yet. Import your CV or add a detail below.</p>:
+             {matches.length===0?<div className="text-sm text-slate-400">{legacy.length?<><p className="mb-2 text-xs">Previously saved in account details (not yet structured as separate CV facts):</p><p>{legacy.join(" · ")}</p></>:<p>No information imported into this section yet. Upload your CV or add a detail below.</p>}</div>:
              <ul className="space-y-2">{visible.map(item=><li key={item.id} className="rounded-lg border border-white/[.07] bg-white/[.02] p-3">
                {editing?.id===item.id?<div><textarea value={editing.value} maxLength={4000} onChange={e=>setEditing({id:item.id,value:e.target.value})} className="input-field min-h-20 w-full text-sm"/>
                  <div className="mt-2 flex gap-2"><button className="btn-primary min-h-10 text-xs" disabled={busy||!editing.value.trim()} onClick={()=>void saveCorrection(item.id,editing.value)}>Save</button>
