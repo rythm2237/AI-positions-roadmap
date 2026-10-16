@@ -21,8 +21,8 @@ export function semanticReview(text,records){
    if(!containedQuote(text,r.sourceQuote)){rejected.push({index,reason:'no matching source excerpt'});continue;}
    // A CV excerpt cannot prove any newly introduced numeric measurement or date.
    // Edited records require separate, explicit user confirmation.
-   const originalNumbers=[...(r.sourceQuote.match(/\d[\d,.%/-]*/g)||[])];
-   const outputNumbers=[...(r.text.match(/\d[\d,.%/-]*/g)||[])];
+   const originalNumbers=[...(r.sourceQuote.match(/\d+(?:[.,]\d+)?%?/g)||[])];
+   const outputNumbers=[...(r.text.match(/\d+(?:[.,]\d+)?%?/g)||[])];
    const inventedNumber=outputNumbers.some(x=>!originalNumbers.includes(x));
    if(inventedNumber&&!r.edited){rejected.push({index,reason:'unsupported number'});continue;}
    const key=semanticDuplicateKey(r);
