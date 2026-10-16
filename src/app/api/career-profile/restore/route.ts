@@ -5,6 +5,18 @@ import {assertKnowledge} from "@/lib/applicationStudio/knowledge.mjs";
 export const dynamic="force-dynamic";
 const json=(data:unknown,status=200)=>NextResponse.json(data,{status,headers:{"Cache-Control":"private, no-store"}});
 
+
+export async function GET(){
+ const db=await createClient();
+ const {data:{user},error}=await db.auth.getUser();
+ if(error||!user||user.is_anonymous)return json({error:"Sign in required."},401);
+ const result=await db.from("career_user_state").select("career_slug").eq("user_id",user.id)
+   .eq("state_key","retention_snapshots").like("career_slug","candidate-knowledge-backup-%")
+   .eq("is_deleted",false).order("created_at",{ascending:false}).limit(1);
+ if(result.error)return json({error:"Backup availability cannot be checked."},503);
+ return json({available:Boolean(result.data?.length)});
+}
+
 export async function POST(request:Request){
  const origin=request.headers.get("origin");
  if(origin!==new URL(request.url).origin)return json({error:"Untrusted request origin."},403);
