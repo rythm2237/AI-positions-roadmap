@@ -68,6 +68,14 @@ export function importSemanticKnowledge(kb,{text,type='cv',label='',records:prop
  if(!records.length)throw Error('No confirmed records to import.');
  const next=structuredClone(kb),sourceId=stableId(type,text);
  if(!next.sources.some(s=>s.id===sourceId))next.sources.push({id:sourceId,type,label:clean(label).slice(0,150),importedAt:at,semanticVersion:2});
+ // Upgrade only earlier machine-split claims from the exact same source file.
+ // User-confirmed edits and other uploaded documents stay untouched.
+ let upgraded=0;
+ for(const claim of next.claims){
+   if(claim.sourceId===sourceId&&claim.confirmed&&!claim.retracted&&claim.verification==='candidate-reported'&&!String(claim.location||'').startsWith('semantic-v2:')){
+     claim.retracted=true;if(!next.declined.includes(claim.id))next.declined.push(claim.id);upgraded++;
+   }
+ }
  const active=next.claims.filter(c=>c.confirmed&&!c.retracted&&!next.declined.includes(c.id));
  let added=0;
  for(const r of records){
@@ -103,7 +111,7 @@ export function importSemanticKnowledge(kb,{text,type='cv',label='',records:prop
   active.push(next.claims[next.claims.length-1]);
   added++;
  }
- if(!added && next.sources.length===kb.sources.length)return kb;
+ if(!added && !upgraded && next.sources.length===kb.sources.length)return kb;
  next.revision++;
  if(next.claims.length>6000||JSON.stringify(next).length>1500000)throw Error('The profile exceeds the size limit.');
  return next;
