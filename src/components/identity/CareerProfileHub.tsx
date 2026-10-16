@@ -22,6 +22,7 @@ function messageOf(error: unknown) { return error instanceof Error ? error.messa
 export function CareerProfileHub({ profile, userId, hasResume }: { profile: Profile; userId: string; hasResume: boolean }) {
   const [knowledge, setKnowledge] = useState<Knowledge>(emptyKnowledge);
   const [loaded, setLoaded] = useState(false);
+  const [knowledgeReady, setKnowledgeReady] = useState(false);
   const [busy, setBusy] = useState(false);
   const [status, setStatus] = useState("");
   const [importDraft, setImportDraft] = useState<ImportDraft | null>(null);
@@ -43,6 +44,7 @@ export function CareerProfileHub({ profile, userId, hasResume }: { profile: Prof
         const result = await res.json() as KnowledgeResponse;
         if (!res.ok || result.userId !== userId || !result.knowledge) throw new Error(result.error || "Your career profile could not load.");
         setKnowledge(result.knowledge);
+        setKnowledgeReady(true);
       })
       .catch((error) => { if (!controller.signal.aborted) setStatus(messageOf(error)); })
       .finally(() => { if (!controller.signal.aborted) setLoaded(true); });
@@ -111,7 +113,7 @@ export function CareerProfileHub({ profile, userId, hasResume }: { profile: Prof
   }
 
   async function confirmImport() {
-    if (!importDraft || !preview?.result || !loaded || busy) return;
+    if (!importDraft || !preview?.result || !knowledgeReady || busy) return;
     setBusy(true);
     setStatus("");
     try {
@@ -124,7 +126,7 @@ export function CareerProfileHub({ profile, userId, hasResume }: { profile: Prof
   }
 
   async function addFact() {
-    if (!factText.trim() || busy) return;
+    if (!knowledgeReady || !factText.trim() || busy) return;
     setBusy(true); setStatus("");
     try {
       await changeKnowledge("confirm", { fact: { text: factText.trim(), kind, entityId: entityId || undefined, label: label.trim() || factText.trim().slice(0, 70), field } });
@@ -135,7 +137,7 @@ export function CareerProfileHub({ profile, userId, hasResume }: { profile: Prof
   }
 
   async function removeFact(id: string) {
-    if (busy || !window.confirm("Remove this fact from active CV and portfolio evidence?")) return;
+    if (!knowledgeReady || busy || !window.confirm("Remove this fact from active CV and portfolio evidence?")) return;
     setBusy(true); setStatus("");
     try {
       await changeKnowledge("retract", { claimId: id });
@@ -145,7 +147,7 @@ export function CareerProfileHub({ profile, userId, hasResume }: { profile: Prof
   }
 
   async function correctFact(id: string) {
-    if (busy || !editingText.trim()) return;
+    if (!knowledgeReady || busy || !editingText.trim()) return;
     setBusy(true); setStatus("");
     try {
       await changeKnowledge("replace", { claimId: id, text: editingText.trim() });
@@ -190,7 +192,7 @@ export function CareerProfileHub({ profile, userId, hasResume }: { profile: Prof
           <p className="mt-2 max-w-2xl text-sm leading-6 text-slate-400">Upload a CV to extract your experience, skills, degrees, credentials and projects. Missing facts are added under the right section; repeated facts are not copied again.</p></div>
         <label className="btn-primary inline-flex min-h-11 cursor-pointer items-center justify-center text-sm">
           {busy ? "Processing…" : "Upload a CV"}
-          <input className="sr-only" type="file" accept=".pdf,.docx,.txt" disabled={!loaded || busy} onChange={(event) => { const file = event.currentTarget.files?.[0]; event.currentTarget.value = ""; if (file) void readCV(file); }} />
+          <input className="sr-only" type="file" accept=".pdf,.docx,.txt" disabled={!knowledgeReady || busy} onChange={(event) => { const file = event.currentTarget.files?.[0]; event.currentTarget.value = ""; if (file) void readCV(file); }} />
         </label>
       </div>
       <p className="mt-3 text-xs text-slate-500">PDF / DOCX / TXT · max 8 MB · Extracted information is reviewed before being saved. Scanned PDFs without extractable text are not supported yet.</p>
@@ -233,7 +235,7 @@ export function CareerProfileHub({ profile, userId, hasResume }: { profile: Prof
       <label className="mt-4 block text-sm text-slate-300">Professional fact
         <textarea className="input-field mt-2 min-h-28 w-full" value={factText} maxLength={4000} onChange={(event) => setFactText(event.target.value)} placeholder="Describe one genuine achievement, responsibility, course, skill or project detail. Add evidence links where available." />
       </label>
-      <button type="button" disabled={!loaded || busy || !factText.trim()} onClick={() => void addFact()} className="btn-primary mt-4 min-h-11 disabled:opacity-50">Save fact</button>
+      <button type="button" disabled={!knowledgeReady || busy || !factText.trim()} onClick={() => void addFact()} className="btn-primary mt-4 min-h-11 disabled:opacity-50">Save fact</button>
     </section>
 
     <section className="space-y-4" aria-labelledby="career-records-title">
