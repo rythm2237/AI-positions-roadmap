@@ -12,8 +12,8 @@ export function semanticDuplicateKey(record){
 }
 // A model can still emit "street", "postal code" and "country" as separate
 // contact records. Consolidate adjacent address components before validation.
-const addressPart=/address|street|strasse|straße|postcode|postal|zip|city|town|province|country|cím|irányítószám|város|ország|آدرس|خیابان|شهر|کد پستی|کشور/i;
-const addressAnchor=/address|street|strasse|straße|postcode|postal|zip|cím|irányítószám|آدرس|خیابان|کد پستی/i;
+const addressPart=/address|street|strasse|straße|utca|plz|postcode|postal|zip|city|town|province|country|cím|irányítószám|város|ország|آدرس|خیابان|شهر|کد ?پستی|کشور/i;
+const addressAnchor=/address|street|strasse|straße|utca|plz|postcode|postal|zip|cím|irányítószám|آدرس|خیابان|کد ?پستی/i;
 export function combineAddressParts(source,records){
  if(!Array.isArray(records))return records;
  const raw=normalizedSource(source);
