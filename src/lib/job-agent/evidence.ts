@@ -1,5 +1,6 @@
 import { createHash } from "node:crypto";
 import { extractMasterCvSkills } from "../cvAnalyzer/masterCvEvidence.ts";
+import { isSensitiveCareerClaim, isSensitiveCareerText } from "../identity/careerPrivacy.mjs";
 import type { CareerEvidenceItem, EvidenceSourceType, EvidenceType } from "../../types/jobAgent.ts";
 import type { Profile } from "../../types/identity.ts";
 
@@ -108,6 +109,7 @@ export function evidenceFromCareerKnowledge(profileId: string, knowledge: {
   for (const claim of knowledge.claims) {
     if (!claim.confirmed || claim.retracted || declined.has(claim.id) || !claim.original?.trim()) continue;
     const entity = entities.get(claim.entityId);
+    if (isSensitiveCareerClaim(claim,entity)) continue;
     if (!entity) continue;
     const kind = entity.kind;
     if (kind === "preferences") continue; // Search preferences are not qualifications.
