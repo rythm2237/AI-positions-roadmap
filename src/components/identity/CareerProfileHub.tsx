@@ -28,6 +28,7 @@ export function CareerProfileHub({ profile, userId, hasResume }: { profile: Prof
   const [busy, setBusy] = useState(false);
   const [status, setStatus] = useState("");
   const [importDraft, setImportDraft] = useState<ImportDraft | null>(null);
+  const [lastCvText, setLastCvText] = useState("");
   const [kind, setKind] = useState<string>("experience");
   const [entityId, setEntityId] = useState("");
   const [label, setLabel] = useState("");
@@ -122,6 +123,7 @@ export function CareerProfileHub({ profile, userId, hasResume }: { profile: Prof
       await changeKnowledge("import", { type: "cv", text: importDraft.text, label: importDraft.file.name });
       const detail = await saveOriginalCV(importDraft.file);
       setStatus("CV import completed. " + preview.result.added + " new facts added. " + detail);
+      setLastCvText(importDraft.text.slice(0,22000));
       setImportDraft(null);
     } catch (error) { setStatus(messageOf(error)); }
     finally { setBusy(false); }
@@ -255,7 +257,7 @@ export function CareerProfileHub({ profile, userId, hasResume }: { profile: Prof
       {status && <p role="status" aria-live="polite" className="mt-4 rounded-lg border border-white/10 bg-white/[.03] p-3 text-sm text-slate-200">{status}</p>}
     </section>
 
-    <CareerProfileAssistant busy={busy} disabled={!knowledgeReady} onApprove={approveAssistantFacts} />
+    <CareerProfileAssistant busy={busy} disabled={!knowledgeReady} cvText={lastCvText} onApprove={approveAssistantFacts} />
 
     <section id="career-profile-add-fact" className="glass scroll-mt-20 rounded-2xl border border-white/10 p-5 sm:p-7" aria-labelledby="career-add-title">
       <h2 id="career-add-title" className="text-xl font-semibold text-white">{entityId ? "Add details to an existing record" : "Add professional information"}</h2>
