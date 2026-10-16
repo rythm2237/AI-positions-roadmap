@@ -1,10 +1,11 @@
 import "server-only";
 
 import { extractStoredCVText } from "./documentText";
-import { evidenceFromMasterCv, evidenceFromProfile, mergeEvidence } from "./evidence";
+import { evidenceFromMasterCv, evidenceFromProfile, evidenceFromCareerKnowledge, mergeEvidence } from "./evidence";
 import type { CareerEvidenceItem } from "../../types/jobAgent";
 import type { Profile, ResumeRecord } from "../../types/identity";
 import type { createClient } from "../supabase/server";
+import { assertKnowledge } from "@/lib/applicationStudio/knowledge.mjs";
 
 type SupabaseClient = Awaited<ReturnType<typeof createClient>>;
 type EvidenceRow = { id: string; source_type: CareerEvidenceItem["sourceType"]; source_id: string | null; evidence_type: CareerEvidenceItem["evidenceType"]; label: string; value: string; confidence: number; duration_months: number | null; provenance: Record<string, unknown>; fingerprint: string };
@@ -34,7 +35,21 @@ export async function loadUnifiedEvidence(supabase: SupabaseClient, userId: stri
     warnings.push("MASTER_CV_MISSING");
   }
 
-  const generated = mergeEvidence(profileEvidence, masterCvEvidence);
+  let knowledgeEvidence: CareerEvidenceItem[] = [];
+  try {
+    const saved = await supabase.from("career_user_state").select("payload")
+      .eq("user_id", userId).eq("career_slug", "candidate-knowledge")
+      .eq("state_key", "starting_profile").eq("is_deleted", false).maybeSingle();
+    if (saved.error) throw saved.error;
+    if (saved.data?.payload?.knowledge) {
+      const kb = assertKnowledge(saved.data.payload.knowledge);
+      knowledgeEvidence = evidenceFromCareerKnowledge(userId, kb);
+    }
+  } catch {
+    warnings.push("CAREER_PROFILE_EVIDENCE_UNAVAILABLE");
+  }
+
+  const generated = mergeEvidence(profileEvidence, masterCvEvidence, knowledgeEvidence);
   if (generated.length) {
     const persisted = await supabase.from("job_evidence_items").upsert(generated.map((entry) => toRow(userId, entry)), { onConflict: "user_id,fingerprint" });
     if (persisted.error) warnings.push(`EVIDENCE_PERSIST_FAILED:${persisted.error.code}`);
@@ -44,6 +59,19 @@ export async function loadUnifiedEvidence(supabase: SupabaseClient, userId: stri
     warnings.push(`EVIDENCE_READ_FAILED:${current.error.code}`);
     return { evidence: generated, resume, warnings };
   }
-  const relevant = (current.data ?? []).filter((row) => row.source_type !== "master_cv" || row.source_id === resume?.id);
+  const activeKnowledge = new Set(knowledgeEvidence.map((entry) => entry.fingerprint));
+  // Stale imported facts must never survive a user correction or retraction.
+  // When candidate knowledge failed to load, do not permanently deactivate its evidence.
+  if (!warnings.includes("CAREER_PROFILE_EVIDENCE_UNAVAILABLE")) {
+    const obsolete = (current.data ?? []).filter((row) => row.provenance?.candidateKnowledge === true && !activeKnowledge.has(row.fingerprint));
+    if (obsolete.length) {
+      const removed = await supabase.from("job_evidence_items").update({ active: false })
+        .eq("user_id", userId).in("id", obsolete.map(row => row.id));
+      if (removed.error) warnings.push("CAREER_PROFILE_EVIDENCE_RETRACTION_FAILED");
+    }
+  }
+  const relevant = (current.data ?? []).filter((row) =>
+    (row.source_type !== "master_cv" || row.source_id === resume?.id) &&
+    (row.provenance?.candidateKnowledge !== true || activeKnowledge.has(row.fingerprint)));
   return { evidence: mergeEvidence(relevant.map(toDomain), generated), resume, warnings };
 }
