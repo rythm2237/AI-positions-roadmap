@@ -29,7 +29,13 @@ export function semanticReview(text,records){
    if(seen.has(key))continue;
    seen.add(key);
    const details={};
-   for(const field of semanticFields){const v=r.details?.[field];if(typeof v==='string'&&v.trim()&&v.length<=180)details[field]=v.trim();}
+   const comparable=v=>normalizedSource(v).replace(/[,;:–—-]/g,' ').replace(/\s+/g,' ').trim();
+   const exactEvidence=comparable(r.sourceQuote);
+   for(const field of semanticFields){
+     const v=r.details?.[field];
+     // Structured metadata must itself be explicitly supported by the excerpt.
+     if(typeof v==='string'&&v.trim()&&v.length<=180&&exactEvidence.includes(comparable(v)))details[field]=v.trim();
+   }
    accepted.push({kind:r.kind,label:r.label.trim(),text:r.text.trim(),sourceQuote:r.sourceQuote,details,edited:r.edited===true});
  }
  return {records:accepted,rejected};
