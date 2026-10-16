@@ -58,7 +58,7 @@ assert.equal(addresses.length,1,"All three address lines combined into ONE recor
 assert.equal(addresses[0].sourceQuote,candidates[0].sourceQuote,"Proof remains original multi-line excerpt");
 assert.equal(kb.entities.find(e=>e.id===addresses[0].entityId).metadata.address,"Main Street 14, 1087 Budapest, Hungary");
 assert.equal(kb.entities.filter(e=>e.kind==="certifications"&&e.claimIds.length).length,2,"Separate certificates");
-assert.equal(kb.entities.filter(e=>e.kind==="skills"&&e.claimIds.length).length,3,"Separate skills");
+assert.equal(kb.entities.filter(e=>e.kind==="skills"&&e.claimIds.length).length,4,"Preserve legacy skill and create three distinct new skills");
 const replay=importSemanticKnowledge(kb,{text:cv,type:"cv",label:"Updated CV",records:reviewed.records});
 assert.equal(replay.revision,kb.revision,"Repeat import is idempotent");
 const another=importSemanticKnowledge(kb,{text:"Certifications\nGoogle Analytics Certificate, 2023\nAdvanced SQL Certificate, 2026",type:"certification",label:"Second source",records:[
