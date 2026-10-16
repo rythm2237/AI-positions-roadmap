@@ -57,5 +57,5 @@ const multi=importKnowledge(moved,{text:"Certifications\\nData Analytics Certifi
 assert.equal(multi.claims.filter(c=>c.original==="Data Analytics Certificate").length,1);
 const skillsOnce=importKnowledge(multi,{text:"Skills\\nPower BI\\nSQL",type:"cv",label:"new-cv.pdf"});
 assert.equal(skillsOnce.claims.filter(c=>c.original==="Power BI").length,1);
-assert.ok(["portfolio","preferences"].every(kind=>sectionKind(kind==="portfolio"?"Portfolio":"Career Preferences")===kind));
+assert.ok(["portfolio","preferences"].every(kind=>sectionKind(kind==="portfolio"?"Portfolio & work samples":"Career Preferences")===kind));
 console.log("Career Profile Hub: import, categorisation, deduplication, corrections, structured metadata, batch approval, reassignment and provenance passed.");
