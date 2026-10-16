@@ -8,7 +8,7 @@ export function stableId(scope, value) {
   return `${scope}-${(hash >>> 0).toString(36)}-${(second>>>0).toString(36)}`;
 }
 export const emptyKnowledge = () => ({ schemaVersion: 1, revision: 0, sources: [], entities: [], claims: [], declined: [] });
-const allowedKinds = ['header','summary','experience','projects','education','certifications','skills','languages','development','additional','other'];
+const allowedKinds = ['header','summary','experience','projects','education','certifications','skills','languages','development','portfolio','preferences','additional','other'];
 const sourceTypes = ['cv','linkedin','interview','portfolio','certification','project-document','approved-cv','application','platform-learning'];
 export function knowledgeSources(kb) {
   return Object.fromEntries(kb.claims.filter(c => !c.retracted && c.confirmed && !kb.declined.includes(c.id)).map(c => [c.id, c.original]));
@@ -27,7 +27,7 @@ export function importKnowledge(kb, { text, type = 'cv', sections, label = '' },
   next.sources.push({ id: sourceId, type, label: clean(label).slice(0,150), importedAt: at, ...(structureRecovered?{structureRecovered:true}:{}) });
   // Preserve uncertain associations rather than guessing companies or dates.
   for (const section of sections?.length ? sections : parseProfile(text)) {
-    const kind = sectionKind(section.title), parsed = ['experience','projects'].includes(kind) ? records(section) : section.text.split(/\n\s*\n/).map(text=>({heading:[],items:text.split('\n')}));
+    const kind = sectionKind(section.title), parsed = ['experience','projects'].includes(kind) ? records(section) : (['skills','languages','certifications','development'].includes(kind) ? section.text.split(/\n|(?<=\S)\s*[;,]\s*(?=\S)/) : section.text.split(/\n\s*\n/)).map(text=>({heading:[],items:['skills','languages','certifications','development'].includes(kind)?[text]:text.split('\n')}));
     for (const record of parsed) {
       const block=[...record.heading,...record.items].join('\n');if(!block.trim())continue;
       const lines = block.split('\n').map(clean).filter(Boolean);
@@ -36,6 +36,13 @@ export function importKnowledge(kb, { text, type = 'cv', sections, label = '' },
       if (!entity) { entity = { id: entityId, kind, label: lines[0], fields: {}, claimIds: [] }; next.entities.push(entity); }
       lines.forEach((line, i) => {
         const original = line.replace(/^[•●▪*-]\s*/, '').trim(), id = stableId('claim', entityId + '|' + original);
+        // Cross-document reconciliation: separate source files may repeat identical
+        // standalone credentials/skills, and must not create duplicate profile facts.
+        const duplicate=['skills','certifications','languages','education','development'].includes(kind) &&
+          next.claims.some(c=>c.confirmed&&!c.retracted&&!next.declined.includes(c.id)&&
+            clean(c.original).toLowerCase()===clean(original).toLowerCase()&&
+            next.entities.find(e=>e.id===c.entityId)?.kind===kind);
+        if(duplicate)return;
         if (!next.claims.some(c => c.id === id)) next.claims.push({ id, sourceId, sourceType: type, location: `${section.title}:${i+1}`, original, meaning: original, entityId, anchor:record.heading.includes(line)||kind==='header', verification: 'candidate-reported', confirmed: true, updatedAt: at });
         if (!entity.claimIds.includes(id)) entity.claimIds.push(id);
       });
@@ -71,6 +78,68 @@ export function retractFact(kb,id) {
 export function assertKnowledge(kb) {
   if (!kb || kb.schemaVersion!==1 || !Number.isInteger(kb.revision) || !Array.isArray(kb.entities) || !Array.isArray(kb.claims) || !Array.isArray(kb.sources) || !Array.isArray(kb.declined) || kb.claims.length>6000) throw Error('Invalid candidate knowledge.');
   return kb;
+}
+
+
+const metadataRules={
+ preferences:['targetRoles','seniority','preferredCountries','preferredCities','workModels','employmentTypes','mobility','workAuthorization','salaryExpectation','preferredIndustries'],
+ portfolio:['projectUrl','repositoryUrl','artifactUrl','status','role','technology'],
+ skills:['category','level','yearsExperience','lastUsed','evidenceLink','relatedProjects'],
+ experience:['employmentType','startDate','endDate','isCurrent','company','jobTitle','country'],
+ education:['institution','degree','field','startDate','endDate','grade'],
+ certifications:['issuer','issuedAt','expiresAt','credentialId','credentialUrl','status'],
+ development:['provider','completedAt','status','hours'],
+ projects:['projectType','status','projectUrl','repositoryUrl','startDate','endDate','role'],
+ languages:['cefr','proficiency','certificate'],
+ additional:['awardIssuer','awardedAt','url'],
+ header:['city','country','phone','linkedin','website'],
+ summary:['targetRole','industry'],
+ other:['category','url']
+};
+const allowedLevels=['beginner','intermediate','advanced','expert','unknown'];
+export function updateEntityMetadata(kb,{entityId,metadata}){
+ const next=structuredClone(kb),entity=next.entities.find(e=>e.id===entityId);
+ if(!entity)throw Error('Career record was not found.');
+ if(!metadata||typeof metadata!=='object'||Array.isArray(metadata))throw Error('Invalid record details.');
+ const allowed=metadataRules[entity.kind]||[];
+ const normalized={};
+ for(const [key,value] of Object.entries(metadata)){
+  if(!allowed.includes(key))throw Error('Unsupported career record field.');
+  if(value===null||value==='')continue;
+  if(typeof value!=='string'&&typeof value!=='number'&&typeof value!=='boolean')throw Error('Invalid field value.');
+  if(typeof value==='string'&&value.length>500)throw Error('Record detail is too long.');
+  if(key==='level'&&!allowedLevels.includes(String(value).toLowerCase()))throw Error('Invalid skill level.');
+  if(key==='yearsExperience'&&(!Number.isFinite(Number(value))||Number(value)<0||Number(value)>80))throw Error('Invalid experience duration.');
+  normalized[key]=value;
+ }
+ entity.metadata={...entity.metadata,...normalized};
+ for(const key of Object.keys(metadata))if(metadata[key]===null||metadata[key]==='')delete entity.metadata[key];
+ if(JSON.stringify(entity.metadata)===JSON.stringify(kb.entities.find(e=>e.id===entityId).metadata||{}))return kb;
+ next.revision++;return next;
+}
+export function moveKnowledgeFact(kb,{claimId,kind,label}){
+ if(!allowedKinds.includes(kind)||typeof label!=='string'||!label.trim()||label.length>150)throw Error('Invalid destination section.');
+ const next=structuredClone(kb),claim=next.claims.find(c=>c.id===claimId&&c.confirmed&&!c.retracted);
+ if(!claim||next.declined.includes(claim.id))throw Error('Fact is no longer active.');
+ const oldEntity=next.entities.find(e=>e.id===claim.entityId);
+ if(!oldEntity)throw Error('Original record is missing.');
+ const id=stableId(kind,label);
+ if(id===oldEntity.id)return kb;
+ let dest=next.entities.find(e=>e.id===id);
+ if(!dest){dest={id,kind,label:clean(label),fields:{},claimIds:[]};next.entities.push(dest);}
+ oldEntity.claimIds=oldEntity.claimIds.filter(x=>x!==claimId);
+ claim.entityId=id;
+ if(!dest.claimIds.includes(claim.id))dest.claimIds.push(claim.id);
+ next.revision++;return next;
+}
+export function confirmFactBatch(kb,proposals){
+ if(!Array.isArray(proposals)||proposals.length<1||proposals.length>25)throw Error('Confirm between 1 and 25 facts at once.');
+ let next=kb;
+ for(const p of proposals){
+  if(!p||typeof p.text!=='string'||!p.text.trim())throw Error('Each fact must have text.');
+  next=confirmFact(next,p);
+ }
+ return next;
 }
 
 export function questionKey(question){return clean(String(question)).toLowerCase().replace(/[^\p{L}\p{N}]+/gu,' ').trim();}

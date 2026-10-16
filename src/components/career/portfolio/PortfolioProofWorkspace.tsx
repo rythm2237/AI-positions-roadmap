@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState } from "react";
 import type { CareerWorkspaceData } from "@/types/careerWorkspace";
 import { projectEvidenceStorageKey, type ProjectReview, type ProjectSubmission } from "@/lib/projectEvidence";
 import { buildProofProfile, encodeProofProfile } from "@/lib/portfolioProof";
+import { ProfilePortfolioEvidence } from "./ProfilePortfolioEvidence";
 
 type StoredEvidence = Record<string, { submission?: ProjectSubmission; review?: ProjectReview }>;
 
@@ -32,6 +33,7 @@ export default function PortfolioProofWorkspace({ career }: { career: CareerWork
 
   return (
     <div className="space-y-5">
+      <ProfilePortfolioEvidence careerTitle={career.title} />
       <div className="rounded-2xl border border-cyan-300/20 bg-slate-950/75 p-5">
         <p className="text-xs font-semibold uppercase tracking-[.16em] text-cyan-300">Proof of Skill</p>
         <div className="mt-3 flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">

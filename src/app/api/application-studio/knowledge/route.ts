@@ -1,7 +1,7 @@
 import {NextResponse} from 'next/server';
 import {createClient} from '@/lib/supabase/server';
 import {getKnowledge,putKnowledge} from '@/lib/applicationStudio/knowledgeStore';
-import {importKnowledge,confirmFact,retractFact} from '@/lib/applicationStudio/knowledge.mjs';
+import {importKnowledge,confirmFact,retractFact,updateEntityMetadata,moveKnowledgeFact,confirmFactBatch,emptyKnowledge} from '@/lib/applicationStudio/knowledge.mjs';
 import {limitedText} from '@/lib/applicationStudio/validation.mjs';
 import {readCompletedLearning} from '@/lib/applicationStudio/completedLearning';
 export const dynamic='force-dynamic';
@@ -23,6 +23,22 @@ export async function POST(request:Request){
    knowledge=current.knowledge;for(const item of items)knowledge=importKnowledge(knowledge,{text:'Professional Development\n'+item.title+' — '+item.provider+'; '+item.provenance,type:'platform-learning',label:item.id});
   }
   else if(body.operation==='confirm')knowledge=confirmFact(current.knowledge,body.fact||{});
+  else if(body.operation==='metadata')knowledge=updateEntityMetadata(current.knowledge,{entityId:body.entityId,metadata:body.metadata});
+  else if(body.operation==='move')knowledge=moveKnowledgeFact(current.knowledge,{claimId:body.claimId,kind:body.kind,label:body.label});
+  else if(body.operation==='batch-confirm')knowledge=confirmFactBatch(current.knowledge,body.facts);
+  else if(body.operation==='clear'){
+   if(body.confirmation!=='CLEAR MY CAREER FACTS')return json({error:'Explicit confirmation required to clear career facts.'},400);
+   knowledge=emptyKnowledge();knowledge.revision=current.knowledge.revision+1;
+  }
+  else if(body.operation==='replace') {
+   const oldClaim=current.knowledge.claims.find(claim=>claim.id===body.claimId&&!claim.retracted&&!current.knowledge.declined.includes(claim.id));
+   if(!oldClaim)return json({error:'The fact no longer exists. Reload your profile.'},409);
+   const entity=current.knowledge.entities.find(item=>item.id===oldClaim.entityId);
+   if(!entity||typeof body.text!=='string'||!body.text.trim())return json({error:'Enter the corrected professional fact.'},400);
+   if(oldClaim.original.trim()===body.text.trim())return json({userId:user.id,...current});
+   const updated=confirmFact(current.knowledge,{entityId:entity.id,kind:entity.kind,label:entity.label,text:body.text,field:'context'});
+   knowledge=retractFact(updated,oldClaim.id);
+  }
   else if(body.operation==='retract')knowledge=retractFact(current.knowledge,body.claimId);
   else return json({error:'Invalid candidate knowledge operation.'},400);
   if(knowledge.revision===current.knowledge.revision)return json({userId:user.id,...current});

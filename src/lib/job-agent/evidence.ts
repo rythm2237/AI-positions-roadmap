@@ -91,3 +91,40 @@ export function evidenceFromCvAnalyzer(input: { sourceId: string; skills: string
   result.push(item(source, input.sourceId, "assessment_result", "CV Analyzer score", `${Math.max(0, Math.min(100, Math.round(input.overall)))}/100`, 0.75, null, { strengths: input.strengths.slice(0, 10), explicitlySaved: true, analyzerVersion: "semantic-cv-v1" }));
   return result;
 }
+
+/**
+ * Convert the user's explicitly saved candidate knowledge into job-agent evidence.
+ * Never promote self-reported skills or project ideas into verified work.
+ * Provenance permits retracting facts without continuing to recommend on stale evidence.
+ */
+export function evidenceFromCareerKnowledge(profileId: string, knowledge: {
+  claims: Array<{id:string; entityId:string; sourceId?:string; sourceType?:string; original:string; confirmed?:boolean; retracted?:boolean; verification?:string; anchor?:boolean}>;
+  entities: Array<{id:string;kind:string;label:string;metadata?:Record<string,unknown>}>;
+  declined: string[];
+}): CareerEvidenceItem[] {
+  const entities = new Map(knowledge.entities.map((e) => [e.id, e]));
+  const declined = new Set(knowledge.declined);
+  const results: CareerEvidenceItem[] = [];
+  for (const claim of knowledge.claims) {
+    if (!claim.confirmed || claim.retracted || declined.has(claim.id) || !claim.original?.trim()) continue;
+    const entity = entities.get(claim.entityId);
+    if (!entity) continue;
+    const kind = entity.kind;
+    if (kind === "preferences") continue; // Search preferences are not qualifications.
+    const evidenceType: EvidenceType =
+      kind === "certifications" ? "certification" :
+      kind === "languages" ? "language" :
+      kind === "education" ? "education" :
+      kind === "experience" && !claim.anchor && demonstratedActionVerb.test(claim.original) ? "work_implementation" :
+      kind === "projects" && demonstratedActionVerb.test(claim.original) && ["production","operational","tested"].includes(String(entity.metadata?.status || "")) ? "project_implementation" :
+      kind === "skills" ? "skill_mention" : kind === "experience" ? "role_history" : "user_claim";
+    const confirmed = claim.verification === "candidate-confirmed";
+    const confidence = confirmed ? 0.76 : 0.56;
+    const title = (entity.label || kind) + " — " + claim.original.slice(0, 72);
+    const value = claim.original.slice(0, 700);
+    results.push(item("profile", profileId, evidenceType, title, value, confidence, null,
+      { candidateKnowledge: true, claimId: claim.id, sourceId: claim.sourceId, section: kind,
+        userConfirmed: confirmed, independentlyVerified: false, metadata: entity.metadata || {} }));
+  }
+  return results;
+}

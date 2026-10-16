@@ -33,7 +33,7 @@ export function ApplicationStudio({ career, initialMode, autoOpen=false }: { car
         if (!data.resume) throw new Error("No saved CV yet. Upload a CV in the editor or add one to your account first.");
         await studio.importSavedCV(data.resume.url, data.resume.name, data.userId);
       } else {
-        studio.importProfile(buildStudioProfileDraft(data.profile, career, data.progress, data.projects), data.userId);
+        studio.importProfile(buildStudioProfileDraft(data.profile, career, data.progress, data.projects, data.careerKnowledgeText || ""), data.userId);
       }
       setMessage("Imported as an editable draft. Check every fact, add missing details, then choose Confirm master profile in the editor.");
     } catch (error) { setMessage(error && typeof error === "object" && "message" in error && typeof error.message === "string" ? error.message : "Import failed. Your editor contents are preserved."); }

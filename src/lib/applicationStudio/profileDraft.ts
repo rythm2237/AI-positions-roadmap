@@ -7,6 +7,7 @@ export function buildStudioProfileDraft(
   career?: CareerWorkspaceData,
   progress?: Partial<CareerWorkspaceProgress>,
   projects?: { reviews?: Record<string, ProjectReview>; submissions?: Record<string, ProjectSubmission> },
+  careerKnowledgeText = "",
 ) {
   const lines = [profile.name || "", profile.email || "", profile.current_country || ""];
   if (profile.current_position) lines.push("Professional Summary", `Current position (self-reported): ${profile.current_position}`);
@@ -28,5 +29,6 @@ export function buildStudioProfileDraft(
       return `${project.title}: ${submission.summary}\nArtifact: ${submission.artifactUrl || submission.repositoryUrl}`;
     }));
   }
+  if (careerKnowledgeText.trim()) lines.push("Full career profile (candidate-reported or candidate-confirmed facts)", careerKnowledgeText.trim());
   return lines.filter(Boolean).join("\n").slice(0, 100_000);
 }

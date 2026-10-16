@@ -7,6 +7,21 @@ export const QUICK_QUESTIONS_POLICY=QUICK_POLICY+` Select zero to five SHORT, hi
 export const quickQuestionsSchema=z.object({jobLanguage:z.enum(['en','de','hu','fa','fr','es','it','pt','tr','ru','ar','ur','hi']),questions:z.array(z.object({id:z.string(),question:z.string(),entityId:z.string(),kind:z.enum(['other','experience','education','certifications','projects','skills','languages']),type:z.enum(['choice','text']),options:z.array(z.object({label:z.string(),value:z.string()}))}))});
 export function quickKnowledge(context){
  let kb=importKnowledge(emptyKnowledge(),{text:String(context.candidate||''),sections:context.cv,type:'cv',label:'Quick CV original source'});
+ // Candidate-confirmed facts from this account supplement the original CV; they
+ // never replace the supplied CV or its layout.
+ const saved=context.careerKnowledge;
+ if(saved?.schemaVersion===1&&Array.isArray(saved.claims)&&Array.isArray(saved.entities)){
+   const sourceIds=new Set(kb.sources.map(s=>s.id));
+   for(const source of saved.sources||[])if(!sourceIds.has(source.id)){kb.sources.push(source);sourceIds.add(source.id);}
+   const entities=new Map(kb.entities.map(e=>[e.id,e]));
+   for(const entity of saved.entities){
+     if(!entities.has(entity.id)){const copy=structuredClone(entity);kb.entities.push(copy);entities.set(copy.id,copy);}
+     else {const current=entities.get(entity.id);current.claimIds=[...new Set([...(current.claimIds||[]),...(entity.claimIds||[])])];}
+   }
+   const claimIds=new Set(kb.claims.map(c=>c.id)),withdrawn=new Set(saved.declined||[]);
+   for(const claim of saved.claims)if(!claimIds.has(claim.id)&&claim.confirmed&&!claim.retracted&&!withdrawn.has(claim.id)){kb.claims.push(structuredClone(claim));claimIds.add(claim.id);}
+   kb.revision=Math.max(kb.revision,Number(saved.revision)||0);
+ }
  const answers=Array.isArray(context.quickAnswers)?context.quickAnswers:[];
  if(answers.length>5)throw Error('Quick CV accepts at most five answers.');
  const seen=new Set();for(const a of answers){
