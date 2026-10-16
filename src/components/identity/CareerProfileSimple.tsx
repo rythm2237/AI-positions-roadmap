@@ -58,6 +58,17 @@ export function CareerProfileSimple({profile,userId,hasResume}: {profile:Profile
    return ()=>controller.abort();
  },[userId]);
 
+
+ useEffect(()=>{
+   let mounted=true;
+   fetch("/api/career-profile/restore",{cache:"no-store"}).then(async response=>{
+     if(!response.ok)return;
+     const result=await response.json() as {available?:boolean};
+     if(mounted)setHasRepairBackup(result.available===true);
+   }).catch(()=>{});
+   return ()=>{mounted=false;};
+ },[userId]);
+
  const groups=useMemo(()=>factsBySection(knowledge),[knowledge]);
  const scores=useMemo(()=>careerProfileScores(profile,knowledge,resumeStored),[profile,knowledge,resumeStored]);
 
