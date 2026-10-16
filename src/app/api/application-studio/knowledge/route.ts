@@ -4,6 +4,7 @@ import {getKnowledge,putKnowledge} from '@/lib/applicationStudio/knowledgeStore'
 import {importKnowledge,importSemanticKnowledge,confirmFact,retractFact,updateEntityMetadata,moveKnowledgeFact,confirmFactBatch,emptyKnowledge} from '@/lib/applicationStudio/knowledge.mjs';
 import {limitedText} from '@/lib/applicationStudio/validation.mjs';
 import {readCompletedLearning} from '@/lib/applicationStudio/completedLearning';
+import {applyRepair,repairCandidates} from '@/lib/identity/profileReconstruction.mjs';
 export const dynamic='force-dynamic';
 const json=(value:unknown,status=200)=>NextResponse.json(value,{status,headers:{'Cache-Control':'private, no-store'}});
 async function identity(){const db=await createClient();const {data:{user},error}=await db.auth.getUser();return !error&&user&&!user.is_anonymous?user:null;}
@@ -19,6 +20,22 @@ export async function POST(request:Request){
   let knowledge;
   if(body.operation==='import'){if(body.type==='platform-learning')return json({error:'Platform learning must come from your account records.'},400);knowledge=importKnowledge(current.knowledge,{text:body.text,type:body.type,label:body.label,sections:body.sections});}
   else if(body.operation==='semantic-import')knowledge=importSemanticKnowledge(current.knowledge,{text:body.text,type:body.type,label:body.label,records:body.records});
+  else if(body.operation==='reconcile') {
+   const available=repairCandidates(current.knowledge,body.kind,40);
+   if(!Array.isArray(body.records)||body.records.length<1||body.records.length>40)return json({error:'Review at least one reconstructed record before saving.'},400);
+   knowledge=applyRepair(current.knowledge,body.kind,body.records,available.candidates.map(c=>c.id));
+   // Make an immutable, RLS-protected snapshot before any existing evidence is retired.
+   // 'retention_snapshots' is an allowed key in career_user_state, while
+   // a unique career_slug permits multiple separately addressable backups.
+   const db=await createClient();
+   const backupSlug='candidate-knowledge-backup-'+crypto.randomUUID().replace(/-/g,'');
+   const snapshot=await db.from('career_user_state').insert({
+     user_id:user.id,career_slug:backupSlug,state_key:'retention_snapshots',
+     payload:{schemaVersion:1,backupOf:'candidate-knowledge',originalRevision:current.knowledge.revision,
+       createdAt:new Date().toISOString(),knowledge:current.knowledge},is_deleted:false,
+   });
+   if(snapshot.error)return json({error:'A private backup could not be saved. No career records were changed.'},503);
+  }
   else if(body.operation==='learning'){
    const db=await createClient(),items=await readCompletedLearning(db,user.id);
    knowledge=current.knowledge;for(const item of items)knowledge=importKnowledge(knowledge,{text:'Professional Development\n'+item.title+' — '+item.provider+'; '+item.provenance,type:'platform-learning',label:item.id});
