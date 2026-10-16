@@ -158,6 +158,20 @@ export function CareerProfileHub({ profile, userId, hasResume }: { profile: Prof
     finally { setBusy(false); }
   }
 
+  async function clearProfileFacts() {
+    if (!knowledgeReady || busy) return;
+    const answer = window.prompt("To permanently clear your saved career facts, type: CLEAR MY CAREER FACTS\n\nYour basic account details and uploaded CV files are NOT deleted.");
+    if (answer !== "CLEAR MY CAREER FACTS") return;
+    if (!window.confirm("Clear all Career Profile Hub facts? CV Maker snapshots and uploaded files remain unchanged.")) return;
+    setBusy(true);
+    try {
+      await changeKnowledge("clear", { confirmation: answer });
+      setStatus("Career knowledge cleared. Previously saved CV documents and account basics were preserved.");
+      setLastCvText("");
+    } catch (error) { setStatus(messageOf(error)); }
+    finally { setBusy(false); }
+  }
+
   function exportProfile() {
     const payload = JSON.stringify({ exportVersion: 1, exportedAt: new Date().toISOString(), account: profile.id, basics: profile, knowledge }, null, 2);
     const url = URL.createObjectURL(new Blob([payload], { type: "application/json" }));
@@ -227,7 +241,10 @@ export function CareerProfileHub({ profile, userId, hasResume }: { profile: Prof
       </div>
       {scores.missing.length > 0 && <p className="mt-4 text-sm text-amber-100">Suggested next sections: {scores.missing.slice(0, 3).join(" · ")}</p>}
       <p className="mt-2 text-xs text-slate-500">Self-reported CV information is not independently verified. Optional sections do not reduce profile completeness.</p>
-      <button type="button" disabled={!knowledgeReady} onClick={exportProfile} className="btn-secondary mt-3 min-h-10 text-xs disabled:opacity-50">Export my full career profile (JSON)</button>
+      <div className="mt-3 flex flex-wrap gap-3">
+        <button type="button" disabled={!knowledgeReady} onClick={exportProfile} className="btn-secondary min-h-10 text-xs disabled:opacity-50">Export my full career profile (JSON)</button>
+        <button type="button" disabled={!knowledgeReady || busy} onClick={() => void clearProfileFacts()} className="rounded-xl border border-rose-400/20 px-3 py-2 text-xs text-rose-200 disabled:opacity-50">Clear all saved career facts</button>
+      </div>
     </section>
 
     <section className="glass rounded-2xl border border-indigo-300/20 p-5 sm:p-7" aria-labelledby="career-cv-import-title">
