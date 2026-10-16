@@ -147,7 +147,7 @@ const metadataRules={
  projects:['projectType','status','projectUrl','repositoryUrl','startDate','endDate','role'],
  languages:['cefr','proficiency','certificate'],
  additional:['awardIssuer','awardedAt','url'],
- header:['city','country','phone','linkedin','website'],
+ header:['address','fullName','email','city','country','phone','linkedin','website'],
  summary:['targetRole','industry'],
  other:['category','url']
 };
