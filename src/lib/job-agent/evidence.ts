@@ -120,7 +120,7 @@ export function evidenceFromCareerKnowledge(profileId: string, knowledge: {
       kind === "skills" ? "skill_mention" : kind === "experience" ? "role_history" : "user_claim";
     const confirmed = claim.verification === "candidate-confirmed";
     const confidence = confirmed ? 0.76 : 0.56;
-    const title = entity.label || kind;
+    const title = (entity.label || kind) + " — " + claim.original.slice(0, 72);
     const value = claim.original.slice(0, 700);
     results.push(item("profile", profileId, evidenceType, title, value, confidence, null,
       { candidateKnowledge: true, claimId: claim.id, sourceId: claim.sourceId, section: kind,
