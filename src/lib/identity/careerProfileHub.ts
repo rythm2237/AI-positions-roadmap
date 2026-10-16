@@ -16,7 +16,7 @@ export const CAREER_SECTIONS = [
 ] as const;
 
 export type CareerSectionKind = (typeof CAREER_SECTIONS)[number]["kind"];
-export type ProfileFact = { id: string; entityId: string; kind: string; label: string; text: string; verification: string; sourceType: string };
+export type ProfileFact = { id: string; entityId: string; kind: string; label: string; text: string; verification: string; sourceType: string; metadata: Record<string, unknown> };
 
 function activeClaims(knowledge: Knowledge) {
   const declined = new Set(knowledge.declined);
@@ -33,7 +33,7 @@ export function factsBySection(knowledge: Knowledge): Record<string, ProfileFact
       id: claim.id, entityId: claim.entityId, kind,
       label: entity?.label || "", text: String(claim.original || ""),
       verification: claim.verification || "candidate-reported",
-      sourceType: claim.sourceType || "interview",
+      sourceType: claim.sourceType || "interview", metadata: entity?.metadata || {},
     });
   }
   return groups;
@@ -82,6 +82,6 @@ export function careerProfileScores(profile: Partial<Profile>, knowledge: Knowle
 export function candidateKnowledgeForCV(knowledge: Knowledge): string {
   const groups = factsBySection(knowledge);
   return CAREER_SECTIONS.flatMap(({ kind, title }) => groups[kind].length
-    ? [title, ...groups[kind].map((fact) => fact.text)]
+    ? [title, ...groups[kind].map((fact) => fact.text + (Object.keys(fact.metadata).length ? " [" + Object.entries(fact.metadata).map(([k,v]) => k + ": " + String(v)).join("; ") + "]" : ""))]
     : []).join("\n").slice(0, 100_000);
 }
