@@ -1,7 +1,7 @@
 import {NextResponse} from 'next/server';
 import {createClient} from '@/lib/supabase/server';
 import {getKnowledge,putKnowledge} from '@/lib/applicationStudio/knowledgeStore';
-import {importKnowledge,confirmFact,retractFact,updateEntityMetadata,moveKnowledgeFact,confirmFactBatch} from '@/lib/applicationStudio/knowledge.mjs';
+import {importKnowledge,confirmFact,retractFact,updateEntityMetadata,moveKnowledgeFact,confirmFactBatch,emptyKnowledge} from '@/lib/applicationStudio/knowledge.mjs';
 import {limitedText} from '@/lib/applicationStudio/validation.mjs';
 import {readCompletedLearning} from '@/lib/applicationStudio/completedLearning';
 export const dynamic='force-dynamic';
@@ -26,6 +26,10 @@ export async function POST(request:Request){
   else if(body.operation==='metadata')knowledge=updateEntityMetadata(current.knowledge,{entityId:body.entityId,metadata:body.metadata});
   else if(body.operation==='move')knowledge=moveKnowledgeFact(current.knowledge,{claimId:body.claimId,kind:body.kind,label:body.label});
   else if(body.operation==='batch-confirm')knowledge=confirmFactBatch(current.knowledge,body.facts);
+  else if(body.operation==='clear'){
+   if(body.confirmation!=='CLEAR MY CAREER FACTS')return json({error:'Explicit confirmation required to clear career facts.'},400);
+   knowledge=emptyKnowledge();knowledge.revision=current.knowledge.revision+1;
+  }
   else if(body.operation==='replace') {
    const oldClaim=current.knowledge.claims.find(claim=>claim.id===body.claimId&&!claim.retracted&&!current.knowledge.declined.includes(claim.id));
    if(!oldClaim)return json({error:'The fact no longer exists. Reload your profile.'},409);
