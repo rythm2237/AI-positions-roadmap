@@ -158,6 +158,33 @@ function comparable(value: string | null | undefined) {
   return (value ?? "").toLowerCase().replace(/[^a-z0-9]+/g, " ").trim();
 }
 
+// Normalize ISO codes, localized country names and provider labels before
+// declaring a canonical metadata conflict. Never treat an unknown alias as equal.
+const countryAliases: Record<string, string> = {
+  de: "germany", deu: "germany", deutschland: "germany", germany: "germany", allemagne: "germany",
+  ie: "ireland", irl: "ireland", ireland: "ireland", irland: "ireland",
+  gb: "united kingdom", uk: "united kingdom", gbr: "united kingdom", "united kingdom": "united kingdom",
+  at: "austria", aut: "austria", austria: "austria", osterreich: "austria", österreich: "austria",
+  nl: "netherlands", nld: "netherlands", netherlands: "netherlands", holland: "netherlands",
+  fr: "france", fra: "france", france: "france",
+  hu: "hungary", hun: "hungary", hungary: "hungary", magyarorszag: "hungary",
+  be: "belgium", bel: "belgium", belgium: "belgium",
+  ch: "switzerland", che: "switzerland", switzerland: "switzerland", schweiz: "switzerland",
+  es: "spain", esp: "spain", spain: "spain", españa: "spain",
+  pt: "portugal", prt: "portugal", portugal: "portugal",
+  pl: "poland", pol: "poland", poland: "poland",
+};
+export function canonicalCountry(value: string | null | undefined): string {
+  const normalized = (value ?? "").normalize("NFKD").replace(/[\u0300-\u036f]/g, "").trim().toLowerCase().replace(/\s+/g, " ");
+  return countryAliases[normalized] ?? normalized;
+}
+export function countryMetadataConflicts(existing: string | null | undefined, verified: string | null | undefined): boolean {
+  if (!existing || !verified) return false;
+  const first = canonicalCountry(existing);
+  const second = canonicalCountry(verified);
+  return Boolean(first && second && first !== second);
+}
+
 function meaningfulConflict(existing: string | null, verified: string | null) {
   if (!existing || !verified) return false;
   const a = comparable(existing);
@@ -243,7 +270,7 @@ export async function verifyVacancy(job: CanonicalJobCandidate): Promise<Vacancy
       const expiresAt = looksClosed ? new Date().toISOString() : stringValue(posting.validThrough) ?? job.expiresAt;
       const companyConflict = meaningfulConflict(job.company, company) && !/not specified|employer not verified/i.test(job.company);
       const titleConflict = meaningfulConflict(job.title, title);
-      const countryConflict = meaningfulConflict(job.country, verifiedLocation.country);
+      const countryConflict = countryMetadataConflicts(job.country, verifiedLocation.country);
       if (companyConflict || titleConflict || countryConflict) {
         return {
           status: "failed",
