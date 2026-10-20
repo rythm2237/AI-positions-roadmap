@@ -46,6 +46,7 @@ const normalizeCountry = (value: string) => {
   const normalized = normalize(value);
   const aliases: Record<string, string> = {
     de: "germany", deutschland: "germany", germany: "germany",
+    ie: "ireland", irl: "ireland", ireland: "ireland", irland: "ireland",
     fr: "france", france: "france",
     hu: "hungary", hungary: "hungary", magyarorszag: "hungary",
     nl: "netherlands", netherlands: "netherlands", holland: "netherlands",
