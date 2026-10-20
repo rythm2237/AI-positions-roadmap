@@ -143,6 +143,25 @@ test("Layer 4 — provider gateway preserves no-results and provider-error statu
   assert.deepEqual(result.attempts.map((item) => item.status).sort(), ["no_results", "provider_error"]);
 });
 
+test("Request budget covers every configured country before exhausting the first country", async () => {
+  const provider = (name) => ({
+    name, countrySupport: () => true,
+    health: async () => ({ configured: true, status: "healthy" }),
+    rateLimitState: async () => ({}),
+    search: async () => ({ provider: name, status: "no_results", jobs: [], latencyMs: 1, requestCount: 1, rateLimitState: {} }),
+  });
+  const result = await orchestrateProviderSearch({
+    providers: [provider("alpha"), provider("beta"), provider("gamma")],
+    queries: ["AI Automation Specialist", "Flow Planner", "SEO Specialist"],
+    countries: ["Germany", "Ireland"], correlationId: "country-fairness-test",
+    maxRequests: 6, limitPerRequest: 3, gatewayDeadlineMs: 1000,
+  });
+  assert.equal(result.attempts.length, 6);
+  assert.deepEqual(new Set(result.attempts.map(x => x.country)), new Set(["Germany", "Ireland"]));
+  assert.deepEqual(new Set(result.attempts.map(x => x.query)), new Set(["AI Automation Specialist", "Flow Planner", "SEO Specialist"]));
+  assert.equal(new Set(result.attempts.map(x => x.provider)).size, 3);
+});
+
 test("Layer 4b — provider gateway times out a stalled adapter and returns a partial-capable result", async () => {
   const stalled = {
     name: "stalled",
