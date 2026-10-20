@@ -22,6 +22,7 @@ import { countProviderIssues, groupCurrentJobResults } from "../src/lib/job-agen
 import { summarizeCanonicalSearchRun } from "../src/lib/job-agent/searchRunMetrics.ts";
 import { extractSourcePageIdentity, sourceCompanyMatchesHost } from "../src/lib/job-agent/sourcePageIdentity.ts";
 import { enrichRequirements } from "../src/lib/job-agent/requirements.ts";
+import { canonicalCountry, countryMetadataConflicts } from "../src/lib/job-agent/countryIdentity.ts";
 import { selectCandidatesForVerification } from "../src/lib/job-agent/verificationSelection.ts";
 
 const root = new URL("..", import.meta.url);
@@ -77,6 +78,19 @@ const candidate = (overrides = {}) => {
   return job;
 };
 
+test("Canonical verification accepts equivalent country names and retains genuine mismatches", () => {
+  assert.equal(canonicalCountry("DE"), "germany");
+  assert.equal(canonicalCountry("Deutschland"), "germany");
+  assert.equal(canonicalCountry("Germany"), "germany");
+  assert.equal(canonicalCountry("Irland"), "ireland");
+  assert.equal(canonicalCountry("IE"), "ireland");
+  assert.equal(countryMetadataConflicts("Germany", "DE"), false);
+  assert.equal(countryMetadataConflicts("Germany", "Deutschland"), false);
+  assert.equal(countryMetadataConflicts("Irland", "IE"), false);
+  assert.equal(countryMetadataConflicts("Germany", "FR"), true);
+  assert.equal(countryMetadataConflicts(null, "DE"), false);
+});
+
 test("Bounded verification samples every provider before consuming any single source", () => {
   const jobs = [
     ...Array.from({length: 90}, (_, i) => ({source: "Arbeitnow", id: `a${i}`})),
@@ -127,6 +141,47 @@ test("Layer 4 — provider gateway preserves no-results and provider-error statu
   });
   const result = await orchestrateProviderSearch({ providers: [provider("empty", "no_results"), provider("down", "provider_error")], queries: ["AI"], countries: ["Germany"], correlationId: "c" });
   assert.deepEqual(result.attempts.map((item) => item.status).sort(), ["no_results", "provider_error"]);
+});
+
+test("Geotargeted search must not overwrite a vacancy's different actual country", async () => {
+  const provider = {
+    name: "geo-provider", countrySupport: () => true,
+    health: async () => ({configured: true, status: "healthy"}),
+    rateLimitState: async () => ({}),
+    search: async () => ({
+      provider: "geo-provider", status: "success", jobs: [candidate({
+        source: "geo-provider",
+        country: "United Kingdom",
+        title: "Flow Planner",
+        externalId: "uk-vacancy",
+      })], latencyMs: 1, requestCount: 1, rateLimitState: {},
+    }),
+  };
+  const result = await orchestrateProviderSearch({
+    providers: [provider], queries: ["Flow Planner"], countries: ["Germany"],
+    correlationId: "geo-integrity-test", maxRequests: 1,
+  });
+  assert.equal(result.jobs.length, 1);
+  assert.equal(result.jobs[0].country, "United Kingdom");
+});
+
+test("Request budget covers every configured country before exhausting the first country", async () => {
+  const provider = (name) => ({
+    name, countrySupport: () => true,
+    health: async () => ({ configured: true, status: "healthy" }),
+    rateLimitState: async () => ({}),
+    search: async () => ({ provider: name, status: "no_results", jobs: [], latencyMs: 1, requestCount: 1, rateLimitState: {} }),
+  });
+  const result = await orchestrateProviderSearch({
+    providers: [provider("alpha"), provider("beta"), provider("gamma")],
+    queries: ["AI Automation Specialist", "Flow Planner", "SEO Specialist"],
+    countries: ["Germany", "Ireland"], correlationId: "country-fairness-test",
+    maxRequests: 6, limitPerRequest: 3, gatewayDeadlineMs: 1000,
+  });
+  assert.equal(result.attempts.length, 6);
+  assert.deepEqual(new Set(result.attempts.map(x => x.country)), new Set(["Germany", "Ireland"]));
+  assert.deepEqual(new Set(result.attempts.map(x => x.query)), new Set(["AI Automation Specialist", "Flow Planner", "SEO Specialist"]));
+  assert.equal(new Set(result.attempts.map(x => x.provider)).size, 3);
 });
 
 test("Layer 4b — provider gateway times out a stalled adapter and returns a partial-capable result", async () => {

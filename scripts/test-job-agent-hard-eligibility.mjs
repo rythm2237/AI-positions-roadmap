@@ -75,4 +75,16 @@ const eligible = evaluateJobEligibility({
 }, profile, { ...agent, workplace_preferences: ["remote"], exclude_unknown_languages: false });
 assert.equal(eligible.status, "eligible");
 
+const irelandAlias = evaluateJobEligibility({
+  title: "Flow Planner",
+  company: "Example",
+  country: "Ireland",
+  location: "Dublin",
+  description: "Fluent English required. This is a full-time role.",
+  descriptionComplete: true,
+  workplaceModel: "hybrid",
+  employmentTypes: ["full_time"],
+}, profile, { ...agent, search_countries: ["Irland"], exclude_unknown_languages: true });
+assert.equal(irelandAlias.status, "eligible", "German-language Ireland alias should not exclude actual Irish jobs");
+
 console.log("Job Agent hard eligibility tests passed: language, source-confidence, geography and workplace filters are enforced before fit scoring.");

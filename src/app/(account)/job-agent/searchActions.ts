@@ -10,6 +10,7 @@ import { requireUser } from "@/lib/auth/session";
 import { createClient } from "@/lib/supabase/server";
 import { assessFreshness, canonicalJobKey, safeExternalUrl } from "@/lib/job-agent/normalization";
 import { selectCandidatesForVerification } from "@/lib/job-agent/verificationSelection";
+import { canonicalCountry } from "@/lib/job-agent/countryIdentity";
 import { configuredJobProviders, runProviderGateway } from "@/lib/job-agent/providers/gateway";
 import { createJobSearchIntent, validateJobSearchIntent } from "@/lib/job-agent/intent";
 import { planSearchQueries } from "@/lib/job-agent/searchStrategy";
@@ -163,7 +164,7 @@ async function executeJobSearch(
   const intent = createJobSearchIntent(agent, agent.search_languages?.length ? agent.search_languages : profile.languages);
   if (validateJobSearchIntent(intent).length) return { error: "criteria" };
   const queries = planSearchQueries(intent, 6);
-  const countries = intent.hard.countries.slice(0, 3);
+  const countries = intent.hard.countries.slice(0, 3).map((country) => { const canonical = canonicalCountry(country); return canonical === "ireland" ? "Ireland" : country; });
   if (!countries.some((country) => providers.some((provider) => provider.countrySupport(country)))) return { error: "country" };
 
   const started = Date.now();

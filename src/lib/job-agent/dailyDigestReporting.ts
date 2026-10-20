@@ -134,6 +134,21 @@ export async function sendDueDailyJobDigests(now = new Date()) {
     const previous = await serviceFetch<ReportRow[]>(`job_agent_reports?agent_id=eq.${agent.id}&report_type=eq.daily&delivery_channel=eq.email&status=eq.sent&sent_at=not.is.null&select=id,status,sent_at&order=sent_at.desc&limit=1`);
     const since = previous[0]?.sent_at ?? new Date(now.getTime() - 26 * 60 * 60 * 1000).toISOString();
     const recent = await serviceFetch<DailyDigestJob[]>(`job_opportunities?user_id=eq.${agent.user_id}&discovered_at=gt.${encodeURIComponent(since)}&discovered_at=lte.${encodeURIComponent(now.toISOString())}&select=${jobSelect}&order=discovered_at.desc&limit=1000`);
+    const latestRuns = await serviceFetch<Array<{
+      provider_records: number | null;
+      deduplicated_count: number | null;
+      unverified_count: number | null;
+      blocked_count: number | null;
+      provider_summary: {attemptsByStatus?: Record<string,number>} | null;
+    }>>(`job_search_runs?agent_id=eq.${agent.id}&started_at=gt.${encodeURIComponent(since)}&started_at=lte.${encodeURIComponent(now.toISOString())}&status=in.(completed,partial)&select=provider_records,deduplicated_count,unverified_count,blocked_count,provider_summary&order=started_at.desc&limit=1`);
+    const latestRun = latestRuns[0] ?? null;
+    const searchStats = latestRun ? {
+      received: latestRun.provider_records ?? 0,
+      reviewed: latestRun.deduplicated_count ?? 0,
+      pending: latestRun.unverified_count ?? 0,
+      blocked: latestRun.blocked_count ?? 0,
+      providerErrors: latestRun.provider_summary?.attemptsByStatus?.provider_error ?? 0,
+    } : null;
     const jobs = recent
       .filter((job) => recommendationEligible(job, agent, now))
       .sort((a, b) => (b.fit_score ?? -1) - (a.fit_score ?? -1) || Date.parse(b.discovered_at) - Date.parse(a.discovered_at));
@@ -143,7 +158,8 @@ export async function sendDueDailyJobDigests(now = new Date()) {
       found: recent.length,
       recommended: jobs.length,
       verified: jobs.filter((job) => job.eligibility_status === "eligible").length,
-      unverified: jobs.filter((job) => job.eligibility_status === "unverified").length,
+      unverified: searchStats?.pending ?? recent.filter((job) => job.eligibility_status === "unverified").length,
+      searchStats,
       strongMatches: jobs.filter((job) => (job.fit_score ?? 0) >= agent.strong_match_threshold).length,
       saved: savedJobs.length,
       windowStartedAt: since,
@@ -157,6 +173,7 @@ export async function sendDueDailyJobDigests(now = new Date()) {
       savedJobs,
       site,
       periodLabel: schedule.periodKey,
+      searchStats,
     });
 
     let ledgerId = existing[0]?.id;

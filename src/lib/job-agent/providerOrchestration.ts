@@ -1,5 +1,6 @@
 import type { CanonicalJobCandidate, JobProvider, SearchGatewayResult } from "./contracts.ts";
 import { canonicalJobKey, deduplicateJobs, normalizeJobText } from "./normalization.ts";
+import { canonicalCountry } from "./countryIdentity.ts";
 
 const recoveryLimit = () => Math.max(0, Math.min(Number(process.env.JOB_AGENT_TRUSTED_RECOVERY_MAX ?? 4) || 0, 6));
 const providerRequestTimeoutMs = 15_000;
@@ -51,6 +52,10 @@ function restoreRequestedCountry(outcome: Awaited<ReturnType<JobProvider["search
   return {
     ...outcome,
     jobs: outcome.jobs.map((job) => {
+      // Never overwrite an explicitly reported different geography with the
+      // requested search country. Search-engine geo-targeting is not proof
+      // that every returned vacancy is located there.
+      if (!job.country || canonicalCountry(job.country) !== canonicalCountry(country)) return job;
       if (normalizeJobText(job.country) === normalizeJobText(country)) return job;
       const normalized = { ...job, country, canonicalKey: "" };
       normalized.canonicalKey = canonicalJobKey(normalized);
@@ -282,7 +287,17 @@ export async function orchestrateProviderSearch(input: {
   const requestTimeoutMs = boundedDuration(input.requestTimeoutMs, providerRequestTimeoutMs, 60_000);
   const gatewayDeadlineMs = boundedDuration(input.gatewayDeadlineMs, providerGatewayDeadlineMs, 180_000);
   const deadlineAt = Date.now() + gatewayDeadlineMs;
-  const requests = input.countries.flatMap((country) => input.queries.flatMap((query) => input.providers.map((provider) => ({ provider, country, query })))).slice(0, maxRequests);
+  // Spread the fixed request budget over all country-query pairs BEFORE
+  // adding additional providers. Country-major truncation silently excluded
+  // later countries whenever the first country exhausted maxRequests.
+  const pairs = input.queries.flatMap((query) => input.countries.map((country) => ({ country, query })));
+  const requests: Array<{ provider: JobProvider; country: string; query: string }> = [];
+  for (let round = 0; round < input.providers.length && requests.length < maxRequests; round++) {
+    for (let index = 0; index < pairs.length && requests.length < maxRequests; index++) {
+      const pair = pairs[index];
+      requests.push({ ...pair, provider: input.providers[(round + index) % input.providers.length] });
+    }
+  }
   const outcomes: Array<{ country: string; query: string; outcome: Awaited<ReturnType<JobProvider["search"]>> }> = [];
   for (let index = 0; index < requests.length; index += 8) {
     const batch = requests.slice(index, index + 8);

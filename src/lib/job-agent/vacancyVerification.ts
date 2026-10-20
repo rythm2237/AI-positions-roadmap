@@ -7,6 +7,7 @@ import type { CanonicalJobCandidate } from "./contracts";
 import type { JobVerificationStatus } from "../../types/jobAgent";
 import { safeExternalUrl } from "./normalization";
 import { extractSourcePageIdentity, sourceCompanyMatchesHost } from "./sourcePageIdentity";
+import { countryMetadataConflicts } from "./countryIdentity";
 
 export type VacancyVerification = {
   status: JobVerificationStatus;
@@ -243,7 +244,7 @@ export async function verifyVacancy(job: CanonicalJobCandidate): Promise<Vacancy
       const expiresAt = looksClosed ? new Date().toISOString() : stringValue(posting.validThrough) ?? job.expiresAt;
       const companyConflict = meaningfulConflict(job.company, company) && !/not specified|employer not verified/i.test(job.company);
       const titleConflict = meaningfulConflict(job.title, title);
-      const countryConflict = meaningfulConflict(job.country, verifiedLocation.country);
+      const countryConflict = countryMetadataConflicts(job.country, verifiedLocation.country);
       if (companyConflict || titleConflict || countryConflict) {
         return {
           status: "failed",

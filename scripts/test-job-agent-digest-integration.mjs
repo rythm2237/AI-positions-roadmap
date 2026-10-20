@@ -17,6 +17,7 @@ async function simulate(jobs) {
   if(path.startsWith('job_agents?'))return Response.json([agent]);
   if(path.startsWith('profiles?'))return Response.json([{id:'user-1',email:'synthetic@example.test',name:'Test'}]);
   if(path.startsWith('job_opportunities?'))return Response.json(jobs);
+  if(path.startsWith('job_search_runs?'))return Response.json([{provider_records:187,deduplicated_count:80,unverified_count:27,blocked_count:53,provider_summary:{attemptsByStatus:{provider_error:5}}}]);
   if(path.startsWith('job_saved_jobs?'))return Response.json([]);
   if(path==='job_agent_reports'&&init.method==='POST'){ledger.push(JSON.parse(init.body));return Response.json([{id:'report-1'}]);}
   if(path.startsWith('job_agent_reports?')&&init.method==='PATCH'){ledger.push(JSON.parse(init.body));return Response.json([]);}
@@ -37,5 +38,5 @@ test('Daily orchestration excludes senior, pending and legacy jobs, preserves si
  assert.match(html,/>0<\/strong><span[^>]*>High match<\/span>/);
 });
 test('No-match digest is truthful and does not pad results',async()=>{
- const run=await simulate([{...good,eligibility_status:'blocked'}]);assert.match(run.sent[0].subject,/No suitable/);assert.match(run.sent[0].html,/No suitable verified new vacancies/);assert.doesNotMatch(run.sent[0].html,/Junior Automation Specialist/);
+ const run=await simulate([{...good,eligibility_status:'blocked'}]);assert.match(run.sent[0].subject,/No suitable/);assert.match(run.sent[0].html,/No new vacancies passed all verification and career checks/);assert.match(run.sent[0].html,/27 candidate\(s\) still need review/);assert.match(run.sent[0].html,/187 provider records received/);assert.equal(run.ledger[0].summary.unverified,27);assert.doesNotMatch(run.sent[0].html,/Junior Automation Specialist/);
 });
