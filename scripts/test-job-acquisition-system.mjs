@@ -22,6 +22,7 @@ import { countProviderIssues, groupCurrentJobResults } from "../src/lib/job-agen
 import { summarizeCanonicalSearchRun } from "../src/lib/job-agent/searchRunMetrics.ts";
 import { extractSourcePageIdentity, sourceCompanyMatchesHost } from "../src/lib/job-agent/sourcePageIdentity.ts";
 import { enrichRequirements } from "../src/lib/job-agent/requirements.ts";
+import { canonicalCountry, countryMetadataConflicts } from "../src/lib/job-agent/countryIdentity.ts";
 import { selectCandidatesForVerification } from "../src/lib/job-agent/verificationSelection.ts";
 
 const root = new URL("..", import.meta.url);
@@ -76,6 +77,19 @@ const candidate = (overrides = {}) => {
   job.canonicalKey = canonicalJobKey(job);
   return job;
 };
+
+test("Canonical verification accepts equivalent country names and retains genuine mismatches", () => {
+  assert.equal(canonicalCountry("DE"), "germany");
+  assert.equal(canonicalCountry("Deutschland"), "germany");
+  assert.equal(canonicalCountry("Germany"), "germany");
+  assert.equal(canonicalCountry("Irland"), "ireland");
+  assert.equal(canonicalCountry("IE"), "ireland");
+  assert.equal(countryMetadataConflicts("Germany", "DE"), false);
+  assert.equal(countryMetadataConflicts("Germany", "Deutschland"), false);
+  assert.equal(countryMetadataConflicts("Irland", "IE"), false);
+  assert.equal(countryMetadataConflicts("Germany", "FR"), true);
+  assert.equal(countryMetadataConflicts(null, "DE"), false);
+});
 
 test("Bounded verification samples every provider before consuming any single source", () => {
   const jobs = [
