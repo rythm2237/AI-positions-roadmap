@@ -143,6 +143,28 @@ test("Layer 4 — provider gateway preserves no-results and provider-error statu
   assert.deepEqual(result.attempts.map((item) => item.status).sort(), ["no_results", "provider_error"]);
 });
 
+test("Geotargeted search must not overwrite a vacancy's different actual country", async () => {
+  const provider = {
+    name: "geo-provider", countrySupport: () => true,
+    health: async () => ({configured: true, status: "healthy"}),
+    rateLimitState: async () => ({}),
+    search: async () => ({
+      provider: "geo-provider", status: "success", jobs: [candidate({
+        source: "geo-provider",
+        country: "United Kingdom",
+        title: "Flow Planner",
+        externalId: "uk-vacancy",
+      })], latencyMs: 1, requestCount: 1, rateLimitState: {},
+    }),
+  };
+  const result = await orchestrateProviderSearch({
+    providers: [provider], queries: ["Flow Planner"], countries: ["Germany"],
+    correlationId: "geo-integrity-test", maxRequests: 1,
+  });
+  assert.equal(result.jobs.length, 1);
+  assert.equal(result.jobs[0].country, "United Kingdom");
+});
+
 test("Request budget covers every configured country before exhausting the first country", async () => {
   const provider = (name) => ({
     name, countrySupport: () => true,
