@@ -1,5 +1,6 @@
 import type { CanonicalJobCandidate, JobProvider, SearchGatewayResult } from "./contracts.ts";
 import { canonicalJobKey, deduplicateJobs, normalizeJobText } from "./normalization.ts";
+import { canonicalCountry } from "./countryIdentity.ts";
 
 const recoveryLimit = () => Math.max(0, Math.min(Number(process.env.JOB_AGENT_TRUSTED_RECOVERY_MAX ?? 4) || 0, 6));
 const providerRequestTimeoutMs = 15_000;
@@ -51,6 +52,10 @@ function restoreRequestedCountry(outcome: Awaited<ReturnType<JobProvider["search
   return {
     ...outcome,
     jobs: outcome.jobs.map((job) => {
+      // Never overwrite an explicitly reported different geography with the
+      // requested search country. Search-engine geo-targeting is not proof
+      // that every returned vacancy is located there.
+      if (!job.country || canonicalCountry(job.country) !== canonicalCountry(country)) return job;
       if (normalizeJobText(job.country) === normalizeJobText(country)) return job;
       const normalized = { ...job, country, canonicalKey: "" };
       normalized.canonicalKey = canonicalJobKey(normalized);
