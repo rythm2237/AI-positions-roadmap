@@ -118,7 +118,7 @@ export function evaluateJobEligibility(job: EligibilityJobInput, profile: Profil
     if (!location) unverified.push("Job location could not be verified against configured cities/regions.");
     else if (!agent.cities_regions.some((place) => location.includes(normalize(place)))) blockers.push("Location is outside the configured cities/regions.");
   }
-  if (agent.max_commute_minutes !== null && job.workplaceModel !== "remote") {
+  if (agent.max_commute_minutes != null && job.workplaceModel !== "remote") {
     unverified.push(`Commute time could not be verified against the configured ${agent.max_commute_minutes}-minute maximum.`);
   }
 
