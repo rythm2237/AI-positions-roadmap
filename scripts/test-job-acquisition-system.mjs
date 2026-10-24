@@ -165,6 +165,27 @@ test("Geotargeted search must not overwrite a vacancy's different actual country
   assert.equal(result.jobs[0].country, "United Kingdom");
 });
 
+test("Unsupported-country providers do not waste the request budget", async () => {
+  const searches=[];
+  const provider=(name, countries)=>({
+    name,
+    countrySupport:(country)=>countries.includes(country),
+    health:async()=>({configured:true,status:"healthy"}),
+    rateLimitState:async()=>({}),
+    search:async(input)=>{ searches.push(name+":"+input.country); return { provider:name,status:"no_results",jobs:[],latencyMs:1,requestCount:1,rateLimitState:{} }; }
+  });
+  const result=await orchestrateProviderSearch({
+    providers:[provider("GermanyOnly",["Germany"]),provider("Both",["Germany","Ireland"])],
+    countries:["Germany","Ireland"],queries:["AI Automation Specialist","Flow Planner"],
+    correlationId:"supported-provider-fairness",maxRequests:6,gatewayDeadlineMs:1000,
+  });
+  assert.equal(result.attempts.length,6);
+  assert.ok(result.attempts.every(a=>a.status!=="unsupported_country"));
+  assert.ok(result.attempts.some(a=>a.country==="Ireland"&&a.provider==="Both"));
+  assert.ok(result.attempts.every(a=>a.country!=="Ireland"||a.provider==="Both"));
+  assert.equal(searches.length,6);
+});
+
 test("Request budget covers every configured country before exhausting the first country", async () => {
   const provider = (name) => ({
     name, countrySupport: () => true,
