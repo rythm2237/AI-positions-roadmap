@@ -38,5 +38,21 @@ test('Daily orchestration excludes senior, pending and legacy jobs, preserves si
  assert.match(html,/>0<\/strong><span[^>]*>High match<\/span>/);
 });
 test('No-match digest is truthful and does not pad results',async()=>{
- const run=await simulate([{...good,eligibility_status:'blocked'}]);assert.match(run.sent[0].subject,/No suitable/);assert.match(run.sent[0].html,/No new vacancies passed all verification and career checks/);assert.match(run.sent[0].html,/27 candidate\(s\) still need review/);assert.match(run.sent[0].html,/187 provider records received/);assert.equal(run.ledger[0].summary.unverified,27);assert.doesNotMatch(run.sent[0].html,/Junior Automation Specialist/);
+ const run=await simulate([{...good,eligibility_status:'blocked'}]);assert.match(run.sent[0].subject,/No suitable/);assert.match(run.sent[0].html,/No vacancies met your recommendation threshold/);assert.match(run.sent[0].html,/27 candidate\(s\) still need review/);assert.match(run.sent[0].html,/187 provider records received/);assert.equal(run.ledger[0].summary.unverified,27);assert.doesNotMatch(run.sent[0].html,/Junior Automation Specialist/);
+});
+
+test('Verified eligible lower-score roles appear only in separately labelled review section',async()=>{
+ const review={...good,id:'review-1',role:'AI Automation Specialist',fit_score:54,status:'discovered',recommendation:'review',decision_classification:'worth_reviewing'};
+ const other={...good,id:'review-2',role:'Digital Solutions & AI Automation Specialist',fit_score:48,status:'discovered',recommendation:'review',decision_classification:'stretch'};
+ const run=await simulate([review,other,{...review,id:'blocked',role:'Blocked Analyst',eligibility_status:'blocked'},{...review,id:'pending',role:'Unverified Analyst',verification_status:'unverified'},{...review,id:'weak',role:'Weak Analyst',fit_score:24}]);
+ assert.equal(run.outcome.sent,1);
+ assert.match(run.sent[0].subject,/2 verified opportunities to review/);
+ assert.match(run.sent[0].html,/Verified opportunities worth reviewing/);
+ assert.match(run.sent[0].html,/Below your recommended-fit threshold/);
+ assert.match(run.sent[0].html,/AI Automation Specialist/);
+ assert.match(run.sent[0].html,/Digital Solutions &amp; AI Automation Specialist/);
+ assert.doesNotMatch(run.sent[0].html,/Blocked Analyst|Unverified Analyst|Weak Analyst/);
+ assert.equal(run.ledger[0].summary.recommended,0);
+ assert.equal(run.ledger[0].summary.verifiedForReview,2);
+ assert.equal(run.ledger[0].summary.verified,2);
 });
