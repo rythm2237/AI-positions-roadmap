@@ -7,7 +7,7 @@ const {sendDueDailyJobDigests,verifyJobEmailActionToken}=await import(`data:text
 process.env.SUPABASE_URL='https://database.test';process.env.SUPABASE_SECRET_KEY='test-not-a-real-key';process.env.RESEND_API_KEY='test-not-a-real-key';process.env.JOB_ACTION_SECRET='synthetic-key-only-for-tests';
 const good={id:'job-1',user_id:'user-1',role:'Junior Automation Specialist',company:'Example',location:'Berlin',country:'Germany',fit_score:84,status:'recommended',recommendation:'prepare',eligibility_status:'eligible',verification_status:'verified',eligibility_version:'career-gate-v1',decision_classification:'good_match',decision_status:'pending',job_url:'https://employer.test/jobs/1',discovered_at:'2026-10-14T10:00:00Z',fit_explanation:{career:{track:'AI automation',seniority:'junior',requiredYears:0,transition:true}},strengths:['Power Platform project evidence'],gaps:[]};
 const agent={id:'agent-1',user_id:'user-1',status:'active',report_frequency:'daily',notification_channels:['email'],timezone:'Europe/Budapest',strong_match_threshold:95,minimum_match_score:68,include_stretch:false};
-async function simulate(jobs) {
+async function simulate(jobs, reviewJobIds=[]) {
  const sent=[],ledger=[];const realFetch=globalThis.fetch;
  globalThis.fetch=async (url,init={})=>{
   url=String(url);
@@ -19,6 +19,7 @@ async function simulate(jobs) {
   if(path.startsWith('job_opportunities?'))return Response.json(jobs);
   if(path.startsWith('job_search_runs?'))return Response.json([{provider_records:187,deduplicated_count:80,unverified_count:27,blocked_count:53,provider_summary:{attemptsByStatus:{provider_error:5}}}]);
   if(path.startsWith('job_saved_jobs?'))return Response.json([]);
+  if(path.startsWith('job_agent_reports?')&&path.includes('select=summary'))return Response.json(reviewJobIds.length?[{summary:{reviewJobIds}}]:[]);
   if(path==='job_agent_reports'&&init.method==='POST'){ledger.push(JSON.parse(init.body));return Response.json([{id:'report-1'}]);}
   if(path.startsWith('job_agent_reports?')&&init.method==='PATCH'){ledger.push(JSON.parse(init.body));return Response.json([]);}
   if(path.startsWith('job_agent_reports?'))return Response.json([]);
@@ -55,4 +56,14 @@ test('Verified eligible lower-score roles appear only in separately labelled rev
  assert.equal(run.ledger[0].summary.recommended,0);
  assert.equal(run.ledger[0].summary.verifiedForReview,2);
  assert.equal(run.ledger[0].summary.verified,2);
+});
+
+test('Recently verified low-fit vacancy is only delivered once across daily digests',async()=>{
+ const review={...good,id:'review-prev',role:'AI Automation Specialist',fit_score:54,status:'discovered',recommendation:'review',decision_classification:'worth_reviewing'};
+ const run=await simulate([review],['review-prev']);
+ assert.equal(run.outcome.sent,1);
+ assert.match(run.sent[0].subject,/No suitable new opportunities/);
+ assert.doesNotMatch(run.sent[0].html,/Verified opportunities worth reviewing/);
+ assert.equal(run.ledger[0].summary.verifiedForReview,0);
+ assert.deepEqual(run.ledger[0].summary.reviewJobIds,[]);
 });
