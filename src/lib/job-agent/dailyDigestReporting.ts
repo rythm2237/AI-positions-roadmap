@@ -1,4 +1,4 @@
-import { recommendationEligible } from "./recommendationPolicy";
+import { recommendationEligible, verifiedReviewCandidate } from "./recommendationPolicy";
 import "server-only";
 
 import type { JobAgent } from "@/types/jobAgent";
@@ -153,11 +153,21 @@ export async function sendDueDailyJobDigests(now = new Date()) {
       .filter((job) => recommendationEligible(job, agent, now))
       .sort((a, b) => (b.fit_score ?? -1) - (a.fit_score ?? -1) || Date.parse(b.discovered_at) - Date.parse(a.discovered_at));
 
+    const reviewJobs = recent
+      .filter((job) => verifiedReviewCandidate(job, agent, now))
+      .sort((a, b) => (b.fit_score ?? -1) - (a.fit_score ?? -1) || Date.parse(b.discovered_at) - Date.parse(a.discovered_at))
+      .filter((job, index, rows) => rows.findIndex((other) =>
+        other.company.trim().toLowerCase() === job.company.trim().toLowerCase() &&
+        other.role.trim().toLowerCase() === job.role.trim().toLowerCase()
+      ) === index)
+      .slice(0, 3);
+
     const savedJobs = await fetchSavedJobs(agent.user_id);
     const summary = {
       found: recent.length,
       recommended: jobs.length,
-      verified: jobs.filter((job) => job.eligibility_status === "eligible").length,
+      verified: jobs.length + reviewJobs.length,
+      verifiedForReview: reviewJobs.length,
       unverified: searchStats?.pending ?? recent.filter((job) => job.eligibility_status === "unverified").length,
       searchStats,
       strongMatches: jobs.filter((job) => (job.fit_score ?? 0) >= agent.strong_match_threshold).length,
@@ -170,6 +180,7 @@ export async function sendDueDailyJobDigests(now = new Date()) {
       userId: agent.user_id,
       name: profile.name,
       jobs,
+      reviewJobs,
       savedJobs,
       site,
       periodLabel: schedule.periodKey,
@@ -196,7 +207,7 @@ export async function sendDueDailyJobDigests(now = new Date()) {
     try {
       const providerId = await sendEmail({
         to: profile.email,
-        subject: jobs.length ? `${jobs.length} suitable opportunities — AI Role Path` : "No suitable new opportunities today — AI Role Path",
+        subject: jobs.length ? `${jobs.length} suitable opportunities — AI Role Path` : reviewJobs.length ? `${reviewJobs.length} verified opportunities to review — AI Role Path` : "No suitable new opportunities today — AI Role Path",
         html,
       });
       if (ledgerId) {
