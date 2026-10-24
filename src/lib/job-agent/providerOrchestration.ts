@@ -290,12 +290,18 @@ export async function orchestrateProviderSearch(input: {
   // Spread the fixed request budget over all country-query pairs BEFORE
   // adding additional providers. Country-major truncation silently excluded
   // later countries whenever the first country exhausted maxRequests.
-  const pairs = input.queries.flatMap((query) => input.countries.map((country) => ({ country, query })));
+  const pairs = input.queries.flatMap((query) => input.countries.map((country) => ({
+    country, query,
+    // Do not spend the global request budget on known unsupported countries.
+    supported: input.providers.filter((provider) => provider.countrySupport(country)),
+  })));
   const requests: Array<{ provider: JobProvider; country: string; query: string }> = [];
-  for (let round = 0; round < input.providers.length && requests.length < maxRequests; round++) {
+  const maxProviderRounds = Math.max(0, ...pairs.map((pair) => pair.supported.length));
+  for (let round = 0; round < maxProviderRounds && requests.length < maxRequests; round++) {
     for (let index = 0; index < pairs.length && requests.length < maxRequests; index++) {
       const pair = pairs[index];
-      requests.push({ ...pair, provider: input.providers[(round + index) % input.providers.length] });
+      if (round >= pair.supported.length) continue;
+      requests.push({ country: pair.country, query: pair.query, provider: pair.supported[(round + index) % pair.supported.length] });
     }
   }
   const outcomes: Array<{ country: string; query: string; outcome: Awaited<ReturnType<JobProvider["search"]>> }> = [];
