@@ -78,13 +78,14 @@ export function renderDailyJobDigestEmail(input: {
   userId: string;
   name?: string | null;
   jobs: DailyDigestJob[];
+  reviewJobs?: DailyDigestJob[];
   savedJobs: DailyDigestJob[];
   site: string;
   periodLabel: string;
   searchStats?: {received: number; reviewed: number; pending: number; blocked: number; providerErrors: number} | null;
 }) {
   const strong = input.jobs.filter((job) => job.decision_classification === "strong_match").length;
-  const eligible = input.jobs.filter((job) => job.eligibility_status === "eligible").length;
+  const eligible = input.jobs.filter((job) => job.eligibility_status === "eligible").length + (input.reviewJobs?.length ?? 0);
   const unverified = input.searchStats?.pending ?? input.jobs.filter((job) => job.eligibility_status === "unverified").length;
   const greeting = input.name?.trim() ? `Hi ${esc(input.name.trim())}, ` : "";
   const saved = input.savedJobs.map((job) => savedCard(job, input.site)).join("");
@@ -95,23 +96,25 @@ export function renderDailyJobDigestEmail(input: {
     ["Stretch Opportunities", input.jobs.filter(j=>["stretch","worth_reviewing"].includes(j.decision_classification??""))],
   ] as const;
   const jobs = sections.filter(([,items])=>items.length).map(([heading,items])=>`<h2 style="font-size:17px">${heading}</h2>${items.map(job=>card(job,input.site)).join("")}`).join("");
+  const reviews = (input.reviewJobs ?? []).map((job) => card(job, input.site)).join("");
 
   return `<!doctype html><html><head><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="color-scheme" content="light"><title>Daily Job Digest</title></head><body style="margin:0;padding:0;background:#f4f7fb;font-family:Arial,Helvetica,sans-serif;color:#111827">
   <div style="width:100%;background:#f4f7fb;padding:24px 0"><div style="width:94%;max-width:760px;margin:0 auto">
     <div style="background:#fff;border:1px solid #e5e7eb;border-radius:20px;padding:26px">
       <div style="font-size:12px;font-weight:700;letter-spacing:1.2px;color:#315efb;text-transform:uppercase">AI Role Path · Job Agent</div>
       <div style="font-size:29px;line-height:35px;font-weight:800;margin:7px 0 8px">Your Daily Job Digest</div>
-      <div style="font-size:14px;line-height:22px;color:#64748b">${greeting}this report separates verified recommendations from vacancies still under review. Fit scores describe alignment, not hiring probability.</div>
+      <div style="font-size:14px;line-height:22px;color:#64748b">${greeting}this report separates recommended matches, verified jobs worth reviewing, and candidates whose verification remains incomplete. Fit scores describe alignment, not hiring probability.</div>
       <table role="presentation" width="100%" style="border-collapse:collapse;margin-top:18px"><tr>
         <td width="25%" style="padding:3px"><div style="background:#f8fafc;border:1px solid #e5e7eb;border-radius:14px;padding:12px;text-align:center"><strong style="display:block;font-size:21px">${input.jobs.length}</strong><span style="font-size:11px;color:#64748b">Recommended</span></div></td>
         <td width="25%" style="padding:3px"><div style="background:#f8fafc;border:1px solid #e5e7eb;border-radius:14px;padding:12px;text-align:center"><strong style="display:block;font-size:21px">${eligible}</strong><span style="font-size:11px;color:#64748b">Verified</span></div></td>
-        <td width="25%" style="padding:3px"><div style="background:#f8fafc;border:1px solid #e5e7eb;border-radius:14px;padding:12px;text-align:center"><strong style="display:block;font-size:21px">${unverified}</strong><span style="font-size:11px;color:#64748b">Pending verify</span></div></td>
+        <td width="25%" style="padding:3px"><div style="background:#f8fafc;border:1px solid #e5e7eb;border-radius:14px;padding:12px;text-align:center"><strong style="display:block;font-size:21px">${unverified}</strong><span style="font-size:11px;color:#64748b">Needs review</span></div></td>
         <td width="25%" style="padding:3px"><div style="background:#f8fafc;border:1px solid #e5e7eb;border-radius:14px;padding:12px;text-align:center"><strong style="display:block;font-size:21px">${strong}</strong><span style="font-size:11px;color:#64748b">High match</span></div></td>
       </tr></table>
     </div>
     ${input.searchStats ? `<div style="background:#fff;border:1px solid #e5e7eb;border-radius:16px;padding:14px 18px;margin-top:12px;font-size:12px;line-height:19px;color:#475569"><strong>Search transparency:</strong> ${input.searchStats.received} provider records received · ${input.searchStats.reviewed} evaluated · ${input.searchStats.pending} need review · ${input.searchStats.blocked} blocked · ${input.searchStats.providerErrors} provider errors. <a href="${esc(input.site)}/job-agent/diagnostics" style="color:#315efb">View diagnostics</a></div>` : "" }
     ${input.savedJobs.length ? `<div style="margin-top:14px"><div style="font-size:15px;font-weight:800;color:#111827;padding:0 4px 9px">Saved Jobs</div>${saved}</div>` : ""}
-    <div style="margin-top:14px"><div style="font-size:15px;font-weight:800;color:#111827;padding:0 4px 9px">Recommended opportunities · ${esc(input.periodLabel)}</div>${jobs || `<div style="background:#fff;border:1px solid #e5e7eb;border-radius:16px;padding:20px;color:#64748b;font-size:13px">No new vacancies passed all verification and career checks today. ${unverified ? `${unverified} candidate(s) still need review; they are not verified recommendations.` : "No pending candidates were reported for this run."}</div>`}</div>
+    <div style="margin-top:14px"><div style="font-size:15px;font-weight:800;color:#111827;padding:0 4px 9px">Recommended opportunities · ${esc(input.periodLabel)}</div>${jobs || `<div style="background:#fff;border:1px solid #e5e7eb;border-radius:16px;padding:20px;color:#64748b;font-size:13px">No vacancies met your recommendation threshold today. ${unverified ? `${unverified} candidate(s) still need review; they are not verified recommendations.` : "No pending candidates were reported for this run."}</div>`}</div>
+    ${reviews ? `<div style="margin-top:14px"><div style="font-size:15px;font-weight:800;color:#111827;padding:0 4px 9px">Verified opportunities worth reviewing <span style="font-size:12px;font-weight:400;color:#64748b">· Below your recommended-fit threshold; not counted as recommendations</span></div>${reviews}</div>` : ""}
     <div style="font-size:11px;line-height:18px;color:#94a3b8;text-align:center;padding:20px 14px">Save and Not Relevant use secure signed links and require confirmation.<br><a href="${esc(input.site)}/job-agent" style="color:#64748b">Open Job Agent dashboard</a></div>
   </div></div></body></html>`;
 }
