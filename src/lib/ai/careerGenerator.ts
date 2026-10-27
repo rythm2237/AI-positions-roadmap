@@ -143,15 +143,47 @@ async function generateBlueprintAttempt(prompt: string, attempt: BlueprintAttemp
   };
 }
 
-export async function generateCareerBlueprint(title: string): Promise<GeneratedCareerBlueprint> {
+export type CareerBlueprintUsage = {
+  model: string | null;
+  inputTokens: number | null;
+  outputTokens: number | null;
+  totalTokens: number | null;
+};
+
+function summarizeBlueprintUsage(usage: unknown, model: string | null): CareerBlueprintUsage {
+  const record = usage && typeof usage === "object" ? usage as Record<string, unknown> : {};
+  const number = (...keys: string[]) => {
+    for (const key of keys) {
+      const value = Number(record[key]);
+      if (Number.isFinite(value) && value >= 0) return value;
+    }
+    return null;
+  };
+  const inputTokens = number("inputTokens", "promptTokens");
+  const outputTokens = number("outputTokens", "completionTokens");
+  return {
+    model,
+    inputTokens,
+    outputTokens,
+    totalTokens: number("totalTokens") ?? (inputTokens !== null && outputTokens !== null ? inputTokens + outputTokens : null),
+  };
+}
+
+export async function generateCareerBlueprintWithUsage(title: string): Promise<{
+  blueprint: GeneratedCareerBlueprint;
+  usage: CareerBlueprintUsage[];
+}> {
+  const usage: CareerBlueprintUsage[] = [];
   try {
     const generated = await generateBlueprintAttempt(
       `Generate the complete Career Blueprint for this exact role: “${title}”. Preserve this professional identity and distinguish it from adjacent roles. The stages array must contain exactly 10 complete stages with order values 1 through 10. Count the array before returning the final object.`,
       "initial",
     );
-    return generated.output;
+    usage.push(summarizeBlueprintUsage(generated.usage, generated.responseModel ?? null));
+    return { blueprint: generated.output, usage };
   } catch (error) {
     if (!isRepairableBlueprintError(error)) throw error;
+    usage.push(summarizeBlueprintUsage(error.usage, error.response?.modelId ?? null));
 
     const shape = inspectGeneratedBlueprint(error.text);
     console.warn(JSON.stringify({
@@ -165,7 +197,7 @@ export async function generateCareerBlueprint(title: string): Promise<GeneratedC
     }));
 
     const normalizedInitial = normalizeBlueprintFromError(error, "initial");
-    if (normalizedInitial) return normalizedInitial;
+    if (normalizedInitial) return { blueprint: normalizedInitial, usage };
 
     try {
       const repaired = await generateBlueprintAttempt(
@@ -182,6 +214,7 @@ ${error.text}
 </previous_blueprint_json>`,
         "repair",
       );
+      usage.push(summarizeBlueprintUsage(repaired.usage, repaired.responseModel ?? null));
 
       console.info(JSON.stringify({
         level: "info",
@@ -191,14 +224,19 @@ ${error.text}
         responseModel: repaired.responseModel,
         generatedStageCount: repaired.output.stages.length,
       }));
-      return repaired.output;
+      return { blueprint: repaired.output, usage };
     } catch (repairError) {
       if (!isRepairableBlueprintError(repairError)) throw repairError;
+      usage.push(summarizeBlueprintUsage(repairError.usage, repairError.response?.modelId ?? null));
       const normalizedRepair = normalizeBlueprintFromError(repairError, "repair");
-      if (normalizedRepair) return normalizedRepair;
+      if (normalizedRepair) return { blueprint: normalizedRepair, usage };
       throw repairError;
     }
   }
+}
+
+export async function generateCareerBlueprint(title: string): Promise<GeneratedCareerBlueprint> {
+  return (await generateCareerBlueprintWithUsage(title)).blueprint;
 }
 
 function resourcePrompt(career: CareerWorkspaceData, requirement: ResourceRequirement) {

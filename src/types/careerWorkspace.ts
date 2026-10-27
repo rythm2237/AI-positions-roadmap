@@ -91,6 +91,18 @@ export interface CareerResource {
   whyUseful: string;
   url: string;
   priority: ResourcePriority;
+  registryMetadata?: {
+    status: "active" | "needs-review" | "broken" | "deprecated" | "replaced";
+    isOfficial: boolean;
+    contentType: string;
+    verifiedAt: string;
+    nextReviewAt?: string;
+    reviewIntervalDays?: number;
+    verificationSource?: string;
+    language?: string;
+    certificateAvailability?: string;
+  };
+  learningOptions?: import("@/types/reference").ReferenceLearningOption[];
 }
 
 export interface CareerLesson {
