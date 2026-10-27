@@ -1,6 +1,7 @@
 "use client";
 
 import { FormEvent, useState } from "react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 
 type Candidate = { title: string; href: string; similarity?: number };
@@ -10,6 +11,7 @@ export function CareerDiscoverySearch() {
   const [title, setTitle] = useState("");
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
+  const [authRequired, setAuthRequired] = useState(false);
   const [related, setRelated] = useState<Candidate[]>([]);
 
   async function submit(event?: FormEvent, confirmDistinct = false) {
@@ -17,6 +19,7 @@ export function CareerDiscoverySearch() {
     if (busy) return;
     setBusy(true);
     setError("");
+    setAuthRequired(false);
     try {
       const response = await fetch("/api/career-discovery", {
         method: "POST",
@@ -24,6 +27,11 @@ export function CareerDiscoverySearch() {
         body: JSON.stringify({ title, confirmDistinct }),
       });
       const result = await response.json() as { kind?: string; href?: string; statusHref?: string; candidates?: Candidate[]; error?: string; message?: string };
+      if (response.status === 401) {
+        setError(result.error ?? "Sign in to request a new career.");
+        setAuthRequired(true);
+        return;
+      }
       if (result.kind === "existing" && result.href) {
         router.push(result.href);
         return;
@@ -54,7 +62,7 @@ export function CareerDiscoverySearch() {
         <input
           id="career-discovery-title"
           value={title}
-          onChange={(event) => { setTitle(event.target.value); setRelated([]); setError(""); }}
+          onChange={(event) => { setTitle(event.target.value); setRelated([]); setError(""); setAuthRequired(false); }}
           maxLength={120}
           minLength={2}
           required
@@ -65,7 +73,19 @@ export function CareerDiscoverySearch() {
           {busy ? "Checking…" : "Find career"}
         </button>
       </form>
-      {error ? <p className="mt-3 text-sm text-amber-100" role="status">{error}</p> : null}
+      {error ? (
+        <div className="mt-3 rounded-xl border border-amber-200/15 bg-amber-200/[.06] p-3 text-sm text-amber-100" role="status">
+          <p>{error}</p>
+          {authRequired ? (
+            <p className="mt-2 text-xs text-amber-50/80">
+              <Link href={`/login?next=${encodeURIComponent("/careers")}`} className="font-semibold text-white underline underline-offset-4">Sign in</Link>
+              {" or "}
+              <Link href={`/signup?next=${encodeURIComponent("/careers")}`} className="font-semibold text-white underline underline-offset-4">create an account</Link>
+              {" to continue. Afterward, search for this career again."}
+            </p>
+          ) : null}
+        </div>
+      ) : null}
       {related.length ? (
         <div className="mt-3 flex flex-wrap gap-2">
           {related.map((candidate) => (

@@ -33,6 +33,8 @@ assert.match(statusRoute, /getOwnedGenerationRequest\(requestId, user\.id\)/, "s
 assert.match(privatePage, /CareerWorkspace career=\{workspace\}/, "private generated previews use the shared career UI");
 assert.match(privatePage, /navigationBasePath=\{`\/career-discovery\//, "preview navigation stays inside the private request path");
 assert.match(searchComponent, /sm:flex-row/, "career search adapts between narrow and wide viewports");
+assert.match(searchComponent, /response\.status === 401[\s\S]*setAuthRequired\(true\)/, "unauthenticated new-career requests show a dedicated sign-in state");
+assert.match(searchComponent, /signup\?next=/, "new-career sign-in state provides a direct account creation path");
 assert.match(publishedPage, /<CareerWorkspace career=\{career\}/, "existing published careers continue using the same workspace component");
 assert.match(userProgressMigration, /career_user_state/, "existing user progress remains a separate persisted context");
 assert.match(worker, /inputTokens[\s\S]*outputTokens[\s\S]*estimatedCostUsd/, "token use and optional configured cost estimates are recorded");
