@@ -1,11 +1,13 @@
-import { NextResponse } from "next/server";
+import { after, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { normalizeCareerTitle, relatedCareerCandidates } from "@/lib/ai/careerDiscovery";
-import { careerGenerationLimit, dynamicCareerEngineEnabled, enqueueCareerGeneration, resolveExistingCareer } from "@/lib/ai/careerGenerationServer";
+import { careerGenerationLimit, createCareerGenerationAdminClient, dynamicCareerEngineEnabled, enqueueCareerGeneration, resolveExistingCareer } from "@/lib/ai/careerGenerationServer";
+import { processOneCareerGenerationJob } from "@/lib/ai/careerGenerationWorker";
 import { resolveRolePathPlan } from "@/lib/productAccess";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
+export const maxDuration = 60;
 
 export async function POST(request: Request) {
   if (!dynamicCareerEngineEnabled()) return NextResponse.json({ error: "Career discovery is not available." }, { status: 404 });
@@ -53,6 +55,25 @@ export async function POST(request: Request) {
 
     const queued = await enqueueCareerGeneration(user.id, title, monthlyLimit);
     if (!queued.allowed) return NextResponse.json({ error: "Your monthly career-generation allowance has been used.", code: "CAREER_GENERATION_LIMIT_REACHED", quota: { used: queued.used, limit: queued.limit } }, { status: 429 });
+
+    // Start work immediately after the 202 response. The bounded daily cron is
+    // retained as a recovery path for transient worker failures on Hobby plans.
+    after(async () => {
+      try {
+        await processOneCareerGenerationJob();
+      } catch (error) {
+        console.error("Immediate career generation dispatch failed", error);
+        try {
+          const admin = createCareerGenerationAdminClient();
+          await admin.from("career_generation_jobs")
+            .update({ status: "queued", error_code: "DISPATCH_FAILED", updated_at: new Date().toISOString() })
+            .eq("id", queued.jobId)
+            .eq("status", "running");
+        } catch (retryError) {
+          console.error("Career generation retry scheduling failed", retryError);
+        }
+      }
+    });
 
     const requestUrl = `/career-discovery/${queued.requestId}`;
     console.info(JSON.stringify({ level: "info", feature: "career-discovery", result: queued.status, jobId: queued.jobId, requestId: queued.requestId, charged: queued.charged }));
