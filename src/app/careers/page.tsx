@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { AVAILABLE_CAREERS, CAREER_DOMAINS } from "@/data/careerCatalog";
 import { absoluteUrl, buildMetadata, seoConfig } from "@/lib/seo";
+import { CareerDiscoverySearch } from "@/components/search/CareerDiscoverySearch";
 
 export const metadata = buildMetadata({
   title: "AI Careers & Career Roadmaps",
@@ -17,6 +18,7 @@ export const metadata = buildMetadata({
 });
 
 export default function CareersPage() {
+  const dynamicCareerSearchEnabled = process.env.DYNAMIC_CAREER_ENGINE_ENABLED === "true";
   const pageUrl = absoluteUrl("/careers");
   const schemas = [
     {
@@ -90,6 +92,7 @@ export default function CareersPage() {
             <p className="mt-6 max-w-3xl text-base leading-8 text-slate-300 sm:text-lg">
               Compare role-specific paths across AI engineering, product, automation, consulting, data, infrastructure, security, and marketing. Each available career opens a structured workspace built around skills, roadmaps, projects, learning, and job readiness.
             </p>
+            {dynamicCareerSearchEnabled ? <CareerDiscoverySearch /> : null}
             <div className="mt-8 flex flex-wrap gap-2" aria-label="Career domains">
               {CAREER_DOMAINS.map((domain) => (
                 <a

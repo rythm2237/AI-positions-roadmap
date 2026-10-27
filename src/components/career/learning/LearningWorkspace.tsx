@@ -10,7 +10,7 @@ import {
   isJourneyAssessmentUnlocked,
   isJourneyStageUnlocked,
 } from "@/lib/careerWorkspaceProgress";
-import { resolveCareerStepReferences } from "@/lib/references/referenceResolver";
+import { resolveWorkspaceStageResources } from "@/lib/learning/resolveWorkspaceResource";
 import type {
   CareerAssessment,
   CareerNote,
@@ -57,9 +57,7 @@ export default function LearningWorkspace({
     );
   }
 
-  const resources = resolveCareerStepReferences(
-    current.resources.map((resource) => resource.id),
-  );
+  const resources = resolveWorkspaceStageResources(current.resources, career.globalResources);
   const resourceRequirement = career.resourceRequirements?.find((requirement) => requirement.milestoneId === current.id);
   const unlocked = isJourneyStageUnlocked(current.id, career, progress);
   const stageProgress = getJourneyStageProgress(current.id, career, progress);

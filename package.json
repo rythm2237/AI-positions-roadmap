@@ -21,6 +21,7 @@
     "test:job-acquisition": "node --experimental-strip-types --test scripts/test-job-acquisition-system.mjs",
     "test:universe-experience": "node scripts/patch-career-universe-autotour.mjs && node scripts/patch-career-universe-orbit-cruise.mjs && node scripts/patch-career-universe-immersive-pilot.mjs && node scripts/patch-career-universe-focus-cadence.mjs && node scripts/patch-career-universe-cinematic-preview.mjs && node scripts/patch-career-universe-user-takeover.mjs && node scripts/patch-career-universe-natural-cruise.mjs && node scripts/test-career-universe-experience.mjs",
     "test:learning-destinations": "node --experimental-strip-types scripts/test-learning-resource-destinations.mjs",
+    "test:dynamic-career-intelligence": "node --import ./scripts/register-test-imports.mjs --experimental-strip-types scripts/test-dynamic-career-intelligence.mjs",
     "test:ai-automation-specialist": "node scripts/patch-ai-automation-specialist-production-grade.mjs && node scripts/test-ai-automation-specialist-production-grade.mjs",
     "test:intelligent-automation-engineer": "node scripts/patch-ai-automation-specialist-production-grade.mjs && node scripts/patch-intelligent-automation-engineer-production-grade.mjs && node scripts/test-intelligent-automation-engineer-production-grade.mjs",
     "test:microsoft-copilot-consultant": "node scripts/patch-ai-automation-specialist-production-grade.mjs && node scripts/patch-intelligent-automation-engineer-production-grade.mjs && node scripts/test-microsoft-copilot-consultant-production-grade.mjs",
