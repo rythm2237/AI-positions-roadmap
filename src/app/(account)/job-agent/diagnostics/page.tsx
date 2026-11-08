@@ -13,7 +13,7 @@ type DiagnosticRun = {
   unverified_count: number | null; blocked_count: number | null;
   recommended_count: number | null; provider_errors: number | null;
   diagnostic_category: string; providers: ProviderAttempt[] | null;
-  provider_summary?: {searchFunnel?: { deferredByProcessingLimit?: number; processedCandidates?: number; processingLimit?: number; reasonCounts?: Record<string,number>; verificationErrorCounts?: Record<string,number> }} | null;
+  provider_summary?: {searchFunnel?: { verifiedActive?: number; verificationPending?: number; deferredByProcessingLimit?: number; processedCandidates?: number; processingLimit?: number; reasonCounts?: Record<string,number>; verificationErrorCounts?: Record<string,number> }} | null;
 };
 const label: Record<string, string> = {
   partial_provider_failure: "Some providers failed — results incomplete",
@@ -31,13 +31,19 @@ export default async function JobSearchDiagnosticsPage() {
   const { data, error } = await supabase
     .from("job_search_run_diagnostics")
     .select("search_run_id,started_at,run_status,queries_planned,provider_records,deduplicated_count,eligible_count,unverified_count,blocked_count,recommended_count,provider_errors,diagnostic_category,providers,provider_summary")
-    .eq("user_id", user.id).order("started_at", { ascending: false }).limit(10);
+    .eq("user_id", user.id).gte("started_at", new Date(Date.now() - 30 * 86400000).toISOString()).order("started_at", { ascending: false }).limit(100);
   const runs = (data ?? []) as DiagnosticRun[];
+  const ikeaAttempts = runs.flatMap((run) => (run.providers ?? [])
+    .filter((attempt) => attempt.provider === "Direct:IKEA")
+    .map((attempt) => ({ ...attempt, startedAt: run.started_at })));
+  const lastIkeaAttempt = ikeaAttempts[0];
+  const lastIkeaDiscovery = ikeaAttempts.find((attempt) => attempt.status === "success" && count(attempt.records_received) > 0);
   return <main className="mx-auto max-w-6xl px-5 py-10 text-slate-100">
     <Link className="text-sm text-violet-300" href="/job-agent">← Back to Job Agent</Link>
     <h1 className="mt-5 text-3xl font-semibold">Search Diagnostics</h1>
-    <p className="mt-2 text-sm text-slate-400">Last 10 search runs. Source errors and unverified results are not counted as an absence of jobs. Counts describe processing stages, not necessarily distinct sets that can be added together.</p>
+    <p className="mt-2 text-sm text-slate-400">Up to 100 search runs from the last 30 days. Source errors and unverified results are not counted as an absence of jobs. Counts describe processing stages, not necessarily distinct sets that can be added together.</p>
     {error ? <p role="alert" className="mt-5 rounded-xl border border-rose-400/30 p-4 text-sm text-rose-200">Diagnostics unavailable. Check database migration and permissions. {error.message}</p> : null}
+    {!error ? <p className="mt-4 text-sm text-slate-400">IKEA official source · {lastIkeaAttempt ? `Latest recorded attempt: ${lastIkeaAttempt.status} (${new Date(lastIkeaAttempt.startedAt).toLocaleString()})` : "No attempts in this history"} · {lastIkeaDiscovery ? `Last recorded discovery: ${new Date(lastIkeaDiscovery.startedAt).toLocaleString()}` : "No successful discovery recorded"}</p> : null}
     {!error && runs.length === 0 ? <p className="mt-5 text-slate-400">No search runs recorded yet.</p> : null}
     <div className="mt-6 space-y-4">{runs.map(run => {
       const providers = Array.isArray(run.providers) ? run.providers : [];
@@ -53,13 +59,14 @@ export default async function JobSearchDiagnosticsPage() {
       return <details key={run.search_run_id} className="rounded-2xl border border-white/10 bg-white/[.025] p-4">
         <summary className="cursor-pointer text-sm font-semibold">{new Date(run.started_at).toLocaleString()} · {run.run_status} · {label[run.diagnostic_category] ?? run.diagnostic_category}</summary>
         <div className="mt-4 grid grid-cols-2 gap-2 sm:grid-cols-4">
-          {([["Received",run.provider_records],["Unique",run.deduplicated_count],["Eligible",run.eligible_count],["Unverified",run.unverified_count],["Blocked",run.blocked_count],["Recommended",run.recommended_count],["Provider errors",run.provider_errors],["Planned queries",run.queries_planned]] as const).map(([key,value]) =>
+          {([["Received",run.provider_records],["Evaluated",run.deduplicated_count],["Eligible",run.eligible_count],["Needs review",run.unverified_count],["Blocked",run.blocked_count],["Recommended",run.recommended_count],["Provider errors",run.provider_errors],["Planned queries",run.queries_planned]] as const).map(([key,value]) =>
             <div key={key} className="rounded-lg border border-white/10 p-3"><p className="text-xl font-semibold">{count(value)}</p><p className="text-xs text-slate-400">{key}</p></div>
           )}
         </div>
         {run.provider_summary?.searchFunnel ? <section className="mt-5 rounded-xl border border-amber-300/15 bg-amber-400/[.025] p-3">
           <h2 className="text-sm font-semibold">Eligibility &amp; verification breakdown</h2>
           <p className="mt-1 text-xs text-slate-400">Processed {count(run.provider_summary.searchFunnel.processedCandidates)} candidates (limit {count(run.provider_summary.searchFunnel.processingLimit)}). Deferred by cap: {count(run.provider_summary.searchFunnel.deferredByProcessingLimit)}. Each candidate may have more than one rejection/review reason.</p>
+          {run.provider_summary.searchFunnel.verifiedActive !== undefined ? <p className="mt-2 text-xs text-slate-300">Verified active: {run.provider_summary.searchFunnel.verifiedActive} · Verification pending: {run.provider_summary.searchFunnel.verificationPending}</p> : null}
           <div className="mt-3 grid gap-3 sm:grid-cols-2">
             <div><p className="text-xs font-semibold">Eligibility reason codes</p>{Object.entries(run.provider_summary.searchFunnel.reasonCounts ?? {}).sort((a,b)=>b[1]-a[1]).map(([reason,total])=><div key={reason} className="flex justify-between gap-2 border-b border-white/5 py-1 text-xs"><span className="break-words text-slate-400">{reason}</span><span>{total}</span></div>)}</div>
             <div><p className="text-xs font-semibold">Verification error codes</p>{Object.entries(run.provider_summary.searchFunnel.verificationErrorCounts ?? {}).sort((a,b)=>b[1]-a[1]).map(([reason,total])=><div key={reason} className="flex justify-between gap-2 border-b border-white/5 py-1 text-xs"><span className="break-words text-slate-400">{reason}</span><span>{total}</span></div>)}</div>

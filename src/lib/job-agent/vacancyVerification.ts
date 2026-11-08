@@ -219,7 +219,8 @@ export async function verifyVacancy(job: CanonicalJobCandidate): Promise<Vacancy
     if (!response.ok) {
       const fallback = providerFallback(job, response.status, finalUrl);
       if (fallback) return fallback;
-      return { status: "failed", job, provenance: { method: "source_page", httpStatus: response.status, sourceUrl: finalUrl }, errorCode: `HTTP_${response.status}` };
+      const pending = [401, 403, 408, 429].includes(response.status) || response.status >= 500;
+      return { status: pending ? "unverified" : "failed", job, provenance: { method: "source_page", httpStatus: response.status, sourceUrl: finalUrl }, errorCode: `HTTP_${response.status}` };
     }
     const size = Number(response.headers.get("content-length") ?? "0");
     if (size > 2_000_000) return { status: "failed", job, provenance: { method: "source_page", sourceUrl: finalUrl }, errorCode: "VERIFICATION_RESPONSE_TOO_LARGE" };
@@ -234,7 +235,9 @@ export async function verifyVacancy(job: CanonicalJobCandidate): Promise<Vacancy
     }
     if (posting) {
       const title = stringValue(posting.title) ?? job.title;
-      const company = organizationName(posting.hiringOrganization) ?? job.company;
+      const organization = organizationName(posting.hiringOrganization);
+      const isOfficialIkea = job.source === "Direct:IKEA" && new URL(finalUrl).hostname === "jobs.ikea.com";
+      const company = isOfficialIkea && /^ingka external$/i.test(organization ?? "") ? job.company : organization ?? job.company;
       const verifiedLocation = locationFromPosting(posting.jobLocation);
       const description = stringValue(posting.description) ?? (pageText.length >= 300 ? pageText.slice(0, 120_000) : job.description);
       const postingUrl = stringValue(posting.url);
@@ -268,7 +271,7 @@ export async function verifyVacancy(job: CanonicalJobCandidate): Promise<Vacancy
         expiresAt,
       };
       return {
-        status: verifiedJob.descriptionComplete ? "verified" : "partially_verified",
+        status: isOfficialIkea || verifiedJob.descriptionComplete ? "verified" : "partially_verified",
         job: verifiedJob,
         provenance: { method: "json_ld_jobposting", httpStatus: response.status, contentType, sourceUrl: finalUrl, verifiedAt: new Date().toISOString(), fields: ["title", "company", "location", "country", "description", "employment_type", "posted_at", "expires_at", "application_url"] },
       };
@@ -308,7 +311,8 @@ export async function verifyVacancy(job: CanonicalJobCandidate): Promise<Vacancy
     ];
     return { status: verifiedJob.descriptionComplete ? "partially_verified" : "unverified", job: verifiedJob, provenance: { method: identity.title || identity.company ? "source_page_identity" : "source_page_text", httpStatus: response.status, contentType, sourceUrl: finalUrl, verifiedAt: new Date().toISOString(), fields: verifiedFields } };
   } catch (error) {
-    const code = error instanceof Error ? error.message.slice(0, 120) : "VERIFICATION_FAILED";
-    return { status: "failed", job, provenance: { method: "source_page", sourceUrl: safe, failedAt: new Date().toISOString() }, errorCode: code };
+    const temporary = error instanceof Error && ["TimeoutError", "AbortError", "TypeError"].includes(error.name);
+    const code = temporary ? "VERIFICATION_TEMPORARY_FAILURE" : error instanceof Error ? error.message.slice(0, 120) : "VERIFICATION_FAILED";
+    return { status: temporary ? "unverified" : "failed", job, provenance: { method: "source_page", sourceUrl: safe, failedAt: new Date().toISOString() }, errorCode: code };
   }
 }

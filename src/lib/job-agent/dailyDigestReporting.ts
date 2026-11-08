@@ -139,7 +139,7 @@ export async function sendDueDailyJobDigests(now = new Date()) {
       deduplicated_count: number | null;
       unverified_count: number | null;
       blocked_count: number | null;
-      provider_summary: {attemptsByStatus?: Record<string,number>} | null;
+      provider_summary: {attemptsByStatus?: Record<string,number>; searchFunnel?: { verifiedActive?: number; verificationPending?: number }} | null;
     }>>(`job_search_runs?agent_id=eq.${agent.id}&started_at=gt.${encodeURIComponent(since)}&started_at=lte.${encodeURIComponent(now.toISOString())}&status=in.(completed,partial)&select=provider_records,deduplicated_count,unverified_count,blocked_count,provider_summary&order=started_at.desc&limit=1`);
     const latestRun = latestRuns[0] ?? null;
     const searchStats = latestRun ? {
@@ -147,7 +147,9 @@ export async function sendDueDailyJobDigests(now = new Date()) {
       reviewed: latestRun.deduplicated_count ?? 0,
       pending: latestRun.unverified_count ?? 0,
       blocked: latestRun.blocked_count ?? 0,
-      providerErrors: latestRun.provider_summary?.attemptsByStatus?.provider_error ?? 0,
+      providerErrors: ["provider_error", "rate_limit", "auth_failure", "invalid_query"].reduce((total, status) => total + (latestRun.provider_summary?.attemptsByStatus?.[status] ?? 0), 0),
+      verifiedActive: latestRun.provider_summary?.searchFunnel?.verifiedActive,
+      verificationPending: latestRun.provider_summary?.searchFunnel?.verificationPending,
     } : null;
     const jobs = recent
       .filter((job) => recommendationEligible(job, agent, now))
@@ -175,7 +177,8 @@ export async function sendDueDailyJobDigests(now = new Date()) {
     const summary = {
       found: recent.length,
       recommended: jobs.length,
-      verified: jobs.length + reviewJobs.length,
+      verified: searchStats?.verifiedActive ?? null,
+      verifiedInDigest: jobs.length + reviewJobs.length,
       verifiedForReview: reviewJobs.length,
       reviewJobIds: reviewJobs.map((job) => job.id),
       unverified: searchStats?.pending ?? recent.filter((job) => job.eligibility_status === "unverified").length,

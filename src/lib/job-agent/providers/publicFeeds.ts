@@ -1,4 +1,5 @@
 import "server-only";
+import { IkeaProvider } from "./ikea";
 
 import { canonicalJobKey, normalizeJobText, safeExternalUrl } from "../normalization";
 import type { CanonicalJobCandidate, JobProvider, ProviderSearchInput, ProviderSearchOutcome } from "../contracts";
@@ -168,5 +169,5 @@ class ArbeitnowProvider implements JobProvider {
 }
 
 export function publicFeedProviders(): JobProvider[] {
-  return [new ArbeitnowProvider(), new RemotiveProvider(), new Nomado24Provider(), ...directCompanyPortfolioProviders(), ...directCompanyExpansionProviders()];
+  return [new IkeaProvider(), new ArbeitnowProvider(), new RemotiveProvider(), new Nomado24Provider(), ...directCompanyPortfolioProviders(), ...directCompanyExpansionProviders()];
 }
