@@ -79,6 +79,7 @@ export function renderDailyJobDigestEmail(input: {
   name?: string | null;
   jobs: DailyDigestJob[];
   reviewJobs?: DailyDigestJob[];
+  pendingJobs?: DailyDigestJob[];
   savedJobs: DailyDigestJob[];
   site: string;
   periodLabel: string;
@@ -96,6 +97,7 @@ export function renderDailyJobDigestEmail(input: {
     ["Stretch Opportunities", input.jobs.filter(j=>["stretch","worth_reviewing"].includes(j.decision_classification??""))],
   ] as const;
   const jobs = sections.filter(([,items])=>items.length).map(([heading,items])=>`<h2 style="font-size:17px">${heading}</h2>${items.map(job=>card(job,input.site)).join("")}`).join("");
+  const pendingCards = (input.pendingJobs ?? []).map((job) => `<div style="background:#fff;border:1px solid #fcd34d;border-radius:12px;padding:13px;margin-bottom:8px"><strong>${esc(job.role)} — ${esc(job.company)}</strong><br><span style="font-size:12px;color:#92400e">Vacancy availability unconfirmed · ${Math.round(job.fit_score ?? 0)}% provisional fit</span><br><a href="${esc(input.site)}/job-agent/jobs/${encodeURIComponent(job.id)}">View in Job Agent</a></div>`).join("");
   const reviews = (input.reviewJobs ?? []).map((job) => card(job, input.site)).join("");
 
   return `<!doctype html><html><head><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="color-scheme" content="light"><title>Daily Job Digest</title></head><body style="margin:0;padding:0;background:#f4f7fb;font-family:Arial,Helvetica,sans-serif;color:#111827">
@@ -115,6 +117,7 @@ export function renderDailyJobDigestEmail(input: {
     ${input.savedJobs.length ? `<div style="margin-top:14px"><div style="font-size:15px;font-weight:800;color:#111827;padding:0 4px 9px">Saved Jobs</div>${saved}</div>` : ""}
     <div style="margin-top:14px"><div style="font-size:15px;font-weight:800;color:#111827;padding:0 4px 9px">Recommended opportunities · ${esc(input.periodLabel)}</div>${jobs || `<div style="background:#fff;border:1px solid #e5e7eb;border-radius:16px;padding:20px;color:#64748b;font-size:13px">No new opportunities cleared all recommendation checks. ${input.searchStats?.providerErrors ? "Some discovery sources failed. " : ""}${unverified ? `${unverified} candidate(s) need eligibility or verification review.` : ""}</div>`}</div>
     ${reviews ? `<div style="margin-top:14px"><div style="font-size:15px;font-weight:800;color:#111827;padding:0 4px 9px">Verified opportunities worth reviewing <span style="font-size:12px;font-weight:400;color:#64748b">· Below your recommended-fit threshold; not counted as recommendations</span></div>${reviews}</div>` : ""}
+    ${pendingCards ? `<div style="margin-top:14px"><div style="font-size:15px;font-weight:800;color:#111827;padding:0 4px 9px">Promising jobs awaiting verification</div>${pendingCards}</div>` : ""}
     <div style="font-size:11px;line-height:18px;color:#94a3b8;text-align:center;padding:20px 14px">Save and Not Relevant use secure signed links and require confirmation.<br><a href="${esc(input.site)}/job-agent" style="color:#64748b">Open Job Agent dashboard</a></div>
   </div></div></body></html>`;
 }

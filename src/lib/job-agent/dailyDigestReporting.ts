@@ -160,7 +160,7 @@ export async function sendDueDailyJobDigests(now = new Date()) {
     const reviewWindowStart = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000).toISOString();
     const [reviewPool, reviewHistory] = await Promise.all([
       serviceFetch<DailyDigestJob[]>(`job_opportunities?user_id=eq.${agent.user_id}&agent_id=eq.${agent.id}&discovered_at=gte.${encodeURIComponent(reviewWindowStart)}&discovered_at=lte.${encodeURIComponent(now.toISOString())}&select=${jobSelect}&order=discovered_at.desc&limit=300`),
-      serviceFetch<Array<{ summary: { reviewJobIds?: string[] } | null }>>(`job_agent_reports?agent_id=eq.${agent.id}&report_type=eq.daily&delivery_channel=eq.email&status=eq.sent&sent_at=gte.${encodeURIComponent(reviewWindowStart)}&select=summary&order=sent_at.desc&limit=10`),
+      serviceFetch<Array<{ summary: { reviewJobIds?: string[]; pendingJobIds?: string[] } | null }>>(`job_agent_reports?agent_id=eq.${agent.id}&report_type=eq.daily&delivery_channel=eq.email&status=eq.sent&sent_at=gte.${encodeURIComponent(reviewWindowStart)}&select=summary&order=sent_at.desc&limit=10`),
     ]);
     const previouslyReviewedIds = new Set(reviewHistory.flatMap((report) => report.summary?.reviewJobIds ?? []));
     const reviewJobs = reviewPool
@@ -173,6 +173,17 @@ export async function sendDueDailyJobDigests(now = new Date()) {
       ) === index)
       .slice(0, 3);
 
+    const previouslyPendingIds = new Set(reviewHistory.flatMap((report) => report.summary?.pendingJobIds ?? []));
+    const pendingJobs = recent.filter((job) =>
+      ["unverified", "partially_verified"].includes(job.verification_status ?? "")
+      && job.eligibility_status !== "blocked"
+      && !["expired", "stale"].includes(job.freshness_status ?? "")
+      && !["expired", "skipped"].includes(job.status)
+      && job.recommendation !== "skip"
+      && !["rejected", "approved", "snoozed"].includes(job.decision_status)
+      && (job.fit_score ?? 0) >= Math.max(60, agent.minimum_match_score ?? 68)
+      && !previouslyPendingIds.has(job.id),
+    ).sort((a, b) => (b.fit_score ?? 0) - (a.fit_score ?? 0)).slice(0, 3);
     const savedJobs = await fetchSavedJobs(agent.user_id);
     const summary = {
       found: recent.length,
@@ -181,6 +192,7 @@ export async function sendDueDailyJobDigests(now = new Date()) {
       verifiedInDigest: jobs.length + reviewJobs.length,
       verifiedForReview: reviewJobs.length,
       reviewJobIds: reviewJobs.map((job) => job.id),
+      pendingJobIds: pendingJobs.map((job) => job.id),
       unverified: searchStats?.pending ?? recent.filter((job) => job.eligibility_status === "unverified").length,
       searchStats,
       strongMatches: jobs.filter((job) => (job.fit_score ?? 0) >= agent.strong_match_threshold).length,
@@ -194,6 +206,7 @@ export async function sendDueDailyJobDigests(now = new Date()) {
       name: profile.name,
       jobs,
       reviewJobs,
+      pendingJobs,
       savedJobs,
       site,
       periodLabel: schedule.periodKey,

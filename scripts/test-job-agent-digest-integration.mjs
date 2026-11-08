@@ -32,7 +32,9 @@ test('Daily orchestration excludes senior, pending and legacy jobs, preserves si
  assert.equal(run.outcome.sent,1);assert.equal(run.sent.length,1);
  const html=run.sent[0].html;
  if(process.env.JOB_DIGEST_PREVIEW_PATH) writeFileSync(process.env.JOB_DIGEST_PREVIEW_PATH,html.replace('<body ', '<body ').replace('<div style="width:100%;', '<p style="padding:12px;text-align:center">Synthetic preview — action links use a test signature.</p><div style="width:100%;'));
- assert.match(html,/Career Transition Opportunities/);assert.match(html,/Junior Automation Specialist/);assert.doesNotMatch(html,/Senior AI Architect|Pending AI vacancy|Legacy scoring vacancy/);
+ assert.match(html,/Career Transition Opportunities/);assert.match(html,/Junior Automation Specialist/);assert.doesNotMatch(html,/Senior AI Architect|Legacy scoring vacancy/);
+ assert.match(html,/Promising jobs awaiting verification[\s\S]*Pending AI vacancy[\s\S]*Vacancy availability unconfirmed/);
+ assert.deepEqual(run.ledger[0].summary.pendingJobIds,['job-3']);
  const tokens=[...html.matchAll(/\/job-action\/([A-Za-z0-9_.-]+)/g)].map(m=>verifyJobEmailActionToken(m[1]));assert.ok(tokens.some(t=>t?.action==='save'));assert.ok(tokens.some(t=>t?.action==='not_relevant'));assert.ok(tokens.every(t=>t.userId==='user-1'&&t.jobId==='job-1'));
  assert.equal(run.ledger[0].summary.recommended,1);
  assert.equal(run.ledger[0].summary.strongMatches,0);

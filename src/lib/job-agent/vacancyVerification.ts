@@ -237,7 +237,7 @@ export async function verifyVacancy(job: CanonicalJobCandidate): Promise<Vacancy
       const title = stringValue(posting.title) ?? job.title;
       const organization = organizationName(posting.hiringOrganization);
       const isOfficialIkea = job.source === "Direct:IKEA" && new URL(finalUrl).hostname === "jobs.ikea.com";
-      const company = isOfficialIkea && /^ingka external$/i.test(organization ?? "") ? job.company : organization ?? job.company;
+      const company = isOfficialIkea && /^(?:ingka|inter) external$/i.test(organization ?? "") ? job.company : organization ?? job.company;
       const verifiedLocation = locationFromPosting(posting.jobLocation);
       const description = stringValue(posting.description) ?? (pageText.length >= 300 ? pageText.slice(0, 120_000) : job.description);
       const postingUrl = stringValue(posting.url);
@@ -311,7 +311,10 @@ export async function verifyVacancy(job: CanonicalJobCandidate): Promise<Vacancy
     ];
     return { status: verifiedJob.descriptionComplete ? "partially_verified" : "unverified", job: verifiedJob, provenance: { method: identity.title || identity.company ? "source_page_identity" : "source_page_text", httpStatus: response.status, contentType, sourceUrl: finalUrl, verifiedAt: new Date().toISOString(), fields: verifiedFields } };
   } catch (error) {
-    const temporary = error instanceof Error && ["TimeoutError", "AbortError", "TypeError"].includes(error.name);
+    const temporary = error instanceof Error && (
+      ["TimeoutError", "AbortError", "TypeError"].includes(error.name)
+      || ["EAI_AGAIN", "ECONNRESET", "ETIMEDOUT"].includes(String((error as NodeJS.ErrnoException).code))
+    );
     const code = temporary ? "VERIFICATION_TEMPORARY_FAILURE" : error instanceof Error ? error.message.slice(0, 120) : "VERIFICATION_FAILED";
     return { status: temporary ? "unverified" : "failed", job, provenance: { method: "source_page", sourceUrl: safe, failedAt: new Date().toISOString() }, errorCode: code };
   }
