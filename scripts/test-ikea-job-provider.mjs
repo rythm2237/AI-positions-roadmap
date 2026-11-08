@@ -46,3 +46,23 @@ test("IKEA distinguishes rate limits and markup changes from zero vacancies", as
   fetch.mock.mockImplementation(async () => new Response("<html>Unexpected structure</html>"));
   assert.equal((await new IkeaProvider().search(input)).errorCode, "IKEA_LISTING_FORMAT_UNRECOGNIZED");
 });
+
+import { SmartRecruitersProvider, smartRecruitersEmployers } from "../src/lib/job-agent/providers/smartRecruiters.ts";
+import { canonicalizeJobUrl } from "../src/lib/job-agent/normalization.ts";
+
+test("SmartRecruiters limits discovery to the employer's public country-specific postings", async (t) => {
+  const fetch = t.mock.method(globalThis, "fetch", async (input) => {
+    const url = new URL(input);
+    assert.equal(url.hostname, "api.smartrecruiters.com");
+    assert.equal(url.searchParams.get("country"), "de");
+    assert.equal(url.searchParams.get("destination"), "PUBLIC");
+    const sample = { id: "101", name: "Warehouse Automation Specialist", visibility: "PUBLIC", location: { country: "de" } };
+    return Response.json({ content: [{...sample,id:"100",visibility:"INTERNAL"},sample], totalFound: 2 });
+  });
+  const r = await new SmartRecruitersProvider(smartRecruitersEmployers[0]).search({country:"Germany",query:"automation",limit:10,correlationId:"test"});
+  assert.equal(r.status,"success");
+  assert.deepEqual(r.jobs.map((job) => job.externalId),["101"]);
+  assert.equal(r.jobs[0].company,"BEUMER Group");
+  assert.equal(fetch.mock.callCount(),1);
+  assert.equal(canonicalizeJobUrl("https://jobs.smartrecruiters.com/BEUMERGroup1/101-job-title?source=external"), r.jobs[0].sourceUrl);
+});

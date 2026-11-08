@@ -1,5 +1,6 @@
 import "server-only";
 import { IkeaProvider } from "./ikea";
+import { SmartRecruitersProvider, smartRecruitersEmployers } from "./smartRecruiters";
 
 import { canonicalJobKey, normalizeJobText, safeExternalUrl } from "../normalization";
 import type { CanonicalJobCandidate, JobProvider, ProviderSearchInput, ProviderSearchOutcome } from "../contracts";
@@ -169,5 +170,5 @@ class ArbeitnowProvider implements JobProvider {
 }
 
 export function publicFeedProviders(): JobProvider[] {
-  return [new IkeaProvider(), new ArbeitnowProvider(), new RemotiveProvider(), new Nomado24Provider(), ...directCompanyPortfolioProviders(), ...directCompanyExpansionProviders()];
+  return [new IkeaProvider(), ...smartRecruitersEmployers.map((employer) => new SmartRecruitersProvider(employer)), new ArbeitnowProvider(), new RemotiveProvider(), new Nomado24Provider(), ...directCompanyPortfolioProviders(), ...directCompanyExpansionProviders()];
 }

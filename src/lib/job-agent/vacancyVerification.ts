@@ -7,6 +7,7 @@ import type { CanonicalJobCandidate } from "./contracts";
 import type { JobVerificationStatus } from "../../types/jobAgent";
 import { safeExternalUrl } from "./normalization";
 import { extractSourcePageIdentity, sourceCompanyMatchesHost } from "./sourcePageIdentity";
+import { smartRecruitersEmployers, smartRecruitersPostingApi } from "./providers/smartRecruiters";
 import { countryMetadataConflicts } from "./countryIdentity";
 
 export type VacancyVerification = {
@@ -206,6 +207,35 @@ function providerFallback(job: CanonicalJobCandidate, httpStatus: number, finalU
 export async function verifyVacancy(job: CanonicalJobCandidate): Promise<VacancyVerification> {
   if ((job.source.startsWith("Greenhouse:") || job.source.startsWith("Lever:")) && job.descriptionComplete) {
     return { status: "verified", job, provenance: { method: "official_provider_api", source: job.source, sourceUrl: job.sourceUrl, verifiedAt: new Date().toISOString() } };
+  }
+  const smartRecruitersEmployer = smartRecruitersEmployers.find((employer) => job.source === `Direct:${employer.company}` &&
+    /^\d+$/.test(job.externalId) && job.sourceUrl === `https://jobs.smartrecruiters.com/${employer.tenant}/${job.externalId}`);
+  if (smartRecruitersEmployer) {
+    const endpoint = `${smartRecruitersPostingApi(smartRecruitersEmployer.tenant)}/${job.externalId}`;
+    const provenance = { method: "official_provider_api", sourceUrl: endpoint };
+    try {
+      const response = await fetch(endpoint, { redirect: "error", signal: AbortSignal.timeout(6_000) });
+      if (response.status === 404 || response.status === 410) {
+        return { status: "verified", job: { ...job, expiresAt: new Date().toISOString() }, provenance: { ...provenance, httpStatus: response.status } };
+      }
+      if (!response.ok) return { status: "unverified", job, provenance, errorCode: `HTTP_${response.status}` };
+      const detail = await response.json() as { id?: string; active?: boolean; visibility?: string; postingUrl?: string;
+        name?: string; jobAd?: { sections?: Record<string, { text?: string }> } };
+      if (detail.id !== job.externalId || detail.visibility !== "PUBLIC" || typeof detail.active !== "boolean") {
+        return { status: "unverified", job, provenance, errorCode: "SMARTRECRUITERS_DETAIL_UNCONFIRMED" };
+      }
+      if (!detail.active) return { status: "verified", job: { ...job, expiresAt: new Date().toISOString() }, provenance };
+      const sections = detail.jobAd?.sections;
+      const description = [sections?.jobDescription?.text, sections?.qualifications?.text, sections?.additionalInformation?.text]
+        .flatMap((section) => typeof section === "string" ? [textFromHtml(section)] : []).join("\n");
+      // Keep the stable posting ID URL as the persistence key.
+      const officialPostingUrl = safeExternalUrl(detail.postingUrl);
+      return { status: "verified", job: { ...job, title: detail.name?.trim() || job.title, description,
+        descriptionComplete: Boolean(sections?.jobDescription?.text) },
+        provenance: { ...provenance, officialPostingUrl, verifiedAt: new Date().toISOString() } };
+    } catch {
+      return { status: "unverified", job, provenance, errorCode: "SMARTRECRUITERS_DETAIL_UNAVAILABLE" };
+    }
   }
   const safe = safeExternalUrl(job.sourceUrl || job.applicationUrl);
   if (!safe) {
