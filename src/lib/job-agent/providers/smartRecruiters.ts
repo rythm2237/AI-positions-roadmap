@@ -4,6 +4,14 @@ import type { CanonicalJobCandidate, JobProvider, ProviderSearchInput, ProviderS
 
 export const smartRecruitersEmployers = [
   { company: "BEUMER Group", tenant: "BEUMERGroup1", careerUrl: "https://www.beumergroup.com/careers/jobs/" },
+  { company: "Continental", tenant: "Continental", careerUrl: "https://jobs.smartrecruiters.com/Continental" },
+  { company: "JYSK", tenant: "JYSK", careerUrl: "https://jobs.smartrecruiters.com/JYSK" },
+  { company: "H&M Group", tenant: "HmGroup", careerUrl: "https://jobs.smartrecruiters.com/HmGroup" },
+  { company: "METRO/MAKRO", tenant: "METROMAKRO", careerUrl: "https://jobs.smartrecruiters.com/METROMAKRO" },
+  { company: "Primark", tenant: "Primark", careerUrl: "https://jobs.smartrecruiters.com/Primark" },
+  { company: "Sika", tenant: "SikaAG", careerUrl: "https://jobs.smartrecruiters.com/SikaAG" },
+  { company: "Bertelsmann", tenant: "Bertelsmann-Jobs", careerUrl: "https://jobs.smartrecruiters.com/Bertelsmann-Jobs" },
+  { company: "REPA Group", tenant: "REPAGROUP", careerUrl: "https://jobs.smartrecruiters.com/REPAGROUP" },
 ];
 type Employer = typeof smartRecruitersEmployers[number];
 type Posting = {
@@ -14,7 +22,7 @@ type Posting = {
 
 const countryNames = new Intl.DisplayNames(["en"], { type: "region" });
 const countries = ["AT", "BE", "CH", "CZ", "DE", "DK", "ES", "FI", "FR", "GB", "HU", "IE", "IT", "NL", "NO", "PL", "PT", "RO", "SE"];
-const countryCode = (country: string) => countries.find((code) => code.toLowerCase() === country.toLowerCase() || canonicalCountry(countryNames.of(code)) === canonicalCountry(country));
+export const europeanJobCountryCode = (country: string) => countries.find((code) => code.toLowerCase() === country.toLowerCase() || canonicalCountry(countryNames.of(code)) === canonicalCountry(country));
 
 export function smartRecruitersPostingApi(tenant: string) {
   return `https://api.smartrecruiters.com/v1/companies/${encodeURIComponent(tenant)}/postings`;
@@ -27,14 +35,14 @@ export class SmartRecruitersProvider implements JobProvider {
     this.employer = employer;
     this.name = `Direct:${employer.company}`;
   }
-  countrySupport(country: string) { return Boolean(countryCode(country)); }
+  countrySupport(country: string) { return Boolean(europeanJobCountryCode(country)); }
   async health() { return { configured: true, status: "healthy" as const }; }
   async rateLimitState() { return { maximumListingPagesPerSearch: 2, source: "public-ats" }; }
 
   async search(input: ProviderSearchInput): Promise<ProviderSearchOutcome> {
     const started = Date.now();
     const jobs: CanonicalJobCandidate[] = [];
-    const code = countryCode(input.country);
+    const code = europeanJobCountryCode(input.country);
     let requestCount = 0;
     let errorCode: string | undefined;
     const limit = Math.max(1, Math.min(10, input.limit));

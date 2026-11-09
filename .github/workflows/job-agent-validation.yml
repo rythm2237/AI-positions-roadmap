@@ -18,6 +18,7 @@ on:
       - "scripts/test-scheduled-job-discovery.mjs"
       - "scripts/test-direct-company-sources.mjs"
       - "scripts/test-ikea-job-provider.mjs"
+      - "scripts/test-european-supply-chain-provider.mjs"
       - "supabase/migrations/**job**"
       - "vercel.json"
       - "package.json"
@@ -39,6 +40,7 @@ on:
       - "scripts/test-job-agent-recovery-relevance-ranking.mjs"
       - "scripts/test-direct-company-sources.mjs"
       - "scripts/test-ikea-job-provider.mjs"
+      - "scripts/test-european-supply-chain-provider.mjs"
       - "supabase/migrations/**job**"
       - "vercel.json"
       - "package.json"
@@ -92,7 +94,7 @@ jobs:
         run: node --experimental-strip-types --test --test-concurrency=1 scripts/test-scheduled-job-discovery.mjs
 
       - name: Direct company source regressions
-        run: node --test --test-concurrency=1 scripts/test-direct-company-sources.mjs scripts/test-ikea-job-provider.mjs
+        run: node --test --test-concurrency=1 scripts/test-direct-company-sources.mjs scripts/test-ikea-job-provider.mjs scripts/test-european-supply-chain-provider.mjs
 
       - name: Full platform regressions
         run: npm test
