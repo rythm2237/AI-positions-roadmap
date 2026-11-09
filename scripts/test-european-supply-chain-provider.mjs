@@ -96,3 +96,36 @@ test("The new regional sources do not run in other countries", () => {
   assert.equal(edeka.countrySupport("DE"), true);
   assert.equal(edeka.countrySupport("France"), false);
 });
+
+test("Public vacancy API excludes internal postings and keeps the official detail URL", async (t) => {
+  t.mock.method(globalThis, "fetch", async (input) => {
+    const url = new URL(input);
+    assert.equal(url.pathname, "/api/vacancy/");
+    assert.equal(url.searchParams.get("search"), "warehouse");
+    return Response.json({ vacancies: [
+      { id: 40, title: "Warehouse Planner", slug: "warehouse-planner", country: "NLD" },
+      { id: 41, title: "Internal Warehouse Planner", country: "NLD", internal_vacancy: true },
+      { id: 42, title: "Warehouse Planner", country: "BEL" },
+    ] });
+  });
+  const board = new PublicSupplyChainBoard(publicSupplyChainBoards.find(({ company }) => company === "Ahold Delhaize"));
+  const result = await board.search({ ...search, country: "Netherlands", query: "warehouse" });
+  assert.deepEqual(result.jobs.map((job) => job.applicationUrl), ["https://careers.aholddelhaize.com/vacancy/40/warehouse-planner"]);
+});
+
+test("Carrefour sitemap admits only same-origin listings with French vacancy evidence", async (t) => {
+  const origin = "https://recrute.carrefour.fr";
+  t.mock.method(globalThis, "fetch", async (input) => {
+    const url = new URL(input);
+    assert.equal(url.origin, origin);
+    if (url.pathname.endsWith(".xml")) return new Response(`<urlset><loc>${origin}/offres/10-entrepots/</loc><loc>${origin}/offres/11-entrepots/</loc><loc>https://example.test/offres/12-entrepots/</loc></urlset>`);
+    const addressCountry = url.pathname.includes("/10-") ? "FR" : "BE";
+    return new Response(`<script type="application/ld+json">${JSON.stringify({ "@type": "JobPosting", title: "Responsable Entrepôts", jobLocation: { address: { addressCountry } } })}</script>`);
+  });
+  const board = new PublicSupplyChainBoard(publicSupplyChainBoards.find(({ company }) => company === "Carrefour"));
+  const input = { ...search, country: "France", query: "entrepots" };
+  const result = await board.search(input);
+  assert.equal(result.requestCount, 3);
+  assert.deepEqual(result.jobs.map((job) => job.applicationUrl), [`${origin}/offres/10-entrepots/`]);
+  assert.equal((await board.search(input)).requestCount, 0);
+});

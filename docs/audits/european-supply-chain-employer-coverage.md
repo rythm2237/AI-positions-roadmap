@@ -2,7 +2,7 @@
 
 The target is 50 new direct employer sources with active operations in Europe. The shortlist combines major logistics providers, warehouse automation vendors, and employers with sizeable supply chain operations. Sequence reflects role relevance and source feasibility. It is not a single revenue ranking across industries.
 
-## Connected sources (38)
+## Connected sources (43)
 
 | Employer | Official source |
 |---|---|
@@ -44,16 +44,25 @@ The target is 50 new direct employer sources with active operations in Europe. T
 | EDEKA | Official Germany career site |
 | Decathlon | Official UK and Ireland SuccessFactors portal |
 | Auchan | Official Luxembourg career site and Skeeled board |
+| Raben Group | Official Germany career site |
+| ID Logistics | Public vacancy endpoint for the Netherlands career site |
+| Schwarz Group / Lidl | Public search endpoint for the Lidl Germany career site |
+| Carrefour | Official France vacancy sitemap and structured job detail pages |
+| Ahold Delhaize | Public vacancy endpoint on the group career site |
 
 The runtime checks country evidence and records the result of each employer query. In a source outage it keeps results from other employers. The source budget stays bounded by the gateway deadline and the portfolio cap. A public board that has jobs can legitimately return zero matches for a particular country and query.
 
-## Pending official source validation (12)
+## Pending official source validation (7)
 
-- Logistics and fulfilment (8). DHL Supply Chain, CEVA Logistics, ID Logistics, Gebrüder Weiss, Scan Global Logistics, Raben Group, FM Logistic, Savino Del Bene.
-- Warehouse automation (1). Mecalux.
-- Retail distribution (3). Schwarz Group / Lidl, Carrefour, Ahold Delhaize.
-
-Public pages and routes were inspected for these 12. A public career landing page, HTML without identifiable vacancies, an unstable or blocked endpoint, or a reference to a third-party job network is insufficient evidence to activate a connector. For example, Savino Del Bene's careers page delegates the current job listing to LinkedIn, and the tested ID Logistics listings returned HTTP 503 in the test environment.
+| Employer | Latest finding |
+|---|---|
+| DHL Supply Chain | The regional listing returned an unavailable page. The group search exposed US records despite European filters. |
+| CEVA Logistics | The official group site has live job details. The tested discovery page did not provide a usable public listing. |
+| Gebrüder Weiss | Tested official pages did not expose identifiable individual listings. |
+| Scan Global Logistics | Tested regional Emply pages did not expose identifiable listings. |
+| FM Logistic | The official recruitment page loaded an application shell without usable listing records. |
+| Savino Del Bene | The official career page linked to LinkedIn for job discovery. |
+| Mecalux | The official sitemap provided vacancy paths. Following job-detail redirects in the connector test did not return reliable details. |
 
 IKEA, BEUMER Group, Amazon, and Exotec are in earlier source registries. Count group and brand combinations as one target when they share coverage.
 

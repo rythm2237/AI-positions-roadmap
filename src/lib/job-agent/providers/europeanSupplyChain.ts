@@ -15,6 +15,10 @@ export const publicSupplyChainBoards = [
   { company: "Maersk", kind: "workday", careerUrl: "https://maersk.wd3.myworkdayjobs.com/en-US/Maersk_Careers", tenant: "maersk", site: "Maersk_Careers" },
   { company: "KION Group", kind: "workday", careerUrl: "https://kiongroup.wd3.myworkdayjobs.com/en-US/KIONGroup", tenant: "kiongroup", site: "KIONGroup" },
   { company: "Vanderlande", kind: "workday", careerUrl: "https://vanderlande.wd3.myworkdayjobs.com/careers", tenant: "vanderlande", site: "careers" },
+  { company: "Carrefour", kind: "sitemap", careerUrl: "https://recrute.carrefour.fr/wp-content/themes/crf-2.01-menuV1/offers-sitemap.xml", countries: ["France"] },
+  { company: "Ahold Delhaize", kind: "vacancy_api", careerUrl: "https://careers.aholddelhaize.com/vacancies", detailPrefix: "vacancy" },
+  { company: "ID Logistics", kind: "vacancy_api", careerUrl: "https://werkenbij.id-logistics.nl/vacatures", detailPrefix: "vacature", countries: ["Netherlands"] },
+  { company: "Schwarz Group / Lidl", kind: "lidl", careerUrl: "https://jobs.lidl.de", countries: ["Germany"] },
   { company: "Kuehne+Nagel", kind: "phenom", careerUrl: "https://jobs.kuehne-nagel.com/global/en/search-results" },
   { company: "GXO Europe", kind: "successfactors", careerUrl: "https://jobs.gxo.com" },
   { company: "STEF", kind: "successfactors", careerUrl: "https://apply.stef.jobs" },
@@ -89,7 +93,7 @@ export class PublicSupplyChainBoard implements JobProvider {
   async health() { return { configured: true, status: "healthy" as const }; }
   async rateLimitState() { return { source: this.source.kind }; }
 
-  private async load(input: ProviderSearchInput): Promise<Job[]> {
+  private async load(input: ProviderSearchInput, countDetail: () => void): Promise<Job[]> {
     const source = this.source;
     const options = { signal: AbortSignal.timeout(9_000), redirect: "error" as const };
     if (source.kind === "successfactors") {
@@ -118,6 +122,62 @@ export class PublicSupplyChainBoard implements JobProvider {
       return data.jobPostings.flatMap((row) => /^\/job\/[^/?#]+(?:\/[^/?#]+)*$/.test(row.externalPath) && row.title ? [{
         id: row.bulletFields?.[0] ?? row.externalPath, title: row.title, location: workdayLocation(row.locationsText, row.externalPath, source.company),
         url: source.careerUrl + row.externalPath,
+      }] : []);
+    }
+    if (source.kind === "sitemap") {
+      const origin = new URL(source.careerUrl).origin;
+      const signal = AbortSignal.timeout(11_000);
+      const response = await fetch(source.careerUrl, { ...options, signal });
+      if (!response.ok) throw new Error(`HTTP_${response.status}`);
+      const xml = await response.text();
+      const pathPattern = /^\/offres\/\d+-[^/]+\/$/;
+      const terms = normalizeJobText(input.query).split(" ").filter((term) => term.length > 2);
+      const urls = [...xml.matchAll(/<loc>([^<]+)<\/loc>/g)].flatMap(([, location]) => {
+        try {
+          const url = new URL(decodeListingHtml(location));
+          const slug = normalizeJobText(decodeURIComponent(url.pathname));
+          return url.origin === origin && pathPattern.test(url.pathname) && terms.every((term) => slug.includes(term)) ? [url] : [];
+        } catch { return []; }
+      }).slice(0, 4);
+      const found = await Promise.allSettled(urls.map(async (url) => {
+        countDetail();
+        const detail = await fetch(url, { ...options, signal });
+        if (!detail.ok) throw new Error(`HTTP_${detail.status}`);
+        const html = await detail.text();
+        for (const [, json] of html.matchAll(/<script[^>]*type=["']application\/ld\+json["'][^>]*>([\s\S]*?)<\/script>/gi)) {
+          try {
+            const item = JSON.parse(json);
+            const address = item.jobLocation?.address;
+            if (item["@type"] === "JobPosting" && typeof item.title === "string" && address?.addressCountry === "FR") {
+              return { id: url.pathname, title: plain(item.title), location: [address.addressLocality, "France"].filter(Boolean).join(", "), url: url.href };
+            }
+          } catch { continue; }
+        }
+        return null;
+      }));
+      if (found.length && found.every((item) => item.status === "rejected")) throw new Error("SOURCE_FAILURE");
+      return found.flatMap((item) => item.status === "fulfilled" && item.value ? [item.value] : []);
+    }
+    if (source.kind === "vacancy_api") {
+      const origin = new URL(source.careerUrl).origin;
+      const query = new URLSearchParams({ search: input.query, pageSize: "20" });
+      const response = await fetch(`${origin}/api/vacancy/?${query}`, { ...options, headers: { Accept: "application/json", "X-Requested-With": "XMLHttpRequest" } });
+      if (!response.ok) throw new Error(`HTTP_${response.status}`);
+      const data = await response.json() as { vacancies: { id?: number; slug?: string; title?: string; city?: string; country?: string; internal_vacancy?: boolean }[] };
+      return data.vacancies.flatMap((row) => {
+        const country = row.country ?? (source.company === "ID Logistics" ? "Netherlands" : "");
+        if (!row.id || !row.title || !country || row.internal_vacancy) return [];
+        return [{ id: String(row.id), title: row.title, location: [row.city, country].filter(Boolean).join(", "),
+          url: `${origin}/${source.detailPrefix}/${row.id}${row.slug ? `/${encodeURIComponent(row.slug)}` : ""}` }];
+      });
+    }
+    if (source.kind === "lidl") {
+      const query = new URLSearchParams({ term: input.query });
+      const response = await fetch(`${source.careerUrl}/api/v1/search?${query}`, options);
+      if (!response.ok) throw new Error(`HTTP_${response.status}`);
+      const data = await response.json() as { jobs: { postingId?: string; title?: string; jobDetailUrl?: string; location?: { city?: string; country?: string } }[] };
+      return data.jobs.flatMap((row) => row.postingId && row.title && row.location?.country === "DE" && row.jobDetailUrl?.startsWith(`${source.careerUrl}/jobs/`) ? [{
+        id: row.postingId, title: row.title, url: row.jobDetailUrl, location: [row.location.city, "Germany"].filter(Boolean).join(", "),
       }] : []);
     }
     if (source.kind === "swisslog") {
@@ -154,10 +214,11 @@ export class PublicSupplyChainBoard implements JobProvider {
   async search(input: ProviderSearchInput): Promise<ProviderSearchOutcome> {
     const started = Date.now();
     const code = europeanJobCountryCode(input.country);
-    const key = this.source.kind === "successfactors" ? JSON.stringify([input.country, input.query])
+    const key = ["successfactors", "lidl", "vacancy_api", "sitemap"].includes(this.source.kind) ? JSON.stringify([input.country, input.query])
       : this.source.kind === "workday" ? input.query : "board";
     const cached = this.cache.get(key);
-    const payload = cached ?? this.load(input);
+    let requestCount = cached ? 0 : 1;
+    const payload = cached ?? this.load(input, () => { requestCount++; });
     this.cache.set(key, payload);
     try {
       const tokens = normalizeJobText(input.query).split(" ").filter((word) => word.length > 2);
@@ -166,7 +227,7 @@ export class PublicSupplyChainBoard implements JobProvider {
         const title = normalizeJobText(row.title);
         if (/^(?:initiativbewerbung|unsolicited application|spontaneous application)/i.test(row.title)) return [];
         if (!code || !url || !row.id || !row.title || !matchesCountry(row.location, input.country, code)) return [];
-        if (!["successfactors", "workday"].includes(this.source.kind) && tokens.length > 0 && !tokens.some((token) => title.split(" ").includes(token))) return [];
+        if (!["successfactors", "workday", "lidl", "vacancy_api", "sitemap"].includes(this.source.kind) && tokens.length > 0 && !tokens.some((token) => title.split(" ").includes(token))) return [];
         const job: CanonicalJobCandidate = {
           externalId: row.id, source: this.name, sourceQuery: input.query, company: this.source.company,
           title: row.title, normalizedTitle: title, location: row.location, country: input.country,
@@ -181,11 +242,11 @@ export class PublicSupplyChainBoard implements JobProvider {
         return [job];
       });
       return { provider: this.name, status: jobs.length ? "success" : "no_results", jobs: jobs.slice(0, input.limit),
-        latencyMs: Date.now() - started, requestCount: cached ? 0 : 1, rateLimitState: {} };
+        latencyMs: Date.now() - started, requestCount, rateLimitState: {} };
     } catch (error) {
       const code = error instanceof Error ? error.message : "SOURCE_FAILURE";
       return { provider: this.name, status: code === "HTTP_429" ? "rate_limit" : "provider_error", jobs: [],
-        latencyMs: Date.now() - started, requestCount: cached ? 0 : 1, rateLimitState: {},
+        latencyMs: Date.now() - started, requestCount, rateLimitState: {},
         errorCode: /^HTTP_\d+$/.test(code) || code === "UNRECOGNIZED_LISTING" ? code : "SOURCE_FAILURE" };
     }
   }

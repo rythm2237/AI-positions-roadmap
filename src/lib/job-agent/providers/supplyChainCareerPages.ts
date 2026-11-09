@@ -4,6 +4,7 @@ type LinkBoard = {
 };
 
 export const supplyChainLinkBoards: LinkBoard[] = [
+  { company: "Raben Group", careerUrl: "https://hire.raben-group.com/", path: /^\/(\d+)\/[a-z\d-]+\/?$/i, fixedCountry: "Germany" },
   { company: "GEODIS", careerUrl: "https://injob.geodis.com/offre-de-emploi/liste-toutes-offres.aspx?changefacet=1&facet_JobCountry=12880&facet_JobGeographicalArea=-12853&mode=list", path: /^\/offre-de-emploi\/emploi-[^/]+_(\d+)\.aspx$/, fixedCountry: "France" },
   { company: "DFDS Logistics", careerUrl: "https://dfdsgermany.teamtailor.com/jobs", path: /^\/jobs\/(\d+)-/, title: /<span[^>]*class="[^"]*text-block-base-link[^"]*"[^>]*>([\s\S]*?)<\/span>/i, fixedCountry: "Germany" },
   { company: "FIEGE", careerUrl: "https://karriere.fiege.com/standorte/landesweit", path: /^\/offer-redirect\/$/, fixedCountry: "Germany" },
