@@ -42,7 +42,7 @@ export class SmartRecruitersProvider implements JobProvider {
       try {
         const params = new URLSearchParams({ q: input.query, country: code.toLowerCase(), limit: String(limit), offset: String(offset), destination: "PUBLIC" });
         requestCount++;
-        const response = await fetch(`${smartRecruitersPostingApi(this.employer.tenant)}?${params}`, { redirect: "error", signal: AbortSignal.timeout(5_000) });
+        const response = await fetch(`${smartRecruitersPostingApi(this.employer.tenant)}?${params}`, { redirect: "error", signal: AbortSignal.timeout(offset === 0 ? 10_000 : 4_000) });
         if (!response.ok) {
           errorCode = response.status === 429 ? "RATE_LIMIT" : `SMARTRECRUITERS_HTTP_${response.status}`;
           break;
@@ -71,8 +71,8 @@ export class SmartRecruitersProvider implements JobProvider {
           jobs.push(job);
         }
         if (payload.content.length < limit || offset + limit >= (payload.totalFound ?? 0)) break;
-      } catch {
-        errorCode = "SMARTRECRUITERS_FETCH_FAILED";
+      } catch (error) {
+        errorCode = error instanceof Error && error.name === "TimeoutError" ? "SMARTRECRUITERS_TIMEOUT" : "SMARTRECRUITERS_FETCH_FAILED";
         break;
       }
     }

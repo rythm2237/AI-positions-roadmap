@@ -66,3 +66,15 @@ test("SmartRecruiters limits discovery to the employer's public country-specific
   assert.equal(fetch.mock.callCount(),1);
   assert.equal(canonicalizeJobUrl("https://jobs.smartrecruiters.com/BEUMERGroup1/101-job-title?source=external"), r.jobs[0].sourceUrl);
 });
+
+test("SmartRecruiters records a listing timeout separately from transport failures", async (t) => {
+  t.mock.method(globalThis, "fetch", async () => {
+    throw new DOMException("The operation timed out", "TimeoutError");
+  });
+  const result = await new SmartRecruitersProvider(smartRecruitersEmployers[0]).search({
+    country: "Germany", query: "Automation", limit: 10, correlationId: "test-timeout",
+  });
+  assert.equal(result.status, "provider_error");
+  assert.equal(result.errorCode, "SMARTRECRUITERS_TIMEOUT");
+  assert.equal(result.requestCount, 1);
+});

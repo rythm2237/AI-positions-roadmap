@@ -214,7 +214,7 @@ export async function verifyVacancy(job: CanonicalJobCandidate): Promise<Vacancy
     const endpoint = `${smartRecruitersPostingApi(smartRecruitersEmployer.tenant)}/${job.externalId}`;
     const provenance = { method: "official_provider_api", sourceUrl: endpoint };
     try {
-      const response = await fetch(endpoint, { redirect: "error", signal: AbortSignal.timeout(6_000) });
+      const response = await fetch(endpoint, { redirect: "error", signal: AbortSignal.timeout(10_000) });
       if (response.status === 404 || response.status === 410) {
         return { status: "verified", job: { ...job, expiresAt: new Date().toISOString() }, provenance: { ...provenance, httpStatus: response.status } };
       }
