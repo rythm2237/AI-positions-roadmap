@@ -21,7 +21,7 @@ type Posting = {
 };
 
 const countryNames = new Intl.DisplayNames(["en"], { type: "region" });
-const countries = ["AT", "BE", "CH", "CZ", "DE", "DK", "ES", "FI", "FR", "GB", "HU", "IE", "IT", "NL", "NO", "PL", "PT", "RO", "SE"];
+const countries = ["AT", "BE", "CH", "CZ", "DE", "DK", "ES", "FI", "FR", "GB", "HU", "IE", "IT", "LU", "NL", "NO", "PL", "PT", "RO", "SE"];
 export const europeanJobCountryCode = (country: string) => countries.find((code) => code.toLowerCase() === country.toLowerCase() || canonicalCountry(countryNames.of(code)) === canonicalCountry(country));
 
 export function smartRecruitersPostingApi(tenant: string) {
