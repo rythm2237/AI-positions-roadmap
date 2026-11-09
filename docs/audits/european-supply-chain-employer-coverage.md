@@ -2,7 +2,7 @@
 
 The target is 50 new direct employer sources with active operations in Europe. The shortlist combines major logistics providers, warehouse automation vendors, and employers with sizeable supply chain operations. Sequence reflects role relevance and source feasibility. It is not a single revenue ranking across industries.
 
-## Connected sources (12)
+## Connected sources (16)
 
 | Employer | Official source |
 |---|---|
@@ -18,13 +18,17 @@ The target is 50 new direct employer sources with active operations in Europe. T
 | Sika | Public SmartRecruiters board |
 | Bertelsmann (including Arvato) | Public SmartRecruiters group board |
 | REPA Group | Public SmartRecruiters board |
+| KNAPP | Employer's official career site |
+| Maersk | Official public Workday board |
+| KION Group | Official public Workday group board |
+| Vanderlande | Official public Workday career board |
 
 The runtime checks country evidence and records the result of each employer query. In a source outage it keeps results from other employers. The source budget stays bounded by the gateway deadline and the portfolio cap. A public board that has jobs can legitimately return zero matches for a particular country and query.
 
-## Pending official source validation (38)
+## Pending official source validation (34)
 
-- Logistics and fulfilment (18). DHL Supply Chain, Kuehne+Nagel, CEVA Logistics, Maersk, GEODIS, GXO Europe, Rhenus Logistics, STEF, ID Logistics, Hellmann, Gebrüder Weiss, Scan Global Logistics, Raben Group, DFDS Logistics, FIEGE, FM Logistic, Savino Del Bene, Militzer & Münch.
-- Warehouse automation and fulfilment technology (11). KION Group / Dematic, Vanderlande, SSI SCHAEFER, KNAPP, Swisslog, TGW Logistics, Mecalux, Interroll, AutoStore, Ocado Group, Picnic.
+- Logistics and fulfilment (17). DHL Supply Chain, Kuehne+Nagel, CEVA Logistics, GEODIS, GXO Europe, Rhenus Logistics, STEF, ID Logistics, Hellmann, Gebrüder Weiss, Scan Global Logistics, Raben Group, DFDS Logistics, FIEGE, FM Logistic, Savino Del Bene, Militzer & Münch.
+- Warehouse automation and fulfilment technology (8). SSI SCHAEFER, Swisslog, TGW Logistics, Mecalux, Interroll, AutoStore, Ocado Group, Picnic.
 - Retail distribution (9). Schwarz Group / Lidl, ALDI SÜD, Carrefour, Tesco, Ahold Delhaize, REWE Group, EDEKA, Decathlon, Auchan.
 
 IKEA, BEUMER Group, Amazon, and Exotec are in earlier source registries. Count group and brand combinations as one target when they share coverage.

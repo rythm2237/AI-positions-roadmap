@@ -9,6 +9,10 @@ const publicBoards = [
   { company: "DACHSER", kind: "successfactors", careerUrl: "https://careers.dachser.com" },
   { company: "cargo-partner", kind: "lever", careerUrl: "https://www.cargo-partner.com/career", tenant: "cargo-partner" },
   { company: "OMP", kind: "greenhouse", careerUrl: "https://job-boards.greenhouse.io/ompexternaljobboards", tenant: "ompexternaljobboards" },
+  { company: "KNAPP", kind: "knapp", careerUrl: "https://www.knapp.com/en/career/jobs/" },
+  { company: "Maersk", kind: "workday", careerUrl: "https://maersk.wd3.myworkdayjobs.com/en-US/Maersk_Careers", tenant: "maersk", site: "Maersk_Careers" },
+  { company: "KION Group", kind: "workday", careerUrl: "https://kiongroup.wd3.myworkdayjobs.com/en-US/KIONGroup", tenant: "kiongroup", site: "KIONGroup" },
+  { company: "Vanderlande", kind: "workday", careerUrl: "https://vanderlande.wd3.myworkdayjobs.com/careers", tenant: "vanderlande", site: "careers" },
 ] as const;
 
 type Board = typeof publicBoards[number];
@@ -31,6 +35,18 @@ export function parseSuccessFactorsListings(html: string, origin: string): Job[]
     jobs.push({ id: anchor[2], title: plain(anchor[3]), location: plain(location[1]), url: origin + anchor[1] });
   }
   return jobs;
+}
+
+export function parseKnappListings(html: string): Job[] {
+  const countries = [...html.matchAll(/<h3\b[^>]*class="country-name"[^>]*>([^<]+)<\/h3>/gi)];
+  return countries.flatMap((country, index) => {
+    const section = html.slice((country.index ?? 0) + country[0].length, countries[index + 1]?.index ?? html.length);
+    return [...section.matchAll(/<a\b[^>]*data-id="(\d+)"[^>]*href="(https:\/\/www\.knapp\.com\/en\/jobs\/[^"<>]+)"[^>]*>([\s\S]*?)<\/a>/gi)].flatMap(([, id, url, content]) => {
+      const title = content.match(/<div class="job-name">([\s\S]*?)<\/div>/i);
+      const city = content.match(/<div class="job-location">([\s\S]*?)<\/div>/i);
+      return title ? [{ id, url, title: plain(title[1]), location: [city && plain(city[1]), plain(country[1])].filter(Boolean).join(", ") }] : [];
+    });
+  });
 }
 
 const locationParts = (location: string) => location.split(/[,;|]/).map((part) => canonicalCountry(part));
@@ -62,6 +78,26 @@ class PublicSupplyChainBoard implements JobProvider {
       if (!/id="searchresults"|class="data-row"|class="no-results"|No jobs found|No results found/i.test(html)) throw new Error("UNRECOGNIZED_LISTING");
       return parseSuccessFactorsListings(html, source.careerUrl);
     }
+    if (source.kind === "knapp") {
+      const response = await fetch(source.careerUrl, options);
+      if (!response.ok) throw new Error(`HTTP_${response.status}`);
+      const html = await response.text();
+      if (!html.includes('class="country-name"')) throw new Error("UNRECOGNIZED_LISTING");
+      return parseKnappListings(html);
+    }
+    if (source.kind === "workday") {
+      const origin = new URL(source.careerUrl).origin;
+      const response = await fetch(`${origin}/wday/cxs/${source.tenant}/${source.site}/jobs`, {
+        ...options, method: "POST", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ appliedFacets: {}, limit: 20, offset: 0, searchText: input.query }),
+      });
+      if (!response.ok) throw new Error(`HTTP_${response.status}`);
+      const data = await response.json() as { jobPostings: { title: string; externalPath: string; locationsText?: string; bulletFields?: string[] }[] };
+      return data.jobPostings.flatMap((row) => /^\/job\/[^/?#]+(?:\/[^/?#]+)*$/.test(row.externalPath) && row.title ? [{
+        id: row.bulletFields?.[0] ?? row.externalPath, title: row.title, location: row.locationsText ?? "",
+        url: source.careerUrl + row.externalPath,
+      }] : []);
+    }
     if (source.kind === "greenhouse") {
       const response = await fetch(`https://boards-api.greenhouse.io/v1/boards/${source.tenant}/jobs?content=true`, options);
       if (!response.ok) throw new Error(`HTTP_${response.status}`);
@@ -77,7 +113,8 @@ class PublicSupplyChainBoard implements JobProvider {
   async search(input: ProviderSearchInput): Promise<ProviderSearchOutcome> {
     const started = Date.now();
     const code = europeanJobCountryCode(input.country);
-    const key = this.source.kind === "successfactors" ? JSON.stringify([input.country, input.query]) : "board";
+    const key = this.source.kind === "successfactors" ? JSON.stringify([input.country, input.query])
+      : this.source.kind === "workday" ? input.query : "board";
     const cached = this.cache.get(key);
     const payload = cached ?? this.load(input);
     this.cache.set(key, payload);
@@ -87,7 +124,7 @@ class PublicSupplyChainBoard implements JobProvider {
         const url = safeExternalUrl(row.url);
         const title = normalizeJobText(row.title);
         if (!code || !url || !row.id || !row.title || !matchesCountry(row.location, input.country, code)) return [];
-        if (this.source.kind !== "successfactors" && !tokens.some((token) => title.split(" ").includes(token))) return [];
+        if (["greenhouse", "lever", "knapp"].includes(this.source.kind) && !tokens.some((token) => title.split(" ").includes(token))) return [];
         const job: CanonicalJobCandidate = {
           externalId: row.id, source: this.name, sourceQuery: input.query, company: this.source.company,
           title: row.title, normalizedTitle: title, location: row.location, country: input.country,
