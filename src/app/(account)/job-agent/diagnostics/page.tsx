@@ -13,7 +13,7 @@ type DiagnosticRun = {
   unverified_count: number | null; blocked_count: number | null;
   recommended_count: number | null; provider_errors: number | null;
   diagnostic_category: string; providers: ProviderAttempt[] | null;
-  provider_summary?: {searchFunnel?: { verifiedActive?: number; verificationPending?: number; deferredByProcessingLimit?: number; processedCandidates?: number; processingLimit?: number; reasonCounts?: Record<string,number>; verificationErrorCounts?: Record<string,number> }} | null;
+  provider_summary?: {directEmployerAttempts?: { provider: string; country: string; query: string; status: string; records: number; errorCode?: string }[]; searchFunnel?: { verifiedActive?: number; verificationPending?: number; deferredByProcessingLimit?: number; processedCandidates?: number; processingLimit?: number; reasonCounts?: Record<string,number>; verificationErrorCounts?: Record<string,number> }} | null;
 };
 const label: Record<string, string> = {
   partial_provider_failure: "Some providers failed — results incomplete",
@@ -75,6 +75,12 @@ export default async function JobSearchDiagnosticsPage() {
         <h2 className="mt-5 text-sm font-semibold">Sources actually queried</h2>
         <div className="mt-2 overflow-x-auto"><table className="w-full text-left text-xs"><thead><tr className="border-b border-white/10 text-slate-400"><th className="p-2">Provider</th><th className="p-2">Attempts</th><th className="p-2">Records</th><th className="p-2">Errors</th></tr></thead>
         <tbody>{summary.map(([provider,stats])=><tr className="border-b border-white/5" key={provider}><td className="p-2">{provider}</td><td className="p-2">{stats.attempts}</td><td className="p-2">{stats.records}</td><td className="p-2">{stats.errors}</td></tr>)}</tbody></table></div>
+        {run.provider_summary?.directEmployerAttempts?.length ? <details className="mt-4">
+          <summary className="cursor-pointer text-xs text-violet-300">European supply chain employers</summary>
+          <ul className="mt-2 space-y-2 text-xs text-slate-400">{run.provider_summary.directEmployerAttempts.map((attempt, index) =>
+            <li key={index} className="rounded-lg border border-white/5 p-2">{attempt.provider} · {attempt.country} · {attempt.query} · {attempt.status} · {attempt.records} records {attempt.errorCode ? `· ${attempt.errorCode}` : ""}</li>
+          )}</ul>
+        </details> : null}
         <details className="mt-4"><summary className="cursor-pointer text-xs text-violet-300">View query, country, and error for every provider attempt</summary>
           <ul className="mt-2 space-y-2 text-xs text-slate-400">{providers.map((p,i)=><li key={i} className="rounded-lg border border-white/5 p-2">{p.provider} · {p.country || p.location || "unspecified location"} · {p.query || "default query"} · {p.status} · {count(p.records_received)} records {p.error_code ? `· ${p.error_code}` : ""}</li>)}</ul>
         </details>

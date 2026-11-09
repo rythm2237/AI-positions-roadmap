@@ -1,4 +1,5 @@
 import "server-only";
+import { EuropeanSupplyChainProvider } from "./europeanSupplyChain";
 import { IkeaProvider } from "./ikea";
 import { SmartRecruitersProvider, smartRecruitersEmployers } from "./smartRecruiters";
 
@@ -170,5 +171,5 @@ class ArbeitnowProvider implements JobProvider {
 }
 
 export function publicFeedProviders(): JobProvider[] {
-  return [new IkeaProvider(), ...smartRecruitersEmployers.map((employer) => new SmartRecruitersProvider(employer)), new ArbeitnowProvider(), new RemotiveProvider(), new Nomado24Provider(), ...directCompanyPortfolioProviders(), ...directCompanyExpansionProviders()];
+  return [new IkeaProvider(), new SmartRecruitersProvider(smartRecruitersEmployers[0]), ...(process.env.JOB_AGENT_DIRECT_COMPANY_ENABLED === "false" ? [] : [new EuropeanSupplyChainProvider()]), new ArbeitnowProvider(), new RemotiveProvider(), new Nomado24Provider(), ...directCompanyPortfolioProviders(), ...directCompanyExpansionProviders()];
 }
