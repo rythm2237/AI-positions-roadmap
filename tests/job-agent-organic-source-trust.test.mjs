@@ -14,5 +14,5 @@ test("organic SerpApi fallback rejects known job aggregators", () => {
 
 test("organic fallback remains available for direct vacancy and ATS-like pages", () => {
   assert.match(source, /workable\|greenhouse\|lever\|smartrecruiters\|ashbyhq\|workdayjobs/);
-  assert.match(source, /company: result\.source\?\.trim\(\) \|\| "Employer not verified"/);
+  assert.match(source, /company: "Employer not verified"/);
 });

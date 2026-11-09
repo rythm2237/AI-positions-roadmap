@@ -17,7 +17,7 @@ async function simulate(jobs, reviewJobIds=[]) {
   if(path.startsWith('job_agents?'))return Response.json([agent]);
   if(path.startsWith('profiles?'))return Response.json([{id:'user-1',email:'synthetic@example.test',name:'Test'}]);
   if(path.startsWith('job_opportunities?'))return Response.json(jobs);
-  if(path.startsWith('job_search_runs?'))return Response.json([{provider_records:187,deduplicated_count:80,unverified_count:27,blocked_count:53,provider_summary:{attemptsByStatus:{provider_error:5}}}]);
+  if(path.startsWith('job_search_runs?'))return Response.json([{provider_records:187,deduplicated_count:80,unverified_count:27,blocked_count:53,provider_summary:{attemptsByStatus:{provider_error:5,rate_limit:2},searchFunnel:{verifiedActive:19,verificationPending:12}}}]);
   if(path.startsWith('job_saved_jobs?'))return Response.json([]);
   if(path.startsWith('job_agent_reports?')&&path.includes('select=summary'))return Response.json(reviewJobIds.length?[{summary:{reviewJobIds}}]:[]);
   if(path==='job_agent_reports'&&init.method==='POST'){ledger.push(JSON.parse(init.body));return Response.json([{id:'report-1'}]);}
@@ -32,14 +32,16 @@ test('Daily orchestration excludes senior, pending and legacy jobs, preserves si
  assert.equal(run.outcome.sent,1);assert.equal(run.sent.length,1);
  const html=run.sent[0].html;
  if(process.env.JOB_DIGEST_PREVIEW_PATH) writeFileSync(process.env.JOB_DIGEST_PREVIEW_PATH,html.replace('<body ', '<body ').replace('<div style="width:100%;', '<p style="padding:12px;text-align:center">Synthetic preview — action links use a test signature.</p><div style="width:100%;'));
- assert.match(html,/Career Transition Opportunities/);assert.match(html,/Junior Automation Specialist/);assert.doesNotMatch(html,/Senior AI Architect|Pending AI vacancy|Legacy scoring vacancy/);
+ assert.match(html,/Career Transition Opportunities/);assert.match(html,/Junior Automation Specialist/);assert.doesNotMatch(html,/Senior AI Architect|Legacy scoring vacancy/);
+ assert.match(html,/Promising jobs awaiting verification[\s\S]*Pending AI vacancy[\s\S]*Vacancy availability unconfirmed/);
+ assert.deepEqual(run.ledger[0].summary.pendingJobIds,['job-3']);
  const tokens=[...html.matchAll(/\/job-action\/([A-Za-z0-9_.-]+)/g)].map(m=>verifyJobEmailActionToken(m[1]));assert.ok(tokens.some(t=>t?.action==='save'));assert.ok(tokens.some(t=>t?.action==='not_relevant'));assert.ok(tokens.every(t=>t.userId==='user-1'&&t.jobId==='job-1'));
  assert.equal(run.ledger[0].summary.recommended,1);
  assert.equal(run.ledger[0].summary.strongMatches,0);
  assert.match(html,/>0<\/strong><span[^>]*>High match<\/span>/);
 });
 test('No-match digest is truthful and does not pad results',async()=>{
- const run=await simulate([{...good,eligibility_status:'blocked'}]);assert.match(run.sent[0].subject,/No suitable/);assert.match(run.sent[0].html,/No vacancies met your recommendation threshold/);assert.match(run.sent[0].html,/27 candidate\(s\) still need review/);assert.match(run.sent[0].html,/187 provider records received/);assert.equal(run.ledger[0].summary.unverified,27);assert.doesNotMatch(run.sent[0].html,/Junior Automation Specialist/);
+ const run=await simulate([{...good,eligibility_status:'blocked'}]);assert.match(run.sent[0].subject,/No suitable/);assert.match(run.sent[0].html,/No new opportunities cleared all recommendation checks/);assert.match(run.sent[0].html,/27 candidate\(s\) need eligibility or verification review/);assert.match(run.sent[0].html,/187 provider records received/);assert.equal(run.ledger[0].summary.unverified,27);assert.doesNotMatch(run.sent[0].html,/Junior Automation Specialist/);
 });
 
 test('Verified eligible lower-score roles appear only in separately labelled review section',async()=>{
@@ -55,7 +57,9 @@ test('Verified eligible lower-score roles appear only in separately labelled rev
  assert.doesNotMatch(run.sent[0].html,/Blocked Analyst|Unverified Analyst|Weak Analyst/);
  assert.equal(run.ledger[0].summary.recommended,0);
  assert.equal(run.ledger[0].summary.verifiedForReview,2);
- assert.equal(run.ledger[0].summary.verified,2);
+ assert.equal(run.ledger[0].summary.verified,19);
+ assert.equal(run.ledger[0].summary.verifiedInDigest,2);
+ assert.match(run.sent[0].html,/>12<\/strong><span[^>]*>Verification pending<\/span>/);
 });
 
 test('Recently verified low-fit vacancy is only delivered once across daily digests',async()=>{

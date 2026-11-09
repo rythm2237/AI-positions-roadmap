@@ -7,6 +7,7 @@ import type { CanonicalJobCandidate } from "./contracts";
 import type { JobVerificationStatus } from "../../types/jobAgent";
 import { safeExternalUrl } from "./normalization";
 import { extractSourcePageIdentity, sourceCompanyMatchesHost } from "./sourcePageIdentity";
+import { smartRecruitersEmployers, smartRecruitersPostingApi } from "./providers/smartRecruiters";
 import { countryMetadataConflicts } from "./countryIdentity";
 
 export type VacancyVerification = {
@@ -207,6 +208,35 @@ export async function verifyVacancy(job: CanonicalJobCandidate): Promise<Vacancy
   if ((job.source.startsWith("Greenhouse:") || job.source.startsWith("Lever:")) && job.descriptionComplete) {
     return { status: "verified", job, provenance: { method: "official_provider_api", source: job.source, sourceUrl: job.sourceUrl, verifiedAt: new Date().toISOString() } };
   }
+  const smartRecruitersEmployer = smartRecruitersEmployers.find((employer) => job.source === `Direct:${employer.company}` &&
+    /^\d+$/.test(job.externalId) && job.sourceUrl === `https://jobs.smartrecruiters.com/${employer.tenant}/${job.externalId}`);
+  if (smartRecruitersEmployer) {
+    const endpoint = `${smartRecruitersPostingApi(smartRecruitersEmployer.tenant)}/${job.externalId}`;
+    const provenance = { method: "official_provider_api", sourceUrl: endpoint };
+    try {
+      const response = await fetch(endpoint, { redirect: "error", signal: AbortSignal.timeout(10_000) });
+      if (response.status === 404 || response.status === 410) {
+        return { status: "verified", job: { ...job, expiresAt: new Date().toISOString() }, provenance: { ...provenance, httpStatus: response.status } };
+      }
+      if (!response.ok) return { status: "unverified", job, provenance, errorCode: `HTTP_${response.status}` };
+      const detail = await response.json() as { id?: string; active?: boolean; visibility?: string; postingUrl?: string;
+        name?: string; jobAd?: { sections?: Record<string, { text?: string }> } };
+      if (detail.id !== job.externalId || detail.visibility !== "PUBLIC" || typeof detail.active !== "boolean") {
+        return { status: "unverified", job, provenance, errorCode: "SMARTRECRUITERS_DETAIL_UNCONFIRMED" };
+      }
+      if (!detail.active) return { status: "verified", job: { ...job, expiresAt: new Date().toISOString() }, provenance };
+      const sections = detail.jobAd?.sections;
+      const description = [sections?.jobDescription?.text, sections?.qualifications?.text, sections?.additionalInformation?.text]
+        .flatMap((section) => typeof section === "string" ? [textFromHtml(section)] : []).join("\n");
+      // Keep the stable posting ID URL as the persistence key.
+      const officialPostingUrl = safeExternalUrl(detail.postingUrl);
+      return { status: "verified", job: { ...job, title: detail.name?.trim() || job.title, description,
+        descriptionComplete: Boolean(sections?.jobDescription?.text) },
+        provenance: { ...provenance, officialPostingUrl, verifiedAt: new Date().toISOString() } };
+    } catch {
+      return { status: "unverified", job, provenance, errorCode: "SMARTRECRUITERS_DETAIL_UNAVAILABLE" };
+    }
+  }
   const safe = safeExternalUrl(job.sourceUrl || job.applicationUrl);
   if (!safe) {
     return { status: "unverified", job, provenance: { method: "not_attempted", reason: "No safe source URL is available.", sourceUrl: job.sourceUrl }, errorCode: "UNSAFE_VERIFICATION_URL" };
@@ -219,7 +249,8 @@ export async function verifyVacancy(job: CanonicalJobCandidate): Promise<Vacancy
     if (!response.ok) {
       const fallback = providerFallback(job, response.status, finalUrl);
       if (fallback) return fallback;
-      return { status: "failed", job, provenance: { method: "source_page", httpStatus: response.status, sourceUrl: finalUrl }, errorCode: `HTTP_${response.status}` };
+      const pending = [401, 403, 408, 429].includes(response.status) || response.status >= 500;
+      return { status: pending ? "unverified" : "failed", job, provenance: { method: "source_page", httpStatus: response.status, sourceUrl: finalUrl }, errorCode: `HTTP_${response.status}` };
     }
     const size = Number(response.headers.get("content-length") ?? "0");
     if (size > 2_000_000) return { status: "failed", job, provenance: { method: "source_page", sourceUrl: finalUrl }, errorCode: "VERIFICATION_RESPONSE_TOO_LARGE" };
@@ -234,7 +265,9 @@ export async function verifyVacancy(job: CanonicalJobCandidate): Promise<Vacancy
     }
     if (posting) {
       const title = stringValue(posting.title) ?? job.title;
-      const company = organizationName(posting.hiringOrganization) ?? job.company;
+      const organization = organizationName(posting.hiringOrganization);
+      const isOfficialIkea = job.source === "Direct:IKEA" && new URL(finalUrl).hostname === "jobs.ikea.com";
+      const company = isOfficialIkea && /^(?:ingka|inter) external$/i.test(organization ?? "") ? job.company : organization ?? job.company;
       const verifiedLocation = locationFromPosting(posting.jobLocation);
       const description = stringValue(posting.description) ?? (pageText.length >= 300 ? pageText.slice(0, 120_000) : job.description);
       const postingUrl = stringValue(posting.url);
@@ -268,7 +301,7 @@ export async function verifyVacancy(job: CanonicalJobCandidate): Promise<Vacancy
         expiresAt,
       };
       return {
-        status: verifiedJob.descriptionComplete ? "verified" : "partially_verified",
+        status: isOfficialIkea || verifiedJob.descriptionComplete ? "verified" : "partially_verified",
         job: verifiedJob,
         provenance: { method: "json_ld_jobposting", httpStatus: response.status, contentType, sourceUrl: finalUrl, verifiedAt: new Date().toISOString(), fields: ["title", "company", "location", "country", "description", "employment_type", "posted_at", "expires_at", "application_url"] },
       };
@@ -308,7 +341,11 @@ export async function verifyVacancy(job: CanonicalJobCandidate): Promise<Vacancy
     ];
     return { status: verifiedJob.descriptionComplete ? "partially_verified" : "unverified", job: verifiedJob, provenance: { method: identity.title || identity.company ? "source_page_identity" : "source_page_text", httpStatus: response.status, contentType, sourceUrl: finalUrl, verifiedAt: new Date().toISOString(), fields: verifiedFields } };
   } catch (error) {
-    const code = error instanceof Error ? error.message.slice(0, 120) : "VERIFICATION_FAILED";
-    return { status: "failed", job, provenance: { method: "source_page", sourceUrl: safe, failedAt: new Date().toISOString() }, errorCode: code };
+    const temporary = error instanceof Error && (
+      ["TimeoutError", "AbortError", "TypeError"].includes(error.name)
+      || ["EAI_AGAIN", "ECONNRESET", "ETIMEDOUT"].includes(String((error as NodeJS.ErrnoException).code))
+    );
+    const code = temporary ? "VERIFICATION_TEMPORARY_FAILURE" : error instanceof Error ? error.message.slice(0, 120) : "VERIFICATION_FAILED";
+    return { status: temporary ? "unverified" : "failed", job, provenance: { method: "source_page", sourceUrl: safe, failedAt: new Date().toISOString() }, errorCode: code };
   }
 }

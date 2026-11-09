@@ -8,7 +8,7 @@ import { enrichRequirements } from '../src/lib/job-agent/requirements.ts';
 import { extractRequiredLanguages } from '../src/lib/job-agent/eligibility.ts';
 const track=(domain,years,maximumSeniority='associate')=>({id:domain,name:domain,domain,directYears:years,maximumSeniority,maximumRequiredYears:null,targetTitles:[],transition:domain==='ai_automation',flexibility:'standard',mandatorySkills:[],preferredSkills:[],industries:[],qualifications:[],professionalEvidence:[],projectEvidence:[],confirmed:true});
 const intent={primaryTargetRole:'AI Automation Specialist',soft:{secondaryRoles:['Operations Planner'],marketTitleVariants:[],adjacentRoles:[]},careerTracks:[track('ai_automation',0),track('operations',4,'specialist')]};
-const job=(title,description='',extra={})=>({title,description,seniority:null,descriptionComplete:true,requiredSkills:[],preferredSkills:[],educationRequirements:[],certificationRequirements:[],workplaceModel:'remote',visaSponsorship:null,...extra});
+const job=(title,description='',extra={})=>({title,description,seniority:null,descriptionComplete:true,requiredLanguages:[],requiredSkills:[],preferredSkills:[],educationRequirements:[],certificationRequirements:[],workplaceModel:'remote',visaSponsorship:null,...extra});
 const check=(title,description='',extra={})=>evaluateCareerEligibility(job(title,description,extra),intent,[]);
 test('1 Junior AI versus senior architecture',()=>assert.equal(check('Senior AI Architect','7 years of experience in AI architecture required.').status,'blocked'));
 test('2 Experienced operations remains eligible',()=>assert.equal(check('Operations Specialist','4 years of warehouse experience required.').status,'eligible'));
@@ -47,3 +47,22 @@ test('24 Description-derived level is persisted by enrichment',()=>assert.equal(
 
 import {planSearchQueries} from '../src/lib/job-agent/searchStrategy.ts';
 test('25 Discovery reserves space for experienced operations alongside AI variants',()=>{const queries=planSearchQueries({primaryTargetRole:'AI Automation Specialist',hard:{excludedRoles:[]},soft:{secondaryRoles:['SEO Specialist'],marketTitleVariants:['Operations Planner'],adjacentRoles:[]}},6);assert.ok(queries.some(q=>q.query==='Operations Planner'));assert.ok(queries.some(q=>q.query==='SEO Specialist'));assert.equal(queries.length,6);});
+
+import { calculateEvidenceGroundedFit } from '../src/lib/job-agent/fitIntelligence.ts';
+const scoringIntent = {...intent, hard: {countries: ['Germany'], workplaceModels: ['remote'], salary: {minimum: null}}, soft: {...intent.soft, targetIndustries: []}};
+test('26 Documented project values earn transferable credit without becoming employment years', () => {
+ const candidateJob = job('Junior Automation Specialist', 'Build approval workflows using Power Automate.', {requiredSkills: ['Power Automate']});
+ const project = {id: 'project-1', evidenceType: 'project_implementation', label: 'Project evidence 1', value: 'Built approval workflows using Power Automate', durationMonths: 60, sourceType: 'profile', confidence: .85, provenance: {}};
+ const baseline = calculateEvidenceGroundedFit(candidateJob, scoringIntent, []);
+ const matched = calculateEvidenceGroundedFit(candidateJob, scoringIntent, [project]);
+ assert.equal(matched.explanation.scoringVersion, 'career-fit-v2');
+ assert.ok(matched.explanation.dimensions.requiredSkills > baseline.explanation.dimensions.requiredSkills);
+ assert.deepEqual(matched.explanation.transferableEvidence.map(item => item.evidenceId), ['project-1']);
+ assert.equal(matched.explanation.dimensions.experienceDepth, 0);
+ assert.equal(calculateEvidenceGroundedFit(job('Senior AI Engineer','7 years of AI experience required.'), scoringIntent, [project]).score, 0);
+});
+test('27 Established operations track keeps its relevant experience depth', () => {
+ const result = calculateEvidenceGroundedFit(job('Operations Specialist', '4 years of warehouse experience required.'), scoringIntent, []);
+ assert.equal(result.explanation.dimensions.experienceDepth, 8);
+ assert.equal(result.explanation.career.status, 'eligible');
+});

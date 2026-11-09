@@ -216,7 +216,8 @@ async function executeJobSearch(
   }
 
   const learned = agent.learned_preferences_enabled === false ? [] : (await supabase.from("job_agent_learned_preferences").select("id,signal_type,signal_key,sample_size,active,value").eq("user_id",user.id).eq("active",true).returns<LearningSignal[]>()).data ?? [];
-  const processingLimit = 80; // Bounded verification workload; expose omitted candidates in diagnostics.
+  const configuredLimit = Number(process.env.JOB_AGENT_PROCESSING_LIMIT ?? 80);
+  const processingLimit = Number.isInteger(configuredLimit) && configuredLimit >= 1 && configuredLimit <= 120 ? configuredLimit : 80;
   const candidatesDeferredByLimit = Math.max(0, gateway.jobs.length - processingLimit);
   const processed = await Promise.all(selectCandidatesForVerification(gateway.jobs, processingLimit).map(async (candidate) => {
     const verification = await verifyVacancy(candidate);
@@ -228,10 +229,10 @@ async function executeJobSearch(
         : null;
     const job = enrichRequirements(verification.job, evidenceResult.evidence);
     const freshness = assessFreshness(job);
-    const eligibility = evaluateHardEligibility({ job, profile, agent, intent: { ...intent, version: intentRecord.version }, evidence: evidenceResult.evidence, expired: freshness.status === "expired" });
+    const eligibility = evaluateHardEligibility({ job, profile, agent, intent: { ...intent, version: intentRecord.version }, evidence: evidenceResult.evidence, expired: false });
     job.requiredLanguages = eligibility.requiredLanguages;
     const effectiveEligibilityStatus = verificationRejected ? "blocked" as const : verification.status !== "verified" && eligibility.status !== "blocked" ? "unverified" as const : eligibility.status;
-    const fit = effectiveEligibilityStatus === "blocked" ? null : calculateEvidenceGroundedFit(job, intent, evidenceResult.evidence);
+    const fit = verificationRejected || freshness.status === "expired" ? null : calculateEvidenceGroundedFit(job, intent, evidenceResult.evidence);
     if(fit && effectiveEligibilityStatus === "eligible") {
       const adjustment=feedbackAdjustment(job.title,learned);
       fit.score=Math.max(0,Math.min(100,fit.score+adjustment));
@@ -239,7 +240,7 @@ async function executeJobSearch(
       fit.classification=fit.score>=agent.strong_match_threshold?"strong_match":fit.score>=Math.max(68,agent.minimum_match_score??68)?"good_match":fit.score>=52?"worth_reviewing":"stretch";
       if(adjustment) fit.explanation.whyRankedHere.push(`Repeated exact-title feedback adjusted ranking by ${adjustment} points. Disable the signal in settings to undo this.`);
     }
-    const classification = effectiveEligibilityStatus === "unverified" ? "worth_reviewing" as const : verificationRejected ? "blocked" as const : freshness.status === "expired" ? "expired" as const : eligibility.status === "blocked" ? "blocked" as const : fit?.classification ?? "stretch";
+    const classification = freshness.status === "expired" ? "expired" as const : verificationRejected || eligibility.status === "blocked" ? "blocked" as const : effectiveEligibilityStatus === "unverified" ? "worth_reviewing" as const : fit?.classification ?? "stretch";
     const execution = determineExecutionCapability({ mode: agent.automation_mode, eligibility: effectiveEligibilityStatus, applicationUrl: job.applicationUrl, officialAutoSubmitConfigured: false, officialAssistedIntegration: false });
     const recommendation = classification === "strong_match" ? "strong" : classification === "good_match" ? "prepare" : classification === "blocked" || classification === "expired" ? "skip" : "review";
     return { job, verification, verificationRejected, verificationReason, freshness, eligibility, effectiveEligibilityStatus, fit, classification, execution, recommendation };
@@ -253,10 +254,10 @@ async function executeJobSearch(
     workplace_model: job.workplaceModel, employment_types: job.employmentTypes, seniority: job.seniority, required_skills: job.requiredSkills, preferred_skills: job.preferredSkills,
     education_requirements: job.educationRequirements, certification_requirements: job.certificationRequirements, visa_sponsorship: job.visaSponsorship,
     posted_at: job.postedAt, expires_at: job.expiresAt, salary_min: job.salaryMin, salary_max: job.salaryMax, salary_currency: job.currency,
-    verification_status: verification.status, verification_provenance: verification.provenance, verified_at: verification.status === "verified" || verification.status === "partially_verified" ? now : null,
+    verification_status: verification.status, verification_provenance: verification.provenance, verified_at: verification.status === "verified" && freshness.status !== "expired" ? now : null,
     freshness_status: freshness.status, stale_reason: freshness.reason, eligibility_status: effectiveEligibilityStatus,
     eligibility_reasons: verificationRejected && verificationReason ? [verificationReason, ...eligibility.reasons] : eligibility.reasons,
-    eligibility_detail: { reasons: eligibility.detail }, eligibility_checked_at: now, eligibility_version: "career-gate-v1",
+    eligibility_detail: { status: eligibility.status, reasons: eligibility.detail }, eligibility_checked_at: now, eligibility_version: "career-gate-v1",
     fit_score: fit?.score ?? null, fit_confidence: fit?.confidence ?? null, fit_explanation: fit?.explanation ?? {}, decision_classification: classification,
     recommendation, strengths: fit?.strengths ?? [], gaps: [...(verificationReason ? [verificationReason] : []), ...eligibility.reasons, ...(fit?.gaps ?? [])], execution_capability: execution.capability,
     status: classification === "blocked" || classification === "expired" ? "skipped" : recommendation === "strong" || recommendation === "prepare" ? "recommended" : "discovered",
@@ -298,7 +299,7 @@ async function executeJobSearch(
     processedByJobId.set(jobId, item);
     for (const source of item.job.sources) sourceRows.set(`${source.provider}|${source.sourceUrl}`, { user_id: user.id, job_id: jobId, search_run_id: searchRun.data.id, provider: source.provider, source_job_id: source.sourceJobId, source_query: source.sourceQuery, source_url: source.sourceUrl, provider_payload: source.providerPayload });
     verificationRows.push({ user_id: user.id, job_id: jobId, status: item.verification.status, method: String(item.verification.provenance.method ?? "unknown"), source_url: item.job.sourceUrl, fields: item.verification.provenance, error_code: item.verification.errorCode ?? null, verified_at: now });
-    if (item.fit) fitRows.push({ user_id: user.id, job_id: jobId, intent_id: intentRecord.id, score: item.fit.score, confidence: item.fit.confidence, classification: item.fit.classification, dimensions: item.fit.explanation.dimensions, strongest_evidence_ids: item.fit.explanation.strongestEvidence.map((evidence) => evidence.evidenceId).filter(Boolean), missing_evidence: item.fit.explanation.missingEvidence, transferable_evidence_ids: item.fit.explanation.transferableEvidence.map((evidence) => evidence.evidenceId).filter(Boolean), explanation: item.fit.explanation, scoring_version: "career-fit-v1" });
+    if (item.fit) fitRows.push({ user_id: user.id, job_id: jobId, intent_id: intentRecord.id, score: item.fit.score, confidence: item.fit.confidence, classification: item.fit.classification, dimensions: item.fit.explanation.dimensions, strongest_evidence_ids: item.fit.explanation.strongestEvidence.map((evidence) => evidence.evidenceId).filter(Boolean), missing_evidence: item.fit.explanation.missingEvidence, transferable_evidence_ids: item.fit.explanation.transferableEvidence.map((evidence) => evidence.evidenceId).filter(Boolean), explanation: item.fit.explanation, scoring_version: item.fit.explanation.scoringVersion });
     if (item.effectiveEligibilityStatus === "eligible" && item.verification.status === "verified" && (item.classification === "strong_match" || item.classification === "good_match")) inboxRows.push({ user_id: user.id, job_id: jobId, category: item.classification === "strong_match" ? "new_strong_match" : "new_review_job", title: `${item.job.title} at ${item.job.company}`.slice(0, 160), body: item.fit?.explanation.whyRankedHere.join(" ") || item.eligibility.reasons.join(" "), priority: item.classification === "strong_match" ? "high" : "normal", recommended_action: "Review the evidence and application readiness.", deep_link: `/job-agent/jobs/${jobId}`, dedupe_key: `search:${searchRun.data.id}:job:${jobId}` });
   });
 
@@ -346,9 +347,11 @@ async function executeJobSearch(
     recommended,
     reasonCounts,
     verificationErrorCounts,
+    verifiedActive: [...processedByJobId.values()].filter((item) => item.verification.status === "verified" && item.freshness.status !== "expired" && item.freshness.status !== "stale").length,
+    verificationPending: [...processedByJobId.values()].filter((item) => item.verification.status !== "verified" && !item.verificationRejected && item.freshness.status !== "expired").length,
   };
   const estimatedCost = gateway.attempts.reduce((sum, attempt) => sum + providerCost(attempt.provider, attempt.requestCount), 0);
-  await supabase.from("job_search_runs").update({ status, provider_records: gateway.jobs.length, deduplicated_count: searched, eligible_count: eligible, unverified_count: unverified, blocked_count: blocked, recommended_count: recommended, expired_count: expired, provider_summary: { attemptsByStatus, evidenceWarnings: evidenceResult.warnings, persistenceErrors, searchFunnel }, api_usage: { requests: gateway.attempts.reduce((sum, attempt) => sum + attempt.requestCount, 0) }, estimated_cost: estimatedCost, latency_ms: Date.now() - started, error_code: allFailed ? "ALL_PROVIDERS_FAILED" : persistenceErrors.length ? "SECONDARY_PERSISTENCE_PARTIAL" : null, completed_at: new Date().toISOString() }).eq("id", searchRun.data.id).eq("user_id", user.id);
+  await supabase.from("job_search_runs").update({ status, provider_records: gateway.attempts.reduce((sum, attempt) => sum + attempt.recordsReceived, 0), deduplicated_count: searched, eligible_count: eligible, unverified_count: unverified, blocked_count: blocked, recommended_count: recommended, expired_count: expired, provider_summary: { attemptsByStatus, evidenceWarnings: evidenceResult.warnings, persistenceErrors, searchFunnel }, api_usage: { requests: gateway.attempts.reduce((sum, attempt) => sum + attempt.requestCount, 0) }, estimated_cost: estimatedCost, latency_ms: Date.now() - started, error_code: allFailed ? "ALL_PROVIDERS_FAILED" : persistenceErrors.length ? "SECONDARY_PERSISTENCE_PARTIAL" : null, completed_at: new Date().toISOString() }).eq("id", searchRun.data.id).eq("user_id", user.id);
 
   await supabase.from("user_activity").insert({ user_id: user.id, action: "job_agent_search_run_v2", metadata: { correlation_id: correlationId, intent_version: intentRecord.version, searched, eligible, unverified, blocked, expired, recommended, provider_errors: providerFailures.length, providers: providers.map((provider) => provider.name), queries: queries.map((query) => query.query), latency_ms: Date.now() - started } });
   if (shouldRevalidate) revalidatePath("/job-agent");

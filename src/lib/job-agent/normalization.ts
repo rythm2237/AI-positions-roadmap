@@ -32,6 +32,10 @@ export function canonicalizeJobUrl(value: string) {
   url.hash = "";
   url.hostname = url.hostname.toLowerCase();
   url.pathname = url.pathname.replace(/\/+$/, "") || "/";
+  if (url.hostname === "jobs.smartrecruiters.com") {
+    const posting = url.pathname.match(/^\/([a-z0-9_-]+)\/(\d+)(?:-[^/]*)?$/i);
+    if (posting) url.pathname = `/${posting[1]}/${posting[2]}`;
+  }
   url.searchParams.sort();
   return url.toString();
 }
