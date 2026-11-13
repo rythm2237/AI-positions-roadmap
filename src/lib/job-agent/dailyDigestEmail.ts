@@ -39,7 +39,7 @@ function salary(job: DailyDigestJob) {
 function eligibility(job: DailyDigestJob) {
   if (job.eligibility_status === "eligible") return "Vacancy verified · Eligibility checks passed";
   if (job.eligibility_status === "blocked") return "Blocked by eligibility checks";
-  return "Verification pending";
+  return job.verification_status === "verified" ? "Vacancy verified · Eligibility needs review" : "Verification pending";
 }
 
 function action(site: string, userId: string, jobId: string, type: "save" | "unsave" | "not_relevant") {
@@ -86,7 +86,7 @@ export function renderDailyJobDigestEmail(input: {
   searchStats?: {received: number; reviewed: number; pending: number; blocked: number; providerErrors: number; verifiedActive?: number; verificationPending?: number} | null;
 }) {
   const strong = input.jobs.filter((job) => job.decision_classification === "strong_match").length;
-  const eligible = input.jobs.filter((job) => job.eligibility_status === "eligible").length + (input.reviewJobs?.length ?? 0);
+  const eligible = input.jobs.filter((job) => job.eligibility_status === "eligible").length + (input.reviewJobs?.filter((job) => job.eligibility_status === "eligible").length ?? 0);
   const unverified = input.searchStats?.pending ?? input.jobs.filter((job) => job.eligibility_status === "unverified").length;
   const greeting = input.name?.trim() ? `Hi ${esc(input.name.trim())}, ` : "";
   const saved = input.savedJobs.map((job) => savedCard(job, input.site)).join("");

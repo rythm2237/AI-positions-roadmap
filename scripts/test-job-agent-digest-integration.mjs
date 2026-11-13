@@ -71,3 +71,13 @@ test('Recently verified low-fit vacancy is only delivered once across daily dige
  assert.equal(run.ledger[0].summary.verifiedForReview,0);
  assert.deepEqual(run.ledger[0].summary.reviewJobIds,[]);
 });
+
+test('Verified vacancies with unresolved eligibility appear only in review', async () => {
+  const job = { ...good, role: 'Warehouse Flow Planner', status: 'discovered',
+    eligibility_status: 'unverified', recommendation: 'review', decision_classification: 'worth_reviewing' };
+  const run = await simulate([job]);
+  assert.equal(run.outcome.sent, 1);
+  assert.match(run.sent[0].html, /Warehouse Flow Planner/);
+  assert.match(run.sent[0].html, /Vacancy verified · Eligibility needs review/);
+  assert.doesNotMatch(run.sent[0].html, /Career Transition Opportunities/);
+});
