@@ -69,5 +69,5 @@ test("explicit sponsorship receives a positive ranking signal without penalizing
   assert.match(fit, /const sponsorship = job\.visaSponsorship === "available" \? 5 : 0/);
   assert.match(fit, /Visa\/work-permit sponsorship explicitly available/);
   assert.match(fit, /Unknown sponsorship is neutral and does not reduce the score/);
-  assert.match(fit, /career-fit-v2/);
+  assert.match(fit, /career-fit-v3/);
 });
