@@ -13,7 +13,7 @@ type DiagnosticRun = {
   unverified_count: number | null; blocked_count: number | null;
   recommended_count: number | null; provider_errors: number | null;
   diagnostic_category: string; providers: ProviderAttempt[] | null;
-  provider_summary?: {directEmployerAttempts?: { provider: string; country: string; query: string; status: string; records: number; errorCode?: string }[]; searchFunnel?: { verifiedActive?: number; verificationPending?: number; deferredByProcessingLimit?: number; processedCandidates?: number; processingLimit?: number; reasonCounts?: Record<string,number>; verificationErrorCounts?: Record<string,number> }} | null;
+  provider_summary?: {directEmployerAttempts?: { provider: string; country: string; query: string; status: string; records: number; errorCode?: string }[]; searchFunnel?: { queueActive?: boolean; resumedCandidates?: number; verifiedActive?: number; verificationPending?: number; deferredByProcessingLimit?: number; processedCandidates?: number; processingLimit?: number; reasonCounts?: Record<string,number>; verificationErrorCounts?: Record<string,number> }} | null;
 };
 const label: Record<string, string> = {
   partial_provider_failure: "Some providers failed — results incomplete",
@@ -66,6 +66,7 @@ export default async function JobSearchDiagnosticsPage() {
         {run.provider_summary?.searchFunnel ? <section className="mt-5 rounded-xl border border-amber-300/15 bg-amber-400/[.025] p-3">
           <h2 className="text-sm font-semibold">Eligibility &amp; verification breakdown</h2>
           <p className="mt-1 text-xs text-slate-400">Processed {count(run.provider_summary.searchFunnel.processedCandidates)} candidates (limit {count(run.provider_summary.searchFunnel.processingLimit)}). Deferred by cap: {count(run.provider_summary.searchFunnel.deferredByProcessingLimit)}. Each candidate may have more than one rejection/review reason.</p>
+          {run.provider_summary.searchFunnel.queueActive && <p className="mt-1 text-xs text-slate-400">Resumed from earlier searches: {count(run.provider_summary.searchFunnel.resumedCandidates)}. Ready candidates above the cap stay queued.</p>}
           {run.provider_summary.searchFunnel.verifiedActive !== undefined ? <p className="mt-2 text-xs text-slate-300">Verified active: {run.provider_summary.searchFunnel.verifiedActive} · Verification pending: {run.provider_summary.searchFunnel.verificationPending}</p> : null}
           <div className="mt-3 grid gap-3 sm:grid-cols-2">
             <div><p className="text-xs font-semibold">Eligibility reason codes</p>{Object.entries(run.provider_summary.searchFunnel.reasonCounts ?? {}).sort((a,b)=>b[1]-a[1]).map(([reason,total])=><div key={reason} className="flex justify-between gap-2 border-b border-white/5 py-1 text-xs"><span className="break-words text-slate-400">{reason}</span><span>{total}</span></div>)}</div>

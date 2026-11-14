@@ -66,3 +66,26 @@ test('27 Established operations track keeps its relevant experience depth', () =
  assert.equal(result.explanation.dimensions.experienceDepth, 8);
  assert.equal(result.explanation.career.status, 'eligible');
 });
+
+test('Production query budget reserves a specific operations automation search', () => {
+  const queries = planSearchQueries({
+    primaryTargetRole: 'AI Automation Specialist',
+    hard: { excludedRoles: [] },
+    soft: { secondaryRoles: ['SEO Specialist'], marketTitleVariants: ['Operation planner'], adjacentRoles: [] },
+  }, 6);
+  assert.equal(queries.length, 6);
+  assert.ok(queries.some(({query}) => query === 'Replenishment Automation Specialist'));
+  assert.ok(queries.some(({query}) => query === 'AI Automation Specialist'));
+});
+
+import { prioritizeJobCandidate } from "../src/lib/job-agent/candidateQueue.ts";
+test("Operational planning and junior AI outrank misleading title matches", () => {
+  const scope = { primaryTargetRole: "AI Automation Specialist", careerTracks: [
+    { domain: "operations", targetTitles: ["Operations Planner"], maximumSeniority: "specialist" },
+    { domain: "ai_automation", targetTitles: ["Junior AI Automation Specialist"], maximumSeniority: "associate" },
+  ] };
+  const rank = (title) => prioritizeJobCandidate({ title, source: "Direct:Example", descriptionComplete: true }, scope);
+  assert.ok(rank("Warehouse Operations & Capacity Planner") > rank("Psychological Operations Planner"));
+  assert.ok(rank("Junior AI Automation Specialist") > rank("AI Automation Architect"));
+  assert.ok(rank("Junior AI Automation Specialist") > rank("Electrical Design & Automation System Specialist"));
+});

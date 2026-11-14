@@ -9,6 +9,7 @@ import { redirect } from "next/navigation";
 import { requireUser } from "@/lib/auth/session";
 import { createClient } from "@/lib/supabase/server";
 import { assessFreshness, canonicalJobKey, safeExternalUrl } from "@/lib/job-agent/normalization";
+import { prioritizeJobCandidate } from "@/lib/job-agent/candidateQueue";
 import { selectCandidatesForVerification } from "@/lib/job-agent/verificationSelection";
 import { canonicalCountry } from "@/lib/job-agent/countryIdentity";
 import { configuredJobProviders, runProviderGateway } from "@/lib/job-agent/providers/gateway";
@@ -218,9 +219,25 @@ async function executeJobSearch(
   const learned = agent.learned_preferences_enabled === false ? [] : (await supabase.from("job_agent_learned_preferences").select("id,signal_type,signal_key,sample_size,active,value").eq("user_id",user.id).eq("active",true).returns<LearningSignal[]>()).data ?? [];
   const configuredLimit = Number(process.env.JOB_AGENT_PROCESSING_LIMIT ?? 80);
   const processingLimit = Number.isInteger(configuredLimit) && configuredLimit >= 1 && configuredLimit <= 120 ? configuredLimit : 80;
-  const candidatesDeferredByLimit = Math.max(0, gateway.jobs.length - processingLimit);
-  const processed = await Promise.all(selectCandidatesForVerification(gateway.jobs, processingLimit).map(async (candidate) => {
-    const verification = await verifyVacancy(candidate);
+  const queueUrl = process.env.SUPABASE_URL ?? process.env.NEXT_PUBLIC_SUPABASE_URL;
+  const queueKey = process.env.SUPABASE_SECRET_KEY ?? process.env.SUPABASE_SERVICE_KEY;
+  const queue = queueUrl && queueKey ? createServiceSupabaseClient(queueUrl, queueKey, {
+    auth: { persistSession: false, autoRefreshToken: false },
+  }) : null;
+  const queueScope = { p_agent_id: agent.id, p_run_id: searchRun.data.id, p_intent_version: intentRecord.version };
+  const claim = queue ? await queue.rpc("claim_job_candidates", {
+    ...queueScope,
+    p_candidates: gateway.jobs.filter((job) => !["expired", "stale"].includes(assessFreshness(job).status))
+      .map((candidate) => ({ candidate, priority: prioritizeJobCandidate(candidate, intent) })),
+    p_limit: processingLimit,
+  }) : null;
+  const claimed = claim?.data as { jobs: CanonicalJobCandidate[]; remaining: number } | null | undefined;
+  const candidates = claimed?.jobs ?? selectCandidatesForVerification(gateway.jobs, processingLimit);
+  const candidatesDeferredByLimit = claimed?.remaining ?? Math.max(0, gateway.jobs.length - processingLimit);
+  const evaluateCandidate = async (candidate: CanonicalJobCandidate) => {
+    const verification = assessFreshness(candidate).status === "expired"
+      ? { status: "unverified" as const, job: candidate, provenance: { method: "queue_expired" }, errorCode: null }
+      : await verifyVacancy(candidate);
     const verificationRejected = verificationRejectCodes.has(verification.errorCode ?? "");
     const verificationReason = verification.errorCode === "NOT_CANONICAL_VACANCY"
       ? "Source quality gate: not a canonical vacancy page"
@@ -243,8 +260,13 @@ async function executeJobSearch(
     const classification = freshness.status === "expired" ? "expired" as const : verificationRejected || eligibility.status === "blocked" ? "blocked" as const : effectiveEligibilityStatus === "unverified" ? "worth_reviewing" as const : fit?.classification ?? "stretch";
     const execution = determineExecutionCapability({ mode: agent.automation_mode, eligibility: effectiveEligibilityStatus, applicationUrl: job.applicationUrl, officialAutoSubmitConfigured: false, officialAssistedIntegration: false });
     const recommendation = classification === "strong_match" ? "strong" : classification === "good_match" ? "prepare" : classification === "blocked" || classification === "expired" ? "skip" : "review";
-    return { job, verification, verificationRejected, verificationReason, freshness, eligibility, effectiveEligibilityStatus, fit, classification, execution, recommendation };
-  }));
+    return { candidateKey: candidate.canonicalKey, job, verification, verificationRejected, verificationReason, freshness, eligibility, effectiveEligibilityStatus, fit, classification, execution, recommendation };
+  };
+  const processed: Awaited<ReturnType<typeof evaluateCandidate>>[] = [];
+  const verificationConcurrency = 40;
+  for (let offset = 0; offset < candidates.length; offset += verificationConcurrency) {
+    processed.push(...await Promise.all(candidates.slice(offset, offset + verificationConcurrency).map(evaluateCandidate)));
+  }
 
   const now = new Date().toISOString();
   const rows = processed.map(({ job, verification, verificationRejected, verificationReason, freshness, eligibility, effectiveEligibilityStatus, fit, classification, execution, recommendation }) => ({
@@ -310,6 +332,20 @@ async function executeJobSearch(
     inboxRows.length ? supabase.from("job_agent_inbox").upsert(inboxRows, { onConflict: "user_id,dedupe_key" }) : Promise.resolve({ error: null }),
   ]);
   const persistenceErrors = secondaryWrites.flatMap((result, index) => result.error ? [`${["sources", "verification", "fit", "inbox"][index]}:${result.error.code}`] : []);
+  if (claim?.error) persistenceErrors.push(`queue_claim:${claim.error.code}`);
+  if (queue && claimed && !persistenceErrors.length && processed.length) {
+    const finish = await queue.rpc("finish_job_candidates", {
+      ...queueScope,
+      p_results: processed.map((item) => ({
+        candidate_key: item.candidateKey,
+        retry: item.verification.status !== "verified" && !item.verificationRejected
+          && !["expired", "stale"].includes(item.freshness.status)
+          && item.eligibility.status !== "blocked",
+        reason: item.verification.errorCode ?? item.verification.status,
+      })),
+    });
+    if (finish.error) persistenceErrors.push(`queue_finish:${finish.error.code}`);
+  }
   if (persistenceErrors.length) console.error("Job Agent secondary persistence was partial", { correlationId, userId: user.id, errorCodes: persistenceErrors });
 
   const latestRunJobIds = secondaryWrites[0].error
@@ -322,7 +358,7 @@ async function executeJobSearch(
     }),
   );
   const { searched, eligible, unverified, blocked, expired, recommended } = runMetrics;
-  const status = allFailed ? "failed" : providerFailures.length || persistenceErrors.length ? "partial" : "completed";
+  const status = allFailed && !processed.length ? "failed" : providerFailures.length || persistenceErrors.length ? "partial" : "completed";
   const attemptsByStatus = Object.fromEntries([...new Set(gateway.attempts.map((attempt) => attempt.status))].map((attemptStatus) => [attemptStatus, gateway.attempts.filter((attempt) => attempt.status === attemptStatus).length]));
   const reasonCounts: Record<string, number> = {};
   const verificationErrorCounts: Record<string, number> = {};
@@ -336,9 +372,12 @@ async function executeJobSearch(
       verificationErrorCounts[code] = (verificationErrorCounts[code] ?? 0) + 1;
     }
   }
+  const discoveredCandidateKeys = new Set(gateway.jobs.map((job) => job.canonicalKey));
   const searchFunnel = {
     rawCandidates: gateway.jobs.length,
     processingLimit,
+    queueActive: Boolean(claimed),
+    resumedCandidates: candidates.filter((job) => !discoveredCandidateKeys.has(job.canonicalKey)).length,
     processedCandidates: processed.length,
     deferredByProcessingLimit: candidatesDeferredByLimit,
     eligible,

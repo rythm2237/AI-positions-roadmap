@@ -35,6 +35,12 @@ export function planSearchQueries(intent: NormalizedJobSearchIntent, limit = 8):
   // Reserve a query for each configured domain before title variants consume the budget.
   const domains=new Set<string>();
   const seeds=unique.filter(candidate=>{const domain=careerDomain(candidate.query);if(domains.has(domain)) return false;domains.add(domain);return true;});
-  const selected=[...seeds,...unique.filter(candidate=>!seeds.includes(candidate))].slice(0,Math.max(1,Math.min(limit,12)));
+  const operationsSeed = seeds.find((candidate) => careerDomain(candidate.query) === "operations");
+  const operationsVariant = operationsSeed && /^(?:operations?|flow) planner$/i.test(operationsSeed.query)
+    && { query: "Replenishment Automation Specialist", origin: "market_variant" as const, priority: 104 };
+  const reserved = operationsVariant && !seen.has(normalize(operationsVariant.query))
+    && !intent.hard.excludedRoles.some((excluded) => normalize(operationsVariant.query).includes(normalize(excluded)))
+    ? [...seeds, operationsVariant] : seeds;
+  const selected=[...reserved,...unique.filter(candidate=>!seeds.includes(candidate))].slice(0,Math.max(1,Math.min(limit,12)));
   return selected.sort((a,b)=>b.priority-a.priority);
 }

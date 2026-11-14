@@ -139,7 +139,7 @@ export async function sendDueDailyJobDigests(now = new Date()) {
       deduplicated_count: number | null;
       unverified_count: number | null;
       blocked_count: number | null;
-      provider_summary: {attemptsByStatus?: Record<string,number>; searchFunnel?: { verifiedActive?: number; verificationPending?: number }} | null;
+      provider_summary: {attemptsByStatus?: Record<string,number>; searchFunnel?: { verifiedActive?: number; verificationPending?: number; queueActive?: boolean; deferredByProcessingLimit?: number }} | null;
     }>>(`job_search_runs?agent_id=eq.${agent.id}&started_at=gt.${encodeURIComponent(since)}&started_at=lte.${encodeURIComponent(now.toISOString())}&status=in.(completed,partial)&select=provider_records,deduplicated_count,unverified_count,blocked_count,provider_summary&order=started_at.desc&limit=1`);
     const latestRun = latestRuns[0] ?? null;
     const searchStats = latestRun ? {
@@ -148,6 +148,7 @@ export async function sendDueDailyJobDigests(now = new Date()) {
       pending: latestRun.unverified_count ?? 0,
       blocked: latestRun.blocked_count ?? 0,
       providerErrors: ["provider_error", "rate_limit", "auth_failure", "invalid_query"].reduce((total, status) => total + (latestRun.provider_summary?.attemptsByStatus?.[status] ?? 0), 0),
+      deferred: latestRun.provider_summary?.searchFunnel?.queueActive ? latestRun.provider_summary.searchFunnel.deferredByProcessingLimit : undefined,
       verifiedActive: latestRun.provider_summary?.searchFunnel?.verifiedActive,
       verificationPending: latestRun.provider_summary?.searchFunnel?.verificationPending,
     } : null;
