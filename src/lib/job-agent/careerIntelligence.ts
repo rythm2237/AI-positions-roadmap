@@ -60,7 +60,9 @@ export function classifyJob(job: Pick<CanonicalJobCandidate,'title'|'description
   }
   const mandatoryYears = Math.max(0,...years.filter(x=>!x.preferred).map(x=>x.minimum));
   if (mandatoryYears>=5 && (levelRank(seniority) ?? 0)<4) {seniority='senior'; evidence.push(...years.filter(x=>!x.preferred).map(x=>x.evidence));}
-  if (architectureOwnership && (levelRank(seniority) ?? 0)<4) {seniority='senior';evidence.push('Enterprise architecture ownership');}
+  const architectExperienceRequired = /\b(?:solution|cloud|ai|enterprise|technical|software) architect\b/i.test(t)
+    && /\b(?:prior|proven|professional|demonstrated) experience (?:as|in) (?:an? )?(?:[\w-]+ ){0,3}architect\b|\bexperience in an architect role\b/i.test(job.description.replace(/&#(?:xa0|160);|&nbsp;/gi, " "));
+  if ((architectureOwnership || architectExperienceRequired) && (levelRank(seniority) ?? 0)<4) {seniority='senior';evidence.push(architectureOwnership ? 'Enterprise architecture ownership' : 'Description requires prior architect experience');}
   if(seniority==='unknown' && job.seniority && levelRank(job.seniority)!==null) {
     const normalized=job.seniority.toLowerCase();
     seniority=LEVELS.find(l=>normalized.includes(l)) ?? 'unknown'; evidence.push(`Provider: ${job.seniority}`);

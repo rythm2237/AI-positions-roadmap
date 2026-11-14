@@ -55,7 +55,7 @@ test('26 Documented project values earn transferable credit without becoming emp
  const project = {id: 'project-1', evidenceType: 'project_implementation', label: 'Project evidence 1', value: 'Built approval workflows using Power Automate', durationMonths: 60, sourceType: 'profile', confidence: .85, provenance: {}};
  const baseline = calculateEvidenceGroundedFit(candidateJob, scoringIntent, []);
  const matched = calculateEvidenceGroundedFit(candidateJob, scoringIntent, [project]);
- assert.equal(matched.explanation.scoringVersion, 'career-fit-v2');
+ assert.equal(matched.explanation.scoringVersion, 'career-fit-v3');
  assert.ok(matched.explanation.dimensions.requiredSkills > baseline.explanation.dimensions.requiredSkills);
  assert.deepEqual(matched.explanation.transferableEvidence.map(item => item.evidenceId), ['project-1']);
  assert.equal(matched.explanation.dimensions.experienceDepth, 0);
@@ -95,4 +95,8 @@ test("Forecast Analyst uses explicit supply-chain responsibilities for career ro
   assert.equal(evaluateCareerEligibility(vacancy, intent, []).analysis.domain, "operations");
   const financial = job("Forecast Analyst", "Forecast interest rates and equity returns.");
   assert.equal(evaluateCareerEligibility(financial, intent, []).analysis.domain, "unknown");
+});
+
+test("AI Solution Architect requiring previous work as an architect exceeds an associate track", () => {
+  assert.equal(check("AI Solution Architect – AI & Automation platform", "Required qualifications: Experience&#xa0;in&#xa0;an&#xa0;architect role, especially in Cloud environments.").status, "blocked");
 });

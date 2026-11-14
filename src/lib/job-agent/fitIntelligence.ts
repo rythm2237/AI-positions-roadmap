@@ -1,3 +1,4 @@
+import { canonicalCountry } from "./countryIdentity.ts";
 import { evaluateCareerEligibility } from "./careerIntelligence.ts";
 import type { CanonicalJobCandidate } from "./contracts.ts";
 import type { CareerEvidenceItem, FitConfidence, FitExplanation, JobClassification, NormalizedJobSearchIntent } from "../../types/jobAgent.ts";
@@ -8,7 +9,7 @@ const normalize = (value: string) => value.toLowerCase().replace(/[^a-z0-9+#.]+/
 const stem = (value: string) => value.replace(/(?:ing|ed|es|s)$/i, "");
 const tokens = (value: string) => new Set(normalize(value).split(" ").filter((part) => part.length > 2).map(stem));
 const overlapRatio = (a: string, b: string) => { const left = tokens(a); const right = tokens(b); if (!left.size || !right.size) return 0; return [...left].filter((part) => right.has(part)).length / Math.max(left.size, right.size); };
-export const FIT_SCORING_VERSION = "career-fit-v2";
+export const FIT_SCORING_VERSION = "career-fit-v3";
 const phraseIn = (phrase: string, text: string) => phrase.length > 1 && ` ${text} `.includes(` ${phrase} `);
 const demonstratedTypes = new Set(["work_implementation", "project_implementation", "quantified_achievement", "portfolio_artifact"]);
 
@@ -61,7 +62,11 @@ export function calculateEvidenceGroundedFit(job: CanonicalJobCandidate, intent:
   const seniority = career.status === "eligible" ? 4 : 0;
   const industry = intent.soft.targetIndustries.some((item) => body.includes(normalize(item))) ? 5 : intent.soft.targetIndustries.length ? 1 : 3;
   const languages = job.requiredLanguages.length ? (job.requiredLanguages.every((language) => evidence.some((item) => item.evidenceType === "language" && normalize(item.label).includes(normalize(language)))) ? 5 : 0) : 3;
-  const geography = intent.hard.countries.some((country) => normalize(job.country ?? job.location ?? "").includes(normalize(country))) ? 5 : 2;
+  const vacancyCountry = canonicalCountry(job.country);
+  const geography = intent.hard.countries.some((country) => {
+    const target = canonicalCountry(country);
+    return target && (vacancyCountry ? vacancyCountry === target : phraseIn(target, normalize(job.location ?? "")));
+  }) ? 5 : 2;
   const workplace = intent.hard.workplaceModels.includes(job.workplaceModel) ? 3 : job.workplaceModel === "unknown" ? 1 : 0;
   const salary = job.salaryMax !== null && intent.hard.salary.minimum !== null && job.currency === intent.hard.salary.currency ? (job.salaryMax >= intent.hard.salary.minimum ? 3 : 0) : 1;
   const trajectory = career.track?.transition && career.track.flexibility === "strict" ? 0 : roleSimilarity >= 0.5 && demonstratedMatches.length ? 4 : 1;
