@@ -96,3 +96,7 @@ test("Forecast Analyst uses explicit supply-chain responsibilities for career ro
   const financial = job("Forecast Analyst", "Forecast interest rates and equity returns.");
   assert.equal(evaluateCareerEligibility(financial, intent, []).analysis.domain, "unknown");
 });
+
+test("AI Solution Architect requiring previous work as an architect exceeds an associate track", () => {
+  assert.equal(check("AI Solution Architect – AI & Automation platform", "Required qualifications: Experience&#xa0;in&#xa0;an&#xa0;architect role, especially in Cloud environments.").status, "blocked");
+});
