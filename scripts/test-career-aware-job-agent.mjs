@@ -89,3 +89,10 @@ test("Operational planning and junior AI outrank misleading title matches", () =
   assert.ok(rank("Junior AI Automation Specialist") > rank("AI Automation Architect"));
   assert.ok(rank("Junior AI Automation Specialist") > rank("Electrical Design & Automation System Specialist"));
 });
+
+test("Forecast Analyst uses explicit supply-chain responsibilities for career routing", () => {
+  const vacancy = job("Forecast Analyst (24 Months FTC)", "Own product forecasting. Work with retail, planning and supply chain to align forecasts with operational priorities.");
+  assert.equal(evaluateCareerEligibility(vacancy, intent, []).analysis.domain, "operations");
+  const financial = job("Forecast Analyst", "Forecast interest rates and equity returns.");
+  assert.equal(evaluateCareerEligibility(financial, intent, []).analysis.domain, "unknown");
+});
