@@ -51,7 +51,7 @@ test('Verified eligible lower-score roles appear only in separately labelled rev
  assert.equal(run.outcome.sent,1);
  assert.match(run.sent[0].subject,/2 verified opportunities to review/);
  assert.match(run.sent[0].html,/Verified opportunities worth reviewing/);
- assert.match(run.sent[0].html,/Below your recommended-fit threshold/);
+ assert.match(run.sent[0].html,/fit is below your recommendation threshold/);
  assert.match(run.sent[0].html,/AI Automation Specialist/);
  assert.match(run.sent[0].html,/Digital Solutions &amp; AI Automation Specialist/);
  assert.doesNotMatch(run.sent[0].html,/Blocked Analyst|Unverified Analyst|Weak Analyst/);
@@ -70,4 +70,14 @@ test('Recently verified low-fit vacancy is only delivered once across daily dige
  assert.doesNotMatch(run.sent[0].html,/Verified opportunities worth reviewing/);
  assert.equal(run.ledger[0].summary.verifiedForReview,0);
  assert.deepEqual(run.ledger[0].summary.reviewJobIds,[]);
+});
+
+test('Verified vacancies with unresolved eligibility appear only in review', async () => {
+  const job = { ...good, role: 'Warehouse Flow Planner', status: 'discovered',
+    eligibility_status: 'unverified', recommendation: 'review', decision_classification: 'worth_reviewing' };
+  const run = await simulate([job]);
+  assert.equal(run.outcome.sent, 1);
+  assert.match(run.sent[0].html, /Warehouse Flow Planner/);
+  assert.match(run.sent[0].html, /Vacancy verified · Eligibility needs review/);
+  assert.doesNotMatch(run.sent[0].html, /Career Transition Opportunities/);
 });

@@ -66,3 +66,14 @@ test('27 Established operations track keeps its relevant experience depth', () =
  assert.equal(result.explanation.dimensions.experienceDepth, 8);
  assert.equal(result.explanation.career.status, 'eligible');
 });
+
+test('Production query budget reserves a specific operations automation search', () => {
+  const queries = planSearchQueries({
+    primaryTargetRole: 'AI Automation Specialist',
+    hard: { excludedRoles: [] },
+    soft: { secondaryRoles: ['SEO Specialist'], marketTitleVariants: ['Operation planner'], adjacentRoles: [] },
+  }, 6);
+  assert.equal(queries.length, 6);
+  assert.ok(queries.some(({query}) => query === 'Replenishment Automation Specialist'));
+  assert.ok(queries.some(({query}) => query === 'AI Automation Specialist'));
+});
