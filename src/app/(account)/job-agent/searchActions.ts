@@ -19,7 +19,7 @@ import { loadUnifiedEvidence } from "@/lib/job-agent/unifiedEvidence";
 import { verifyVacancy } from "@/lib/job-agent/vacancyVerification";
 import { enrichRequirements } from "@/lib/job-agent/requirements";
 import { evaluateHardEligibility } from "@/lib/job-agent/hardEligibility";
-import { calculateEvidenceGroundedFit } from "@/lib/job-agent/fitIntelligence";
+import { calculateEvidenceGroundedFit, FIT_SCORING_VERSION } from "@/lib/job-agent/fitIntelligence";
 import { determineExecutionCapability } from "@/lib/job-agent/execution";
 import { preserveOpportunityConflictUrls } from "@/lib/job-agent/persistence";
 import { summarizeCanonicalSearchRun } from "@/lib/job-agent/searchRunMetrics";
@@ -228,7 +228,7 @@ async function executeJobSearch(
   const claim = queue ? await queue.rpc("claim_job_candidates", {
     ...queueScope,
     p_candidates: gateway.jobs.filter((job) => !["expired", "stale"].includes(assessFreshness(job).status))
-      .map((candidate) => ({ candidate, priority: prioritizeJobCandidate(candidate, intent) })),
+      .map((candidate) => ({ candidate, priority: prioritizeJobCandidate(candidate, intent), evaluation_version: FIT_SCORING_VERSION })),
     p_limit: processingLimit,
   }) : null;
   const claimed = claim?.data as { jobs: CanonicalJobCandidate[]; remaining: number; resumed?: number } | null | undefined;
