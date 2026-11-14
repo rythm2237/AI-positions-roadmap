@@ -43,7 +43,7 @@ function demonstratedEvidenceMatches(item: CareerEvidenceItem, body: string, vac
 }
 
 export function calculateEvidenceGroundedFit(job: CanonicalJobCandidate, intent: NormalizedJobSearchIntent, evidence: CareerEvidenceItem[], weights: Partial<typeof FIT_WEIGHTS> = {}): EvidenceGroundedFit {
-  const targets = [intent.primaryTargetRole, ...intent.soft.marketTitleVariants, ...intent.soft.secondaryRoles, ...intent.soft.adjacentRoles];
+  const targets = [intent.primaryTargetRole, ...intent.soft.marketTitleVariants, ...intent.soft.secondaryRoles, ...intent.soft.adjacentRoles, ...(intent.careerTracks ?? []).flatMap((track) => track.targetTitles).filter((title) => normalize(title).length > 0)];
   const roleSimilarity = Math.max(0, ...targets.map((target) => overlapRatio(job.title, target)));
   const titleExact = targets.some((target) => normalize(job.title).includes(normalize(target)) || normalize(target).includes(normalize(job.title)));
   const role = titleExact ? 25 : Math.round(roleSimilarity * 18);

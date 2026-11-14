@@ -231,7 +231,7 @@ async function executeJobSearch(
       .map((candidate) => ({ candidate, priority: prioritizeJobCandidate(candidate, intent) })),
     p_limit: processingLimit,
   }) : null;
-  const claimed = claim?.data as { jobs: CanonicalJobCandidate[]; remaining: number } | null | undefined;
+  const claimed = claim?.data as { jobs: CanonicalJobCandidate[]; remaining: number; resumed?: number } | null | undefined;
   const candidates = claimed?.jobs ?? selectCandidatesForVerification(gateway.jobs, processingLimit);
   const candidatesDeferredByLimit = claimed?.remaining ?? Math.max(0, gateway.jobs.length - processingLimit);
   const evaluateCandidate = async (candidate: CanonicalJobCandidate) => {
@@ -372,12 +372,11 @@ async function executeJobSearch(
       verificationErrorCounts[code] = (verificationErrorCounts[code] ?? 0) + 1;
     }
   }
-  const discoveredCandidateKeys = new Set(gateway.jobs.map((job) => job.canonicalKey));
   const searchFunnel = {
     rawCandidates: gateway.jobs.length,
     processingLimit,
     queueActive: Boolean(claimed),
-    resumedCandidates: candidates.filter((job) => !discoveredCandidateKeys.has(job.canonicalKey)).length,
+    resumedCandidates: claimed?.resumed,
     processedCandidates: processed.length,
     deferredByProcessingLimit: candidatesDeferredByLimit,
     eligible,

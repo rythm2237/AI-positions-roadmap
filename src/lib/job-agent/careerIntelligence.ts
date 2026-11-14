@@ -65,7 +65,11 @@ export function classifyJob(job: Pick<CanonicalJobCandidate,'title'|'description
     const normalized=job.seniority.toLowerCase();
     seniority=LEVELS.find(l=>normalized.includes(l)) ?? 'unknown'; evidence.push(`Provider: ${job.seniority}`);
   }
-  return {seniority,domain:careerDomain(t),years,mandatoryYears,peopleManagement,architectureOwnership,
+  const titleDomain = careerDomain(t);
+  const planningTitle = /\b(?:forecast|demand|inventory|capacity|transport network)\s+(?:analyst|planning|planner)\b/i.test(t);
+  const supplyChainContext = /\b(?:supply chain|replenishment|inventory planning|warehouse|logistics|transport network)\b/i.test(job.description);
+  const domain = (titleDomain === 'unknown' || titleDomain === 'data') && planningTitle && supplyChainContext ? 'operations' : titleDomain;
+  return {seniority,domain,years,mandatoryYears,peopleManagement,architectureOwnership,
     confidence: seniority!=='unknown' && job.descriptionComplete ? 'high' : 'low',evidence};
 }
 export function inferCareerTracks(intent: NormalizedJobSearchIntent, evidence: CareerEvidenceItem[]): CareerTrack[] {
