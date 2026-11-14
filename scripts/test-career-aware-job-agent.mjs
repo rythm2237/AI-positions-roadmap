@@ -55,7 +55,7 @@ test('26 Documented project values earn transferable credit without becoming emp
  const project = {id: 'project-1', evidenceType: 'project_implementation', label: 'Project evidence 1', value: 'Built approval workflows using Power Automate', durationMonths: 60, sourceType: 'profile', confidence: .85, provenance: {}};
  const baseline = calculateEvidenceGroundedFit(candidateJob, scoringIntent, []);
  const matched = calculateEvidenceGroundedFit(candidateJob, scoringIntent, [project]);
- assert.equal(matched.explanation.scoringVersion, 'career-fit-v2');
+ assert.equal(matched.explanation.scoringVersion, 'career-fit-v3');
  assert.ok(matched.explanation.dimensions.requiredSkills > baseline.explanation.dimensions.requiredSkills);
  assert.deepEqual(matched.explanation.transferableEvidence.map(item => item.evidenceId), ['project-1']);
  assert.equal(matched.explanation.dimensions.experienceDepth, 0);
