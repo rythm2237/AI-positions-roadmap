@@ -55,7 +55,7 @@ test('26 Documented project values earn transferable credit without becoming emp
  const project = {id: 'project-1', evidenceType: 'project_implementation', label: 'Project evidence 1', value: 'Built approval workflows using Power Automate', durationMonths: 60, sourceType: 'profile', confidence: .85, provenance: {}};
  const baseline = calculateEvidenceGroundedFit(candidateJob, scoringIntent, []);
  const matched = calculateEvidenceGroundedFit(candidateJob, scoringIntent, [project]);
- assert.equal(matched.explanation.scoringVersion, 'career-fit-v3');
+ assert.equal(matched.explanation.scoringVersion, 'career-fit-v4');
  assert.ok(matched.explanation.dimensions.requiredSkills > baseline.explanation.dimensions.requiredSkills);
  assert.deepEqual(matched.explanation.transferableEvidence.map(item => item.evidenceId), ['project-1']);
  assert.equal(matched.explanation.dimensions.experienceDepth, 0);
@@ -99,4 +99,74 @@ test("Forecast Analyst uses explicit supply-chain responsibilities for career ro
 
 test("AI Solution Architect requiring previous work as an architect exceeds an associate track", () => {
   assert.equal(check("AI Solution Architect – AI & Automation platform", "Required qualifications: Experience&#xa0;in&#xa0;an&#xa0;architect role, especially in Cloud environments.").status, "blocked");
+});
+
+test('Stored production-style search tracks get specific operations and junior transition queries', () => {
+  const queries = planSearchQueries({
+    ...intent,
+    hard: { excludedRoles: [] },
+    careerTracks: [
+      { ...track('ai_automation', null), targetTitles: ['AI Automation Specialist', 'AI Solutions Consultant', 'Power Platform Consultant'] },
+      { ...track('operations', null, 'specialist'), targetTitles: ['Operation planner', 'Flow planner'] },
+      { ...track('marketing', null), targetTitles: ['SEO & GEO specialist'], transition: true },
+    ],
+  }, 6).map(({ query }) => query);
+  for (const query of ['Operation planner', 'Supply Chain Planner', 'Replenishment Automation Specialist', 'Junior AI Automation Specialist', 'SEO & GEO specialist']) {
+    assert.ok(queries.includes(query), query);
+  }
+});
+
+test('A complete operational planner posting can pass without a seniority label; a managerial posting cannot', () => {
+  assert.equal(check('Supply Chain Planner', 'Coordinate inventory and replenishment across the distribution network.').status, 'eligible');
+  assert.equal(check('Supply Chain Planner', '', { descriptionComplete: false }).status, 'unverified');
+  assert.equal(check('Warehouse Operations Manager', 'Coordinate inventory and replenishment.').status, 'blocked');
+  assert.equal(check('AI Engineer', 'Implement AI workflows.').status, 'unverified');
+});
+
+test('Verified wording recovers working hours without matching skill names inside other words', () => {
+  const result = enrichRequirements(job('Junior AI Specialist - Vollzeit', 'Qualifications:\nExperience in digital transformation and GitHub. Experience with LLMs.', { employmentTypes: [] }), []);
+  assert.deepEqual(result.employmentTypes, ['full_time']);
+  assert.ok(result.requiredSkills.includes('GitHub'));
+  assert.ok(result.requiredSkills.includes('LLM'));
+  assert.ok(!result.requiredSkills.includes('Git'));
+});
+
+test('Confirmed track with missing duration uses same-domain dated professional evidence only', () => {
+  const scope = { ...intent, careerTracks: [track('operations', null, 'specialist')] };
+  const evidence = [
+    { evidenceType: 'role_history', value: 'Fulfilment Flow Planner', durationMonths: 48, provenance: {} },
+    { evidenceType: 'role_history', value: 'Operations professional', durationMonths: 120, provenance: { scope: 'total_experience' } },
+    { evidenceType: 'project_implementation', value: 'Logistics', durationMonths: 120, provenance: {} },
+  ];
+  assert.equal(inferCareerTracks(scope, evidence)[0].directYears, 4);
+});
+
+import { evidenceFromCareerKnowledge } from '../src/lib/job-agent/evidence.ts';
+test('Imported employment dates become track evidence and project durations do not', () => {
+  const entities = [
+    {id:'ops',kind:'experience',label:'Replenishment coworker'},
+    {id:'ai',kind:'projects',label:'Personal AI project',metadata:{status:'production',startDate:'2020-01',isCurrent:true}},
+  ];
+  const claims = [
+    {id:'work',entityId:'ops',confirmed:true,anchor:true,original:'Replenishment coworker — Feb 2022 (3 years)'},
+    {id:'project',entityId:'ai',confirmed:true,original:'Built AI automation for testing'},
+  ];
+  const evidence = evidenceFromCareerKnowledge('profile', { entities, claims, declined:[] });
+  assert.equal(evidence.find(item=>item.evidenceType==='role_history').durationMonths,36);
+  assert.equal(evidence.find(item=>item.evidenceType==='project_implementation').durationMonths,null);
+  assert.equal(inferCareerTracks({...intent,careerTracks:[track('operations',null,'specialist')]},evidence)[0].directYears,3);
+});
+
+test('The same operational titles guide discovery, queue ranking and fit assessment', () => {
+  const scope = {
+    ...scoringIntent,
+    careerTracks: [{ ...track('operations', 3, 'specialist'), targetTitles: ['Operation planner'] }],
+  };
+  const vacancy = job('Supply Chain Planner', 'Coordinate warehouse inventory, replenishment and material flow.');
+  const result = calculateEvidenceGroundedFit(vacancy, scope, []);
+  assert.equal(result.explanation.dimensions.roleRelevance, 25);
+  assert.equal(result.explanation.dimensions.experienceDepth, 6);
+  assert.equal(result.explanation.career.status, 'eligible');
+  assert.ok(prioritizeJobCandidate({ ...vacancy, source: 'Direct:Example' }, scope)
+    > prioritizeJobCandidate(job('People Operations Manager', '', { source: 'Direct:Example' }), scope));
 });

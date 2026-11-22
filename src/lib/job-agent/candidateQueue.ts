@@ -1,13 +1,15 @@
-import { careerDomain, levelRank } from "./careerIntelligence.ts";
+import { operationalPlanningVariants } from "./searchStrategy.ts";
+import { classifyJob, levelRank } from "./careerIntelligence.ts";
 import type { CanonicalJobCandidate } from "./contracts.ts";
 import { assessFreshness, normalizeJobText } from "./normalization.ts";
 import type { NormalizedJobSearchIntent } from "../../types/jobAgent.ts";
 
 export function prioritizeJobCandidate(job: CanonicalJobCandidate, intent: NormalizedJobSearchIntent) {
   const title = normalizeJobText(job.title);
-  const domain = careerDomain(title);
+  const domain = classifyJob({ ...job, description: job.description ?? "" }).domain;
   const matchingTracks = (intent.careerTracks ?? []).filter((track) => track.domain === domain);
   const targets = [intent.primaryTargetRole, ...(intent.careerTracks ?? []).flatMap((track) => track.targetTitles)];
+  if (domain === "operations") targets.push(...operationalPlanningVariants(targets));
   const titleWords = new Set(title.split(" "));
   const overlap = Math.max(0, ...targets.map((target) => {
     const words = normalizeJobText(target).split(" ").filter((word) => word.length > 2);

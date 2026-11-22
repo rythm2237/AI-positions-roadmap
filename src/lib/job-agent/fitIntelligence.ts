@@ -1,3 +1,4 @@
+import { operationalPlanningVariants } from "./searchStrategy.ts";
 import { canonicalCountry } from "./countryIdentity.ts";
 import { evaluateCareerEligibility } from "./careerIntelligence.ts";
 import type { CanonicalJobCandidate } from "./contracts.ts";
@@ -9,7 +10,7 @@ const normalize = (value: string) => value.toLowerCase().replace(/[^a-z0-9+#.]+/
 const stem = (value: string) => value.replace(/(?:ing|ed|es|s)$/i, "");
 const tokens = (value: string) => new Set(normalize(value).split(" ").filter((part) => part.length > 2).map(stem));
 const overlapRatio = (a: string, b: string) => { const left = tokens(a); const right = tokens(b); if (!left.size || !right.size) return 0; return [...left].filter((part) => right.has(part)).length / Math.max(left.size, right.size); };
-export const FIT_SCORING_VERSION = "career-fit-v3";
+export const FIT_SCORING_VERSION = "career-fit-v4";
 const phraseIn = (phrase: string, text: string) => phrase.length > 1 && ` ${text} `.includes(` ${phrase} `);
 const demonstratedTypes = new Set(["work_implementation", "project_implementation", "quantified_achievement", "portfolio_artifact"]);
 
@@ -45,8 +46,14 @@ function demonstratedEvidenceMatches(item: CareerEvidenceItem, body: string, vac
 
 export function calculateEvidenceGroundedFit(job: CanonicalJobCandidate, intent: NormalizedJobSearchIntent, evidence: CareerEvidenceItem[], weights: Partial<typeof FIT_WEIGHTS> = {}): EvidenceGroundedFit {
   const targets = [intent.primaryTargetRole, ...intent.soft.marketTitleVariants, ...intent.soft.secondaryRoles, ...intent.soft.adjacentRoles, ...(intent.careerTracks ?? []).flatMap((track) => track.targetTitles).filter((title) => normalize(title).length > 0)];
+  const career = evaluateCareerEligibility(job, intent, evidence);
+  if (career.track?.domain === "operations") targets.push(...operationalPlanningVariants(career.track.targetTitles));
   const roleSimilarity = Math.max(0, ...targets.map((target) => overlapRatio(job.title, target)));
-  const titleExact = targets.some((target) => normalize(job.title).includes(normalize(target)) || normalize(target).includes(normalize(job.title)));
+  const normalizedTitle = normalize(job.title);
+  const titleExact = targets.some((target) => {
+    const normalizedTarget = normalize(target);
+    return phraseIn(normalizedTarget, normalizedTitle) || phraseIn(normalizedTitle, normalizedTarget);
+  });
   const role = titleExact ? 25 : Math.round(roleSimilarity * 18);
   const requiredMatches = job.requiredSkills.map((skill) => ({ skill, evidence: skillMatch(skill, evidence) }));
   const preferredMatches = job.preferredSkills.map((skill) => ({ skill, evidence: skillMatch(skill, evidence) }));
@@ -57,11 +64,10 @@ export function calculateEvidenceGroundedFit(job: CanonicalJobCandidate, intent:
   const demonstratedScore = Math.min(20, demonstratedMatches.reduce((sum, item) => sum + (item.evidenceType === "quantified_achievement" ? 6 : 4), 0));
   const requiredScore = job.requiredSkills.length ? Math.round(requiredMatches.reduce((sum, match) => sum + skillEvidenceWeight(match.evidence), 0) / job.requiredSkills.length * 10) : 5;
   const preferredScore = job.preferredSkills.length ? Math.round(preferredMatches.reduce((sum, match) => sum + skillEvidenceWeight(match.evidence), 0) / job.preferredSkills.length * 5) : 3;
-  const career = evaluateCareerEligibility(job, intent, evidence);
   const experience = career.track?.directYears ? Math.min(10, Math.round(career.track.directYears * 2)) : 0;
   const seniority = career.status === "eligible" ? 4 : 0;
   const industry = intent.soft.targetIndustries.some((item) => body.includes(normalize(item))) ? 5 : intent.soft.targetIndustries.length ? 1 : 3;
-  const languages = job.requiredLanguages.length ? (job.requiredLanguages.every((language) => evidence.some((item) => item.evidenceType === "language" && normalize(item.label).includes(normalize(language)))) ? 5 : 0) : 3;
+  const languages = job.requiredLanguages.length ? (job.requiredLanguages.every((language) => evidence.some((item) => item.evidenceType === "language" && normalize(item.label).includes(normalize(language))) || intent.hard.languages?.some(known => phraseIn(normalize(language), normalize(known)))) ? 5 : 0) : 3;
   const vacancyCountry = canonicalCountry(job.country);
   const geography = intent.hard.countries.some((country) => {
     const target = canonicalCountry(country);

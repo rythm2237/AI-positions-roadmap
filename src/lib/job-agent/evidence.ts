@@ -98,11 +98,27 @@ export function evidenceFromCvAnalyzer(input: { sourceId: string; skills: string
  * Never promote self-reported skills or project ideas into verified work.
  * Provenance permits retracting facts without continuing to recommend on stale evidence.
  */
+function explicitRoleDuration(value: string, metadata: Record<string, unknown> | undefined, now: Date) {
+  const monthIndex = (input: unknown) => {
+    if (typeof input !== "string") return null;
+    const date = input.match(/^(\d{4})-(0[1-9]|1[0-2])(?:-\d{2})?$/);
+    return date ? Number(date[1]) * 12 + Number(date[2]) - 1 : null;
+  };
+  const start = monthIndex(metadata?.startDate);
+  const end = metadata?.isCurrent === true ? now.getUTCFullYear() * 12 + now.getUTCMonth() : monthIndex(metadata?.endDate);
+  if (start !== null && end !== null && end >= start && end - start <= 720) return end - start;
+
+  // Imported experience headers can contain the date and its explicit duration.
+  const written = value.match(/\b(?:Jan(?:uary)?|Feb(?:ruary)?|Mar(?:ch)?|Apr(?:il)?|May|Jun(?:e)?|Jul(?:y)?|Aug(?:ust)?|Sep(?:tember)?|Oct(?:ober)?|Nov(?:ember)?|Dec(?:ember)?)\s+\d{4}(?:\s*[-–]\s*Present)?\s*\(\s*(?:(\d{1,2})\s+years?)?(?:\s*(\d{1,2})\s+months?)?\s*\)/i);
+  const months = Number(written?.[1] ?? 0) * 12 + Number(written?.[2] ?? 0);
+  return months > 0 && months <= 720 ? months : null;
+}
+
 export function evidenceFromCareerKnowledge(profileId: string, knowledge: {
   claims: Array<{id:string; entityId:string; sourceId?:string; sourceType?:string; original:string; confirmed?:boolean; retracted?:boolean; verification?:string; anchor?:boolean}>;
   entities: Array<{id:string;kind:string;label:string;metadata?:Record<string,unknown>}>;
   declined: string[];
-}): CareerEvidenceItem[] {
+}, now = new Date()): CareerEvidenceItem[] {
   const entities = new Map(knowledge.entities.map((e) => [e.id, e]));
   const declined = new Set(knowledge.declined);
   const results: CareerEvidenceItem[] = [];
@@ -124,7 +140,10 @@ export function evidenceFromCareerKnowledge(profileId: string, knowledge: {
     const confidence = confirmed ? 0.76 : 0.56;
     const title = (entity.label || kind) + " — " + claim.original.slice(0, 72);
     const value = claim.original.slice(0, 700);
-    results.push(item("profile", profileId, evidenceType, title, value, confidence, null,
+    const duration = evidenceType === "role_history"
+      ? explicitRoleDuration(value, claim.anchor || confirmed ? entity.metadata : undefined, now)
+      : null;
+    results.push(item("profile", profileId, evidenceType, title, value, confidence, duration,
       { candidateKnowledge: true, claimId: claim.id, sourceId: claim.sourceId, section: kind,
         userConfirmed: confirmed, independentlyVerified: false, metadata: entity.metadata || {} }));
   }

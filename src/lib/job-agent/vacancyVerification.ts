@@ -269,7 +269,8 @@ export async function verifyVacancy(job: CanonicalJobCandidate): Promise<Vacancy
       const isOfficialIkea = job.source === "Direct:IKEA" && new URL(finalUrl).hostname === "jobs.ikea.com";
       const company = isOfficialIkea && /^(?:ingka|inter) external$/i.test(organization ?? "") ? job.company : organization ?? job.company;
       const verifiedLocation = locationFromPosting(posting.jobLocation);
-      const description = stringValue(posting.description) ?? (pageText.length >= 300 ? pageText.slice(0, 120_000) : job.description);
+      const postingDescription = stringValue(posting.description);
+      const description = postingDescription ? textFromHtml(postingDescription) : (pageText.length >= 300 ? pageText.slice(0, 120_000) : job.description);
       const postingUrl = stringValue(posting.url);
       const applicationUrl = safeExternalUrl(postingUrl ?? finalUrl) ?? job.applicationUrl;
       const verifiedEmploymentTypes = employmentTypes(posting.employmentType);
