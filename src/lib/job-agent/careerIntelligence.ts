@@ -3,7 +3,7 @@ import type { CanonicalJobCandidate } from './contracts.ts';
 
 export const CAREER_GATE_VERSION = 'career-gate-v1';
 export const DOMAINS = {
-  operations: /\b(fulfil[l]?ment|replenishment|warehouse|logistics|supply chain|stock flow|flow planner|operations|operations specialist|operations? planner|production planner)\b/i,
+  operations: /\b(fulfil[l]?ment|replenishment|warehouse|logistics?|logestic|supply chain|stock flow|flow planner|operations?|inventory (?:planning|planner|management|control)|demand (?:planning|planner)|production planner)\b/i,
   ai_automation: /\b(ai|artificial intelligence|machine learning|automation|power platform|power apps|power automate|copilot|digital transformation)\b/i,
   marketing: /\b(seo|geo specialist|marketing|gtm|content|growth)\b/i,
   product_management: /\bproduct manag(?:er|ement)\b/i,
@@ -52,7 +52,7 @@ export function classifyJob(job: Pick<CanonicalJobCandidate,'title'|'description
   ];
   for (const [level,pattern] of titleRules) if(pattern.test(t)) {seniority=level;evidence.push(`Title: ${t}`);break;}
   // Manager is a function in Project/Product/Account Manager titles, not proof of direct reports.
-  if (peopleManagement && (levelRank(seniority) ?? 0)<4) {seniority='manager';evidence.push('Description explicitly requires people management');}
+  if ((peopleManagement || /\b(?:warehouse|logistics|operations|fulfil[l]?ment|replenishment) manager\b/i.test(t)) && (levelRank(seniority) ?? 0)<4) {seniority='manager';evidence.push('Management responsibility indicated by title or description');}
   const providerRank=levelRank(job.seniority);
   if(providerRank!==null && providerRank>=4 && providerRank>(levelRank(seniority)??0)) {
     seniority=LEVELS.find(level=>job.seniority?.toLowerCase().includes(level)) ?? (providerRank>=7?'executive':providerRank>=6?'director':providerRank>=5?'lead':'senior');
@@ -67,15 +67,23 @@ export function classifyJob(job: Pick<CanonicalJobCandidate,'title'|'description
     const normalized=job.seniority.toLowerCase();
     seniority=LEVELS.find(l=>normalized.includes(l)) ?? 'unknown'; evidence.push(`Provider: ${job.seniority}`);
   }
-  const titleDomain = careerDomain(t);
-  const planningTitle = /\b(?:forecast|demand|inventory|capacity|transport network)\s+(?:analyst|planning|planner)\b/i.test(t);
+  const titleDomain = /\b(?:people|sales|revenue|marketing|security|military|combat|psychological) operations\b/i.test(t)
+    ? 'unknown' : careerDomain(t);
+  const planningTitle = /\b(?:forecast|demand|inventory|capacity|materials?|supply|transport network)\s+(?:analyst|planning|planner)\b/i.test(t);
   const supplyChainContext = /\b(?:supply chain|replenishment|inventory planning|warehouse|logistics|transport network)\b/i.test(job.description);
   const domain = (titleDomain === 'unknown' || titleDomain === 'data') && planningTitle && supplyChainContext ? 'operations' : titleDomain;
   return {seniority,domain,years,mandatoryYears,peopleManagement,architectureOwnership,
     confidence: seniority!=='unknown' && job.descriptionComplete ? 'high' : 'low',evidence};
 }
 export function inferCareerTracks(intent: NormalizedJobSearchIntent, evidence: CareerEvidenceItem[]): CareerTrack[] {
-  if(intent.careerTracks?.length) return intent.careerTracks;
+  if(intent.careerTracks?.length) return intent.careerTracks.map(track => {
+    if (track.directYears !== null || track.domain === 'unknown') return track;
+    const durations = evidence.filter(item => item.evidenceType === 'role_history'
+      && item.provenance.scope !== 'total_experience'
+      && (careerDomain(item.value) === track.domain || (careerDomain(item.value) === 'unknown' && careerDomain(item.label) === track.domain)))
+      .flatMap(item => item.durationMonths === null ? [] : [item.durationMonths]);
+    return durations.length ? {...track, directYears: Math.max(...durations) / 12} : track;
+  });
   const titles=[intent.primaryTargetRole,...intent.soft.secondaryRoles,...intent.soft.marketTitleVariants,...intent.soft.adjacentRoles];
   return [...new Set(titles.map(careerDomain))].map(domain=>{
     const direct=evidence.filter(e=>e.evidenceType==='role_history' && e.provenance.scope!=='total_experience' && careerDomain(e.value)===domain && domain!=='unknown');
@@ -110,7 +118,7 @@ export function evaluateCareerEligibility(job: CanonicalJobCandidate,intent:Norm
     }
     if(analysis.peopleManagement && !evidence.some(e=>e.evidenceType==='role_history' && careerDomain(e.value)===track.domain && e.provenance.peopleManagement===true)) add('LEADERSHIP_EVIDENCE_UNKNOWN','unknown','People management experience needs confirmation.');
   }
-  if(analysis.confidence==='low' && analysis.seniority==='unknown') add('SENIORITY_REVIEW_REQUIRED','unknown','Seniority needs review; experience requirements were not inferred from keywords.');
+  if(analysis.seniority==='unknown' && (!job.descriptionComplete || !track || track.transition || levelRank(track.maximumSeniority) === null || (levelRank(track.maximumSeniority) ?? 0) < 2 || !/\bplanner\b/i.test(job.title))) add('SENIORITY_REVIEW_REQUIRED','unknown','Seniority needs review; experience requirements were not inferred from keywords.');
   return {analysis,track,reasons,status:reasons.some(r=>r.outcome==='block')?'blocked' as const:reasons.length?'unverified' as const:'eligible' as const};
 }
 export function parseCareerTracks(value:unknown):CareerTrack[] {

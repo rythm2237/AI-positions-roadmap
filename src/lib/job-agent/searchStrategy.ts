@@ -12,10 +12,15 @@ const ROLE_VARIANTS: Record<string, string[]> = {
 
 const normalize = (value: string) => value.toLowerCase().replace(/[^a-z0-9+#]+/g, " ").replace(/\s+/g, " ").trim();
 
+export function operationalPlanningVariants(titles: string[]) {
+  return titles.some(title => /^(?:operations?|flow) planner$/i.test(title.trim()))
+    ? ["Replenishment Automation Specialist", "Supply Chain Planner", "Supply Planner", "Supply Demand Planner"] : [];
+}
+
 export function planSearchQueries(intent: NormalizedJobSearchIntent, limit = 8): SearchQuery[] {
   const trackQueries=(intent.careerTracks??[]).flatMap(track=>track.targetTitles.flatMap(title=>[
     {query:title,origin:"exact" as const,priority:110},
-    ...(track.transition ? [{query:`Junior ${title.replace(/^(?:junior|associate)\s+/i,"")}`,origin:"market_variant" as const,priority:105}] : []),
+    ...(track.transition && !/^(?:junior|associate|graduate|entry.level)\b/i.test(title) ? [{query:`Junior ${title}`,origin:"market_variant" as const,priority:105}] : []),
   ]));
   const candidates: SearchQuery[] = [
     ...trackQueries,
@@ -35,12 +40,30 @@ export function planSearchQueries(intent: NormalizedJobSearchIntent, limit = 8):
   // Reserve a query for each configured domain before title variants consume the budget.
   const domains=new Set<string>();
   const seeds=unique.filter(candidate=>{const domain=careerDomain(candidate.query);if(domains.has(domain)) return false;domains.add(domain);return true;});
-  const operationsSeed = seeds.find((candidate) => careerDomain(candidate.query) === "operations");
-  const operationsVariant = operationsSeed && /^(?:operations?|flow) planner$/i.test(operationsSeed.query)
-    && { query: "Replenishment Automation Specialist", origin: "market_variant" as const, priority: 104 };
-  const reserved = operationsVariant && !seen.has(normalize(operationsVariant.query))
-    && !intent.hard.excludedRoles.some((excluded) => normalize(operationsVariant.query).includes(normalize(excluded)))
-    ? [...seeds, operationsVariant] : seeds;
-  const selected=[...reserved,...unique.filter(candidate=>!seeds.includes(candidate))].slice(0,Math.max(1,Math.min(limit,12)));
+  const operationsVariants: SearchQuery[] = operationalPlanningVariants(unique.map(({query}) => query))
+    .slice(0, 2).flatMap((query, index) =>
+      seen.has(normalize(query)) || intent.hard.excludedRoles.some(excluded => normalize(query).includes(normalize(excluded)))
+        ? [] : [{ query, origin: "market_variant", priority: 104 - index }]);
+  const transitionVariants = seeds.flatMap(seed => {
+    const domain = careerDomain(seed.query);
+    const variants = unique.filter(candidate => candidate.priority === 105 && careerDomain(candidate.query) === domain);
+    const concise = variants.find(candidate => normalize(candidate.query).split(" ").length <= 5);
+    return (concise ? [concise] : variants.slice(0, 1));
+  });
+  const reserved = [...seeds, ...operationsVariants, ...transitionVariants];
+  const selected=[...reserved,...unique.filter(candidate=>!reserved.includes(candidate))].slice(0,Math.max(1,Math.min(limit,12)));
   return selected.sort((a,b)=>b.priority-a.priority);
+}
+
+
+// Generic job-title words alone are weak evidence that a board result matches the query.
+const genericTitleWords = new Set(["junior", "senior", "associate", "specialist", "consultant", "manager", "engineer", "analyst", "and", "the"]);
+export function employerTitleRelevance(title: string, query: string) {
+  const words = (value: string) => normalize(value.normalize("NFD").replace(/\p{M}/gu, "")).split(" ");
+  const titleWords = new Set(words(title));
+  const queryWords = words(query).filter(word => word.length >= 2);
+  const specific = queryWords.filter(word => !genericTitleWords.has(word));
+  const matchingWords = (specific.length ? specific : queryWords).filter(word => titleWords.has(word)).length;
+  const localLogistics = /\b(?:logistik|logistics|logistique)\b/i;
+  return matchingWords || (localLogistics.test(query) && /\b(?:material flow|warehouse|replenishment|lagerlogistik|supply chain)\b/i.test(title) ? 1 : 0);
 }

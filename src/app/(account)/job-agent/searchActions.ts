@@ -360,11 +360,19 @@ async function executeJobSearch(
   const { searched, eligible, unverified, blocked, expired, recommended } = runMetrics;
   const status = allFailed && !processed.length ? "failed" : providerFailures.length || persistenceErrors.length ? "partial" : "completed";
   const attemptsByStatus = Object.fromEntries([...new Set(gateway.attempts.map((attempt) => attempt.status))].map((attemptStatus) => [attemptStatus, gateway.attempts.filter((attempt) => attempt.status === attemptStatus).length]));
+  const verifiedEligibilityCounts = { eligible: 0, unverified: 0, blocked: 0 };
+  const verifiedReasonCounts: Record<string, number> = {};
+  let eligibleBelowThreshold = 0;
   const reasonCounts: Record<string, number> = {};
   const verificationErrorCounts: Record<string, number> = {};
   for (const item of processed) {
     // One count per reason code per candidate. A candidate can have multiple reasons.
     const codes = new Set(item.eligibility.detail.map((reason) => reason.code));
+    if (item.verification.status === "verified" && !["expired", "stale"].includes(item.freshness.status)) {
+      verifiedEligibilityCounts[item.effectiveEligibilityStatus]++;
+      for (const code of codes) verifiedReasonCounts[code] = (verifiedReasonCounts[code] ?? 0) + 1;
+      if (item.effectiveEligibilityStatus === "eligible" && item.recommendation === "review") eligibleBelowThreshold++;
+    }
     if (item.verificationRejected) codes.add("SOURCE_VERIFICATION_REJECTED");
     for (const code of codes) reasonCounts[code] = (reasonCounts[code] ?? 0) + 1;
     if (item.verification.errorCode) {
@@ -377,6 +385,9 @@ async function executeJobSearch(
     processingLimit,
     queueActive: Boolean(claimed),
     resumedCandidates: claimed?.resumed,
+    verifiedEligibilityCounts,
+    verifiedReasonCounts,
+    eligibleBelowThreshold,
     processedCandidates: processed.length,
     deferredByProcessingLimit: candidatesDeferredByLimit,
     eligible,

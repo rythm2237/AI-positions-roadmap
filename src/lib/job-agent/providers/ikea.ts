@@ -1,3 +1,4 @@
+import { employerTitleRelevance } from "../searchStrategy.ts";
 import { canonicalCountry } from "../countryIdentity.ts";
 import { canonicalJobKey, normalizeJobText } from "../normalization.ts";
 import type { CanonicalJobCandidate, JobProvider, ProviderSearchInput, ProviderSearchOutcome } from "../contracts.ts";
@@ -66,8 +67,7 @@ export class IkeaProvider implements JobProvider {
     const pending = cached ?? this.loadListings(path);
     this.listings.set(path, pending);
     const listing = await pending;
-    const query = new Set(normalizeJobText(input.query).split(" ").filter((token) => token.length >= 3));
-    const jobs = listing.rows.flatMap((item) => {
+    const candidates = listing.rows.flatMap((item) => {
       const country = item.location.split(",").at(-1)?.trim() ?? "";
       if (canonicalCountry(country) !== canonicalCountry(input.country)) return [];
       const employmentTypes = /full time/i.test(item.employment) ? ["full_time"] : /part time/i.test(item.employment) ? ["part_time"] : [];
@@ -84,11 +84,12 @@ export class IkeaProvider implements JobProvider {
       candidate.canonicalKey = canonicalJobKey(candidate);
       return [candidate];
     });
-    const operationsQuery = /fulfil|warehouse|replenish|logistic|supply chain|flow plan|automation/i.test(input.query);
+    const operationsQuery = /fulfil|warehouse|replenish|logistic|supply chain|flow plan/i.test(input.query);
     const operationsTitle = /fulfil|warehouse|replenish|logisti|supply chain|flow plan|automation|automati|lager|raktar|aruosszekeszit|anyagmozgat/i;
-    const relevance = (job: CanonicalJobCandidate) => job.normalizedTitle.split(" ").filter((token) => query.has(token)).length
+    const relevance = (job: CanonicalJobCandidate) => employerTitleRelevance(job.title, input.query)
       + (operationsQuery && operationsTitle.test(job.normalizedTitle) ? 1 : 0);
-    jobs.sort((a, b) => relevance(b) - relevance(a));
+    const jobs = candidates.map(job => ({ job, score: relevance(job) }))
+      .filter(({ score }) => score > 0).sort((a, b) => b.score - a.score).map(({ job }) => job);
     return { provider: this.name, jobs: jobs.slice(0, input.limit), latencyMs: Date.now() - started,
       status: listing.errorCode === "RATE_LIMIT" ? "rate_limit" : listing.errorCode ? "provider_error" : jobs.length ? "success" : "no_results",
       errorCode: listing.errorCode, requestCount: cached ? 0 : listing.requests,

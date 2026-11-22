@@ -10,11 +10,12 @@ const reasonCode = (message: string) => {
   if (/role.*exclusion/i.test(message)) return "EXCLUDED_ROLE";
   if (/country.*excluded|outside.*search scope/i.test(message)) return "GEOGRAPHY_CONFLICT";
   if (/location.*outside/i.test(message)) return "LOCATION_CONFLICT";
+  if (/country.*could not/i.test(message)) return "GEOGRAPHY_UNKNOWN";
   if (/location.*could not/i.test(message)) return "LOCATION_UNKNOWN";
   if (/workplace model.*not selected/i.test(message)) return "WORKPLACE_CONFLICT";
   if (/workplace model.*could not/i.test(message)) return "WORKPLACE_UNKNOWN";
   if (/employment type.*outside/i.test(message)) return "EMPLOYMENT_TYPE_CONFLICT";
-  if (/employment type.*could not/i.test(message)) return "EMPLOYMENT_TYPE_UNKNOWN";
+  if (/(?:employment|working-hours) type.*could not/i.test(message)) return "EMPLOYMENT_TYPE_UNKNOWN";
   if (/seniority.*below|seniority.*above/i.test(message)) return "SENIORITY_CONFLICT";
   if (/seniority.*could not/i.test(message)) return "SENIORITY_UNKNOWN";
   if (/missing required language|english-only priority/i.test(message)) return "LANGUAGE_CONFLICT";
@@ -32,7 +33,11 @@ export function evaluateHardEligibility(input: { job: CanonicalJobCandidate; pro
   if (input.expired) return { status: "blocked", reasons: ["The vacancy is expired."], detail: [{ code: "VACANCY_EXPIRED", outcome: "block", field: "expiresAt", message: "The vacancy is expired.", evidence: input.job.expiresAt }], requiredLanguages: input.job.requiredLanguages, postingLanguage: null };
   const profile = { ...input.profile, languages: input.intent.hard.languages };
   const base = evaluateJobEligibility({ title: input.job.title, company: input.job.company, country: input.job.country, location: input.job.location, description: input.job.description, descriptionComplete: input.job.descriptionComplete, workplaceModel: input.job.workplaceModel, employmentTypes: input.job.employmentTypes, seniority: input.job.seniority, visaSponsorship: input.job.visaSponsorship, salaryMin: input.job.salaryMin, salaryMax: input.job.salaryMax, currency: input.job.currency }, profile, input.agent);
-  const hard: EligibilityReason[] = base.reasons.map((message) => ({ code: reasonCode(message), outcome: base.status === "blocked" ? "block" : "unknown", field: reasonCode(message).split("_")[0].toLowerCase(), message, evidence: null }));
+  const hard: EligibilityReason[] = base.reasons.map((message) => {
+    const code = reasonCode(message);
+    const unknown = code.endsWith("_UNKNOWN") || /country could not|working-hours type could not/i.test(message);
+    return { code, outcome: unknown ? "unknown" : "block", field: code.split("_")[0].toLowerCase(), message, evidence: null };
+  });
 
   hard.push(...evaluateCareerEligibility(input.job, input.intent, input.evidence).reasons);
 

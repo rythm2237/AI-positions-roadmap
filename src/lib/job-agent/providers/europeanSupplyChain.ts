@@ -1,3 +1,4 @@
+import { employerTitleRelevance } from "../searchStrategy.ts";
 import { canonicalCountry } from "../countryIdentity.ts";
 import type { CanonicalJobCandidate, JobProvider, ProviderSearchInput, ProviderSearchOutcome } from "../contracts.ts";
 import { canonicalJobKey, normalizeJobText, safeExternalUrl } from "../normalization.ts";
@@ -221,13 +222,13 @@ export class PublicSupplyChainBoard implements JobProvider {
     const payload = cached ?? this.load(input, () => { requestCount++; });
     this.cache.set(key, payload);
     try {
-      const tokens = normalizeJobText(input.query).split(" ").filter((word) => word.length > 2);
-      const jobs = (await payload).flatMap((row) => {
+      const ranked = (await payload).map(row => ({ row, score: employerTitleRelevance(row.title, input.query) }))
+        .filter(({ score }) => score > 0).sort((a, b) => b.score - a.score);
+      const jobs = ranked.flatMap(({ row }) => {
         const url = safeExternalUrl(row.url);
         const title = normalizeJobText(row.title);
         if (/^(?:initiativbewerbung|unsolicited application|spontaneous application)/i.test(row.title)) return [];
         if (!code || !url || !row.id || !row.title || !matchesCountry(row.location, input.country, code)) return [];
-        if (!["successfactors", "workday", "lidl", "vacancy_api", "sitemap"].includes(this.source.kind) && tokens.length > 0 && !tokens.some((token) => title.split(" ").includes(token))) return [];
         const job: CanonicalJobCandidate = {
           externalId: row.id, source: this.name, sourceQuery: input.query, company: this.source.company,
           title: row.title, normalizedTitle: title, location: row.location, country: input.country,

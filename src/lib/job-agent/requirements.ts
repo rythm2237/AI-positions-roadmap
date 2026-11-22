@@ -36,6 +36,9 @@ const seniority = (text: string) => {
 export function enrichRequirements(job: CanonicalJobCandidate, evidence: CareerEvidenceItem[]): CanonicalJobCandidate {
   const clauses = job.description.split(/(?<=[.;:\n])\s+|\n+/).filter(Boolean);
   const knownSkills = [...new Set([...COMMON_SKILLS, ...evidence.map((item) => item.label)].filter((label) => label.length > 1))];
+  const skillPatterns = knownSkills.map(skill => [
+    skill, new RegExp(`(?:^|[^\\p{L}\\p{N}+#])${skill.replace(/[.*+?^\${}()|[\]\\]/g, "\\$&")}${skill === "LLM" ? "s?" : ""}(?=$|[^\\p{L}\\p{N}+#])`, "iu"),
+  ] as const);
   const required = new Set(job.requiredSkills);
   const preferred = new Set(job.preferredSkills);
   let requirementSection = false;
@@ -46,8 +49,8 @@ export function enrichRequirements(job: CanonicalJobCandidate, evidence: CareerE
       continue;
     }
     if (sectionEnding.test(clause.trim())) requirementSection = false;
-    for (const skill of knownSkills) {
-      if (!lower.includes(skill.toLowerCase())) continue;
+    for (const [skill, pattern] of skillPatterns) {
+      if (!pattern.test(clause)) continue;
       if (preferredWording.test(lower)) preferred.add(skill);
       else if (requirementSection || requiredWording.test(lower)) required.add(skill);
     }
@@ -73,6 +76,14 @@ export function enrichRequirements(job: CanonicalJobCandidate, evidence: CareerE
   const visaSponsorship = /\b(?:visa )?sponsorship (?:is )?(?:available|provided|offered)\b/i.test(job.description) ? "available"
     : /\b(?:no|not) (?:visa )?sponsorship|must (?:already )?have (?:the )?(?:right|authorization) to work\b/i.test(job.description) ? "not_available" : job.visaSponsorship;
   const workplaceModel = job.workplaceModel !== "unknown" ? job.workplaceModel : /\bhybrid\b/i.test(job.description) ? "hybrid" : /\b(?:fully remote|remote role|work from home)\b/i.test(job.description) ? "remote" : /\b(?:on[- ]site|office[- ]based)\b/i.test(job.description) ? "on_site" : "unknown";
+  const employmentTypes = new Set(job.employmentTypes);
+  if (!employmentTypes.size || (employmentTypes.size === 1 && employmentTypes.has("permanent"))) {
+    const titleOrLabel = [job.title, ...job.description.split(/[\n|]/).filter(line =>
+      /^(?:employment type|working hours|contract type|beschäftigungsart|arbeitszeit|anstellungsart|type de contrat)\s*:/i.test(line.trim())
+    )].join(" ");
+    if (/\b(?:full[ -]?time|vollzeit|temps plein)\b/i.test(titleOrLabel)) employmentTypes.add("full_time");
+    if (/\b(?:part[ -]?time|teilzeit|temps partiel)\b/i.test(titleOrLabel)) employmentTypes.add("part_time");
+  }
   const classified = classifyJob(job);
-  return { ...job, seniority: classified.seniority === "unknown" ? job.seniority ?? seniority(job.title) : classified.seniority, workplaceModel, requiredSkills: [...required], preferredSkills: [...preferred], educationRequirements: [...education], certificationRequirements: [...certifications], visaSponsorship };
+  return { ...job, seniority: classified.seniority === "unknown" ? job.seniority ?? seniority(job.title) : classified.seniority, workplaceModel, employmentTypes: [...employmentTypes], requiredSkills: [...required], preferredSkills: [...preferred], educationRequirements: [...education], certificationRequirements: [...certifications], visaSponsorship };
 }
